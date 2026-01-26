@@ -21,4 +21,4 @@
 * **Integraciones:** API de Pagos, Librería de generación QR.
 
 ---
-*Proyecto desarrollado por [Tu Nombre], [Nombre de Sebas], [Nombre de Benja].*
+*Proyecto desarrollado por Ayrton, Sebastian, Benjamin.*
