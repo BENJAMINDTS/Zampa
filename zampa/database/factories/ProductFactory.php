@@ -9,18 +9,21 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class ProductFactory extends Factory
 {
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
     public function definition(): array
     {
         return [
-            'name' => $this->faker->words(3, true),
-            'description' => $this->faker->sentence(),
-            'price' => $this->faker->randomFloat(2, 5, 25),
+            // Generamos nombres de platos aleatorios
+            'name' => $this->faker->randomElement(['Hamburguesa Clásica', 'Pizza Margarita', 'Ensalada César', 'Tacos al Pastor', 'Sushi Roll', 'Pasta Carbonara']),
+
+            'description' => $this->faker->sentence(10), // Descripción corta
+
+            'price' => $this->faker->randomFloat(2, 5, 25), // Precio entre 5.00 y 25.00
+
             'is_active' => true,
+
+            // IMPORTANTE: Ahora la imagen es una ruta de texto (string).
+            // Ponemos una ruta falsa por defecto para que no de error.
+            'image' => 'products/default_food.jpg',
         ];
     }
 }
