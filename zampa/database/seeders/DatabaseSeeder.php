@@ -64,6 +64,7 @@ class DatabaseSeeder extends Seeder
                     ['quantity_base' => 1] // Dato extra en la tabla intermedia
                 );
             }
+            
         });
     }
 }
