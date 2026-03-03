@@ -2,15 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use App\Models\Product;
+use App\Models\Category;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Auth;
+
 
 /**
  * Controlador para la gestión del catálogo de productos.
- * Permite listar y crear nuevos platos en la carta digital.
+ * Permite listar y crear nuevos platos en la carta digital, gestionando imágenes y relaciones.
  *
  * @author SebastianBCF
  */
@@ -23,19 +25,20 @@ class ProductController extends Controller
    */
   public function index(): View
   {
-    $products = Product::where('user_id', auth::id())->get();
+    $products = Product::where('user_id', Auth::id())->get();
     return view('products.index', compact('products'));
   }
 
   /**
    * Muestra el formulario para crear un nuevo producto.
+   * Carga las categorías del usuario autenticado para el menú desplegable.
    *
    * @return View Vista del formulario de creación.
    */
   public function create(): View
   {
-    // Nota: Aquí se deberían cargar las categorías para pasarlas a la vista
-    return view('products.create');
+    $categories = Category::where('user_id', Auth::id())->get();
+    return view('products.create', compact('categories'));
   }
 
   /**
@@ -55,7 +58,7 @@ class ProductController extends Controller
       'image'       => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
     ]);
 
-    $validatedData['user_id'] = auth::id();
+    $validatedData['user_id'] = Auth::id();
 
     if ($request->hasFile('image')) {
       /** @var string $path Ruta donde se almacena temporalmente la imagen */
