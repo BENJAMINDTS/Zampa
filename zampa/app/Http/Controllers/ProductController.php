@@ -8,13 +8,13 @@ use App\Models\Category;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
-
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Controlador para la gestión del catálogo de productos.
  * Permite listar y crear nuevos platos en la carta digital, gestionando imágenes y relaciones.
  *
- * @author SebastianBCF
+ * @author SebastianBCF-AyrtonAlania
  */
 class ProductController extends Controller
 {
@@ -72,4 +72,107 @@ class ProductController extends Controller
       ->route('products.index')
       ->with('success', '¡Plato creado con éxito en la carta digital!');
   }
+  /**
+
+     * Muestra el formulario para editar un producto existente.
+
+     *
+
+     * @param Product $product El modelo del producto a editar.
+
+     * @return View
+
+     */
+
+    public function edit(Product $product): View
+
+    {
+
+        abort_if($product->user_id !== Auth::id(), 403, 'No tienes permiso para editar este plato.');
+ 
+        $categories = Category::where('user_id', Auth::id())->get();
+
+        return view('products.edit', compact('product', 'categories'));
+
+    }
+ 
+    /**
+
+     * Actualiza los datos del producto y gestiona el reemplazo de la imagen en el disco.
+
+     *
+
+     * @param Request $request
+
+     * @param Product $product
+
+     * @return RedirectResponse
+
+     */
+
+    public function update(Request $request, Product $product): RedirectResponse
+
+    {
+
+        abort_if($product->user_id !== Auth::id(), 403);
+ 
+        $validatedData = $request->validate([
+
+            'name'        => 'required|string|max:255',
+
+            'description' => 'nullable|string',
+
+            'price'       => 'required|numeric|min:0',
+
+            'category_id' => 'required|exists:categories,id',
+
+            'image'       => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+
+        ]);
+ 
+        if ($request->hasFile('image')) {
+
+            if ($product->image) {
+
+                Storage::disk('public')->delete($product->image);
+
+            }
+
+            $path = $request->file('image')->store('products', 'public');
+
+            $validatedData['image'] = $path;
+
+        }
+ 
+        $product->update($validatedData);
+ 
+        return redirect()->route('products.index')->with('success', '¡Plato actualizado correctamente!');
+
+    }
+ 
+    /**
+
+     * Elimina un producto de la carta digital (Soft Delete).
+
+     *
+
+     * @param Product $product
+
+     * @return RedirectResponse
+
+     */
+
+    public function destroy(Product $product): RedirectResponse
+
+    {
+
+        abort_if($product->user_id !== Auth::id(), 403);
+ 
+        $product->delete();
+ 
+        return redirect()->route('products.index')->with('success', 'Plato retirado de la carta.');
+
+    }
+ 
 }
+
