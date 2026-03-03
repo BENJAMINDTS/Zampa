@@ -20,6 +20,7 @@
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Imagen</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Precio</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acciones</th>
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
@@ -34,6 +35,14 @@
             </td>
             <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900">{{ $product->name }}</td>
             <td class="px-6 py-4 whitespace-nowrap text-gray-500">{{ number_format($product->price, 2) }} €</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium flex space-x-2">
+              <a href="{{ route('products.edit', $product) }}" class="text-indigo-600 hover:text-indigo-900 bg-indigo-100 px-3 py-1 rounded">Editar</a>
+              <form action="{{ route('products.destroy', $product) }}" method="POST" onsubmit="return confirm('¿Seguro que quieres borrar este plato?');">
+                  @csrf
+                  @method('DELETE')
+                  <button type="submit" class="text-red-600 hover:text-red-900 bg-red-100 px-3 py-1 rounded">Borrar</button>
+              </form>
+            </td>
           </tr>
           @endforeach
         </tbody>
