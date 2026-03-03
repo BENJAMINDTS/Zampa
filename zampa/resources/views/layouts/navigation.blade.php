@@ -23,7 +23,11 @@
                     <x-nav-link :href="route('ingredients.index')" :active="request()->routeIs('ingredients.*')">
                         {{ __('Ingredientes') }}
                     </x-nav-link>
-
+                    
+                    {{-- NUEVO: Enlace a Productos --}}
+                    <x-nav-link :href="route('products.index')" :active="request()->routeIs('products.*')">
+                        {{ __('Productos') }}
+                    </x-nav-link>
                 </div>
 
                 <!-- Settings Dropdown -->
@@ -85,6 +89,10 @@
                 {{-- NUEVO: Enlace a Ingredientes (Versión Móvil) --}}
                 <x-responsive-nav-link :href="route('ingredients.index')" :active="request()->routeIs('ingredients.*')">
                     {{ __('Ingredientes') }}
+                </x-responsive-nav-link>
+                {{-- NUEVO: Enlace a Productos (Versión Móvil) --}}
+                <x-responsive-nav-link :href="route('products.index')" :active="request()->routeIs('products.*')">
+                    {{ __('Productos') }}
                 </x-responsive-nav-link>
             </div>
 
