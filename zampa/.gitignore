@@ -23,4 +23,5 @@ Homestead.json
 Homestead.yaml
 Thumbs.db
 CLAUDE.md
-./claude
+/.claude
+/.githooks
