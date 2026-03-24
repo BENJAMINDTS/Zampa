@@ -12,6 +12,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  *
  * Representa un plato o bebida de la carta.
  *
+ * @author SebastianBCF
+ *
  * @property string $image       Ruta relativa de la imagen almacenada en storage/app/public/products
  * @property float $price      Precio base del producto
  * @property boolean $is_active  Si está disponible para pedir
@@ -49,4 +51,5 @@ class Product extends Model
             ->withPivot(['quantity_base', 'is_removable', 'is_extra', 'extra_price'])
             ->withTimestamps();
     }
+
 }
