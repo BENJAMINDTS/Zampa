@@ -68,9 +68,11 @@ class CategoryController extends Controller
 
     /**
      * Muestra los detalles de una categoría específica.
-     * * @param Category $category
+     *
+     * @param  Category  $category El modelo de la categoría a mostrar.
+     * @return void
      */
-    public function show(Category $category)
+    public function show(Category $category): void
     {
         // Método pendiente de implementación si se requiere vista de detalle
     }
