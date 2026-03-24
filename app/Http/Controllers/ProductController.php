@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Product;
 use App\Models\Category;
+use App\Models\Ingredient;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
@@ -173,6 +174,25 @@ class ProductController extends Controller
 
         return redirect()->route('products.index')->with('success', 'Plato retirado de la carta.');
 
+    }
+
+    /**
+     * Muestra el configurador de ingredientes para un producto.
+     *
+     * @param Product $product
+     * @return View
+     */
+    public function editIngredients(Product $product): View
+    {
+        abort_if($product->user_id !== Auth::id(), 403, 'Acceso denegado.');
+
+        $product->load('ingredients');
+
+        $ingredients = Ingredient::where('user_id', Auth::id())
+                                 ->orderBy('name')
+                                 ->get();
+
+        return view('products.ingredients', compact('product', 'ingredients'));
     }
 
     /**
