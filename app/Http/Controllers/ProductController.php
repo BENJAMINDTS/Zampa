@@ -14,7 +14,8 @@ use Illuminate\Support\Facades\Storage;
  * Controlador para la gestión del catálogo de productos.
  * Permite listar y crear nuevos platos en la carta digital, gestionando imágenes y relaciones.
  *
- * @author SebastianBCF-AyrtonAlania
+ * @author SebastianBCF
+ * @author BenjaminDTS
  */
 class ProductController extends Controller
 {
