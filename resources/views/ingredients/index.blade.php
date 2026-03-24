@@ -21,6 +21,12 @@
           </div>
           @endforeach
         </div>
+
+        @if($ingredients->hasPages())
+        <nav aria-label="Paginación de ingredientes" class="mt-4">
+          {{ $ingredients->links() }}
+        </nav>
+        @endif
       </div>
     </div>
   </div>
