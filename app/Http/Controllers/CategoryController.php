@@ -30,7 +30,7 @@ class CategoryController extends Controller
         $user = Auth::user();
 
         // Obtener sus categorías mediante la relación definida en el modelo User
-        $categories = $user->categories;
+        $categories = $user->categories()->paginate(15);
 
         return view('categories.index', compact('categories'));
     }
