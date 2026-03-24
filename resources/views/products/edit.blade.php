@@ -1,8 +1,8 @@
 <x-app-layout>
-    <div class="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-md mt-10">
-        <h2 class="text-2xl font-bold mb-6 text-gray-800">Editar Plato: {{ $product->name }}</h2>
+    <div class="max-w-2xl mx-auto px-4 sm:px-6 py-4 sm:p-6 bg-white rounded-lg shadow-md mt-4 sm:mt-10">
+        <h2 class="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-gray-800">Editar Plato: {{ $product->name }}</h2>
 
-        <form action="{{ route('products.update', $product) }}" method="POST" enctype="multipart/form-data" class="space-y-4">
+        <form action="{{ route('products.update', $product) }}" method="POST" enctype="multipart/form-data" class="space-y-3 sm:space-y-4">
             @csrf
             @method('PUT')
             <div>
@@ -34,7 +34,7 @@
                 <label class="block text-sm font-medium text-gray-700">Foto del plato (Max: 2MB)</label>
                 @if($product->image)
                 <div class="my-2">
-                    <img src="{{ asset('storage/' . $product->image) }}" class="h-20 w-20 object-cover rounded-md border">
+                    <img src="{{ asset('storage/' . $product->image) }}" class="h-16 w-16 sm:h-20 sm:w-20 object-cover rounded-md border">
                     <p class="text-xs text-gray-500 mt-1">Imagen actual. Sube una nueva si deseas reemplazarla.</p>
                 </div>
                 @endif
