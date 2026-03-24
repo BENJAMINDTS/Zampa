@@ -8,7 +8,7 @@
     </div>
 
     @if(session('success'))
-    <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+    <div role="alert" class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
       {{ session('success') }}
     </div>
     @endif
@@ -41,7 +41,7 @@
                 <form action="{{ route('products.destroy', $product) }}" method="POST" onsubmit="return confirm('¿Seguro que quieres borrar este plato?');">
                     @csrf
                     @method('DELETE')
-                    <button type="submit" class="w-full text-red-600 hover:text-red-900 bg-red-100 px-3 py-1 rounded">Borrar</button>
+                    <button type="submit" aria-label="Borrar plato {{ $product->name }}" class="w-full text-red-600 hover:text-red-900 bg-red-100 px-3 py-1 rounded">Borrar</button>
                 </form>
               </div>
             </td>

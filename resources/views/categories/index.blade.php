@@ -7,12 +7,12 @@
   </x-slot>
 
   <div class="py-12">
-    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="p-6 text-gray-900 dark:text-gray-100">
 
         {{-- Alerta de éxito al guardar, editar o borrar --}}
         @if(session('success'))
-        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-6">
+        <div role="alert" class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-6">
           {{ session('success') }}
         </div>
         @endif
@@ -43,7 +43,7 @@
               <form action="{{ route('categories.destroy', $category) }}" method="POST" onsubmit="return confirm('¿Seguro que quieres borrar la categoría {{ $category->name }}?');">
                 @csrf
                 @method('DELETE')
-                <button type="submit" class="text-sm bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 py-1 px-3 rounded">
+                <button type="submit" aria-label="Borrar categoría {{ $category->name }}" class="text-sm bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 py-1 px-3 rounded">
                   Borrar
                 </button>
               </form>
