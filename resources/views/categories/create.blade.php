@@ -6,7 +6,7 @@
   </x-slot>
 
   <div class="py-12">
-    <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
 
         <form method="POST" action="{{ route('categories.store') }}">
