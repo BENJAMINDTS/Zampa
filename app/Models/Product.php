@@ -52,4 +52,24 @@ class Product extends Model
             ->withTimestamps();
     }
 
+    /**
+     * Transforma el input del formulario al formato que espera Eloquent sync().
+     *
+     * @param array $ingredientsInput Array del formulario indexado por ingredient_id
+     * @return array Array formateado para sync() con datos de la tabla pivote
+     */
+    public function formatIngredientsForSync(array $ingredientsInput): array
+    {
+        $formatted = [];
+        foreach ($ingredientsInput as $id => $data) {
+            $formatted[$id] = [
+                'quantity_base' => $data['quantity_base'] ?? 1,
+                'is_removable'  => isset($data['is_removable']) ? 1 : 0,
+                'is_extra'      => isset($data['is_extra']) ? 1 : 0,
+                'extra_price'   => $data['extra_price'] ?? 0.00,
+            ];
+        }
+        return $formatted;
+    }
+
 }
