@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Auth;
  * Permite listar el stock actual y registrar nuevos ingredientes.
  *
  * @package App\Http\Controllers
+ * @author BenjaminDTS
  */
 class IngredientController extends Controller
 {
@@ -21,7 +22,7 @@ class IngredientController extends Controller
      *
      * @return \Illuminate\View\View Vista con la rejilla de ingredientes.
      */
-    public function index()
+    public function index(): \Illuminate\View\View
     {
         $user = Auth::user();
         $ingredients = $user->ingredients; // Usamos la relación del modelo User
@@ -34,7 +35,7 @@ class IngredientController extends Controller
      *
      * @return \Illuminate\View\View Vista con el formulario de creación.
      */
-    public function create()
+    public function create(): \Illuminate\View\View
     {
         return view('ingredients.create');
     }
@@ -45,7 +46,7 @@ class IngredientController extends Controller
      * @param  \Illuminate\Http\Request  $request Datos del formulario.
      * @return \Illuminate\Http\RedirectResponse Redirección al índice tras guardar.
      */
-    public function store(Request $request)
+    public function store(Request $request): \Illuminate\Http\RedirectResponse
     {
         // 1. Validamos (Nombre obligatorio)
         $validated = $request->validate([
@@ -59,9 +60,39 @@ class IngredientController extends Controller
         return redirect()->route('ingredients.index');
     }
 
-    // --- Métodos pendientes ---
-    public function show(Ingredient $ingredient) {}
-    public function edit(Ingredient $ingredient) {}
-    public function update(Request $request, Ingredient $ingredient) {}
-    public function destroy(Ingredient $ingredient) {}
+    /**
+     * Muestra los detalles de un ingrediente específico.
+     *
+     * @param  Ingredient  $ingredient El modelo del ingrediente a mostrar.
+     * @return void
+     */
+    public function show(Ingredient $ingredient): void {}
+
+    /**
+     * Muestra el formulario para editar un ingrediente existente.
+     * Pendiente de implementación en Bloque 1.6.
+     *
+     * @param  Ingredient  $ingredient El modelo del ingrediente a editar.
+     * @return void
+     */
+    public function edit(Ingredient $ingredient): void {}
+
+    /**
+     * Actualiza los datos de un ingrediente en la base de datos.
+     * Pendiente de implementación en Bloque 1.6.
+     *
+     * @param  Request    $request    Datos del formulario de edición.
+     * @param  Ingredient $ingredient El modelo del ingrediente a actualizar.
+     * @return void
+     */
+    public function update(Request $request, Ingredient $ingredient): void {}
+
+    /**
+     * Elimina un ingrediente de la base de datos.
+     * Pendiente de implementación en Bloque 1.6.
+     *
+     * @param  Ingredient  $ingredient El modelo del ingrediente a eliminar.
+     * @return void
+     */
+    public function destroy(Ingredient $ingredient): void {}
 }
