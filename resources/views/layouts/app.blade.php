@@ -15,6 +15,10 @@
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
     <body class="font-sans antialiased">
+        <a href="#main-content"
+           class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-white text-indigo-700 px-4 py-2 rounded font-medium z-50">
+            Saltar al contenido principal
+        </a>
         <div class="min-h-screen bg-gray-100 dark:bg-gray-900">
             @include('layouts.navigation')
 
@@ -28,7 +32,7 @@
             @endisset
 
             <!-- Page Content -->
-            <main>
+            <main id="main-content">
                 {{ $slot }}
             </main>
         </div>
