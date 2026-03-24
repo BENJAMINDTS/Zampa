@@ -62,6 +62,9 @@ class Product extends Model
     {
         $formatted = [];
         foreach ($ingredientsInput as $id => $data) {
+            if (empty($data['included'])) {
+                continue;
+            }
             $formatted[$id] = [
                 'quantity_base' => $data['quantity_base'] ?? 1,
                 'is_removable'  => isset($data['is_removable']) ? 1 : 0,
