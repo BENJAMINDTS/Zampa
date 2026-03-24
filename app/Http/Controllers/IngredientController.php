@@ -48,16 +48,14 @@ class IngredientController extends Controller
      */
     public function store(Request $request): \Illuminate\Http\RedirectResponse
     {
-        // 1. Validamos (Nombre obligatorio)
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
+            'name'        => 'required|string|max:255',
+            'is_allergen' => 'boolean',
         ]);
 
-        // 2. Creamos (Asociado al usuario)
         $request->user()->ingredients()->create($validated);
 
-        // 3. Redirigimos
-        return redirect()->route('ingredients.index');
+        return redirect()->route('ingredients.index')->with('success', 'Ingrediente creado correctamente.');
     }
 
     /**
