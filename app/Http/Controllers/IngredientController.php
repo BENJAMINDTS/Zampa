@@ -70,29 +70,50 @@ class IngredientController extends Controller
 
     /**
      * Muestra el formulario para editar un ingrediente existente.
-     * Pendiente de implementación en Bloque 1.6.
      *
      * @param  Ingredient  $ingredient El modelo del ingrediente a editar.
-     * @return void
+     * @return \Illuminate\View\View Vista con el formulario de edición.
      */
-    public function edit(Ingredient $ingredient): void {}
+    public function edit(Ingredient $ingredient): \Illuminate\View\View
+    {
+        abort_if($ingredient->user_id !== Auth::id(), 403, 'Acceso denegado.');
+
+        return view('ingredients.edit', compact('ingredient'));
+    }
 
     /**
      * Actualiza los datos de un ingrediente en la base de datos.
-     * Pendiente de implementación en Bloque 1.6.
      *
      * @param  Request    $request    Datos del formulario de edición.
      * @param  Ingredient $ingredient El modelo del ingrediente a actualizar.
-     * @return void
+     * @return \Illuminate\Http\RedirectResponse Redirección al índice tras actualizar.
      */
-    public function update(Request $request, Ingredient $ingredient): void {}
+    public function update(Request $request, Ingredient $ingredient): \Illuminate\Http\RedirectResponse
+    {
+        abort_if($ingredient->user_id !== Auth::id(), 403, 'Acceso denegado.');
+
+        $validated = $request->validate([
+            'name'        => 'required|string|max:255',
+            'is_allergen' => 'boolean',
+        ]);
+
+        $ingredient->update($validated);
+
+        return redirect()->route('ingredients.index')->with('success', 'Ingrediente actualizado correctamente.');
+    }
 
     /**
      * Elimina un ingrediente de la base de datos.
-     * Pendiente de implementación en Bloque 1.6.
      *
      * @param  Ingredient  $ingredient El modelo del ingrediente a eliminar.
-     * @return void
+     * @return \Illuminate\Http\RedirectResponse Redirección al índice tras eliminar.
      */
-    public function destroy(Ingredient $ingredient): void {}
+    public function destroy(Ingredient $ingredient): \Illuminate\Http\RedirectResponse
+    {
+        abort_if($ingredient->user_id !== Auth::id(), 403, 'Acceso denegado.');
+
+        $ingredient->delete();
+
+        return redirect()->route('ingredients.index')->with('success', 'Ingrediente eliminado correctamente.');
+    }
 }
