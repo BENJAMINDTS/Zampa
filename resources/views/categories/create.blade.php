@@ -14,14 +14,14 @@
 
           {{-- Nombre --}}
           <div class="mb-4">
-            <label class="block text-gray-700 dark:text-gray-300 mb-2">Nombre</label>
-            <input type="text" name="name" required class="w-full rounded-md border-gray-300 dark:bg-gray-900 dark:text-white">
+            <label for="name" class="block text-gray-700 dark:text-gray-300 mb-2">Nombre</label>
+            <input type="text" name="name" id="name" required class="w-full rounded-md border-gray-300 dark:bg-gray-900 dark:text-white">
           </div>
 
           {{-- Destino --}}
           <div class="mb-4">
-            <label class="block text-gray-700 dark:text-gray-300 mb-2">Destino</label>
-            <select name="destination" class="w-full rounded-md border-gray-300 dark:bg-gray-900 dark:text-white">
+            <label for="destination" class="block text-gray-700 dark:text-gray-300 mb-2">Destino</label>
+            <select name="destination" id="destination" class="w-full rounded-md border-gray-300 dark:bg-gray-900 dark:text-white">
               <option value="kitchen">Cocina 🍳</option>
               <option value="bar">Barra 🍺</option>
             </select>
