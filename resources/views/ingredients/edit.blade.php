@@ -2,17 +2,18 @@
 <x-app-layout>
   <x-slot name="header">
     <h2 class="font-semibold text-xl sm:text-2xl text-gray-800 dark:text-gray-200 leading-tight">
-      {{ __('Nuevo Ingrediente') }}
+      Editar Ingrediente: {{ $ingredient->name }}
     </h2>
   </x-slot>
 
   <div class="py-12">
-    <div class="max-w-md mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
         <div class="p-4 sm:p-6">
 
-          <form method="POST" action="{{ route('ingredients.store') }}" class="space-y-4 sm:space-y-6">
+          <form action="{{ route('ingredients.update', $ingredient) }}" method="POST" class="space-y-4 sm:space-y-6">
             @csrf
+            @method('PUT')
 
             {{-- Campo: Nombre --}}
             <div>
@@ -23,10 +24,9 @@
                 type="text"
                 name="name"
                 id="name"
-                value="{{ old('name') }}"
+                value="{{ old('name', $ingredient->name) }}"
                 required
                 aria-required="true"
-                placeholder="Ej: Pan Brioche"
                 @error('name') aria-describedby="error-name" @enderror
                 class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-green-500 focus:ring-green-500 focus:outline-none focus:ring-2 focus:ring-offset-2"
               >
@@ -53,7 +53,7 @@
                   name="is_allergen"
                   id="is_allergen"
                   value="1"
-                  {{ old('is_allergen') ? 'checked' : '' }}
+                  {{ old('is_allergen', $ingredient->is_allergen) ? 'checked' : '' }}
                   class="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-green-600 focus:ring-green-500 focus:outline-none focus:ring-2 focus:ring-offset-2"
                 >
                 <label for="is_allergen" class="text-sm text-gray-700 dark:text-gray-300">
@@ -74,7 +74,7 @@
                 type="submit"
                 class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
               >
-                Guardar
+                Actualizar Ingrediente
               </button>
             </div>
 
