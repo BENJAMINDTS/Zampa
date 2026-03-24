@@ -1,8 +1,8 @@
 <x-app-layout>
-  <div class="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-md mt-10">
-    <h2 class="text-2xl font-bold mb-6 text-gray-800">Añadir Nuevo Plato</h2>
+  <div class="max-w-2xl mx-auto px-4 sm:px-6 py-4 sm:p-6 bg-white rounded-lg shadow-md mt-4 sm:mt-10">
+    <h2 class="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-gray-800">Añadir Nuevo Plato</h2>
 
-    <form action="{{ route('products.store') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
+    <form action="{{ route('products.store') }}" method="POST" enctype="multipart/form-data" class="space-y-3 sm:space-y-4">
       @csrf
       <div>
         <label for="name" class="block text-sm font-medium text-gray-700">Nombre del plato</label>
