@@ -33,9 +33,16 @@
         <input type="file" name="image" id="image" accept="image/jpeg, image/png, image/webp" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
       </div>
 
-      <button type="submit" class="w-full py-2 px-4 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-        Guardar Plato
-      </button>
+      <div class="flex flex-col sm:flex-row gap-3 pt-1">
+        <button type="submit" name="configure_ingredients" value="1"
+                class="flex-1 py-2 px-4 bg-orange-500 text-white rounded-md hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 font-semibold">
+          Guardar y configurar ingredientes
+        </button>
+        <button type="submit"
+                class="flex-1 py-2 px-4 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+          Guardar Plato
+        </button>
+      </div>
     </form>
   </div>
 </x-app-layout>
