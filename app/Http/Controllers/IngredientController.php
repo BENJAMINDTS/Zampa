@@ -24,7 +24,7 @@ class IngredientController extends Controller
     public function index()
     {
         $user = Auth::user();
-        $ingredients = $user->ingredients; // Usamos la relación del modelo User
+        $ingredients = $user->ingredients()->paginate(15); // Usamos la relación del modelo User
 
         return view('ingredients.index', compact('ingredients'));
     }
