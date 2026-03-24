@@ -12,6 +12,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  *
  * Representa un plato o bebida de la carta.
  *
+ * @author SebastianBCF
+ *
  * @property string $image       Ruta relativa de la imagen almacenada en storage/app/public/products
  * @property float $price      Precio base del producto
  * @property boolean $is_active  Si está disponible para pedir
@@ -49,4 +51,28 @@ class Product extends Model
             ->withPivot(['quantity_base', 'is_removable', 'is_extra', 'extra_price'])
             ->withTimestamps();
     }
+
+    /**
+     * Transforma el input del formulario al formato que espera Eloquent sync().
+     *
+     * @param array $ingredientsInput Array del formulario indexado por ingredient_id
+     * @return array Array formateado para sync() con datos de la tabla pivote
+     */
+    public function formatIngredientsForSync(array $ingredientsInput): array
+    {
+        $formatted = [];
+        foreach ($ingredientsInput as $id => $data) {
+            if (empty($data['included'])) {
+                continue;
+            }
+            $formatted[$id] = [
+                'quantity_base' => $data['quantity_base'] ?? 1,
+                'is_removable'  => isset($data['is_removable']) ? 1 : 0,
+                'is_extra'      => isset($data['is_extra']) ? 1 : 0,
+                'extra_price'   => $data['extra_price'] ?? 0.00,
+            ];
+        }
+        return $formatted;
+    }
+
 }

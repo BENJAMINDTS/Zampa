@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Product;
 use App\Models\Category;
+use App\Models\Ingredient;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
@@ -67,7 +68,13 @@ class ProductController extends Controller
       $validatedData['image'] = $path;
     }
 
-    Product::create($validatedData);
+    $product = Product::create($validatedData);
+
+    if ($request->boolean('configure_ingredients')) {
+      return redirect()
+        ->route('products.ingredients.edit', $product)
+        ->with('success', '¡Plato creado! Ahora configura sus ingredientes.');
+    }
 
     return redirect()
       ->route('products.index')
@@ -168,12 +175,61 @@ class ProductController extends Controller
     {
 
         abort_if($product->user_id !== Auth::id(), 403);
- 
+
         $product->delete();
- 
+
         return redirect()->route('products.index')->with('success', 'Plato retirado de la carta.');
 
     }
- 
+
+    /**
+     * Muestra el configurador de ingredientes para un producto.
+     *
+     * @param Product $product
+     * @return View
+     */
+    public function editIngredients(Product $product): View
+    {
+        abort_if($product->user_id !== Auth::id(), 403, 'Acceso denegado.');
+
+        $product->load('ingredients');
+
+        $ingredients = Ingredient::where('user_id', Auth::id())
+                                 ->orderBy('name')
+                                 ->get();
+
+        return view('products.ingredients', compact('product', 'ingredients'));
+    }
+
+    /**
+     * Sincroniza los ingredientes de un producto con sus datos de configuración de receta.
+     *
+     * @param Request $request
+     * @param Product $product
+     * @return RedirectResponse
+     */
+    public function syncIngredients(Request $request, Product $product): RedirectResponse
+    {
+        abort_if($product->user_id !== Auth::id(), 403, 'Acceso denegado.');
+
+        $validated = $request->validate([
+            'ingredients'                     => 'nullable|array',
+            'ingredients.*.quantity_base'     => 'numeric|min:0',
+            'ingredients.*.is_removable'      => 'boolean',
+            'ingredients.*.is_extra'          => 'boolean',
+            'ingredients.*.extra_price'       => 'numeric|min:0',
+        ]);
+
+        $formatted = $product->formatIngredientsForSync(
+            $validated['ingredients'] ?? []
+        );
+
+        $product->ingredients()->sync($formatted);
+
+        return redirect()
+            ->route('products.edit', $product)
+            ->with('success', 'Ingredientes del plato actualizados correctamente.');
+    }
+
 }
 

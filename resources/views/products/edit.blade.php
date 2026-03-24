@@ -45,5 +45,18 @@
                 Actualizar Plato
             </button>
         </form>
+
+        <div class="mt-4 pt-4 border-t dark:border-gray-700">
+            <a href="{{ route('products.ingredients.edit', $product) }}"
+               class="w-full flex justify-center py-2 px-4 border border-orange-500
+                      rounded-md shadow-sm text-sm font-medium
+                      text-orange-600 dark:text-orange-400
+                      hover:bg-orange-50 dark:hover:bg-orange-900/20
+                      focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2
+                      transition-colors"
+               aria-label="Configurar ingredientes y alérgenos del plato {{ $product->name }}">
+                ⚙️ Configurar ingredientes y alérgenos
+            </a>
+        </div>
     </div>
 </x-app-layout>
