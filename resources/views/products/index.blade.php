@@ -50,5 +50,11 @@
         </tbody>
       </table>
     </div>
+
+    @if($products->hasPages())
+    <nav aria-label="Paginación de productos" class="mt-4">
+      {{ $products->links() }}
+    </nav>
+    @endif
   </div>
 </x-app-layout>
