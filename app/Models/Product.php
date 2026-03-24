@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  *
  * Representa un plato o bebida de la carta.
  *
- * @property string $image       Imagen en formato binario (BLOB)
+ * @property string $image       Ruta relativa de la imagen almacenada en storage/app/public/products
  * @property float $price      Precio base del producto
  * @property boolean $is_active  Si está disponible para pedir
  */
@@ -41,7 +41,7 @@ class Product extends Model
     /**
      * Relación Muchos a Muchos con Ingredientes.
      * Permite saber qué ingredientes lleva por defecto y cuánto cuesta añadirlos como extra.
-     * * Accede a la tabla pivote 'ingredient_product'.
+     * Accede a la tabla pivote 'ingredient_product'.
      */
     public function ingredients(): BelongsToMany
     {
