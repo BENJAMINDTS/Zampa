@@ -1,59 +1,145 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Zampa
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Plataforma SaaS para la digitalización de bares y restaurantes. Permite gestionar la carta digital, ingredientes, alérgenos, mesas y comandas en tiempo real mediante un panel de administración y una carta pública accesible por QR.
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Stack tecnológico
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+| Tecnología | Versión |
+| ---------- | ------- |
+| PHP | 8.2 |
+| Laravel | 12.x |
+| MySQL / MariaDB | 10.4+ |
+| Tailwind CSS | 3.x |
+| Vite | 7.x |
+| Alpine.js | 3.x |
+| Node.js | 20.x |
+| Composer | 2.x |
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+---
 
-## Learning Laravel
+## Requisitos previos
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+- PHP 8.2+ con extensiones: `mbstring`, `pdo_mysql`, `zip`, `curl`, `gd`
+- Composer 2.x
+- Node.js 20.x + npm
+- MySQL 8.x o MariaDB 10.4+
+- Servidor web (Apache/Nginx) o `php artisan serve` para desarrollo
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+---
 
-## Laravel Sponsors
+## Instalación y despliegue
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+```bash
+# 1. Clonar el repositorio
+git clone https://github.com/BENJAMINDTS/Zampa.git
+cd Zampa
 
-### Premium Partners
+# 2. Dependencias PHP
+composer install
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+# 3. Dependencias JS y compilar assets
+npm install && npm run build
 
-## Contributing
+# 4. Configurar entorno
+cp .env.example .env
+php artisan key:generate
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+# 5. Configurar base de datos en .env
+# DB_DATABASE=zampa
+# DB_USERNAME=root
+# DB_PASSWORD=
 
-## Code of Conduct
+# 6. Crear base de datos y ejecutar migraciones con datos de prueba
+php artisan migrate:fresh --seed
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+# 7. Enlace simbólico para imágenes
+php artisan storage:link
 
-## Security Vulnerabilities
+# 8. Levantar servidor de desarrollo
+php artisan serve        # <http://127.0.0.1:8000>
+npm run dev              # Vite HMR en <http://localhost:5173> (solo desarrollo)
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+---
 
-## License
+## Credenciales de prueba
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+| Campo | Valor |
+| ----- | ----- |
+| Email | admin@zampa.app |
+| Contraseña | password |
+
+---
+
+## Progreso del desarrollo
+
+**Progreso global: ~42%** (5 de 12 bloques completados)
+
+| Bloque | Descripción | Estado |
+| ------ | ----------- | ------ |
+| 1.1 | Categorías — Crear y Ver | ✅ Completado |
+| 1.2 | Ingredientes — Crear y Ver | ✅ Completado |
+| 1.3 | Productos — Crear y Ver + imágenes | ✅ Completado |
+| 1.4 | Productos — Editar y Eliminar | ✅ Completado |
+| 1.5 | Categorías — Editar y Eliminar | ✅ Completado |
+| 1.6 | Ingredientes — Editar y Eliminar | 🚧 En progreso |
+| 2.1 | Relación Platos-Ingredientes (N:M, tabla pivote) | 🔒 Pendiente |
+| 2.2 | Sistema de Alérgenos automático | 🔒 Pendiente |
+| 3.1 | Carta digital pública (acceso por QR sin login) | 🔒 Pendiente |
+| 3.2 | Filtros dinámicos (Vegano, Sin Gluten...) | 🔒 Pendiente |
+| 3.3 | Generación de QR único por mesa | 🔒 Pendiente |
+| 4.1 | Carrito de la compra | 🔒 Pendiente |
+| 4.2 | Panel de Cocina (Comandas en tiempo real) | 🔒 Pendiente |
+
+---
+
+## Estructura de la base de datos
+
+| Tabla | Relación clave |
+| ----- | -------------- |
+| plans | 1:N con users |
+| users | Centro del Multitenancy (user_id en todo) |
+| categories | user_id FK — campo `destination`: kitchen / bar |
+| ingredients | user_id FK — campo `is_allergen` (boolean) |
+| products | user_id FK, category_id FK, image (string) |
+| ingredient_product | Pivote N:M productos-ingredientes |
+| tables | user_id FK, unique_hash para QR |
+| orders | table_id FK, tip separado del total |
+| order_items | order_id FK, product_id FK |
+| order_item_modifications | order_item_id FK — action: add / remove |
+
+---
+
+## Equipo
+
+| Miembro | Rol |
+| ------- | --- |
+| **BenjaminDTS** | Arquitectura Backend y Base de Datos |
+| **SebastianBCF** | Frontend y Vistas (Blade + Tailwind) |
+| **Ayrton** | QA, Testing y Sistemas |
+
+---
+
+## Variables de entorno relevantes
+
+Copia `.env.example` a `.env` y configura al menos:
+
+```env
+APP_NAME=Zampa
+APP_URL=http://localhost
+
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=zampa
+DB_USERNAME=root
+DB_PASSWORD=
+```
+
+---
+
+## Licencia
+
+Propietaria — © BenjaminDTS/SebastianBCF/AyrtonAlania. Todos los derechos reservados.
