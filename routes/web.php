@@ -20,6 +20,8 @@ Route::middleware('auth')->group(function () {
     Route::resource('categories', CategoryController::class);
     Route::resource('ingredients', IngredientController::class);
     Route::resource('products', ProductController::class);
+    Route::post('/productos/{product}/ingredientes', [ProductController::class, 'syncIngredients'])
+         ->name('products.ingredients.sync');
 });
 
 require __DIR__.'/auth.php';
