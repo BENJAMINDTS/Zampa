@@ -68,7 +68,13 @@ class ProductController extends Controller
       $validatedData['image'] = $path;
     }
 
-    Product::create($validatedData);
+    $product = Product::create($validatedData);
+
+    if ($request->boolean('configure_ingredients')) {
+      return redirect()
+        ->route('products.ingredients.edit', $product)
+        ->with('success', '¡Plato creado! Ahora configura sus ingredientes.');
+    }
 
     return redirect()
       ->route('products.index')
