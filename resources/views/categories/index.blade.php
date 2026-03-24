@@ -51,6 +51,12 @@
           </div>
           @endforeach
         </div>
+
+        @if($categories->hasPages())
+        <nav aria-label="Paginación de categorías" class="mt-6">
+          {{ $categories->links() }}
+        </nav>
+        @endif
       </div>
     </div>
   </div>
