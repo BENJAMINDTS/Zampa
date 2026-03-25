@@ -75,7 +75,7 @@ npm run dev              # Vite HMR en <http://localhost:5173> (solo desarrollo)
 
 ## Progreso del desarrollo
 
-**Progreso global: ~42%** (5 de 12 bloques completados)
+**Progreso global: ~58%** (7 de 12 bloques completados)
 
 | Bloque | Descripción | Estado |
 | ------ | ----------- | ------ |
@@ -84,9 +84,9 @@ npm run dev              # Vite HMR en <http://localhost:5173> (solo desarrollo)
 | 1.3 | Productos — Crear y Ver + imágenes | ✅ Completado |
 | 1.4 | Productos — Editar y Eliminar | ✅ Completado |
 | 1.5 | Categorías — Editar y Eliminar | ✅ Completado |
-| 1.6 | Ingredientes — Editar y Eliminar | 🚧 En progreso |
-| 2.1 | Relación Platos-Ingredientes (N:M, tabla pivote) | 🔒 Pendiente |
-| 2.2 | Sistema de Alérgenos automático | 🔒 Pendiente |
+| 1.6 | Ingredientes — Editar y Eliminar | ✅ Completado |
+| 2.1 | Relación Platos-Ingredientes (N:M, tabla pivote) | ✅ Completado |
+| 2.2 | Sistema de Alérgenos automático | 🚧 En progreso |
 | 3.1 | Carta digital pública (acceso por QR sin login) | 🔒 Pendiente |
 | 3.2 | Filtros dinámicos (Vegano, Sin Gluten...) | 🔒 Pendiente |
 | 3.3 | Generación de QR único por mesa | 🔒 Pendiente |
