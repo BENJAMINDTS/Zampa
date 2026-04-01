@@ -46,6 +46,20 @@
             </button>
         </form>
 
+        @if($product->allergens->isNotEmpty())
+        <div class="mt-4 pt-4 border-t border-gray-200">
+            <p class="text-sm font-medium text-gray-700 mb-2">Alérgenos detectados:</p>
+            <div class="flex flex-wrap gap-1" role="list" aria-label="Alérgenos de {{ $product->name }}">
+                @foreach($product->allergens as $allergen)
+                    <span role="listitem"
+                          class="inline-flex items-center gap-1 bg-red-100 text-red-700 text-xs font-semibold px-2 py-1 rounded-full border border-red-200">
+                        <span aria-hidden="true">⚠️</span>{{ $allergen->name }}
+                    </span>
+                @endforeach
+            </div>
+        </div>
+        @endif
+
         <div class="mt-4 pt-4 border-t dark:border-gray-700">
             <a href="{{ route('products.ingredients.edit', $product) }}"
                class="w-full flex justify-center py-2 px-4 border border-orange-500
