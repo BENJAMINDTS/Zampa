@@ -43,6 +43,13 @@ class MenuController extends Controller
             ->get()
             ->filter(fn ($category) => $category->products->isNotEmpty());
 
-        return view('menu.show', compact('table', 'categories'));
+        $allergens = $categories
+            ->flatMap(fn ($c) => $c->products)
+            ->flatMap(fn ($p) => $p->ingredients)
+            ->unique('id')
+            ->sortBy('name')
+            ->values();
+
+        return view('menu.show', compact('table', 'categories', 'allergens'));
     }
 }
