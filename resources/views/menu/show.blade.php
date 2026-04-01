@@ -97,7 +97,7 @@
     </script>
 </head>
 
-<body class="font-sans antialiased bg-stone-200 dark:bg-gray-950 text-gray-900 dark:text-gray-100 min-h-screen">
+<body class="font-sans antialiased bg-gray-200 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen">
 
     {{-- Skip to content --}}
     <a href="#main-content"
@@ -282,9 +282,12 @@
                          id="categoria-{{ $category->id }}">
 
                     {{-- Encabezado de categoría --}}
-                    <div class="flex items-center gap-3 mb-4 pb-3 border-b-2 border-indigo-500 dark:border-indigo-400">
+                    <div class="flex items-center gap-3 mb-4 px-3 py-2 rounded-lg
+                                bg-white dark:bg-gray-800
+                                border-l-4 border-indigo-500 dark:border-indigo-400
+                                shadow-sm">
                         <h2 id="titulo-categoria-{{ $category->id }}"
-                            class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+                            class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">
                             {{ $category->name }}
                         </h2>
 
@@ -323,7 +326,7 @@
                                 x-transition:leave="transition ease-in duration-150"
                                 x-transition:leave-start="opacity-100 scale-100"
                                 x-transition:leave-end="opacity-0 scale-95"
-                                class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700
+                                class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700
                                        shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden">
                                 <div class="flex gap-3 sm:gap-4 p-3 sm:p-4">
 
@@ -339,7 +342,7 @@
                                     {{-- Info --}}
                                     <div class="flex-1 min-w-0">
                                         <div class="flex items-start justify-between gap-2">
-                                            <h3 class="font-semibold text-base sm:text-lg leading-snug text-gray-900 dark:text-white">
+                                            <h3 class="font-semibold text-base sm:text-lg leading-snug text-gray-900 dark:text-gray-100">
                                                 {{ $product->name }}
                                             </h3>
                                             <span class="flex-shrink-0 font-bold text-base sm:text-lg
