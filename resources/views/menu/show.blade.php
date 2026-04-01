@@ -32,9 +32,10 @@
             const list = raw ? JSON.parse(raw.textContent) : [];
 
             Alpine.data('menuFilters', () => ({
-                products: list,          // array plano de objetos producto
+                products: list,
                 activeAllergens: [],
                 activeDestination: null,
+                activeCategory: null,    // ID de categoría seleccionada, null = todas
 
                 /**
                  * Activa o desactiva la exclusión de un alérgeno.
@@ -50,31 +51,42 @@
                 },
 
                 /**
-                 * Activa/desactiva el filtro de destino. Toggle: el mismo valor
-                 * pulsado dos veces lo desactiva.
+                 * Activa/desactiva el filtro de destino (toggle).
                  */
                 setDestination(dest) {
                     this.activeDestination = this.activeDestination === dest ? null : dest;
                 },
 
                 /**
-                 * Un producto es visible si pasa ambos filtros:
-                 *  - Destino coincide (o no hay filtro de destino).
+                 * Filtra por categoría. Al pulsar la misma dos veces se desactiva (toggle).
+                 * Muestra ÚNICAMENTE los productos de esa categoría.
+                 */
+                setCategory(id) {
+                    this.activeCategory = this.activeCategory === id ? null : id;
+                },
+
+                /**
+                 * Un producto es visible si pasa los tres filtros:
+                 *  - Su categoría coincide con activeCategory (si hay alguna activa).
+                 *  - Su destino coincide con activeDestination (si hay alguno activo).
                  *  - No contiene ninguno de los alérgenos excluidos.
                  */
                 isProductVisible(productId) {
                     const p = this.products.find(item => item.id === productId);
                     if (!p) return true;
+                    if (this.activeCategory !== null && p.categoryId !== this.activeCategory) return false;
                     if (this.activeDestination !== null && p.destination !== this.activeDestination) return false;
                     if (this.activeAllergens.some(id => p.allergenIds.includes(id))) return false;
                     return true;
                 },
 
                 /**
-                 * Una categoría es visible si al menos uno de sus productos lo es.
-                 * Si la categoría no tiene entradas en el índice, se muestra por defecto.
+                 * Una sección de categoría es visible si:
+                 *  - No hay filtro de categoría activo, o es la categoría seleccionada.
+                 *  - Al menos uno de sus productos pasa los demás filtros.
                  */
                 isCategoryVisible(categoryId) {
+                    if (this.activeCategory !== null && this.activeCategory !== categoryId) return false;
                     const items = this.products.filter(p => p.categoryId === categoryId);
                     if (items.length === 0) return true;
                     return items.some(p => this.isProductVisible(p.id));
@@ -85,12 +97,15 @@
                 },
 
                 get hasActiveFilters() {
-                    return this.activeAllergens.length > 0 || this.activeDestination !== null;
+                    return this.activeAllergens.length > 0
+                        || this.activeDestination !== null
+                        || this.activeCategory !== null;
                 },
 
                 clearAll() {
                     this.activeAllergens = [];
                     this.activeDestination = null;
+                    this.activeCategory = null;
                 },
             }));
         });
@@ -229,23 +244,44 @@
             </div>
         </div>
 
-        {{-- ── Nav rápido de categorías ─────────────────────────────── --}}
+        {{-- ── Filtro de categorías ────────────────────────────────────── --}}
         @if ($categories->isNotEmpty())
-            <nav aria-label="Ir a categoría"
+            <nav aria-label="Filtrar por categoría"
                  class="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
                 <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
                     <ul class="flex gap-1 py-2" role="list">
+
+                        {{-- Chip "Todas" --}}
+                        <li>
+                            <button type="button"
+                                    @click="setCategory(null)"
+                                    :aria-pressed="activeCategory === null"
+                                    :class="activeCategory === null
+                                        ? 'bg-indigo-600 text-white'
+                                        : 'text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 hover:text-indigo-700 dark:hover:text-indigo-300'"
+                                    class="inline-block whitespace-nowrap px-3 py-1.5 rounded-full text-sm font-medium
+                                           transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500
+                                           focus:ring-offset-2 dark:focus:ring-offset-gray-900">
+                                Todas
+                            </button>
+                        </li>
+
                         @foreach ($categories as $category)
-                            <li x-show="isCategoryVisible({{ $category->id }})">
-                                <a href="#categoria-{{ $category->id }}"
-                                   class="inline-block whitespace-nowrap px-3 py-1.5 rounded-full text-sm font-medium
-                                          text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/40
-                                          hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors
-                                          focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900">
+                            <li>
+                                <button type="button"
+                                        @click="setCategory({{ $category->id }})"
+                                        :aria-pressed="activeCategory === {{ $category->id }}"
+                                        :class="activeCategory === {{ $category->id }}
+                                            ? 'bg-indigo-600 text-white'
+                                            : 'text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 hover:text-indigo-700 dark:hover:text-indigo-300'"
+                                        class="inline-block whitespace-nowrap px-3 py-1.5 rounded-full text-sm font-medium
+                                               transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500
+                                               focus:ring-offset-2 dark:focus:ring-offset-gray-900">
                                     {{ $category->name }}
-                                </a>
+                                </button>
                             </li>
                         @endforeach
+
                     </ul>
                 </div>
             </nav>
