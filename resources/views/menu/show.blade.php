@@ -8,17 +8,36 @@
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700&display=swap" rel="stylesheet" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
-    {{-- Registro del componente Alpine antes de que Alpine arranque --}}
+    {{--
+        Los datos de productos se pasan fuera de atributos HTML para evitar
+        problemas de escapado. Alpine los lee via textContent en alpine:init.
+    --}}
+    <script id="menu-products" type="application/json">
+        @json(
+            $categories->flatMap(function ($category) {
+                return $category->products->map(fn ($p) => [
+                    'id'          => $p->id,
+                    'categoryId'  => $category->id,
+                    'destination' => $category->destination,
+                    'allergenIds' => $p->ingredients->pluck('id')->values()->toArray(),
+                ]);
+            })->values()
+        )
+    </script>
+
     <script>
         document.addEventListener('alpine:init', () => {
-            Alpine.data('menuFilters', (products) => ({
-                products,
+            const raw  = document.getElementById('menu-products');
+            const list = raw ? JSON.parse(raw.textContent) : [];
+
+            Alpine.data('menuFilters', () => ({
+                products: list,          // array plano de objetos producto
                 activeAllergens: [],
                 activeDestination: null,
 
                 /**
-                 * Activa o desactiva un filtro de alérgeno por su ID.
-                 * Lógica: "Sin X" — oculta productos que CONTENGAN el alérgeno X.
+                 * Activa o desactiva la exclusión de un alérgeno.
+                 * "Sin X" = ocultar productos que CONTENGAN el alérgeno X.
                  */
                 toggleAllergen(id) {
                     const idx = this.activeAllergens.indexOf(id);
@@ -30,43 +49,44 @@
                 },
 
                 /**
-                 * Activa o desactiva el filtro de destino (kitchen / bar).
-                 * Si se pulsa el mismo que ya está activo, se desactiva (toggle).
+                 * Activa/desactiva el filtro de destino. Toggle: el mismo valor
+                 * pulsado dos veces lo desactiva.
                  */
                 setDestination(dest) {
                     this.activeDestination = this.activeDestination === dest ? null : dest;
                 },
 
                 /**
-                 * Determina si un producto debe ser visible.
-                 * Se oculta si su destino no coincide o contiene un alérgeno excluido.
+                 * Un producto es visible si pasa ambos filtros:
+                 *  - Destino coincide (o no hay filtro de destino).
+                 *  - No contiene ninguno de los alérgenos excluidos.
                  */
                 isProductVisible(productId) {
-                    const p = this.products[productId];
+                    const p = this.products.find(item => item.id === productId);
                     if (!p) return true;
                     if (this.activeDestination !== null && p.destination !== this.activeDestination) return false;
                     if (this.activeAllergens.some(id => p.allergenIds.includes(id))) return false;
                     return true;
                 },
 
-                /** Devuelve true si al menos un producto de la categoría es visible. */
+                /**
+                 * Una categoría es visible si al menos uno de sus productos lo es.
+                 * Si la categoría no tiene entradas en el índice, se muestra por defecto.
+                 */
                 isCategoryVisible(categoryId) {
-                    return Object.values(this.products)
-                        .filter(p => p.categoryId === categoryId)
-                        .some(p => this.isProductVisible(p.id));
+                    const items = this.products.filter(p => p.categoryId === categoryId);
+                    if (items.length === 0) return true;
+                    return items.some(p => this.isProductVisible(p.id));
                 },
 
-                /** Número total de productos visibles con los filtros actuales. */
                 get visibleCount() {
-                    return Object.values(this.products).filter(p => this.isProductVisible(p.id)).length;
+                    return this.products.filter(p => this.isProductVisible(p.id)).length;
                 },
 
-                /** True si hay al menos un filtro activo. */
                 get hasActiveFilters() {
                     return this.activeAllergens.length > 0 || this.activeDestination !== null;
                 },
 
-                /** Resetea todos los filtros. */
                 clearAll() {
                     this.activeAllergens = [];
                     this.activeDestination = null;
@@ -75,22 +95,6 @@
         });
     </script>
 </head>
-
-{{-- ─────────────────────────────────────────────────────────────────
-     Datos de productos para Alpine.js.
-     Cada entrada expone sólo lo necesario: destino e IDs de alérgenos.
-     Se indexan por product_id para acceso O(1).
-──────────────────────────────────────────────────────────────────── --}}
-@php
-    $productsJson = $categories->flatMap(function ($category) {
-        return $category->products->map(fn ($p) => [
-            'id'          => $p->id,
-            'categoryId'  => $category->id,
-            'destination' => $category->destination,
-            'allergenIds' => $p->ingredients->pluck('id')->values()->toArray(),
-        ]);
-    })->keyBy('id');
-@endphp
 
 <body class="font-sans antialiased bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 min-h-screen">
 
@@ -103,7 +107,7 @@
     </a>
 
     {{-- ── Componente Alpine raíz ──────────────────────────────────── --}}
-    <div x-data="menuFilters(@json($productsJson))">
+    <div x-data="menuFilters()">
 
         {{-- ── Header ──────────────────────────────────────────────── --}}
         <header class="sticky top-0 z-40 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 shadow-sm">
@@ -175,7 +179,7 @@
                     </button>
                 </div>
 
-                {{-- Grupo: Alérgenos (sólo si existen alérgenos en la carta) --}}
+                {{-- Grupo: Alérgenos --}}
                 @if ($allergens->isNotEmpty())
                     <div class="flex items-center gap-2 overflow-x-auto pb-1"
                          role="group" aria-label="Filtrar por alérgenos ausentes">
@@ -204,7 +208,7 @@
                     </div>
                 @endif
 
-                {{-- Contador de resultados + limpiar filtros --}}
+                {{-- Contador + limpiar --}}
                 <div class="flex items-center justify-between min-h-[1.5rem]">
                     <p class="text-xs text-gray-400 dark:text-gray-500"
                        role="status" aria-live="polite" aria-atomic="true">
