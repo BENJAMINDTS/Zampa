@@ -97,7 +97,7 @@
     </script>
 </head>
 
-<body class="font-sans antialiased bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 min-h-screen">
+<body class="font-sans antialiased bg-gray-100 dark:bg-gray-950 text-gray-900 dark:text-gray-100 min-h-screen">
 
     {{-- Skip to content --}}
     <a href="#main-content"
@@ -117,7 +117,7 @@
                     <p class="text-xs font-medium text-indigo-600 dark:text-indigo-400 uppercase tracking-widest">
                         Carta digital
                     </p>
-                    <h1 class="text-lg sm:text-xl font-bold leading-tight">
+                    <h1 class="text-lg sm:text-xl font-bold leading-tight text-gray-900 dark:text-white">
                         {{ $table->user->name }}
                     </h1>
                 </div>
@@ -143,7 +143,7 @@
                 {{-- Grupo: Destino --}}
                 <div class="flex items-center gap-2 overflow-x-auto pb-1"
                      role="group" aria-label="Filtrar por origen">
-                    <span class="flex-shrink-0 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide">
+                    <span class="flex-shrink-0 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                         Origen
                     </span>
 
@@ -184,7 +184,7 @@
                 @if ($allergens->isNotEmpty())
                     <div class="flex items-center gap-2 overflow-x-auto pb-1"
                          role="group" aria-label="Filtrar por alérgenos ausentes">
-                        <span class="flex-shrink-0 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide">
+                        <span class="flex-shrink-0 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                             Sin
                         </span>
 
@@ -284,7 +284,7 @@
                     {{-- Encabezado de categoría --}}
                     <div class="flex items-center gap-3 mb-4">
                         <h2 id="titulo-categoria-{{ $category->id }}"
-                            class="text-xl sm:text-2xl font-bold">
+                            class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
                             {{ $category->name }}
                         </h2>
 
@@ -339,7 +339,7 @@
                                     {{-- Info --}}
                                     <div class="flex-1 min-w-0">
                                         <div class="flex items-start justify-between gap-2">
-                                            <h3 class="font-semibold text-base sm:text-lg leading-snug">
+                                            <h3 class="font-semibold text-base sm:text-lg leading-snug text-gray-900 dark:text-white">
                                                 {{ $product->name }}
                                             </h3>
                                             <span class="flex-shrink-0 font-bold text-base sm:text-lg
