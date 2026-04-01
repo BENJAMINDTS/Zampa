@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Category;
+use App\Models\Ingredient;
 use App\Models\Table;
 use Illuminate\View\View;
 
@@ -43,12 +44,13 @@ class MenuController extends Controller
             ->get()
             ->filter(fn ($category) => $category->products->isNotEmpty());
 
-        $allergens = $categories
-            ->flatMap(fn ($c) => $c->products)
-            ->flatMap(fn ($p) => $p->ingredients)
-            ->unique('id')
-            ->sortBy('name')
-            ->values();
+        // Se consultan TODOS los alérgenos del restaurante directamente,
+        // no solo los vinculados a productos activos, para que el filtro
+        // refleje la realidad completa de la carta.
+        $allergens = Ingredient::where('user_id', $table->user_id)
+            ->where('is_allergen', true)
+            ->orderBy('name')
+            ->get();
 
         return view('menu.show', compact('table', 'categories', 'allergens'));
     }
