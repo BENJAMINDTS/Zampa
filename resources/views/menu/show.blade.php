@@ -8,22 +8,23 @@
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700&display=swap" rel="stylesheet" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
-    {{--
-        Los datos de productos se pasan fuera de atributos HTML para evitar
-        problemas de escapado. Alpine los lee via textContent en alpine:init.
-    --}}
-    <script id="menu-products" type="application/json">
-        @json(
-            $categories->flatMap(function ($category) {
-                return $category->products->map(fn ($p) => [
-                    'id'          => $p->id,
-                    'categoryId'  => $category->id,
-                    'destination' => $category->destination,
-                    'allergenIds' => $p->ingredients->pluck('id')->values()->toArray(),
-                ]);
-            })->values()
-        )
-    </script>
+    @php
+        // Datos de productos para Alpine. Se calculan aquí para evitar que
+        // @json() reciba una expresión multi-línea con corchetes anidados,
+        // lo que confunde al parser de Blade.
+        $productsForAlpine = $categories->flatMap(function ($category) {
+            return $category->products->map(fn ($p) => [
+                'id'          => $p->id,
+                'categoryId'  => $category->id,
+                'destination' => $category->destination,
+                'allergenIds' => $p->ingredients->pluck('id')->values()->toArray(),
+            ]);
+        })->values();
+    @endphp
+
+    {{-- Los datos se inyectan en un <script> separado para evitar conflictos
+         de escapado al pasar JSON como argumento en x-data. --}}
+    <script id="menu-products" type="application/json">@json($productsForAlpine)</script>
 
     <script>
         document.addEventListener('alpine:init', () => {
