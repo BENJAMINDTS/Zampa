@@ -40,10 +40,7 @@
               @if($product->allergens->isNotEmpty())
                 <div class="flex flex-wrap gap-1" role="list" aria-label="Alérgenos de {{ $product->name }}">
                   @foreach($product->allergens as $allergen)
-                    <span role="listitem"
-                          class="inline-flex items-center gap-1 bg-red-100 text-red-700 text-xs font-medium px-2 py-0.5 rounded-full border border-red-200">
-                      <span aria-hidden="true">⚠️</span>{{ $allergen->name }}
-                    </span>
+                    <x-allergen-badge :allergen="$allergen" />
                   @endforeach
                 </div>
               @else
