@@ -53,6 +53,19 @@ class Product extends Model
     }
 
     /**
+     * Devuelve solo los ingredientes del plato que están marcados como alérgeno.
+     * Se actualiza automáticamente al modificar los ingredientes del plato.
+     *
+     * @return BelongsToMany
+     */
+    public function allergens(): BelongsToMany
+    {
+        return $this->belongsToMany(Ingredient::class, 'ingredient_product')
+            ->where('is_allergen', true)
+            ->withTimestamps();
+    }
+
+    /**
      * Transforma el input del formulario al formato que espera Eloquent sync().
      *
      * @param array $ingredientsInput Array del formulario indexado por ingredient_id
