@@ -97,7 +97,7 @@
     </script>
 </head>
 
-<body class="font-sans antialiased bg-gray-100 dark:bg-gray-950 text-gray-900 dark:text-gray-100 min-h-screen">
+<body class="font-sans antialiased bg-stone-200 dark:bg-gray-950 text-gray-900 dark:text-gray-100 min-h-screen">
 
     {{-- Skip to content --}}
     <a href="#main-content"
@@ -282,7 +282,7 @@
                          id="categoria-{{ $category->id }}">
 
                     {{-- Encabezado de categoría --}}
-                    <div class="flex items-center gap-3 mb-4">
+                    <div class="flex items-center gap-3 mb-4 pb-3 border-b-2 border-indigo-500 dark:border-indigo-400">
                         <h2 id="titulo-categoria-{{ $category->id }}"
                             class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
                             {{ $category->name }}
@@ -364,10 +364,9 @@
                                                 <ul class="flex flex-wrap gap-1" role="list">
                                                     @foreach ($product->ingredients as $allergen)
                                                         <li>
-                                                            <span class="inline-block text-xs font-medium
-                                                                         bg-red-100 dark:bg-red-900/40
-                                                                         text-red-700 dark:text-red-300
-                                                                         border border-red-200 dark:border-red-700
+                                                            <span class="inline-block text-xs font-semibold
+                                                                         bg-red-600 dark:bg-red-700
+                                                                         text-white
                                                                          px-2 py-0.5 rounded-full">
                                                                 {{ $allergen->name }}
                                                             </span>
