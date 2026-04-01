@@ -27,7 +27,7 @@ class ProductController extends Controller
    */
   public function index(): View
   {
-    $products = Product::where('user_id', Auth::id())->paginate(15);
+    $products = Product::where('user_id', Auth::id())->with('allergens')->paginate(15);
     return view('products.index', compact('products'));
   }
 
@@ -98,6 +98,8 @@ class ProductController extends Controller
 
         abort_if($product->user_id !== Auth::id(), 403, 'No tienes permiso para editar este plato.');
  
+        $product->load('allergens');
+
         $categories = Category::where('user_id', Auth::id())->get();
 
         return view('products.edit', compact('product', 'categories'));
