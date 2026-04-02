@@ -20,6 +20,7 @@
             <th class="hidden sm:table-cell px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Imagen</th>
             <th class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre</th>
             <th class="hidden md:table-cell px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Precio</th>
+            <th class="hidden lg:table-cell px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Alérgenos</th>
             <th class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acciones</th>
           </tr>
         </thead>
@@ -35,6 +36,17 @@
             </td>
             <td class="px-4 sm:px-6 py-4 whitespace-nowrap font-medium text-gray-900 text-sm sm:text-base">{{ $product->name }}</td>
             <td class="hidden md:table-cell px-4 sm:px-6 py-4 whitespace-nowrap text-gray-500">{{ number_format($product->price, 2) }} €</td>
+            <td class="hidden lg:table-cell px-4 sm:px-6 py-4">
+              @if($product->allergens->isNotEmpty())
+                <div class="flex flex-wrap gap-1" role="list" aria-label="Alérgenos de {{ $product->name }}">
+                  @foreach($product->allergens as $allergen)
+                    <x-allergen-badge :allergen="$allergen" />
+                  @endforeach
+                </div>
+              @else
+                <span class="text-gray-400 text-xs">Ninguno</span>
+              @endif
+            </td>
             <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-medium">
               <div class="flex flex-col sm:flex-row gap-2">
                 <a href="{{ route('products.edit', $product) }}" class="text-indigo-600 hover:text-indigo-900 bg-indigo-100 px-3 py-1 rounded text-center">Editar</a>
