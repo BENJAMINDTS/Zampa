@@ -1,6 +1,7 @@
 <?php
 use App\Http\Controllers\IngredientController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\MenuController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
@@ -8,6 +9,9 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return view('welcome');
 })->name('welcome');
+
+// Carta digital pública — accesible sin autenticación mediante QR
+Route::get('/carta/{hash}', [MenuController::class, 'show'])->name('menu.show');
 
 Route::get('/dashboard', function () {
     return view('dashboard');
