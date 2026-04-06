@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Ingredient;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 
 /**
  * Class IngredientController
@@ -14,6 +15,7 @@ use Illuminate\Support\Facades\Auth;
  *
  * @package App\Http\Controllers
  * @author BenjaminDTS
+ * @author AyrtonAlania
  */
 class IngredientController extends Controller
 {
@@ -49,8 +51,9 @@ class IngredientController extends Controller
     public function store(Request $request): \Illuminate\Http\RedirectResponse
     {
         $validated = $request->validate([
-            'name'        => 'required|string|max:255',
-            'is_allergen' => 'boolean',
+            'name'         => 'required|string|max:255',
+            'is_allergen'  => 'boolean',
+            'allergen_type' => ['nullable', 'string', Rule::in(array_keys(Ingredient::ALLERGEN_TYPES))],
         ]);
 
         $request->user()->ingredients()->create($validated);
@@ -91,8 +94,9 @@ class IngredientController extends Controller
         abort_if($ingredient->user_id !== Auth::id(), 403, 'Acceso denegado.');
 
         $validated = $request->validate([
-            'name'        => 'required|string|max:255',
-            'is_allergen' => 'boolean',
+            'name'         => 'required|string|max:255',
+            'is_allergen'  => 'boolean',
+            'allergen_type' => ['nullable', 'string', Rule::in(array_keys(Ingredient::ALLERGEN_TYPES))],
         ]);
 
         $ingredient->update($validated);
