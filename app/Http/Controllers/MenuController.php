@@ -33,7 +33,13 @@ class MenuController extends Controller
                     $query->where('is_active', true)
                           ->with([
                               'ingredients' => function ($q) {
-                                  $q->where('is_allergen', true);
+                                  $q->where('is_allergen', true)
+                                    ->select([
+                                        'ingredients.id',
+                                        'ingredients.name',
+                                        'ingredients.is_allergen',
+                                        'ingredients.allergen_type',
+                                    ]);
                               },
                           ])
                           ->orderBy('name');
