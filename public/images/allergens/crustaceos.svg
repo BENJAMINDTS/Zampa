@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title-crustaceos">
+  <title id="title-crustaceos">Crustáceos</title>
+  <circle cx="32" cy="32" r="32" fill="#D95B2E"/>
+  <path d="M32 16 C26 16 22 20 22 26 C22 32 26 38 32 42 C38 38 42 32 42 26 C42 20 38 16 32 16 Z M24 30 L18 28 M24 34 L18 36 M40 30 L46 28 M40 34 L46 36 M29 20 L26 14 M35 20 L38 14" stroke="white" stroke-width="2" fill="none"/>
+</svg>

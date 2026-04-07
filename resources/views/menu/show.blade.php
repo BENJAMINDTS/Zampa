@@ -208,17 +208,26 @@
                                     @click="toggleAllergen({{ $allergen->id }})"
                                     :aria-pressed="activeAllergens.includes({{ $allergen->id }})"
                                     :class="activeAllergens.includes({{ $allergen->id }})
-                                        ? 'bg-red-500 dark:bg-red-600 text-white border-red-500 dark:border-red-600'
-                                        : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-red-400 hover:text-red-600 dark:hover:text-red-400'"
-                                    class="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full
-                                           text-sm font-medium border transition-colors duration-150
-                                           focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900">
-                                <svg x-show="activeAllergens.includes({{ $allergen->id }})"
-                                     aria-hidden="true" class="w-3.5 h-3.5" fill="none"
-                                     stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
-                                </svg>
-                                Sin {{ $allergen->name }}
+                                        ? 'ring-2 ring-orange-500 bg-orange-50 dark:bg-orange-900/30'
+                                        : 'bg-white dark:bg-gray-800 opacity-70 hover:opacity-100'"
+                                    class="flex flex-col items-center gap-1 p-2 rounded-lg border border-gray-200
+                                           dark:border-gray-700 transition-all duration-200 cursor-pointer
+                                           focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2
+                                           dark:focus:ring-offset-gray-900"
+                                    aria-label="{{ $allergen->allergenTypeName() ?? $allergen->name }}">
+                                @if($allergen->allergen_type)
+                                    <img src="{{ $allergen->allergenIconPath() }}"
+                                         alt="{{ $allergen->allergenTypeName() }}"
+                                         class="h-10 w-10 rounded-full">
+                                    <span class="text-xs text-gray-600 dark:text-gray-400 text-center leading-tight max-w-[4rem]">
+                                        {{ $allergen->allergenTypeName() }}
+                                    </span>
+                                @else
+                                    <span class="h-10 w-10 flex items-center justify-center bg-yellow-100 dark:bg-yellow-900 rounded-full text-xl" aria-hidden="true">⚠️</span>
+                                    <span class="text-xs text-gray-600 dark:text-gray-400 text-center leading-tight max-w-[4rem]">
+                                        {{ $allergen->name }}
+                                    </span>
+                                @endif
                             </button>
                         @endforeach
                     </div>
@@ -402,14 +411,7 @@
                                                 </p>
                                                 <ul class="flex flex-wrap gap-1" role="list">
                                                     @foreach ($product->ingredients as $allergen)
-                                                        <li>
-                                                            <span class="inline-block text-xs font-semibold
-                                                                         bg-red-600 dark:bg-red-700
-                                                                         text-white
-                                                                         px-2 py-0.5 rounded-full">
-                                                                {{ $allergen->name }}
-                                                            </span>
-                                                        </li>
+                                                        <li><x-allergen-badge :ingredient="$allergen" /></li>
                                                     @endforeach
                                                 </ul>
                                             </div>

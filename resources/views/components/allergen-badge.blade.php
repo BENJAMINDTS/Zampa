@@ -1,46 +1,26 @@
-@php
-/**
- * Componente: allergen-badge
- *
- * Muestra el icono y nombre de un alérgeno según los 14 alérgenos de la UE.
- * El icono se selecciona por coincidencia de keywords en el nombre del ingrediente.
- *
- * @prop \App\Models\Ingredient $allergen
- */
+@props(['ingredient'])
 
-$name = mb_strtolower($allergen->name);
-
-$map = [
-    '🌾' => ['gluten','trigo','cebada','centeno','avena','pan','harina','cereal','espelta','kamut'],
-    '🦐' => ['crustáceo','crustaceo','gamba','langosta','cangrejo','langostino','bogavante','nécora','necora'],
-    '🥚' => ['huevo','huevos','clara','yema'],
-    '🐟' => ['pescado','atún','atun','salmón','salmon','merluza','bacalao','anchoa','sardina','trucha','dorada','lubina','boquerón'],
-    '🥜' => ['cacahuete','maní','mani','groundnut'],
-    '🫘' => ['soja','tofu','edamame'],
-    '🥛' => ['lácteo','lacteo','leche','nata','queso','mantequilla','yogur','lactosa','caseína','caseina','requesón'],
-    '🌰' => ['fruto seco','nuez','nueces','almendra','avellana','pistacho','anacardo','castaña','macadamia','pecana','nogal'],
-    '🥬' => ['apio'],
-    '🌻' => ['mostaza'],
-    '🌱' => ['sésamo','sesamo','tahini'],
-    '🍷' => ['sulfito','sulfitos','dióxido de azufre','so2'],
-    '🌸' => ['altramuz','altramuces','lupino'],
-    '🦪' => ['molusco','moluscos','almeja','mejillón','mejillon','ostra','calamar','pulpo','caracol','sepia'],
-];
-
-$icon = '⚠️';
-foreach ($map as $emoji => $keywords) {
-    foreach ($keywords as $keyword) {
-        if (str_contains($name, $keyword)) {
-            $icon = $emoji;
-            break 2;
-        }
-    }
-}
-@endphp
-
-<span role="listitem"
-      title="{{ $allergen->name }}"
-      class="inline-flex items-center gap-1 bg-red-100 text-red-700 text-xs font-semibold px-2 py-0.5 rounded-full border border-red-200">
-    <span aria-hidden="true">{{ $icon }}</span>
-    <span>{{ $allergen->name }}</span>
-</span>
+@if($ingredient->allergen_type)
+    <span class="inline-flex items-center gap-1
+                 bg-orange-50 dark:bg-orange-900/30
+                 border border-orange-200 dark:border-orange-700
+                 rounded-full px-2 py-0.5 text-xs
+                 text-orange-800 dark:text-orange-200"
+          title="{{ $ingredient->allergenTypeName() }}">
+        <img src="{{ $ingredient->allergenIconPath() }}"
+             alt="{{ $ingredient->allergenTypeName() }}"
+             class="h-4 w-4 rounded-full"
+             loading="lazy">
+        <span>{{ $ingredient->allergenTypeName() }}</span>
+    </span>
+@elseif($ingredient->is_allergen)
+    <span class="inline-flex items-center gap-1
+                 bg-yellow-50 dark:bg-yellow-900/30
+                 border border-yellow-200 dark:border-yellow-700
+                 rounded-full px-2 py-0.5 text-xs
+                 text-yellow-800 dark:text-yellow-200"
+          title="Alérgeno (tipo no especificado)">
+        <span aria-hidden="true">⚠️</span>
+        <span>{{ $ingredient->name }}</span>
+    </span>
+@endif

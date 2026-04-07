@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title-pescado">
+  <title id="title-pescado">Pescado</title>
+  <circle cx="32" cy="32" r="32" fill="#1E73BE"/>
+  <path fill="white" d="M44 32 C44 32 36 22 24 24 C16 25 14 32 14 32 C14 32 16 39 24 40 C36 42 44 32 44 32 Z M44 32 L52 24 M44 32 L52 40 M52 24 L52 40 M28 30 C28 30 28 32 28 32" stroke="white" stroke-width="0" />
+  <circle cx="26" cy="30" r="2" fill="#1E73BE"/>
+</svg>
