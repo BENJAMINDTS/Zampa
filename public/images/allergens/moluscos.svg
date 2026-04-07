@@ -1,6 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title-moluscos">
   <title id="title-moluscos">Moluscos</title>
   <circle cx="32" cy="32" r="32" fill="#1A3A5C"/>
-  <path fill="white" d="M32 48 C20 48 14 40 14 32 C14 22 22 16 32 16 C42 16 50 22 50 32 C50 40 44 48 32 48 Z M32 16 L32 48 M14 32 Q32 28 50 32 M18 22 Q32 36 46 22 M20 42 Q32 38 44 42" fill="none" stroke="white" stroke-width="2"/>
+  <path fill="white" d="M32 48 C20 48 14 40 14 32 C14 22 22 16 32 16 C42 16 50 22 50 32 C50 40 44 48 32 48 Z"/>
+  <path stroke="#1A3A5C" stroke-width="2" fill="none" d="M32 16 L32 48 M14 32 Q32 28 50 32 M18 22 Q32 36 46 22 M20 42 Q32 38 44 42"/>
   <path fill="white" d="M32 48 L26 56 L32 52 L38 56 Z"/>
 </svg>
