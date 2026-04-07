@@ -1,5 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title-frutos-cascara">
   <title id="title-frutos-cascara">Frutos de cáscara</title>
   <circle cx="32" cy="32" r="32" fill="#A0522D"/>
-  <path fill="white" d="M32 16 C24 16 18 22 18 30 C18 38 24 48 32 50 C40 48 46 38 46 30 C46 22 40 16 32 16 Z M18 30 Q32 26 46 30 M26 20 Q32 28 38 20" stroke="white" stroke-width="1.5" fill="none"/>
+  <path fill="white" d="M32 16 C24 16 18 22 18 30 C18 38 24 48 32 50 C40 48 46 38 46 30 C46 22 40 16 32 16 Z"/>
+  <path stroke="#A0522D" stroke-width="1.5" fill="none" d="M18 30 Q32 26 46 30 M26 20 Q32 28 38 20"/>
 </svg>
