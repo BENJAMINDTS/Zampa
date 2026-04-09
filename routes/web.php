@@ -4,6 +4,7 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\MenuController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\TableController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -28,6 +29,11 @@ Route::middleware('auth')->group(function () {
          ->name('products.ingredients.edit');
     Route::post('/productos/{product}/ingredientes', [ProductController::class, 'syncIngredients'])
          ->name('products.ingredients.sync');
+
+    // Gestión de mesas y códigos QR
+    Route::get('/mesas', [TableController::class, 'index'])->name('tables.index');
+    Route::get('/mesas/{table}/qr/descargar', [TableController::class, 'downloadQr'])->name('tables.qr.download');
+    Route::post('/mesas/{table}/qr/regenerar', [TableController::class, 'regenerateHash'])->name('tables.qr.regenerate');
 });
 
 require __DIR__.'/auth.php';
