@@ -28,6 +28,10 @@
                     <x-nav-link :href="route('products.index')" :active="request()->routeIs('products.*')">
                         {{ __('Productos') }}
                     </x-nav-link>
+                    {{-- Enlace a Mesas y QR --}}
+                    <x-nav-link :href="route('tables.index')" :active="request()->routeIs('tables.*')">
+                        {{ __('Mesas QR') }}
+                    </x-nav-link>
                 </div>
 
                 <!-- Settings Dropdown -->
@@ -98,6 +102,10 @@
                 {{-- NUEVO: Enlace a Productos (Versión Móvil) --}}
                 <x-responsive-nav-link :href="route('products.index')" :active="request()->routeIs('products.*')">
                     {{ __('Productos') }}
+                </x-responsive-nav-link>
+                {{-- Enlace a Mesas y QR (Versión Móvil) --}}
+                <x-responsive-nav-link :href="route('tables.index')" :active="request()->routeIs('tables.*')">
+                    {{ __('Mesas QR') }}
                 </x-responsive-nav-link>
             </div>
 
