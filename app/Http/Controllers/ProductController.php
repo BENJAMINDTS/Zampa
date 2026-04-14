@@ -216,9 +216,10 @@ class ProductController extends Controller
 
         $validated = $request->validate([
             'ingredients'                     => 'nullable|array',
+            'ingredients.*.included'          => 'nullable|boolean',
             'ingredients.*.quantity_base'     => 'numeric|min:0',
-            'ingredients.*.is_removable'      => 'boolean',
-            'ingredients.*.is_extra'          => 'boolean',
+            'ingredients.*.is_removable'      => 'nullable|boolean',
+            'ingredients.*.is_extra'          => 'nullable|boolean',
             'ingredients.*.extra_price'       => 'numeric|min:0',
         ]);
 
