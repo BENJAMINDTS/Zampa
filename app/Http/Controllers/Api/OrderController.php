@@ -13,10 +13,16 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Recibe pedidos desde la carta digital pública y los persiste en BD.
+ * @author SebastianBCF
  */
 class OrderController extends Controller
 {
+    /**
+     * Persiste un nuevo pedido recibido desde la carta digital pública.
+     *
+     * @param  Request  $request
+     * @return JsonResponse
+     */
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
