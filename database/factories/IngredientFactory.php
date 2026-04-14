@@ -16,11 +16,28 @@ class IngredientFactory extends Factory
      *
      * @return array<string, mixed>
      */
+    /**
+     * Mapa de nombre de ingrediente → tipo de alérgeno UE (Reglamento 1169/2011).
+     * Solo los que realmente son alérgenos oficiales.
+     */
+    private const ALLERGEN_MAP = [
+        'Queso'     => 'lacteos',
+        'Bacon'     => 'gluten',
+        'Huevo'     => 'huevos',
+        'Pan'       => 'gluten',
+        'Salsa BBQ' => 'mostaza',
+        'Tomate'    => 'sulfitos',
+    ];
+
     public function definition(): array
     {
+        $name       = $this->faker->randomElement(['Tomate', 'Queso', 'Bacon', 'Lechuga', 'Salsa BBQ', 'Huevo', 'Pan', 'Pollo']);
+        $isAllergen = isset(self::ALLERGEN_MAP[$name]) ? $this->faker->boolean(20) : false;
+
         return [
-            'name' => $this->faker->randomElement(['Tomate', 'Queso', 'Bacon', 'Lechuga', 'Salsa BBQ', 'Huevo', 'Pan', 'Pollo']),
-            'is_allergen' => $this->faker->boolean(20),
+            'name'         => $name,
+            'is_allergen'  => $isAllergen,
+            'allergen_type' => $isAllergen ? self::ALLERGEN_MAP[$name] : null,
         ];
     }
 }
