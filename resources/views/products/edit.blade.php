@@ -41,7 +41,7 @@
                 <input type="file" name="image" id="image" accept="image/*" class="mt-1 block w-full text-sm text-gray-500">
             </div>
 
-            <button type="submit" class="w-full py-2 px-4 bg-yellow-600 text-white rounded-md hover:bg-yellow-700">
+            <button type="submit" class="w-full py-2 px-4 bg-green-600 text-white rounded-md hover:bg-green-700">
                 Actualizar Plato
             </button>
         </form>
@@ -49,9 +49,9 @@
         @if($product->allergens->isNotEmpty())
         <div class="mt-4 pt-4 border-t border-gray-200">
             <p class="text-sm font-medium text-gray-700 mb-2">Alérgenos detectados:</p>
-            <div class="flex flex-wrap gap-1" role="list" aria-label="Alérgenos de {{ $product->name }}">
-                @foreach($product->allergens as $allergen)
-                    <x-allergen-badge :allergen="$allergen" />
+            <div class="flex flex-wrap gap-3" role="list" aria-label="Alérgenos de {{ $product->name }}">
+                @foreach($product->allergens->unique('allergen_type') as $allergen)
+                    <x-allergen-badge :ingredient="$allergen" />
                 @endforeach
             </div>
         </div>
@@ -59,11 +59,10 @@
 
         <div class="mt-4 pt-4 border-t dark:border-gray-700">
             <a href="{{ route('products.ingredients.edit', $product) }}"
-               class="w-full flex justify-center py-2 px-4 border border-orange-500
+               class="w-full flex justify-center py-2 px-4
                       rounded-md shadow-sm text-sm font-medium
-                      text-orange-600 dark:text-orange-400
-                      hover:bg-orange-50 dark:hover:bg-orange-900/20
-                      focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2
+                      bg-green-600 text-white hover:bg-green-700
+                      focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2
                       transition-colors"
                aria-label="Configurar ingredientes y alérgenos del plato {{ $product->name }}">
                 ⚙️ Configurar ingredientes y alérgenos
