@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Carta — {{ $table->user->name }}</title>
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700&display=swap" rel="stylesheet" />
@@ -15,9 +16,19 @@
         $productsForAlpine = $categories->flatMap(function ($category) {
             return $category->products->map(fn ($p) => [
                 'id'          => $p->id,
+                'name'        => $p->name,
+                'price'       => (float) $p->price,
                 'categoryId'  => $category->id,
                 'destination' => $category->destination,
-                'allergenIds' => $p->ingredients->pluck('id')->values()->toArray(),
+                'allergenIds' => $p->ingredients->where('is_allergen', true)->pluck('id')->values()->toArray(),
+                'removable'   => $p->ingredients
+                    ->filter(fn ($i) => $i->pivot->is_removable)
+                    ->map(fn ($i) => ['id' => $i->id, 'name' => $i->name])
+                    ->values(),
+                'extras'      => $p->ingredients
+                    ->filter(fn ($i) => $i->pivot->is_extra)
+                    ->map(fn ($i) => ['id' => $i->id, 'name' => $i->name, 'price' => (float) $i->pivot->extra_price])
+                    ->values(),
             ]);
         })->values();
     @endphp
@@ -30,6 +41,113 @@
         document.addEventListener('alpine:init', () => {
             const raw  = document.getElementById('menu-products');
             const list = raw ? JSON.parse(raw.textContent) : [];
+
+            // ── Carrito global ──────────────────────────────────────────
+            Alpine.store('cart', {
+                items:   [],
+                open:    false,
+                sending: false,
+                sent:    false,
+                error:   null,
+                tableHash: '{{ $table->unique_hash }}',
+
+                add(product) {
+                    const existing = this.items.find(i => i.productId === product.id);
+                    if (existing) {
+                        existing.quantity++;
+                    } else {
+                        this.items.push({
+                            productId:  product.id,
+                            name:       product.name,
+                            price:      product.price,
+                            quantity:   1,
+                            mods:       [],
+                            removable:  product.removable || [],
+                            extras:     product.extras    || [],
+                        });
+                    }
+                },
+
+                inc(idx) { this.items[idx].quantity++; },
+
+                dec(idx) {
+                    this.items[idx].quantity--;
+                    if (this.items[idx].quantity <= 0) this.items.splice(idx, 1);
+                },
+
+                toggleRemove(idx, ing) {
+                    const i = this.items[idx].mods.findIndex(m => m.ingredientId === ing.id && m.action === 'remove');
+                    if (i === -1) this.items[idx].mods.push({ ingredientId: ing.id, name: ing.name, action: 'remove', amountCharged: 0 });
+                    else          this.items[idx].mods.splice(i, 1);
+                },
+
+                toggleExtra(idx, ing) {
+                    const i = this.items[idx].mods.findIndex(m => m.ingredientId === ing.id && m.action === 'add');
+                    if (i === -1) this.items[idx].mods.push({ ingredientId: ing.id, name: ing.name, action: 'add', amountCharged: ing.price });
+                    else          this.items[idx].mods.splice(i, 1);
+                },
+
+                hasMod(idx, ingId, action) {
+                    return this.items[idx].mods.some(m => m.ingredientId === ingId && m.action === action);
+                },
+
+                lineTotal(item) {
+                    const extra = item.mods.filter(m => m.action === 'add').reduce((s, m) => s + m.amountCharged, 0);
+                    return (item.price + extra) * item.quantity;
+                },
+
+                get total() {
+                    return this.items.reduce((s, item) => s + this.lineTotal(item), 0);
+                },
+
+                get count() {
+                    return this.items.reduce((s, i) => s + i.quantity, 0);
+                },
+
+                fmt(n) {
+                    return n.toFixed(2).replace('.', ',') + ' €';
+                },
+
+                async send() {
+                    if (!this.items.length || this.sending) return;
+                    this.sending = true;
+                    this.error   = null;
+                    try {
+                        const res = await fetch('/api/v1/orders', {
+                            method:  'POST',
+                            headers: {
+                                'Content-Type':  'application/json',
+                                'Accept':        'application/json',
+                                'X-CSRF-TOKEN':  document.querySelector('meta[name="csrf-token"]')?.content ?? '',
+                            },
+                            body: JSON.stringify({
+                                table_hash: this.tableHash,
+                                items: this.items.map(item => ({
+                                    product_id:    item.productId,
+                                    quantity:      item.quantity,
+                                    modifications: item.mods.map(m => ({
+                                        ingredient_id:  m.ingredientId,
+                                        action:         m.action,
+                                        amount_charged: m.amountCharged,
+                                    })),
+                                })),
+                            }),
+                        });
+                        const data = await res.json();
+                        if (res.ok && data.success) {
+                            this.sent  = true;
+                            this.items = [];
+                            this.open  = false;
+                        } else {
+                            this.error = data.message ?? 'Error al enviar el pedido.';
+                        }
+                    } catch {
+                        this.error = 'Error de conexión. Inténtalo de nuevo.';
+                    } finally {
+                        this.sending = false;
+                    }
+                },
+            });
 
             Alpine.data('menuFilters', () => ({
                 products: list,
@@ -149,6 +267,219 @@
                 </div>
             </div>
         </header>
+
+        {{-- ── FAB Carrito ─────────────────────────────────────────── --}}
+        <div class="fixed bottom-6 right-4 z-50"
+             x-show="$store.cart.count > 0"
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0 scale-75"
+             x-transition:enter-end="opacity-100 scale-100"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100 scale-100"
+             x-transition:leave-end="opacity-0 scale-75">
+            <button type="button"
+                    @click="$store.cart.open = true"
+                    class="relative flex items-center gap-2 px-5 py-3 rounded-full
+                           bg-green-600 hover:bg-green-700 text-white font-bold shadow-xl
+                           transition-colors focus:outline-none focus:ring-4 focus:ring-green-400">
+                <svg aria-hidden="true" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                          d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
+                </svg>
+                Ver pedido
+                <span class="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center"
+                      x-text="$store.cart.count"></span>
+            </button>
+        </div>
+
+        {{-- ── Drawer del carrito ───────────────────────────────────── --}}
+        <div x-show="$store.cart.open"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
+             @click.self="$store.cart.open = false"
+             aria-modal="true" role="dialog" aria-label="Tu pedido">
+
+            <div x-show="$store.cart.open"
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="translate-y-full"
+                 x-transition:enter-end="translate-y-0"
+                 x-transition:leave="transition ease-in duration-200"
+                 x-transition:leave-start="translate-y-0"
+                 x-transition:leave-end="translate-y-full"
+                 class="absolute bottom-0 left-0 right-0 max-h-[90dvh] flex flex-col
+                        bg-white dark:bg-gray-900 rounded-t-2xl shadow-2xl overflow-hidden">
+
+                {{-- Handle + cabecera --}}
+                <div class="flex-shrink-0 px-4 pt-3 pb-3 border-b border-gray-200 dark:border-gray-700">
+                    <div class="w-10 h-1 rounded-full bg-gray-300 dark:bg-gray-600 mx-auto mb-3"></div>
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-lg font-bold text-gray-900 dark:text-white">
+                            Tu pedido
+                            <span class="ml-1 text-sm font-normal text-gray-400">
+                                (<span x-text="$store.cart.count"></span> <span x-text="$store.cart.count === 1 ? 'artículo' : 'artículos'"></span>)
+                            </span>
+                        </h2>
+                        <button type="button"
+                                @click="$store.cart.open = false"
+                                class="p-1.5 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800
+                                       focus:outline-none focus:ring-2 focus:ring-gray-400">
+                            <svg aria-hidden="true" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                {{-- Lista de items --}}
+                <div class="flex-1 overflow-y-auto px-4 py-3 space-y-4">
+                    <template x-for="(item, idx) in $store.cart.items" :key="idx">
+                        <div class="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 space-y-3">
+
+                            {{-- Fila producto --}}
+                            <div class="flex items-start gap-3">
+                                <div class="flex-1 min-w-0">
+                                    <p class="font-semibold text-gray-900 dark:text-white text-sm leading-snug" x-text="item.name"></p>
+                                    <p class="text-xs text-gray-400 mt-0.5" x-text="$store.cart.fmt(item.price) + ' / ud.'"></p>
+                                </div>
+
+                                {{-- Cantidad --}}
+                                <div class="flex items-center gap-2 flex-shrink-0">
+                                    <button type="button" @click="$store.cart.dec(idx)"
+                                            class="w-7 h-7 rounded-full border-2 border-gray-300 dark:border-gray-600
+                                                   flex items-center justify-center text-gray-600 dark:text-gray-300
+                                                   hover:border-red-400 hover:text-red-500 transition-colors
+                                                   focus:outline-none focus:ring-2 focus:ring-red-400">
+                                        <svg aria-hidden="true" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M20 12H4"/>
+                                        </svg>
+                                    </button>
+                                    <span class="w-5 text-center font-bold text-gray-900 dark:text-white text-sm" x-text="item.quantity"></span>
+                                    <button type="button" @click="$store.cart.inc(idx)"
+                                            class="w-7 h-7 rounded-full border-2 border-gray-300 dark:border-gray-600
+                                                   flex items-center justify-center text-gray-600 dark:text-gray-300
+                                                   hover:border-green-500 hover:text-green-600 transition-colors
+                                                   focus:outline-none focus:ring-2 focus:ring-green-400">
+                                        <svg aria-hidden="true" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+                                        </svg>
+                                    </button>
+                                </div>
+
+                                {{-- Subtotal --}}
+                                <span class="flex-shrink-0 font-bold text-green-600 dark:text-green-400 text-sm"
+                                      x-text="$store.cart.fmt($store.cart.lineTotal(item))"></span>
+                            </div>
+
+                            {{-- Modificaciones --}}
+                            <template x-if="item.removable.length > 0 || item.extras.length > 0">
+                                <div class="border-t border-gray-200 dark:border-gray-700 pt-2 space-y-2">
+
+                                    <template x-if="item.removable.length > 0">
+                                        <div>
+                                            <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Quitar</p>
+                                            <div class="flex flex-wrap gap-1.5">
+                                                <template x-for="ing in item.removable" :key="ing.id">
+                                                    <button type="button"
+                                                            @click="$store.cart.toggleRemove(idx, ing)"
+                                                            :class="$store.cart.hasMod(idx, ing.id, 'remove')
+                                                                ? 'bg-red-100 dark:bg-red-900/40 border-red-400 text-red-700 dark:text-red-300'
+                                                                : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300'"
+                                                            class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border text-xs font-medium transition-colors
+                                                                   focus:outline-none focus:ring-2 focus:ring-red-400">
+                                                        <span x-text="'Sin ' + ing.name"></span>
+                                                    </button>
+                                                </template>
+                                            </div>
+                                        </div>
+                                    </template>
+
+                                    <template x-if="item.extras.length > 0">
+                                        <div>
+                                            <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Extra</p>
+                                            <div class="flex flex-wrap gap-1.5">
+                                                <template x-for="ing in item.extras" :key="ing.id">
+                                                    <button type="button"
+                                                            @click="$store.cart.toggleExtra(idx, ing)"
+                                                            :class="$store.cart.hasMod(idx, ing.id, 'add')
+                                                                ? 'bg-green-100 dark:bg-green-900/40 border-green-500 text-green-700 dark:text-green-300'
+                                                                : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300'"
+                                                            class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border text-xs font-medium transition-colors
+                                                                   focus:outline-none focus:ring-2 focus:ring-green-400">
+                                                        <span x-text="'+ ' + ing.name + (ing.price > 0 ? ' (+' + ing.price.toFixed(2).replace(\'.\',\',\') + \' €)\' : \'\'  )"></span>
+                                                    </button>
+                                                </template>
+                                            </div>
+                                        </div>
+                                    </template>
+
+                                </div>
+                            </template>
+
+                        </div>
+                    </template>
+                </div>
+
+                {{-- Footer --}}
+                <div class="flex-shrink-0 px-4 py-4 border-t border-gray-200 dark:border-gray-700 space-y-3 bg-white dark:bg-gray-900">
+
+                    <template x-if="$store.cart.error">
+                        <p class="text-sm text-red-600 dark:text-red-400 text-center font-medium" x-text="$store.cart.error"></p>
+                    </template>
+
+                    <div class="flex items-center justify-between">
+                        <span class="text-base font-semibold text-gray-700 dark:text-gray-300">Total</span>
+                        <span class="text-xl font-bold text-gray-900 dark:text-white" x-text="$store.cart.fmt($store.cart.total)"></span>
+                    </div>
+
+                    <button type="button"
+                            @click="$store.cart.send()"
+                            :disabled="$store.cart.sending"
+                            class="w-full py-3.5 rounded-xl bg-green-600 hover:bg-green-700 disabled:opacity-60
+                                   text-white font-bold text-base shadow-sm transition-colors
+                                   focus:outline-none focus:ring-4 focus:ring-green-400">
+                        <span x-show="!$store.cart.sending">🍽️ Enviar pedido a cocina</span>
+                        <span x-show="$store.cart.sending" class="flex items-center justify-center gap-2">
+                            <svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+                            </svg>
+                            Enviando...
+                        </span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        {{-- ── Confirmación pedido enviado ─────────────────────────── --}}
+        <div x-show="$store.cart.sent"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 scale-90"
+             x-transition:enter-end="opacity-100 scale-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100 scale-100"
+             x-transition:leave-end="opacity-0 scale-90"
+             class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-6">
+            <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-8 max-w-sm w-full text-center space-y-4">
+                <div class="mx-auto w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/40 flex items-center justify-center">
+                    <svg class="w-9 h-9 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-bold text-gray-900 dark:text-white">¡Pedido enviado!</h3>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Tu pedido está en camino a cocina. En breve lo tendrás listo.</p>
+                <button type="button"
+                        @click="$store.cart.sent = false"
+                        class="w-full py-2.5 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold transition-colors
+                               focus:outline-none focus:ring-4 focus:ring-green-400">
+                    Aceptar
+                </button>
+            </div>
+        </div>
 
         {{-- ── Barra de filtros ─────────────────────────────────────── --}}
         <div class="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 shadow-sm"
@@ -404,18 +735,34 @@
                                         @endif
 
                                         {{-- Alérgenos --}}
-                                        @if ($product->ingredients->isNotEmpty())
+                                        @if ($product->ingredients->where('is_allergen', true)->isNotEmpty())
                                             <div class="mt-2" aria-label="Alérgenos de {{ $product->name }}">
                                                 <p class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1">
                                                     Alérgenos
                                                 </p>
-                                                <ul class="flex flex-wrap gap-1" role="list">
-                                                    @foreach ($product->ingredients as $allergen)
+                                                <ul class="flex flex-wrap gap-3" role="list">
+                                                    @foreach ($product->ingredients->where('is_allergen', true)->unique('allergen_type') as $allergen)
                                                         <li><x-allergen-badge :ingredient="$allergen" /></li>
                                                     @endforeach
                                                 </ul>
                                             </div>
                                         @endif
+
+                                        {{-- Botón añadir al carrito --}}
+                                        <div class="mt-3 flex justify-end">
+                                            <button type="button"
+                                                    @click="$store.cart.add(products.find(p => p.id === {{ $product->id }}))"
+                                                    class="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full
+                                                           bg-green-600 hover:bg-green-700 active:scale-95
+                                                           text-white text-sm font-semibold shadow-sm
+                                                           transition-all duration-150
+                                                           focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
+                                                <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+                                                </svg>
+                                                Añadir
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </li>
