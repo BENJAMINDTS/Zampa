@@ -38,8 +38,8 @@
             <td class="hidden md:table-cell px-4 sm:px-6 py-4 whitespace-nowrap text-gray-500">{{ number_format($product->price, 2) }} €</td>
             <td class="hidden lg:table-cell px-4 sm:px-6 py-4">
               @if($product->ingredients->where('is_allergen', true)->isNotEmpty())
-                <div class="flex flex-wrap gap-1" role="list" aria-label="Alérgenos de {{ $product->name }}">
-                  @foreach($product->ingredients->where('is_allergen', true) as $allergen)
+                <div class="flex flex-wrap gap-3" role="list" aria-label="Alérgenos de {{ $product->name }}">
+                  @foreach($product->ingredients->where('is_allergen', true)->unique('allergen_type') as $allergen)
                     <x-allergen-badge :ingredient="$allergen" />
                   @endforeach
                 </div>
