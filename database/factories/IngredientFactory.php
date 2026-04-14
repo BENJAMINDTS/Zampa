@@ -6,19 +6,13 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Ingredient>
+ *
+ * @author SebastianBCF
  */
 class IngredientFactory extends Factory
 {
     /**
-     * Define the model's default state.
-     *
-     * Incluye un flag booleano para simular alérgenos (20% de probabilidad).
-     *
-     * @return array<string, mixed>
-     */
-    /**
-     * Mapa de nombre de ingrediente → tipo de alérgeno UE (Reglamento 1169/2011).
-     * Solo los que realmente son alérgenos oficiales.
+     * Mapa de nombre de ingrediente a tipo de alérgeno UE (Reglamento 1169/2011).
      */
     private const ALLERGEN_MAP = [
         'Queso'     => 'lacteos',
@@ -29,6 +23,11 @@ class IngredientFactory extends Factory
         'Tomate'    => 'sulfitos',
     ];
 
+    /**
+     * Define the model's default state.
+     *
+     * @return array<string, mixed>
+     */
     public function definition(): array
     {
         $name       = $this->faker->randomElement(['Tomate', 'Queso', 'Bacon', 'Lechuga', 'Salsa BBQ', 'Huevo', 'Pan', 'Pollo']);
