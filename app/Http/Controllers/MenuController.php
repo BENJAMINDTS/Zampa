@@ -33,7 +33,7 @@ class MenuController extends Controller
                     $query->where('is_active', true)
                           ->with([
                               'ingredients' => function ($q) {
-                                  $q->where('is_allergen', true)
+                                  $q->withPivot(['is_removable', 'is_extra', 'extra_price'])
                                     ->select([
                                         'ingredients.id',
                                         'ingredients.name',
@@ -52,7 +52,7 @@ class MenuController extends Controller
         // Solo se muestran alérgenos que aparecen en al menos un plato activo.
         $allergens = $categories
             ->flatMap(fn ($c) => $c->products)
-            ->flatMap(fn ($p) => $p->ingredients)
+            ->flatMap(fn ($p) => $p->ingredients->where('is_allergen', true))
             ->unique('id')
             ->sortBy('name')
             ->values();
