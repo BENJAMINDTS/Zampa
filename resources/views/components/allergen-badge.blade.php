@@ -1,26 +1,40 @@
 @props(['ingredient'])
 
-@if($ingredient->allergen_type)
-    <span class="inline-flex items-center gap-1
-                 bg-orange-50 dark:bg-orange-900/30
-                 border border-orange-200 dark:border-orange-700
-                 rounded-full px-2 py-0.5 text-xs
-                 text-orange-800 dark:text-orange-200"
-          title="{{ $ingredient->allergenTypeName() }}">
-        <img src="{{ $ingredient->allergenIconPath() }}"
-             alt="{{ $ingredient->allergenTypeName() }}"
-             class="h-4 w-4 rounded-full"
-             loading="lazy">
-        <span>{{ $ingredient->allergenTypeName() }}</span>
-    </span>
-@elseif($ingredient->is_allergen)
-    <span class="inline-flex items-center gap-1
-                 bg-yellow-50 dark:bg-yellow-900/30
-                 border border-yellow-200 dark:border-yellow-700
-                 rounded-full px-2 py-0.5 text-xs
-                 text-yellow-800 dark:text-yellow-200"
-          title="Alérgeno (tipo no especificado)">
-        <span aria-hidden="true">⚠️</span>
-        <span>{{ $ingredient->name }}</span>
-    </span>
+@if($ingredient->is_allergen)
+    @php
+        $shortNames = [
+            'gluten'          => 'Gluten',
+            'crustaceos'      => 'Crustáceos',
+            'huevos'          => 'Huevos',
+            'pescado'         => 'Pescado',
+            'cacahuetes'      => 'Cacahuetes',
+            'soja'            => 'Soja',
+            'lacteos'         => 'Lácteos',
+            'frutos-cascara'  => 'Frutos secos',
+            'apio'            => 'Apio',
+            'mostaza'         => 'Mostaza',
+            'sesamo'          => 'Sésamo',
+            'sulfitos'        => 'Sulfitos',
+            'altramuces'      => 'Altramuz',
+            'moluscos'        => 'Moluscos',
+        ];
+
+        $label = $shortNames[$ingredient->allergen_type] ?? $ingredient->name;
+    @endphp
+
+    <div class="flex flex-col items-center gap-1 w-16"
+         title="{{ $label }}">
+        <div class="w-12 h-12 rounded-full bg-white border-2 border-gray-300 flex items-center justify-center shadow-sm p-2">
+            @if($ingredient->allergen_type)
+                <img src="{{ $ingredient->allergenIconPath() }}"
+                     alt="{{ $label }}"
+                     class="w-full h-full object-contain">
+            @else
+                <span class="text-2xl leading-none">{{ $ingredient->ingredientEmoji() }}</span>
+            @endif
+        </div>
+        <span class="text-xs text-center font-medium text-gray-600 dark:text-gray-400 leading-tight">
+            {{ $label }}
+        </span>
+    </div>
 @endif
