@@ -27,7 +27,7 @@ class OpenAIService
         $response = Http::withToken(config('services.groq.key'))
             ->timeout(30)
             ->post('https://api.groq.com/openai/v1/chat/completions', [
-                'model'       => 'llama3-8b-8192',
+                'model'       => 'llama-3.1-8b-instant',
                 'messages'    => $messages,
                 'temperature' => 0.7,
                 'max_tokens'  => 500,
