@@ -19,7 +19,7 @@ use App\Models\Product;
  */
 class ChatService
 {
-    private const MAX_TOKENS = 1500;
+    private const MAX_TOKENS = 6000;
 
     /**
      * @param  OpenAIService  $openAI
