@@ -117,26 +117,29 @@
   </div>
 
   @push('scripts')
+  @php
+    $ordersForJs = $orders->map(fn($o) => [
+      'id'         => $o->id,
+      'table_name' => $o->table->name,
+      'created_at' => $o->created_at->format('H:i'),
+      'status'     => $o->status,
+      'all_ready'  => false,
+      'items'      => $o->items->map(fn($i) => [
+        'id'            => $i->id,
+        'product_name'  => $i->product->name,
+        'quantity'      => $i->quantity,
+        'marking'       => false,
+        'modifications' => $i->modifications->map(fn($m) => [
+          'action'     => $m->action,
+          'ingredient' => $m->ingredient->name,
+        ])->values(),
+      ])->values(),
+    ])->values();
+  @endphp
   <script>
     function kitchenPanel() {
       return {
-        orders: @json($orders->map(fn($o) => [
-          'id'         => $o->id,
-          'table_name' => $o->table->name,
-          'created_at' => $o->created_at->format('H:i'),
-          'status'     => $o->status,
-          'all_ready'  => false,
-          'items'      => $o->items->map(fn($i) => [
-            'id'            => $i->id,
-            'product_name'  => $i->product->name,
-            'quantity'      => $i->quantity,
-            'marking'       => false,
-            'modifications' => $i->modifications->map(fn($m) => [
-              'action'     => $m->action,
-              'ingredient' => $m->ingredient->name,
-            ])->values(),
-          ])->values(),
-        ])->values()),
+        orders: @json($ordersForJs),
 
         polling: true,
         lastUpdated: '--:--',
