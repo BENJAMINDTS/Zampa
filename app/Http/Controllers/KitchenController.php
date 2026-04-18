@@ -108,9 +108,9 @@ class KitchenController extends Controller
     {
         return Order::with([
             'table',
-            'items' => fn($q) => $q->where('status', 'queued'),
-            'items.product',
-            'items.modifications.ingredient',
+            'items' => fn($q) => $q
+                ->where('status', 'queued')
+                ->with(['product', 'modifications.ingredient']),
         ])
         ->whereHas('table', fn($q) => $q->where('user_id', Auth::id()))
         ->whereIn('status', ['pending', 'cooking'])
