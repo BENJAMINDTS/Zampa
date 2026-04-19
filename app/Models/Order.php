@@ -16,6 +16,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $status         'pending', 'cooking', 'ready', 'served', 'closed'
  * @property float $total         Total a pagar
  * @property string $payment_status 'pending' o 'paid'
+ *
+ * @author BenjaminDTS
+ * @author AyrtonAlania
  */
 class Order extends Model
 {
@@ -30,6 +33,23 @@ class Order extends Model
         'payment_status',
         'note'
     ];
+
+    /**
+     * Cierra las conversaciones activas de la mesa cuando el pedido se cierra.
+     *
+     * Este hook se activará automáticamente cuando el flujo de pago
+     * marque el Order como 'closed' (Bloque de pago — pendiente de implementar).
+     */
+    protected static function booted(): void
+    {
+        static::updated(function (Order $order): void {
+            if ($order->wasChanged('status') && $order->status === 'closed') {
+                Conversation::where('table_id', $order->table_id)
+                    ->where('status', 'active')
+                    ->update(['status' => 'closed']);
+            }
+        });
+    }
 
     /**
      * La mesa a la que pertenece el pedido.

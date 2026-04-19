@@ -226,6 +226,102 @@
                     this.activeCategory = null;
                 },
             }));
+
+            // ── Widget de chat IA ────────────────────────────────────────
+            Alpine.data('chatWidget', () => ({
+                open:           false,
+                conversationId: null,
+                messages:       [],
+                input:          '',
+                sending:        false,
+                closed:         false,
+                error:          null,
+
+                get tableHash() {
+                    return Alpine.store('cart').tableHash;
+                },
+
+                async openChat() {
+                    this.open = true;
+                    if (!this.conversationId) {
+                        await this.startConversation();
+                    }
+                    this.$nextTick(() => {
+                        this.$refs.chatInput?.focus();
+                        this.scrollBottom();
+                    });
+                },
+
+                closeChat() {
+                    this.open = false;
+                },
+
+                async startConversation() {
+                    try {
+                        const res = await fetch('/api/v1/chat/' + this.tableHash + '/start', {
+                            method:  'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept':       'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
+                            },
+                        });
+                        const data = await res.json();
+                        if (res.ok && data.success) {
+                            this.conversationId = data.data.conversation_id;
+                            this.messages.push({
+                                role:    'assistant',
+                                content: '¡Hola! Soy el asistente virtual de este restaurante. ¿En qué puedo ayudarte con la carta?',
+                            });
+                        }
+                    } catch {
+                        this.error = 'No se pudo iniciar el chat. Inténtalo de nuevo.';
+                    }
+                },
+
+                async sendMessage() {
+                    const text = this.input.trim();
+                    if (!text || this.sending || this.closed || !this.conversationId) return;
+
+                    this.input = '';
+                    this.messages.push({ role: 'user', content: text });
+                    this.sending = true;
+                    this.error   = null;
+                    this.$nextTick(() => this.scrollBottom());
+
+                    try {
+                        const res = await fetch('/api/v1/chat/' + this.conversationId + '/message', {
+                            method:  'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept':       'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
+                            },
+                            body: JSON.stringify({ message: text }),
+                        });
+                        const data = await res.json();
+                        if (res.ok && data.success) {
+                            this.messages.push({ role: 'assistant', content: data.data.reply });
+                            if (data.data.closed) {
+                                this.closed = true;
+                            }
+                        } else {
+                            this.error = data.message ?? 'Error al enviar el mensaje.';
+                        }
+                    } catch {
+                        this.error = 'Error de conexión. Inténtalo de nuevo.';
+                    } finally {
+                        this.sending = false;
+                        this.$nextTick(() => this.scrollBottom());
+                    }
+                },
+
+                scrollBottom() {
+                    if (this.$refs.chatLog) {
+                        this.$refs.chatLog.scrollTop = this.$refs.chatLog.scrollHeight;
+                    }
+                },
+            }));
         });
     </script>
 </head>
@@ -267,6 +363,139 @@
                 </div>
             </div>
         </header>
+
+        {{-- ── FAB Chat IA ─────────────────────────────────────────── --}}
+        <div x-data="chatWidget()">
+            <button type="button"
+                    @click="openChat()"
+                    aria-label="Abrir asistente virtual"
+                    class="fixed bottom-20 right-4 z-40 flex items-center gap-2 px-4 py-2.5 rounded-full
+                           bg-indigo-600 hover:bg-indigo-700 text-white font-semibold shadow-xl
+                           transition-colors focus:outline-none focus:ring-4 focus:ring-indigo-400">
+                <span aria-hidden="true" class="text-lg leading-none">💬</span>
+                <span class="text-sm">Pregúntame</span>
+            </button>
+
+            {{-- Drawer del chat --}}
+            <div x-show="open"
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="opacity-0"
+                 x-transition:enter-end="opacity-100"
+                 x-transition:leave="transition ease-in duration-200"
+                 x-transition:leave-start="opacity-100"
+                 x-transition:leave-end="opacity-0"
+                 class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
+                 @click.self="closeChat()"
+                 @keydown.escape.window="closeChat()"
+                 aria-modal="true" role="dialog" aria-label="Asistente virtual">
+
+                <div x-show="open"
+                     x-transition:enter="transition ease-out duration-300"
+                     x-transition:enter-start="translate-y-full"
+                     x-transition:enter-end="translate-y-0"
+                     x-transition:leave="transition ease-in duration-200"
+                     x-transition:leave-start="translate-y-0"
+                     x-transition:leave-end="translate-y-full"
+                     class="absolute bottom-0 left-0 right-0 h-[80dvh] flex flex-col
+                            bg-white dark:bg-gray-900 rounded-t-2xl shadow-2xl overflow-hidden">
+
+                    {{-- Cabecera --}}
+                    <div class="flex-shrink-0 px-4 pt-3 pb-3 border-b border-gray-200 dark:border-gray-700">
+                        <div class="w-10 h-1 rounded-full bg-gray-300 dark:bg-gray-600 mx-auto mb-3"></div>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span aria-hidden="true" class="text-xl">💬</span>
+                                <h2 class="text-lg font-bold text-gray-900 dark:text-white">Asistente virtual</h2>
+                            </div>
+                            <button type="button"
+                                    @click="closeChat()"
+                                    aria-label="Cerrar asistente"
+                                    class="p-1.5 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100
+                                           dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400">
+                                <svg aria-hidden="true" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    {{-- Log de mensajes --}}
+                    <div x-ref="chatLog"
+                         role="log"
+                         aria-live="polite"
+                         aria-label="Conversación con el asistente"
+                         class="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+
+                        <template x-for="(msg, idx) in messages" :key="idx">
+                            <div :class="msg.role === 'user' ? 'flex justify-end' : 'flex justify-start'">
+                                <div :class="msg.role === 'user'
+                                        ? 'bg-indigo-600 text-white rounded-2xl rounded-br-sm'
+                                        : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-2xl rounded-bl-sm'"
+                                     class="max-w-[80%] px-4 py-2.5 text-sm leading-relaxed"
+                                     x-text="msg.content">
+                                </div>
+                            </div>
+                        </template>
+
+                        {{-- Indicador de escritura --}}
+                        <template x-if="sending">
+                            <div class="flex justify-start" aria-label="El asistente está escribiendo">
+                                <div class="bg-gray-100 dark:bg-gray-800 rounded-2xl rounded-bl-sm px-4 py-3 flex items-center gap-1">
+                                    <span class="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style="animation-delay:-0.3s"></span>
+                                    <span class="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style="animation-delay:-0.15s"></span>
+                                    <span class="w-2 h-2 rounded-full bg-gray-400 animate-bounce"></span>
+                                </div>
+                            </div>
+                        </template>
+
+                        {{-- Error --}}
+                        <template x-if="error">
+                            <p class="text-center text-sm text-red-500 dark:text-red-400 py-1"
+                               role="alert"
+                               x-text="error"></p>
+                        </template>
+
+                        {{-- Conversación cerrada --}}
+                        <template x-if="closed">
+                            <p class="text-center text-xs text-gray-400 dark:text-gray-500 py-2 italic">
+                                Conversación finalizada. Confirma tu pedido o inicia una nueva.
+                            </p>
+                        </template>
+                    </div>
+
+                    {{-- Área de input --}}
+                    <div class="flex-shrink-0 px-4 py-3 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+                        <div class="flex items-end gap-2">
+                            <label for="chat-input" class="sr-only">Escribe tu mensaje</label>
+                            <textarea id="chat-input"
+                                      x-ref="chatInput"
+                                      x-model="input"
+                                      @keydown.enter.prevent="sendMessage()"
+                                      :disabled="sending || closed"
+                                      rows="1"
+                                      placeholder="Escribe tu mensaje..."
+                                      class="flex-1 resize-none max-h-20 rounded-xl border border-gray-300 dark:border-gray-600
+                                             bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100
+                                             px-3 py-2 text-sm leading-snug placeholder:text-gray-400 dark:placeholder:text-gray-500
+                                             focus:outline-none focus:ring-2 focus:ring-indigo-500
+                                             disabled:opacity-50 disabled:cursor-not-allowed transition-colors"></textarea>
+                            <button type="button"
+                                    @click="sendMessage()"
+                                    :disabled="!input.trim() || sending || closed"
+                                    aria-label="Enviar mensaje"
+                                    class="flex-shrink-0 p-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700
+                                           disabled:opacity-40 disabled:cursor-not-allowed text-white
+                                           transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                                <svg aria-hidden="true" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>{{-- /chatWidget --}}
 
         {{-- ── FAB Carrito ─────────────────────────────────────────── --}}
         <div class="fixed bottom-6 right-4 z-50"
