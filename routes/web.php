@@ -41,6 +41,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/cocina', [KitchenController::class, 'index'])->name('kitchen.index');
         Route::get('/cocina/pendientes', [KitchenController::class, 'pendingOrders'])->name('kitchen.pending');
         Route::post('/cocina/items/{item}/listo', [KitchenController::class, 'markItemReady'])->name('kitchen.item.ready');
+        Route::post('/cocina/orders/{order}/servido', [KitchenController::class, 'markOrderServed'])->name('kitchen.order.served');
     });
 });
 
