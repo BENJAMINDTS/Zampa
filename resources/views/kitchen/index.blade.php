@@ -104,10 +104,19 @@
           {{-- Footer: pedido completo --}}
           <div
             x-show="order.all_ready"
-            class="px-4 py-2 bg-green-50 border-t border-green-200 text-green-700 text-xs font-semibold text-center"
+            class="px-4 py-3 bg-green-50 border-t border-green-200 flex items-center justify-between gap-3"
             role="status"
           >
-            ¡Pedido completo! Listo para servir.
+            <span class="text-green-700 text-xs font-semibold">¡Pedido completo! Listo para servir.</span>
+            <button
+              @click="markServed(order)"
+              :disabled="order.serving"
+              class="text-xs font-semibold px-3 py-1 rounded bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1"
+              aria-label="Marcar pedido como servido"
+            >
+              <span x-show="!order.serving">Servido ✓</span>
+              <span x-show="order.serving">...</span>
+            </button>
           </div>
 
         </div>
@@ -124,6 +133,7 @@
       'created_at' => $o->created_at->format('H:i'),
       'status'     => $o->status,
       'all_ready'  => false,
+      'serving'    => false,
       'items'      => $o->items->map(fn($i) => [
         'id'            => $i->id,
         'product_name'  => $i->product->name,
@@ -164,6 +174,7 @@
             this.orders = data.orders.map(o => ({
               ...o,
               all_ready: false,
+              serving: false,
               items: o.items.map(i => ({ ...i, marking: !!markingIds[i.id] })),
             }));
 
@@ -192,13 +203,26 @@
 
             if (data.all_ready) {
               order.all_ready = true;
-              // Retirar la comanda completa tras 2 s
-              setTimeout(() => {
-                this.orders = this.orders.filter(o => o.id !== order.id);
-              }, 2000);
             }
           } catch {
             item.marking = false;
+          }
+        },
+
+        async markServed(order) {
+          order.serving = true;
+          try {
+            await fetch(`/cocina/orders/${order.id}/servido`, {
+              method:  'POST',
+              headers: {
+                'X-CSRF-TOKEN':     document.querySelector('meta[name="csrf-token"]').content,
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept':           'application/json',
+              },
+            });
+            this.orders = this.orders.filter(o => o.id !== order.id);
+          } catch {
+            order.serving = false;
           }
         },
       };
