@@ -23,7 +23,7 @@ it('redirects unauthenticated user away from category create', function () {
 });
 
 it('redirects unauthenticated user away from category edit', function () {
-    $category = Category::factory()->for($this->user)->create();
+    $category = Category::factory()->create(['user_id' => $this->user->id]);
 
     $this->get(route('categories.edit', $category))
         ->assertRedirect(route('login'));
@@ -38,8 +38,8 @@ it('shows categories index to authenticated user', function () {
 });
 
 it('shows only the authenticated users categories', function () {
-    $mine  = Category::factory()->for($this->user)->create(['name' => 'Mis Tapas']);
-    $other = Category::factory()->for($this->other)->create(['name' => 'Ajenas']);
+    Category::factory()->create(['user_id' => $this->user->id, 'name' => 'Mis Tapas']);
+    Category::factory()->create(['user_id' => $this->other->id, 'name' => 'Ajenas']);
 
     $this->actingAs($this->user)
         ->get(route('categories.index'))
@@ -48,7 +48,7 @@ it('shows only the authenticated users categories', function () {
 });
 
 it('paginates categories at 15 per page', function () {
-    Category::factory()->for($this->user)->count(20)->create();
+    Category::factory()->count(20)->create(['user_id' => $this->user->id]);
 
     $response = $this->actingAs($this->user)
         ->get(route('categories.index'));
@@ -142,7 +142,7 @@ it('accepts bar as valid destination', function () {
 // ─── Edit / Update ───────────────────────────────────────────────────────────
 
 it('shows category edit form to owner', function () {
-    $category = Category::factory()->for($this->user)->create();
+    $category = Category::factory()->create(['user_id' => $this->user->id]);
 
     $this->actingAs($this->user)
         ->get(route('categories.edit', $category))
@@ -150,7 +150,7 @@ it('shows category edit form to owner', function () {
 });
 
 it('returns 403 when user tries to edit another users category', function () {
-    $category = Category::factory()->for($this->other)->create();
+    $category = Category::factory()->create(['user_id' => $this->other->id]);
 
     $this->actingAs($this->user)
         ->get(route('categories.edit', $category))
@@ -158,7 +158,8 @@ it('returns 403 when user tries to edit another users category', function () {
 });
 
 it('updates a category with valid data', function () {
-    $category = Category::factory()->for($this->user)->create([
+    $category = Category::factory()->create([
+        'user_id'     => $this->user->id,
         'name'        => 'Original',
         'destination' => 'kitchen',
     ]);
@@ -178,7 +179,7 @@ it('updates a category with valid data', function () {
 });
 
 it('returns 403 when user tries to update another users category', function () {
-    $category = Category::factory()->for($this->other)->create();
+    $category = Category::factory()->create(['user_id' => $this->other->id]);
 
     $this->actingAs($this->user)
         ->put(route('categories.update', $category), [
@@ -189,7 +190,7 @@ it('returns 403 when user tries to update another users category', function () {
 });
 
 it('fails to update a category with empty name', function () {
-    $category = Category::factory()->for($this->user)->create();
+    $category = Category::factory()->create(['user_id' => $this->user->id]);
 
     $this->actingAs($this->user)
         ->put(route('categories.update', $category), [
@@ -202,7 +203,7 @@ it('fails to update a category with empty name', function () {
 // ─── Delete ──────────────────────────────────────────────────────────────────
 
 it('deletes a category owned by the user', function () {
-    $category = Category::factory()->for($this->user)->create();
+    $category = Category::factory()->create(['user_id' => $this->user->id]);
 
     $this->actingAs($this->user)
         ->delete(route('categories.destroy', $category))
@@ -212,7 +213,7 @@ it('deletes a category owned by the user', function () {
 });
 
 it('returns 403 when user tries to delete another users category', function () {
-    $category = Category::factory()->for($this->other)->create();
+    $category = Category::factory()->create(['user_id' => $this->other->id]);
 
     $this->actingAs($this->user)
         ->delete(route('categories.destroy', $category))
@@ -237,7 +238,7 @@ it('shows success flash message after create', function () {
 });
 
 it('shows success flash message after update', function () {
-    $category = Category::factory()->for($this->user)->create();
+    $category = Category::factory()->create(['user_id' => $this->user->id]);
 
     $this->actingAs($this->user)
         ->put(route('categories.update', $category), [
@@ -248,7 +249,7 @@ it('shows success flash message after update', function () {
 });
 
 it('shows success flash message after delete', function () {
-    $category = Category::factory()->for($this->user)->create();
+    $category = Category::factory()->create(['user_id' => $this->user->id]);
 
     $this->actingAs($this->user)
         ->delete(route('categories.destroy', $category))
