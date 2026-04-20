@@ -32,6 +32,20 @@ class KitchenController extends Controller
     }
 
     /**
+     * Endpoint ligero para el badge del nav: devuelve el conteo de pedidos pendientes.
+     *
+     * @return JsonResponse
+     */
+    public function badgeCount(): JsonResponse
+    {
+        $count = Order::whereHas('table', fn($q) => $q->where('user_id', Auth::id()))
+            ->where('status', 'pending')
+            ->count();
+
+        return response()->json(['pending_count' => $count]);
+    }
+
+    /**
      * Endpoint JSON consumido por el polling de Alpine.js cada 5 segundos.
      *
      * @return JsonResponse
