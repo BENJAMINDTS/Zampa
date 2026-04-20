@@ -32,6 +32,21 @@
                     <x-nav-link :href="route('tables.index')" :active="request()->routeIs('tables.*')">
                         {{ __('Mesas QR') }}
                     </x-nav-link>
+                    {{-- Panel de Cocina: visible solo para admin y kitchen --}}
+                    @if(in_array(Auth::user()->role, ['admin', 'kitchen']))
+                    <x-nav-link :href="route('kitchen.index')" :active="request()->routeIs('kitchen.*')" class="relative">
+                        {{ __('Cocina') }}
+                        @php
+                            $readyOrders = \App\Models\Order::whereHas('table', fn($q) => $q->where('user_id', Auth::id()))
+                                ->where('status', 'ready')->count();
+                        @endphp
+                        @if($readyOrders > 0)
+                        <span class="absolute -top-1 -right-3 inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-500 rounded-full" aria-label="{{ $readyOrders }} pedidos listos para servir">
+                            {{ $readyOrders }}
+                        </span>
+                        @endif
+                    </x-nav-link>
+                    @endif
                 </div>
 
                 <!-- Settings Dropdown -->
@@ -107,6 +122,17 @@
                 <x-responsive-nav-link :href="route('tables.index')" :active="request()->routeIs('tables.*')">
                     {{ __('Mesas QR') }}
                 </x-responsive-nav-link>
+                {{-- Panel de Cocina (Versión Móvil) --}}
+                @if(in_array(Auth::user()->role, ['admin', 'kitchen']))
+                <x-responsive-nav-link :href="route('kitchen.index')" :active="request()->routeIs('kitchen.*')">
+                    {{ __('Cocina') }}
+                    @if(isset($readyOrders) && $readyOrders > 0)
+                    <span class="ml-2 inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-500 rounded-full" aria-label="{{ $readyOrders }} pedidos listos">
+                        {{ $readyOrders }}
+                    </span>
+                    @endif
+                </x-responsive-nav-link>
+                @endif
             </div>
 
             <!-- Responsive Settings Options -->
