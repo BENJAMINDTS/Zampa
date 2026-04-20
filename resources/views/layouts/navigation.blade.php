@@ -37,12 +37,12 @@
                     <x-nav-link :href="route('kitchen.index')" :active="request()->routeIs('kitchen.*')" class="relative">
                         {{ __('Cocina') }}
                         @php
-                            $readyOrders = \App\Models\Order::whereHas('table', fn($q) => $q->where('user_id', Auth::id()))
-                                ->where('status', 'ready')->count();
+                            $pendingOrders = \App\Models\Order::whereHas('table', fn($q) => $q->where('user_id', Auth::id()))
+                                ->where('status', 'pending')->count();
                         @endphp
-                        @if($readyOrders > 0)
-                        <span class="absolute -top-1 -right-3 inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-500 rounded-full" aria-label="{{ $readyOrders }} pedidos listos para servir">
-                            {{ $readyOrders }}
+                        @if($pendingOrders > 0)
+                        <span class="absolute -top-1 -right-3 inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-500 rounded-full" aria-label="{{ $pendingOrders }} pedidos nuevos sin atender">
+                            {{ $pendingOrders }}
                         </span>
                         @endif
                     </x-nav-link>
@@ -126,9 +126,9 @@
                 @if(in_array(Auth::user()->role, ['admin', 'kitchen']))
                 <x-responsive-nav-link :href="route('kitchen.index')" :active="request()->routeIs('kitchen.*')">
                     {{ __('Cocina') }}
-                    @if(isset($readyOrders) && $readyOrders > 0)
-                    <span class="ml-2 inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-500 rounded-full" aria-label="{{ $readyOrders }} pedidos listos">
-                        {{ $readyOrders }}
+                    @if(isset($pendingOrders) && $pendingOrders > 0)
+                    <span class="ml-2 inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-500 rounded-full" aria-label="{{ $pendingOrders }} pedidos nuevos sin atender">
+                        {{ $pendingOrders }}
                     </span>
                     @endif
                 </x-responsive-nav-link>
