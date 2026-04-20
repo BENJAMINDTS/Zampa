@@ -87,7 +87,7 @@ class KitchenController extends Controller
         $allReady = $order->items()->where('status', 'queued')->doesntExist();
 
         if ($allReady) {
-            $order->update(['status' => 'ready']);
+            $order->update(['status' => 'served']);
         }
 
         return response()->json([
