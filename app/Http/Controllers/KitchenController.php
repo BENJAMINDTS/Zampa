@@ -87,7 +87,7 @@ class KitchenController extends Controller
         $allReady = $order->items()->where('status', 'queued')->doesntExist();
 
         if ($allReady) {
-            $order->update(['status' => 'served']);
+            $order->update(['status' => 'ready']);
         }
 
         return response()->json([
@@ -96,6 +96,22 @@ class KitchenController extends Controller
             'order_status' => $order->fresh()->status,
             'all_ready'    => $allReady,
         ]);
+    }
+
+    /**
+     * Marca un pedido completo como servido, limpiando la notificación del badge.
+     *
+     * @param  Order  $order
+     * @return JsonResponse
+     */
+    public function markOrderServed(Order $order): JsonResponse
+    {
+        abort_if($order->table->user_id !== Auth::id(), 403, 'Acceso denegado.');
+        abort_if($order->status !== 'ready', 422, 'El pedido no está listo para servir.');
+
+        $order->update(['status' => 'served']);
+
+        return response()->json(['order_id' => $order->id, 'status' => 'served']);
     }
 
     /**
