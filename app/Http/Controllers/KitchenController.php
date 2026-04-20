@@ -60,13 +60,13 @@ class KitchenController extends Controller
             ->filter(fn($order) => count($order['items']) > 0)
             ->values();
 
-        $readyCount = Order::whereHas('table', fn($q) => $q->where('user_id', Auth::id()))
-            ->where('status', 'ready')
+        $pendingCount = Order::whereHas('table', fn($q) => $q->where('user_id', Auth::id()))
+            ->where('status', 'pending')
             ->count();
 
         return response()->json([
-            'orders'      => $orders,
-            'ready_count' => $readyCount,
+            'orders'        => $orders,
+            'pending_count' => $pendingCount,
         ]);
     }
 
@@ -84,7 +84,11 @@ class KitchenController extends Controller
 
         $item->update(['status' => 'ready']);
 
-        $allReady = $order->items()->where('status', 'queued')->doesntExist();
+        if ($order->status === 'pending') {
+            $order->update(['status' => 'cooking']);
+        }
+
+        $allReady = $order->fresh()->items()->where('status', 'queued')->doesntExist();
 
         if ($allReady) {
             $order->update(['status' => 'ready']);
