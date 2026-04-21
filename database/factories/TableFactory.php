@@ -16,7 +16,7 @@ class TableFactory extends Factory
     public function definition(): array
     {
         return [
-            'name'        => 'Mesa ' . $this->faker->unique()->numberBetween(1, 50),
+            'name'        => 'Mesa ' . fake()->unique()->numberBetween(1, 50),
             'unique_hash' => Str::uuid()->toString(),
             'status'      => 'free',
             'position_x'  => 0,
