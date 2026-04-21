@@ -33,6 +33,14 @@ class Product extends Model
     ];
 
     /**
+     * @return BelongsTo
+     */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    /**
      * Categoría a la que pertenece (Ej: Hamburguesas).
      */
     public function category(): BelongsTo
