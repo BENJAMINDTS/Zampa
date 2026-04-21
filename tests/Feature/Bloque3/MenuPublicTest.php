@@ -4,11 +4,13 @@ use App\Models\Category;
 use App\Models\Ingredient;
 use App\Models\Product;
 use App\Models\Table;
+use Illuminate\Support\Facades\Cache;
 use Tests\Support\CreatesTenants;
 
 uses(CreatesTenants::class);
 
 beforeEach(function () {
+    Cache::flush();
     $this->setupTenants();
 });
 
@@ -115,4 +117,16 @@ it('passes allergens to view for filters', function () {
     $response->assertOk();
     $allergens = $response->viewData('allergens');
     expect($allergens)->not->toBeEmpty();
+});
+
+// ─── Rate limiting ────────────────────────────────────────────────────────────
+
+it('returns 429 after exceeding 60 requests per minute', function () {
+    $table = Table::factory()->for($this->user)->create();
+
+    for ($i = 0; $i < 60; $i++) {
+        $this->get(route('menu.show', $table->unique_hash))->assertOk();
+    }
+
+    $this->get(route('menu.show', $table->unique_hash))->assertTooManyRequests();
 });
