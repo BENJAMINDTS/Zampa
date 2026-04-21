@@ -66,7 +66,7 @@ it('public menu shows allergen names for products with allergens', function () {
 
     $this->get(route('menu.show', $table->unique_hash))
         ->assertOk()
-        ->assertSee('Queso');
+        ->assertSee('Lácteos');
 });
 
 it('public menu view contains allergen data', function () {
