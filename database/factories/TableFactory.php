@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
@@ -16,6 +17,7 @@ class TableFactory extends Factory
     public function definition(): array
     {
         return [
+            'user_id'     => User::factory(),
             'name'        => 'Mesa ' . fake()->unique()->numberBetween(1, 50),
             'unique_hash' => Str::uuid()->toString(),
             'status'      => 'free',
