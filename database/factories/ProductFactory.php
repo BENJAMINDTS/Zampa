@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\Category;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -16,11 +17,12 @@ class ProductFactory extends Factory
     public function definition(): array
     {
         return [
-            'name'        => $this->faker->words(2, true),
-            'description' => $this->faker->sentence(),
-            'price'       => $this->faker->randomFloat(2, 3, 30),
+            'name'        => fake()->words(2, true),
+            'description' => fake()->sentence(),
+            'price'       => fake()->randomFloat(2, 3, 30),
             'is_active'   => true,
             'image'       => null,
+            'user_id'     => User::factory(),
             'category_id' => Category::factory(),
         ];
     }
