@@ -1,8 +1,10 @@
 <?php
 
 use App\Models\Category;
+use App\Models\Ingredient;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\OrderItemModification;
 use App\Models\Product;
 use App\Models\Table;
 use Tests\Support\CreatesTenants;
@@ -160,4 +162,61 @@ it('price snapshot is not affected when product price changes later', function (
 
     $item = OrderItem::where('product_id', $product->id)->first();
     expect((float) $item->price)->toBe(12.50);
+});
+
+// ─── Modificaciones de ingredientes ──────────────────────────────────────────
+
+it('saves ingredient add modification in order item modifications table', function () {
+    $table      = Table::factory()->for($this->user)->create();
+    $category   = Category::factory()->for($this->user)->create(['destination' => 'kitchen']);
+    $product    = Product::factory()->for($category)->for($this->user)->create(['price' => 10.00]);
+    $ingredient = Ingredient::factory()->for($this->user)->create();
+
+    $this->postJson('/api/v1/orders', [
+        'table_hash' => $table->unique_hash,
+        'items'      => [
+            [
+                'product_id'    => $product->id,
+                'quantity'      => 1,
+                'modifications' => [
+                    ['ingredient_id' => $ingredient->id, 'action' => 'add', 'amount_charged' => 1.50],
+                ],
+            ],
+        ],
+    ])->assertCreated();
+
+    $item = OrderItem::where('product_id', $product->id)->first();
+    $this->assertDatabaseHas('order_item_modifications', [
+        'order_item_id'  => $item->id,
+        'ingredient_id'  => $ingredient->id,
+        'action'         => 'add',
+        'amount_charged' => 1.50,
+    ]);
+});
+
+it('saves ingredient remove modification in order item modifications table', function () {
+    $table      = Table::factory()->for($this->user)->create();
+    $category   = Category::factory()->for($this->user)->create(['destination' => 'kitchen']);
+    $product    = Product::factory()->for($category)->for($this->user)->create(['price' => 10.00]);
+    $ingredient = Ingredient::factory()->for($this->user)->create();
+
+    $this->postJson('/api/v1/orders', [
+        'table_hash' => $table->unique_hash,
+        'items'      => [
+            [
+                'product_id'    => $product->id,
+                'quantity'      => 1,
+                'modifications' => [
+                    ['ingredient_id' => $ingredient->id, 'action' => 'remove', 'amount_charged' => 0],
+                ],
+            ],
+        ],
+    ])->assertCreated();
+
+    $item = OrderItem::where('product_id', $product->id)->first();
+    $this->assertDatabaseHas('order_item_modifications', [
+        'order_item_id' => $item->id,
+        'ingredient_id' => $ingredient->id,
+        'action'        => 'remove',
+    ]);
 });
