@@ -13,7 +13,9 @@ Route::get('/', function () {
 })->name('welcome');
 
 // Carta digital pública — accesible sin autenticación mediante QR
-Route::get('/carta/{hash}', [MenuController::class, 'show'])->name('menu.show');
+Route::get('/carta/{hash}', [MenuController::class, 'show'])
+    ->middleware('throttle:60,1')
+    ->name('menu.show');
 
 Route::get('/dashboard', function () {
     return view('dashboard');
