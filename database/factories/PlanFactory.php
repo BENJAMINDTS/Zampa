@@ -19,8 +19,8 @@ class PlanFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => $this->faker->randomElement(['Básico', 'Pro', 'Business']),
-            'price' => $this->faker->randomFloat(2, 9, 99), // Precio float con 2 decimales
+            'name'       => $this->faker->randomElement(['Básico', 'Pro', 'Business']),
+            'price'      => $this->faker->randomFloat(2, 9, 99),
             'max_tables' => $this->faker->numberBetween(5, 50),
         ];
     }

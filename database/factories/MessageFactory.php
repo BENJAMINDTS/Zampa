@@ -17,9 +17,9 @@ class MessageFactory extends Factory
     {
         return [
             'conversation_id' => Conversation::factory(),
-            'role'            => $this->faker->randomElement(['user', 'assistant']),
-            'content'         => $this->faker->sentence(),
-            'tokens_used'     => $this->faker->numberBetween(10, 100),
+            'role'            => fake()->randomElement(['user', 'assistant']),
+            'content'         => fake()->sentence(),
+            'tokens_used'     => fake()->numberBetween(10, 100),
         ];
     }
 }

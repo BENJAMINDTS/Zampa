@@ -18,7 +18,7 @@ class OrderFactory extends Factory
         return [
             'table_id'        => Table::factory(),
             'status'          => 'pending',
-            'total'           => $this->faker->randomFloat(2, 5, 200),
+            'total'           => fake()->randomFloat(2, 5, 200),
             'tip'             => 0,
             'payment_method'  => null,
             'payment_status'  => 'pending',
