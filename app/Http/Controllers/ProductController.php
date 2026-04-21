@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use App\Models\Product;
 use App\Models\Category;
 use App\Models\Ingredient;
@@ -56,7 +57,7 @@ class ProductController extends Controller
       'name'        => 'required|string|max:255',
       'description' => 'nullable|string',
       'price'       => 'required|numeric|min:0',
-      'category_id' => 'required|exists:categories,id',
+      'category_id' => ['required', Rule::exists('categories', 'id')->where('user_id', Auth::id())],
       'image'       => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
     ]);
 
