@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -30,13 +31,14 @@ class IngredientFactory extends Factory
      */
     public function definition(): array
     {
-        $name       = $this->faker->randomElement(['Tomate', 'Queso', 'Bacon', 'Lechuga', 'Salsa BBQ', 'Huevo', 'Pan', 'Pollo']);
-        $isAllergen = isset(self::ALLERGEN_MAP[$name]) ? $this->faker->boolean(20) : false;
+        $name       = fake()->randomElement(['Tomate', 'Queso', 'Bacon', 'Lechuga', 'Salsa BBQ', 'Huevo', 'Pan', 'Pollo']);
+        $isAllergen = isset(self::ALLERGEN_MAP[$name]) ? fake()->boolean(20) : false;
 
         return [
-            'name'         => $name,
-            'is_allergen'  => $isAllergen,
+            'name'          => $name,
+            'is_allergen'   => $isAllergen,
             'allergen_type' => $isAllergen ? self::ALLERGEN_MAP[$name] : null,
+            'user_id'       => User::factory(),
         ];
     }
 }
