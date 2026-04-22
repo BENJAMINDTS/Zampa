@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
@@ -21,11 +22,16 @@ class TableFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => 'Mesa ' . $this->faker->unique()->numberBetween(1, 50),
+            'user_id'     => User::factory(),
+            'name'        => 'Mesa ' . $this->faker->unique()->numberBetween(1, 100),
             'unique_hash' => Str::uuid(),
-            'status' => 'free',
-            'position_x' => $this->faker->numberBetween(0, 800), // Ancho del canvas simulado
-            'position_y' => $this->faker->numberBetween(0, 600), // Alto del canvas simulado
+            'status'      => 'free',
+            'position_x'  => 0,
+            'position_y'  => 0,
+            'width'       => 100,
+            'height'      => 100,
+            'shape'       => 'square',
+            'rotation'    => 0,
         ];
     }
 }
