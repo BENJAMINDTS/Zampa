@@ -5,12 +5,13 @@ use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 uses(TestCase::class, RefreshDatabase::class)->in('Feature');
+uses(TestCase::class)->in('Unit');
 
 beforeEach(function () {
     Http::preventStrayRequests();
 
     Http::fake([
-        'api.groq.com/*' => Http::response([
+        'https://api.groq.com/*' => Http::response([
             'choices' => [
                 ['message' => ['content' => 'Respuesta mock del chatbot']],
             ],
