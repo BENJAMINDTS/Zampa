@@ -2,6 +2,8 @@
 
 namespace Database\Factories;
 
+use App\Models\Category;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -9,21 +11,19 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class ProductFactory extends Factory
 {
+    /**
+     * @return array<string, mixed>
+     */
     public function definition(): array
     {
         return [
-            // Generamos nombres de platos aleatorios
-            'name' => $this->faker->randomElement(['Hamburguesa Clásica', 'Pizza Margarita', 'Ensalada César', 'Tacos al Pastor', 'Sushi Roll', 'Pasta Carbonara']),
-
-            'description' => $this->faker->sentence(10), // Descripción corta
-
-            'price' => $this->faker->randomFloat(2, 5, 25), // Precio entre 5.00 y 25.00
-
-            'is_active' => true,
-
-            // IMPORTANTE: Ahora la imagen es una ruta de texto (string).
-            // Ponemos una ruta falsa por defecto para que no de error.
-            'image' => 'products/default_food.jpg',
+            'name'        => fake()->words(2, true),
+            'description' => fake()->sentence(),
+            'price'       => fake()->randomFloat(2, 3, 30),
+            'is_active'   => true,
+            'image'       => null,
+            'user_id'     => User::factory(),
+            'category_id' => Category::factory(),
         ];
     }
 }
