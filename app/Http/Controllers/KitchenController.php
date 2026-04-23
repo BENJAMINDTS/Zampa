@@ -32,6 +32,20 @@ class KitchenController extends Controller
     }
 
     /**
+     * Endpoint ligero para el badge del nav: devuelve el conteo de pedidos pendientes.
+     *
+     * @return JsonResponse
+     */
+    public function badgeCount(): JsonResponse
+    {
+        $count = Order::whereHas('table', fn($q) => $q->where('user_id', Auth::id()))
+            ->where('status', 'pending')
+            ->count();
+
+        return response()->json(['pending_count' => $count]);
+    }
+
+    /**
      * Endpoint JSON consumido por el polling de Alpine.js cada 5 segundos.
      *
      * @return JsonResponse
@@ -60,13 +74,13 @@ class KitchenController extends Controller
             ->filter(fn($order) => count($order['items']) > 0)
             ->values();
 
-        $readyCount = Order::whereHas('table', fn($q) => $q->where('user_id', Auth::id()))
-            ->where('status', 'ready')
+        $pendingCount = Order::whereHas('table', fn($q) => $q->where('user_id', Auth::id()))
+            ->where('status', 'pending')
             ->count();
 
         return response()->json([
-            'orders'      => $orders,
-            'ready_count' => $readyCount,
+            'orders'        => $orders,
+            'pending_count' => $pendingCount,
         ]);
     }
 
@@ -84,7 +98,11 @@ class KitchenController extends Controller
 
         $item->update(['status' => 'ready']);
 
-        $allReady = $order->items()->where('status', 'queued')->doesntExist();
+        if ($order->status === 'pending') {
+            $order->update(['status' => 'cooking']);
+        }
+
+        $allReady = $order->fresh()->items()->where('status', 'queued')->doesntExist();
 
         if ($allReady) {
             $order->update(['status' => 'ready']);
@@ -96,6 +114,22 @@ class KitchenController extends Controller
             'order_status' => $order->fresh()->status,
             'all_ready'    => $allReady,
         ]);
+    }
+
+    /**
+     * Marca un pedido completo como servido, limpiando la notificación del badge.
+     *
+     * @param  Order  $order
+     * @return JsonResponse
+     */
+    public function markOrderServed(Order $order): JsonResponse
+    {
+        abort_if($order->table->user_id !== Auth::id(), 403, 'Acceso denegado.');
+        abort_if($order->status !== 'ready', 422, 'El pedido no está listo para servir.');
+
+        $order->update(['status' => 'served']);
+
+        return response()->json(['order_id' => $order->id, 'status' => 'served']);
     }
 
     /**
