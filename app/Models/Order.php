@@ -35,6 +35,10 @@ class Order extends Model
         'notification_ready',
     ];
 
+    protected $casts = [
+        'notification_ready' => 'boolean',
+    ];
+
     /**
      * Cierra las conversaciones activas de la mesa cuando el pedido se cierra.
      *
