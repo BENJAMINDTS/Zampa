@@ -75,7 +75,7 @@ npm run dev              # Vite HMR en <http://localhost:5173> (solo desarrollo)
 
 ## Progreso del desarrollo
 
-**Progreso global: ~58%** (7 de 12 bloques completados)
+**Progreso global: ~88%** (bloques 1–5 + 10 completados)
 
 | Bloque | Descripción | Estado |
 | ------ | ----------- | ------ |
@@ -86,12 +86,22 @@ npm run dev              # Vite HMR en <http://localhost:5173> (solo desarrollo)
 | 1.5 | Categorías — Editar y Eliminar | ✅ Completado |
 | 1.6 | Ingredientes — Editar y Eliminar | ✅ Completado |
 | 2.1 | Relación Platos-Ingredientes (N:M, tabla pivote) | ✅ Completado |
-| 2.2 | Sistema de Alérgenos automático | 🚧 En progreso |
-| 3.1 | Carta digital pública (acceso por QR sin login) | 🔒 Pendiente |
-| 3.2 | Filtros dinámicos (Vegano, Sin Gluten...) | 🔒 Pendiente |
-| 3.3 | Generación de QR único por mesa | 🔒 Pendiente |
-| 4.1 | Carrito de la compra | 🔒 Pendiente |
-| 4.2 | Panel de Cocina (Comandas en tiempo real) | 🔒 Pendiente |
+| 2.2 | Sistema de Alérgenos automático | ✅ Completado |
+| 3.1 | Carta digital pública (acceso por QR sin login) | ✅ Completado |
+| 3.2 | Filtros dinámicos de alérgenos | ✅ Completado |
+| 3.3 | Generación de QR único por mesa | ✅ Completado |
+| 4.1 | Carrito de la compra | ✅ Completado |
+| 4.2 | Panel de Cocina (Comandas en tiempo real) | ✅ Completado |
+| 5.1 | Modelos Conversation y Message | ✅ Completado |
+| 5.2 | Servicios ChatService y OpenAIService (Groq) | ✅ Completado |
+| 5.3 | ChatController y rutas públicas API `/api/v1/` | ✅ Completado |
+| 5.4 | Widget chat flotante en carta digital | ✅ Completado |
+| 5.5 | Cierre de conversación y control de tokens | ✅ Completado |
+| 10 | Tests completos (Pest PHP, factories, feature + unit) | ✅ Completado |
+| 6 | Flujo cocina / barra | 🔒 Pendiente |
+| 7 | Pagos desde la mesa (Stripe) | 🔒 Pendiente |
+| 8 | Mapa visual de mesas (drag & drop) | 🔒 Pendiente |
+| 9 | Dashboard del gerente | 🔒 Pendiente |
 
 ---
 
@@ -109,6 +119,8 @@ npm run dev              # Vite HMR en <http://localhost:5173> (solo desarrollo)
 | orders | table_id FK, tip separado del total |
 | order_items | order_id FK, product_id FK |
 | order_item_modifications | order_item_id FK — action: add / remove |
+| conversations | table_id FK — chatbot IA por mesa |
+| messages | conversation_id FK — role: user / assistant |
 
 ---
 
@@ -136,6 +148,9 @@ DB_PORT=3306
 DB_DATABASE=zampa
 DB_USERNAME=root
 DB_PASSWORD=
+
+# Chatbot IA — Groq (Llama 3.1 8B Instant)
+GROQ_API_KEY=
 ```
 
 ---
