@@ -159,3 +159,52 @@ it('bar items do not appear among kitchen panel items', function () {
 
     expect($allItemIds)->not->toContain($barItem->id);
 });
+
+// ─── Guard: cocina no puede marcar ítems de barra ─────────────────────────────
+
+it('kitchen panel returns 403 when trying to mark a bar item as ready', function () {
+    $kitchenUser = User::factory()->create(['role' => 'kitchen']);
+    $table       = Table::factory()->create(['user_id' => $kitchenUser->id]);
+    $barProduct  = Product::factory()->create(['user_id' => $kitchenUser->id]);
+
+    $order   = Order::factory()->create(['table_id' => $table->id, 'status' => 'pending']);
+    $barItem = OrderItem::factory()->create([
+        'order_id'    => $order->id,
+        'product_id'  => $barProduct->id,
+        'status'      => 'queued',
+        'destination' => 'bar',
+    ]);
+
+    $this->actingAs($kitchenUser)
+        ->postJson(route('kitchen.item.ready', $barItem))
+        ->assertForbidden();
+
+    expect($barItem->fresh()->status)->toBe('queued');
+});
+
+it('mixed order does not become ready while bar items are still queued', function () {
+    $kitchenUser     = User::factory()->create(['role' => 'kitchen']);
+    $table           = Table::factory()->create(['user_id' => $kitchenUser->id]);
+    $kitchenProduct  = Product::factory()->create(['user_id' => $kitchenUser->id]);
+
+    $order       = Order::factory()->create(['table_id' => $table->id, 'status' => 'pending']);
+    $kitchenItem = OrderItem::factory()->create([
+        'order_id'    => $order->id,
+        'product_id'  => $kitchenProduct->id,
+        'status'      => 'queued',
+        'destination' => 'kitchen',
+    ]);
+    OrderItem::factory()->create([
+        'order_id'    => $order->id,
+        'product_id'  => $kitchenProduct->id,
+        'status'      => 'queued',
+        'destination' => 'bar',
+    ]);
+
+    $this->actingAs($kitchenUser)
+        ->postJson(route('kitchen.item.ready', $kitchenItem))
+        ->assertOk()
+        ->assertJsonPath('all_ready', false);
+
+    expect($order->fresh()->status)->not->toBe('ready');
+});
