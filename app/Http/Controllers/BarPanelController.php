@@ -16,6 +16,7 @@ use Illuminate\View\View;
  * automáticamente el pedido cuando todos sus ítems están preparados.
  *
  * @author SebastianBCF
+ * @author BenjaminDTS
  */
 class BarPanelController extends Controller
 {
