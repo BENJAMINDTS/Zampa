@@ -101,10 +101,12 @@ class BarPanelController extends Controller
             $order->update(['status' => 'cooking']);
         }
 
-        $allReady = $order->fresh()->items()->where('status', 'queued')->doesntExist();
+        $allReady = $order->fresh()->items()
+            ->whereNotIn('status', ['ready', 'served'])
+            ->doesntExist();
 
         if ($allReady) {
-            $order->update(['status' => 'ready']);
+            $order->update(['status' => 'ready', 'notification_ready' => true]);
         }
 
         return response()->json([
