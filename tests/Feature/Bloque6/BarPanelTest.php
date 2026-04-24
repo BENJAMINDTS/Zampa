@@ -205,3 +205,120 @@ it('returns 403 when waiter tries to update item from another restaurant', funct
 
     expect($otherItem->fresh()->status)->toBe('queued');
 });
+
+// ─── Notificaciones (Bloque 6.3) ─────────────────────────────────────────────
+
+it('sets notification_ready true when all items are marked ready', function () {
+    $waiter  = User::factory()->create(['role' => 'waiter']);
+    $table   = Table::factory()->create(['user_id' => $waiter->id]);
+    $product = Product::factory()->create(['user_id' => $waiter->id]);
+
+    $order = Order::factory()->create(['table_id' => $table->id, 'status' => 'pending']);
+    $item  = OrderItem::factory()->create([
+        'order_id'    => $order->id,
+        'product_id'  => $product->id,
+        'status'      => 'queued',
+        'destination' => 'bar',
+    ]);
+
+    $this->actingAs($waiter)
+        ->patchJson(route('bar.items.update', $item))
+        ->assertOk();
+
+    expect($order->fresh()->notification_ready)->toBeTrue();
+});
+
+it('does not set notification_ready if some items are still pending', function () {
+    $waiter   = User::factory()->create(['role' => 'waiter']);
+    $table    = Table::factory()->create(['user_id' => $waiter->id]);
+    $product  = Product::factory()->create(['user_id' => $waiter->id]);
+    $product2 = Product::factory()->create(['user_id' => $waiter->id]);
+
+    $order = Order::factory()->create(['table_id' => $table->id, 'status' => 'pending']);
+    $item1 = OrderItem::factory()->create([
+        'order_id'    => $order->id,
+        'product_id'  => $product->id,
+        'status'      => 'queued',
+        'destination' => 'bar',
+    ]);
+    OrderItem::factory()->create([
+        'order_id'    => $order->id,
+        'product_id'  => $product2->id,
+        'status'      => 'queued',
+        'destination' => 'bar',
+    ]);
+
+    $this->actingAs($waiter)
+        ->patchJson(route('bar.items.update', $item1))
+        ->assertOk();
+
+    expect($order->fresh()->notification_ready)->toBeFalse();
+});
+
+it('returns ready orders in notifications endpoint', function () {
+    $waiter  = User::factory()->create(['role' => 'waiter']);
+    $table   = Table::factory()->create(['user_id' => $waiter->id]);
+
+    $readyOrder = Order::factory()->create([
+        'table_id'          => $table->id,
+        'status'            => 'ready',
+        'notification_ready' => true,
+    ]);
+
+    $this->actingAs($waiter)
+        ->getJson(route('notifications.ready'))
+        ->assertOk()
+        ->assertJsonPath('orders.0.id', $readyOrder->id)
+        ->assertJsonPath('orders.0.table', $table->name);
+});
+
+it('does not return notifications from other restaurants', function () {
+    $waiter      = User::factory()->create(['role' => 'waiter']);
+    $otherWaiter = User::factory()->create(['role' => 'waiter']);
+    $otherTable  = Table::factory()->create(['user_id' => $otherWaiter->id]);
+
+    Order::factory()->create([
+        'table_id'          => $otherTable->id,
+        'status'            => 'ready',
+        'notification_ready' => true,
+    ]);
+
+    $this->actingAs($waiter)
+        ->getJson(route('notifications.ready'))
+        ->assertOk()
+        ->assertJsonPath('orders', []);
+});
+
+it('waiter can dismiss a notification', function () {
+    $waiter = User::factory()->create(['role' => 'waiter']);
+    $table  = Table::factory()->create(['user_id' => $waiter->id]);
+    $order  = Order::factory()->create([
+        'table_id'          => $table->id,
+        'status'            => 'ready',
+        'notification_ready' => true,
+    ]);
+
+    $this->actingAs($waiter)
+        ->patchJson(route('notifications.dismiss', $order))
+        ->assertOk()
+        ->assertJsonPath('success', true);
+
+    expect($order->fresh()->notification_ready)->toBeFalse();
+});
+
+it('returns 403 when dismissing notification from another restaurant', function () {
+    $waiter      = User::factory()->create(['role' => 'waiter']);
+    $otherWaiter = User::factory()->create(['role' => 'waiter']);
+    $otherTable  = Table::factory()->create(['user_id' => $otherWaiter->id]);
+    $otherOrder  = Order::factory()->create([
+        'table_id'          => $otherTable->id,
+        'status'            => 'ready',
+        'notification_ready' => true,
+    ]);
+
+    $this->actingAs($waiter)
+        ->patchJson(route('notifications.dismiss', $otherOrder))
+        ->assertForbidden();
+
+    expect($otherOrder->fresh()->notification_ready)->toBeTrue();
+});
