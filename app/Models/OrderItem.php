@@ -13,15 +13,18 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * Una línea de detalle dentro de un pedido.
  * Ej: "2 Hamburguesas de la Casa".
  *
- * @property int $quantity      Cantidad solicitada
- * @property float $price     Precio unitario en el momento del pedido
- * @property string $status     'queued' (en cola), 'ready' (listo para servir)
+ * @property int    $quantity      Cantidad solicitada
+ * @property float  $price         Precio unitario en el momento del pedido
+ * @property string $status        'queued' (en cola), 'ready' (listo para servir)
+ * @property string $destination   'kitchen' o 'bar', copiado de la categoría del producto
+ *
+ * @author BenjaminDTS
  */
 class OrderItem extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['order_id', 'product_id', 'quantity', 'price', 'status'];
+    protected $fillable = ['order_id', 'product_id', 'quantity', 'price', 'status', 'destination'];
 
     /**
      * El pedido general al que pertenece esta línea.
