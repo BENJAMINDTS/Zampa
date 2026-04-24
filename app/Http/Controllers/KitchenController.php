@@ -131,7 +131,7 @@ class KitchenController extends Controller
         abort_if($order->table->user_id !== Auth::id(), 403, 'Acceso denegado.');
         abort_if($order->status !== 'ready', 422, 'El pedido no está listo para servir.');
 
-        $order->update(['status' => 'served']);
+        $order->update(['status' => 'served', 'notification_ready' => false]);
 
         return response()->json(['order_id' => $order->id, 'status' => 'served']);
     }
