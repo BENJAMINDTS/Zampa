@@ -4,6 +4,7 @@ use App\Http\Controllers\BarPanelController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\KitchenController;
 use App\Http\Controllers\MenuController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TableController;
@@ -55,6 +56,12 @@ Route::middleware('auth')->group(function () {
         Route::get('/bar/pendientes', [BarPanelController::class, 'pendingItems'])->name('bar.pending');
         Route::patch('/bar/items/{item}', [BarPanelController::class, 'updateItem'])->name('bar.items.update');
     });
+
+    // Notificaciones al camarero cuando una comanda está lista
+    Route::get('/notifications/ready', [NotificationController::class, 'ready'])
+         ->name('notifications.ready');
+    Route::patch('/notifications/{order}/dismiss', [NotificationController::class, 'dismiss'])
+         ->name('notifications.dismiss');
 });
 
 require __DIR__.'/auth.php';
