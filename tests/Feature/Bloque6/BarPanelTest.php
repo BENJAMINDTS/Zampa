@@ -164,6 +164,26 @@ it('waiter can mark a bar item as ready', function () {
     expect($item->fresh()->status)->toBe('ready');
 });
 
+it('returns 403 when trying to mark a kitchen item as ready via bar endpoint', function () {
+    $waiter         = User::factory()->create(['role' => 'waiter']);
+    $table          = Table::factory()->create(['user_id' => $waiter->id]);
+    $kitchenProduct = Product::factory()->create(['user_id' => $waiter->id]);
+
+    $order       = Order::factory()->create(['table_id' => $table->id, 'status' => 'pending']);
+    $kitchenItem = OrderItem::factory()->create([
+        'order_id'    => $order->id,
+        'product_id'  => $kitchenProduct->id,
+        'status'      => 'queued',
+        'destination' => 'kitchen',
+    ]);
+
+    $this->actingAs($waiter)
+        ->patchJson(route('bar.items.update', $kitchenItem))
+        ->assertForbidden();
+
+    expect($kitchenItem->fresh()->status)->toBe('queued');
+});
+
 it('returns 403 when waiter tries to update item from another restaurant', function () {
     $waiter       = User::factory()->create(['role' => 'waiter']);
     $otherWaiter  = User::factory()->create(['role' => 'waiter']);
