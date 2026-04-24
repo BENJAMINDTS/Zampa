@@ -151,7 +151,7 @@
         async markReady(item, order) {
           item.marking = true;
           try {
-            const res = await fetch(`/bar/items/${item.id}`, {
+            const res = await fetch(`{{ url('/bar/items') }}/${item.id}`, {
               method:  'PATCH',
               headers: {
                 'X-CSRF-TOKEN':     document.querySelector('meta[name="csrf-token"]').content,
