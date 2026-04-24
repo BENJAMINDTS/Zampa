@@ -96,6 +96,7 @@ class KitchenController extends Controller
         $order = $item->order()->with('table')->first();
 
         abort_if($order->table->user_id !== Auth::id(), 403, 'Acceso denegado.');
+        abort_if($item->destination !== 'kitchen', 403, 'Este ítem no pertenece a cocina.');
 
         $item->update(['status' => 'ready']);
 
