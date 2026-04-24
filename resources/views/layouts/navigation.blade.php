@@ -50,6 +50,24 @@
                         ></span>
                     </span>
                     @endif
+                    {{-- Panel de Barra: visible solo para admin y waiter --}}
+                    @if(in_array(Auth::user()->role, ['admin', 'waiter']))
+                    <span
+                        x-data="barBadge('{{ route('bar.badge') }}')"
+                        x-init="init()"
+                        class="relative inline-flex items-center"
+                    >
+                        <x-nav-link :href="route('bar.index')" :active="request()->routeIs('bar.*')">
+                            {{ __('Barra') }}
+                        </x-nav-link>
+                        <span
+                            x-show="count > 0"
+                            x-text="count"
+                            class="absolute -top-1 right-0 inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-amber-500 rounded-full pointer-events-none"
+                            :aria-label="count + ' bebidas pendientes en barra'"
+                        ></span>
+                    </span>
+                    @endif
                 </div>
 
                 <!-- Settings Dropdown -->
@@ -135,6 +153,20 @@
                             x-text="count"
                             class="ml-2 inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-500 rounded-full"
                             :aria-label="count + ' pedidos nuevos sin atender'"
+                        ></span>
+                    </x-responsive-nav-link>
+                </span>
+                @endif
+                {{-- Panel de Barra (Versión Móvil) --}}
+                @if(in_array(Auth::user()->role, ['admin', 'waiter']))
+                <span x-data="barBadge('{{ route('bar.badge') }}')" x-init="init()" class="flex items-center">
+                    <x-responsive-nav-link :href="route('bar.index')" :active="request()->routeIs('bar.*')">
+                        {{ __('Barra') }}
+                        <span
+                            x-show="count > 0"
+                            x-text="count"
+                            class="ml-2 inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-amber-500 rounded-full"
+                            :aria-label="count + ' bebidas pendientes en barra'"
                         ></span>
                     </x-responsive-nav-link>
                 </span>
