@@ -4,6 +4,7 @@ use App\Http\Controllers\BarPanelController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\KitchenController;
 use App\Http\Controllers\MenuController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TableController;
@@ -48,12 +49,17 @@ Route::middleware('auth')->group(function () {
         Route::post('/cocina/orders/{order}/servido', [KitchenController::class, 'markOrderServed'])->name('kitchen.order.served');
     });
 
-    // Panel de barra — accesible para roles admin y waiter
+    // Panel de barra y notificaciones al camarero — accesible para roles admin y waiter
     Route::middleware('role:admin,waiter')->group(function () {
         Route::get('/bar', [BarPanelController::class, 'index'])->name('bar.index');
         Route::get('/bar/badge', [BarPanelController::class, 'badgeCount'])->name('bar.badge');
         Route::get('/bar/pendientes', [BarPanelController::class, 'pendingItems'])->name('bar.pending');
         Route::patch('/bar/items/{item}', [BarPanelController::class, 'updateItem'])->name('bar.items.update');
+
+        Route::get('/notifications/ready', [NotificationController::class, 'ready'])
+             ->name('notifications.ready');
+        Route::patch('/notifications/{order}/dismiss', [NotificationController::class, 'dismiss'])
+             ->name('notifications.dismiss');
     });
 });
 

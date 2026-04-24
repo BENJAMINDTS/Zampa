@@ -31,7 +31,12 @@ class Order extends Model
         'tip',
         'payment_method',
         'payment_status',
-        'note'
+        'note',
+        'notification_ready',
+    ];
+
+    protected $casts = [
+        'notification_ready' => 'boolean',
     ];
 
     /**
