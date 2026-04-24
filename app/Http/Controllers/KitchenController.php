@@ -16,6 +16,7 @@ use Illuminate\View\View;
  * cuando todos sus ítems han sido preparados.
  *
  * @author AyrtonAlania
+ * @author BenjaminDTS
  */
 class KitchenController extends Controller
 {
@@ -144,9 +145,11 @@ class KitchenController extends Controller
             'table',
             'items' => fn($q) => $q
                 ->where('status', 'queued')
+                ->where('destination', 'kitchen')
                 ->with(['product', 'modifications.ingredient']),
         ])
         ->whereHas('table', fn($q) => $q->where('user_id', Auth::id()))
+        ->whereHas('items', fn($q) => $q->where('destination', 'kitchen')->where('status', 'queued'))
         ->whereIn('status', ['pending', 'cooking'])
         ->orderBy('created_at')
         ->get();
