@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * @author SebastianBCF
+ * @author BenjaminDTS
  */
 class OrderController extends Controller
 {
@@ -49,7 +50,7 @@ class OrderController extends Controller
             $total = 0;
 
             foreach ($validated['items'] as $itemData) {
-                $product = Product::findOrFail($itemData['product_id']);
+                $product = Product::with('category')->findOrFail($itemData['product_id']);
 
                 $extraCharge = collect($itemData['modifications'] ?? [])
                     ->where('action', 'add')
@@ -59,11 +60,12 @@ class OrderController extends Controller
                 $total    += $unitPrice * $itemData['quantity'];
 
                 $orderItem = OrderItem::create([
-                    'order_id'   => $order->id,
-                    'product_id' => $product->id,
-                    'quantity'   => $itemData['quantity'],
-                    'price'      => $product->price,
-                    'status'     => 'queued',
+                    'order_id'    => $order->id,
+                    'product_id'  => $product->id,
+                    'quantity'    => $itemData['quantity'],
+                    'price'       => $product->price,
+                    'status'      => 'queued',
+                    'destination' => $product->category->destination,
                 ]);
 
                 foreach ($itemData['modifications'] ?? [] as $mod) {
