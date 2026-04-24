@@ -1,5 +1,6 @@
 <?php
 use App\Http\Controllers\IngredientController;
+use App\Http\Controllers\BarPanelController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\KitchenController;
 use App\Http\Controllers\MenuController;
@@ -45,6 +46,14 @@ Route::middleware('auth')->group(function () {
         Route::get('/cocina/pendientes', [KitchenController::class, 'pendingOrders'])->name('kitchen.pending');
         Route::post('/cocina/items/{item}/listo', [KitchenController::class, 'markItemReady'])->name('kitchen.item.ready');
         Route::post('/cocina/orders/{order}/servido', [KitchenController::class, 'markOrderServed'])->name('kitchen.order.served');
+    });
+
+    // Panel de barra — accesible para roles admin y waiter
+    Route::middleware('role:admin,waiter')->group(function () {
+        Route::get('/bar', [BarPanelController::class, 'index'])->name('bar.index');
+        Route::get('/bar/badge', [BarPanelController::class, 'badgeCount'])->name('bar.badge');
+        Route::get('/bar/pendientes', [BarPanelController::class, 'pendingItems'])->name('bar.pending');
+        Route::patch('/bar/items/{item}', [BarPanelController::class, 'updateItem'])->name('bar.items.update');
     });
 });
 
