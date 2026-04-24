@@ -1,7 +1,35 @@
 {{-- @author SebastianBCF --}}
 <x-app-layout>
+
+  {{-- Notificaciones al camarero: polling cada 20 segundos --}}
   <div
-    class="max-w-6xl mx-auto px-4 sm:px-6 py-6 mt-4 sm:mt-10"
+    x-data="notificationPolling()"
+    x-init="init()"
+    class="max-w-6xl mx-auto px-4 sm:px-6 pt-4"
+    role="region"
+    aria-label="Notificaciones de comandas listas"
+  >
+    <template x-for="order in readyOrders" :key="order.id">
+      <div
+        class="flex items-center justify-between bg-green-50 border border-green-400 rounded-lg px-4 py-3 mb-2 shadow-sm"
+        role="alert"
+      >
+        <span class="text-green-800 font-medium text-sm">
+          &#128276; <strong x-text="order.table"></strong> &mdash; lista para servir
+        </span>
+        <button
+          @click="dismiss(order.id)"
+          class="ml-4 shrink-0 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold px-3 py-1.5 rounded focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition"
+          :aria-label="'Confirmar comanda lista: ' + order.table"
+        >
+          &#10003; Confirmado
+        </button>
+      </div>
+    </template>
+  </div>
+
+  <div
+    class="max-w-6xl mx-auto px-4 sm:px-6 py-6"
     x-data="barPanel()"
     x-init="init()"
   >
@@ -96,6 +124,41 @@
   </div>
 
   @push('scripts')
+  <script>
+    function notificationPolling() {
+      return {
+        readyOrders: [],
+
+        init() {
+          this.poll();
+          setInterval(() => this.poll(), 20000);
+        },
+
+        async poll() {
+          try {
+            const res  = await fetch('{{ route('notifications.ready') }}', {
+              headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            const data = await res.json();
+            this.readyOrders = data.orders;
+          } catch {
+            // sin conexión — silencioso, el barPanel ya gestiona el indicador
+          }
+        },
+
+        async dismiss(id) {
+          await fetch(`{{ url('/notifications') }}/${id}/dismiss`, {
+            method:  'PATCH',
+            headers: {
+              'X-CSRF-TOKEN':     document.querySelector('meta[name="csrf-token"]').content,
+              'X-Requested-With': 'XMLHttpRequest',
+            },
+          });
+          this.readyOrders = this.readyOrders.filter(o => o.id !== id);
+        },
+      };
+    }
+  </script>
   @php
     $ordersForJs = $orders->map(fn($o) => [
       'id'         => $o->id,
