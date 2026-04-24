@@ -147,7 +147,8 @@
         },
 
         async dismiss(id) {
-          await fetch(`{{ url('/notifications') }}/${id}/dismiss`, {
+          const url = '{{ route('notifications.dismiss', ['order' => '__ID__']) }}'.replace('__ID__', id);
+          await fetch(url, {
             method:  'PATCH',
             headers: {
               'X-CSRF-TOKEN':     document.querySelector('meta[name="csrf-token"]').content,
