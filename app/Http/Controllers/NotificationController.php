@@ -66,8 +66,9 @@ class NotificationController extends Controller
             ->whereHas('table', fn ($q) => $q->where('user_id', Auth::id()))
             ->get()
             ->map(fn (Order $order) => [
-                'id'    => $order->id,
-                'table' => $order->table->name,
+                'id'              => $order->id,
+                'table'           => $order->table->name,
+                'payment_method'  => $order->requested_payment_method,
             ])
             ->values();
 
