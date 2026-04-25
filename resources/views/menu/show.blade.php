@@ -8,6 +8,8 @@
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700&display=swap" rel="stylesheet" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <meta name="stripe-key" content="{{ $stripePublicKey }}">
+    <script src="https://js.stripe.com/v3/" defer></script>
 
     @php
         // Datos de productos para Alpine. Se calculan aquí para evitar que
@@ -229,13 +231,22 @@
 
             // ── Solicitud de cuenta ──────────────────────────────────────
             Alpine.store('bill', {
-                active:    @json($hasActiveOrder),
-                requested: false,
-                sending:   false,
-                error:     null,
-                choosing:  false,
-                method:    null,
-                tableHash: '{{ $table->unique_hash }}',
+                active:      @json($hasActiveOrder),
+                requested:   false,
+                sending:     false,
+                error:       null,
+                choosing:    false,
+                method:      null,
+                tableHash:   '{{ $table->unique_hash }}',
+
+                // Estado de pago con tarjeta
+                payingCard:   false,
+                stripeReady:  false,
+                stripeError:  null,
+                stripeTotal:  0,
+                paymentDone:  false,
+                _stripe:      null,
+                _elements:    null,
 
                 open() {
                     if (this.requested || this.sending) return;
@@ -247,7 +258,8 @@
                     this.choosing = false;
                 },
 
-                async request(method) {
+                // Pago en efectivo: envía la solicitud de cuenta al camarero
+                async requestCash() {
                     if (this.requested || this.sending) return;
                     this.choosing = false;
                     this.sending  = true;
@@ -260,17 +272,108 @@
                                 'Accept':       'application/json',
                                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
                             },
-                            body: JSON.stringify({ payment_method: method }),
+                            body: JSON.stringify({ payment_method: 'cash' }),
                         });
                         const data = await res.json();
                         if (res.ok && data.success) {
                             this.requested = true;
-                            this.method    = method;
+                            this.method    = 'cash';
                         } else {
                             this.error = data.message ?? 'Error al solicitar la cuenta.';
                         }
                     } catch {
                         this.error = 'Error de conexión. Inténtalo de nuevo.';
+                    } finally {
+                        this.sending = false;
+                    }
+                },
+
+                // Pago con tarjeta: abre el sheet de Stripe y crea el PaymentIntent
+                async openCardPayment() {
+                    this.choosing    = false;
+                    this.payingCard  = true;
+                    this.stripeReady = false;
+                    this.stripeError = null;
+                    try {
+                        const res = await fetch('/api/v1/payment/' + this.tableHash + '/intent', {
+                            method:  'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept':       'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
+                            },
+                        });
+                        const data = await res.json();
+                        if (!res.ok) {
+                            this.stripeError = data.message ?? 'No se pudo iniciar el pago.';
+                            this.payingCard  = false;
+                            return;
+                        }
+                        this.stripeTotal = data.total;
+                        // Montar Stripe Elements tras actualizar el DOM
+                        setTimeout(() => this._mountStripe(data.client_secret), 80);
+                    } catch {
+                        this.stripeError = 'Error de conexión al iniciar el pago.';
+                        this.payingCard  = false;
+                    }
+                },
+
+                _mountStripe(clientSecret) {
+                    const pk = document.querySelector('meta[name="stripe-key"]')?.content ?? '';
+                    if (!pk || !window.Stripe) {
+                        this.stripeError = 'Stripe no disponible. Recarga la página.';
+                        return;
+                    }
+                    this._stripe   = Stripe(pk);
+                    this._elements = this._stripe.elements({ clientSecret, locale: 'es' });
+                    const el = this._elements.create('payment');
+                    el.mount('#stripe-payment-element');
+                    el.on('ready', () => { this.stripeReady = true; });
+                },
+
+                closeCardPayment() {
+                    this.payingCard  = false;
+                    this.stripeError = null;
+                    this._elements   = null;
+                    this._stripe     = null;
+                },
+
+                async submitCardPayment() {
+                    if (!this._stripe || !this._elements || this.sending) return;
+                    this.sending     = true;
+                    this.stripeError = null;
+                    try {
+                        const { error, paymentIntent } = await this._stripe.confirmPayment({
+                            elements:      this._elements,
+                            confirmParams: {},
+                            redirect:      'if_required',
+                        });
+                        if (error) {
+                            this.stripeError = error.message;
+                            return;
+                        }
+                        if (paymentIntent && paymentIntent.status === 'succeeded') {
+                            const res = await fetch('/api/v1/payment/' + this.tableHash + '/confirm', {
+                                method:  'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Accept':       'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
+                                },
+                                body: JSON.stringify({ payment_intent_id: paymentIntent.id }),
+                            });
+                            const data = await res.json();
+                            if (res.ok && data.success) {
+                                this.payingCard  = false;
+                                this.paymentDone = true;
+                                this.requested   = true;
+                                this.method      = 'card';
+                            } else {
+                                this.stripeError = data.message ?? 'Error al confirmar el pago.';
+                            }
+                        }
+                    } catch {
+                        this.stripeError = 'Error de conexión. Inténtalo de nuevo.';
                     } finally {
                         this.sending = false;
                     }
@@ -589,7 +692,7 @@
                         <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
                         </svg>
-                        <span x-text="$store.bill.method === 'cash' ? 'Cuenta solicitada · Efectivo' : 'Cuenta solicitada · Tarjeta'"></span>
+                        <span x-text="$store.bill.paymentDone ? '¡Pago completado!' : ($store.bill.method === 'cash' ? 'Cuenta solicitada · Efectivo' : 'Cuenta solicitada · Tarjeta')"></span>
                     </span>
                 </template>
             </button>
@@ -634,7 +737,7 @@
 
                 <div class="grid grid-cols-2 gap-3">
                     <button type="button"
-                            @click="$store.bill.request('cash')"
+                            @click="$store.bill.requestCash()"
                             class="flex flex-col items-center justify-center gap-2 py-5 rounded-2xl
                                    bg-gray-50 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700
                                    hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-900/20
@@ -644,7 +747,7 @@
                     </button>
 
                     <button type="button"
-                            @click="$store.bill.request('card')"
+                            @click="$store.bill.openCardPayment()"
                             class="flex flex-col items-center justify-center gap-2 py-5 rounded-2xl
                                    bg-gray-50 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700
                                    hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20
@@ -662,6 +765,98 @@
                 </button>
             </div>
         </div>{{-- /sheet --}}
+
+        {{-- ── Sheet: pago con tarjeta (Stripe Elements) ──────────── --}}
+        <div x-show="$store.bill.payingCard"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
+             @keydown.escape.window="$store.bill.closeCardPayment()"
+             aria-modal="true" role="dialog" aria-label="Pago con tarjeta">
+
+            <div x-show="$store.bill.payingCard"
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="translate-y-full"
+                 x-transition:enter-end="translate-y-0"
+                 x-transition:leave="transition ease-in duration-200"
+                 x-transition:leave-start="translate-y-0"
+                 x-transition:leave-end="translate-y-full"
+                 class="absolute bottom-0 left-0 right-0 bg-white dark:bg-gray-900
+                        rounded-t-2xl shadow-2xl px-5 pb-8 pt-4 max-h-[92dvh] overflow-y-auto">
+
+                <div class="w-10 h-1 rounded-full bg-gray-300 dark:bg-gray-600 mx-auto mb-5"></div>
+
+                {{-- Cabecera --}}
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h2 class="text-lg font-bold text-gray-900 dark:text-white">Pago con tarjeta</h2>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                            Total:
+                            <span class="font-semibold text-gray-900 dark:text-white"
+                                  x-text="$store.bill.stripeTotal.toFixed(2).replace('.', ',') + ' €'"></span>
+                        </p>
+                    </div>
+                    <button type="button"
+                            @click="$store.bill.closeCardPayment()"
+                            aria-label="Cerrar pago"
+                            class="p-1.5 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100
+                                   dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400">
+                        <svg aria-hidden="true" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+
+                {{-- Spinner mientras carga Stripe Elements --}}
+                <div x-show="!$store.bill.stripeReady && !$store.bill.stripeError"
+                     class="flex items-center justify-center py-10">
+                    <svg class="animate-spin w-8 h-8 text-indigo-500" fill="none" viewBox="0 0 24 24" aria-label="Cargando formulario de pago">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+                    </svg>
+                </div>
+
+                {{-- Formulario Stripe Elements --}}
+                <div id="stripe-payment-element" class="mb-4"></div>
+
+                {{-- Error de Stripe --}}
+                <template x-if="$store.bill.stripeError">
+                    <p class="mb-3 text-sm text-red-600 dark:text-red-400 font-medium text-center"
+                       role="alert"
+                       x-text="$store.bill.stripeError"></p>
+                </template>
+
+                {{-- Botón pagar --}}
+                <button type="button"
+                        x-show="$store.bill.stripeReady"
+                        @click="$store.bill.submitCardPayment()"
+                        :disabled="$store.bill.sending"
+                        class="w-full py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60
+                               text-white font-bold text-base shadow-sm transition-colors
+                               focus:outline-none focus:ring-4 focus:ring-indigo-400">
+                    <span x-show="!$store.bill.sending">
+                        💳 Pagar <span x-text="$store.bill.stripeTotal.toFixed(2).replace('.', ',') + ' €'"></span>
+                    </span>
+                    <span x-show="$store.bill.sending" class="flex items-center justify-center gap-2">
+                        <svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+                        </svg>
+                        Procesando...
+                    </span>
+                </button>
+
+                <p class="mt-3 text-center text-xs text-gray-400 dark:text-gray-500">
+                    Pago seguro procesado por
+                    <span class="font-semibold text-indigo-500">Stripe</span>
+                    &middot; Tarjeta de prueba: 4242 4242 4242 4242
+                </p>
+            </div>
+        </div>{{-- /stripe sheet --}}
 
         {{-- ── FAB Carrito ─────────────────────────────────────────── --}}
         <div class="fixed bottom-6 right-4 z-50"
