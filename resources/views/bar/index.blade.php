@@ -1,11 +1,38 @@
 {{-- @author SebastianBCF --}}
 <x-app-layout>
 
+  {{-- Solicitudes de cuenta: polling cada 15 segundos --}}
+  <div
+    x-data="billRequestPolling()"
+    x-init="init()"
+    class="max-w-6xl mx-auto px-4 sm:px-6 pt-4"
+    role="region"
+    aria-label="Solicitudes de cuenta"
+  >
+    <template x-for="order in billOrders" :key="order.id">
+      <div
+        class="flex items-center justify-between bg-indigo-50 border border-indigo-400 rounded-lg px-4 py-3 mb-2 shadow-sm"
+        role="alert"
+      >
+        <span class="text-indigo-800 font-medium text-sm">
+          &#128179; <strong x-text="order.table"></strong> &mdash; solicita la cuenta
+        </span>
+        <button
+          @click="dismiss(order.id)"
+          class="ml-4 shrink-0 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-3 py-1.5 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition"
+          :aria-label="'Confirmar solicitud de cuenta: ' + order.table"
+        >
+          &#10003; Confirmado
+        </button>
+      </div>
+    </template>
+  </div>
+
   {{-- Notificaciones al camarero: polling cada 20 segundos --}}
   <div
     x-data="notificationPolling()"
     x-init="init()"
-    class="max-w-6xl mx-auto px-4 sm:px-6 pt-4"
+    class="max-w-6xl mx-auto px-4 sm:px-6 pt-2"
     role="region"
     aria-label="Notificaciones de comandas listas"
   >
@@ -124,6 +151,42 @@
   </div>
 
   @push('scripts')
+  <script>
+    function billRequestPolling() {
+      return {
+        billOrders: [],
+
+        init() {
+          this.poll();
+          setInterval(() => this.poll(), 15000);
+        },
+
+        async poll() {
+          try {
+            const res  = await fetch('{{ route('notifications.bill.requests') }}', {
+              headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            const data = await res.json();
+            this.billOrders = data.orders;
+          } catch {
+            // sin conexión — silencioso
+          }
+        },
+
+        async dismiss(id) {
+          const url = '{{ route('notifications.bill.dismiss', ['order' => '__ID__']) }}'.replace('__ID__', id);
+          await fetch(url, {
+            method:  'PATCH',
+            headers: {
+              'X-CSRF-TOKEN':     document.querySelector('meta[name="csrf-token"]').content,
+              'X-Requested-With': 'XMLHttpRequest',
+            },
+          });
+          this.billOrders = this.billOrders.filter(o => o.id !== id);
+        },
+      };
+    }
+  </script>
   <script>
     function notificationPolling() {
       return {
