@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Category;
+use App\Models\OrderItem;
 use App\Models\Table;
 use Illuminate\View\View;
 
@@ -57,6 +58,18 @@ class MenuController extends Controller
             ->sortBy('name')
             ->values();
 
-        return view('menu.show', compact('table', 'categories', 'allergens'));
+        $tapaConfig    = null;
+        $barItemsCount = 0;
+
+        $config = $table->user->tapaConfig;
+        if ($config && $config->tapas_enabled) {
+            $tapaConfig    = $config;
+            $barItemsCount = OrderItem::whereHas('order', fn ($q) =>
+                $q->where('table_id', $table->id)
+                  ->where('status', '!=', 'closed')
+            )->where('destination', 'bar')->sum('quantity');
+        }
+
+        return view('menu.show', compact('table', 'categories', 'allergens', 'tapaConfig', 'barItemsCount'));
     }
 }

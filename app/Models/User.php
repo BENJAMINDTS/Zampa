@@ -7,6 +7,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * Class User
@@ -115,5 +116,15 @@ class User extends Authenticatable
     public function ingredients(): HasMany
     {
         return $this->hasMany(Ingredient::class);
+    }
+
+    /**
+     * Obtiene la configuración de tapas del restaurante.
+     *
+     * @return HasOne
+     */
+    public function tapaConfig(): HasOne
+    {
+        return $this->hasOne(TapaConfig::class);
     }
 }

@@ -32,6 +32,12 @@
                     <x-nav-link :href="route('tables.index')" :active="request()->routeIs('tables.*')">
                         {{ __('Mesas QR') }}
                     </x-nav-link>
+                    {{-- Configuración de tapas: visible solo para admin --}}
+                    @if(Auth::user()->role === 'admin')
+                    <x-nav-link :href="route('tapas.edit')" :active="request()->routeIs('tapas.*')">
+                        {{ __('Tapas') }}
+                    </x-nav-link>
+                    @endif
                     {{-- Panel de Cocina: visible solo para admin y kitchen --}}
                     @if(in_array(Auth::user()->role, ['admin', 'kitchen']))
                     <span
@@ -143,6 +149,12 @@
                 <x-responsive-nav-link :href="route('tables.index')" :active="request()->routeIs('tables.*')">
                     {{ __('Mesas QR') }}
                 </x-responsive-nav-link>
+                {{-- Configuración de tapas (Versión Móvil) --}}
+                @if(Auth::user()->role === 'admin')
+                <x-responsive-nav-link :href="route('tapas.edit')" :active="request()->routeIs('tapas.*')">
+                    {{ __('Tapas') }}
+                </x-responsive-nav-link>
+                @endif
                 {{-- Panel de Cocina (Versión Móvil) --}}
                 @if(in_array(Auth::user()->role, ['admin', 'kitchen']))
                 <span x-data="kitchenBadge('{{ route('kitchen.badge') }}')" x-init="init()" class="flex items-center">
