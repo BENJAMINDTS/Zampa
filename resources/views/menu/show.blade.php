@@ -1014,6 +1014,34 @@
 
         </main>
 
+        {{-- ── Banner de Tapas disponibles ─────────────────────────── --}}
+        @if($tapaConfig && $barItemsCount > 0)
+        <section
+            aria-label="Tapas disponibles"
+            class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 mb-8"
+        >
+            <div class="rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                <span aria-hidden="true" class="text-2xl leading-none">🍽️</span>
+                <div class="flex-1">
+                    <p class="text-sm font-semibold text-amber-800 dark:text-amber-300">
+                        {{ __('¡Tienes') }}
+                        <span class="font-bold text-base">{{ $barItemsCount }}</span>
+                        {{ Str::plural('tapa', $barItemsCount) }} {{ __('disponible') }}{{ $barItemsCount > 1 ? 's' : '' }}
+                    </p>
+                    <p class="text-xs text-amber-700 dark:text-amber-400 mt-0.5">
+                        @if($tapaConfig->tapas_free)
+                            {{ __('Las tapas son gratuitas. Puedes pedirlas indicándolo en tu comanda.') }}
+                        @else
+                            {{ __('Precio por tapa:') }}
+                            <span class="font-semibold">{{ number_format($tapaConfig->tapa_price, 2) }} €</span>
+                        @endif
+                        &bull; {{ __('Máximo') }} {{ $tapaConfig->max_tapa_variants }} {{ Str::plural('variante', $tapaConfig->max_tapa_variants) }} {{ __('distintas.') }}
+                    </p>
+                </div>
+            </div>
+        </section>
+        @endif
+
         {{-- ── Footer ──────────────────────────────────────────────── --}}
         <footer class="mt-12 border-t border-gray-200 dark:border-gray-800 py-6 text-center">
             <p class="text-xs text-gray-400 dark:text-gray-600">
