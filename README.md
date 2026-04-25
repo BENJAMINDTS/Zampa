@@ -75,10 +75,10 @@ npm run dev              # Vite HMR en <http://localhost:5173> (solo desarrollo)
 
 ## Progreso del desarrollo
 
-**Progreso global: ~88%** (bloques 1–5 + 10 completados)
+**Progreso global: 57%** (27/47 sub-bloques completados)
 
-| Bloque | Descripción | Estado |
-| ------ | ----------- | ------ |
+| Sub-bloque | Descripción | Estado |
+| ---------- | ----------- | ------ |
 | 1.1 | Categorías — Crear y Ver | ✅ Completado |
 | 1.2 | Ingredientes — Crear y Ver | ✅ Completado |
 | 1.3 | Productos — Crear y Ver + imágenes | ✅ Completado |
@@ -93,15 +93,43 @@ npm run dev              # Vite HMR en <http://localhost:5173> (solo desarrollo)
 | 4.1 | Carrito de la compra | ✅ Completado |
 | 4.2 | Panel de Cocina (Comandas en tiempo real) | ✅ Completado |
 | 5.1 | Modelos Conversation y Message | ✅ Completado |
-| 5.2 | Servicios ChatService y OpenAIService (Groq) | ✅ Completado |
+| 5.2 | Servicios ChatService y OpenAIService | ✅ Completado |
 | 5.3 | ChatController y rutas públicas API `/api/v1/` | ✅ Completado |
 | 5.4 | Widget chat flotante en carta digital | ✅ Completado |
 | 5.5 | Cierre de conversación y control de tokens | ✅ Completado |
-| 10 | Tests completos (Pest PHP, factories, feature + unit) | ✅ Completado |
-| 6 | Flujo cocina / barra | 🔒 Pendiente |
-| 7 | Pagos desde la mesa (Stripe) | 🔒 Pendiente |
-| 8 | Mapa visual de mesas (drag & drop) | 🔒 Pendiente |
-| 9 | Dashboard del gerente | 🔒 Pendiente |
+| 10.1 | Instalar Pest PHP y configurar entorno de tests | ✅ Completado |
+| 10.2 | Factories (Plan, Category, Ingredient, Product, Table, Order…) | ✅ Completado |
+| 10.3 | Feature tests Bloques 1 y 2 | ✅ Completado |
+| 10.4 | Feature tests Bloques 3 y 4 | ✅ Completado |
+| 10.5 | Feature tests Bloque 5 (OpenAI mockeado) | ✅ Completado |
+| 10.6 | Unit tests de ChatService y OpenAIService | ✅ Completado |
+| 6.1 | Enrutado de ítems por destino (kitchen / bar) | ✅ Completado |
+| 6.2 | Panel de Barra para el camarero | ✅ Completado |
+| 6.3 | Notificación al camarero cuando cocina completa una comanda | ✅ Completado |
+| 6.4 | Sistema de Tapas configurable por el gerente | 🔒 Pendiente |
+| 6.5 | Tests del Bloque 6 | 🔒 Pendiente |
+| 7.1 | Solicitud de cuenta desde la carta pública | 🔒 Pendiente |
+| 7.2 | Pago en efectivo | 🔒 Pendiente |
+| 7.3 | Pago con tarjeta vía Stripe (modo test) | 🔒 Pendiente |
+| 7.4 | Pantalla de propina antes de pagar con tarjeta | 🔒 Pendiente |
+| 7.5 | Desglose de ingresos para el gerente | 🔒 Pendiente |
+| 7.6 | Tests del Bloque 7 | 🔒 Pendiente |
+| 8.1 | Interfaz drag & drop para crear, mover y eliminar mesas | 🔒 Pendiente |
+| 8.2 | Límite de mesas según plan del gerente | 🔒 Pendiente |
+| 8.3 | Formas de mesa (cuadrada, redonda, rectangular) | 🔒 Pendiente |
+| 8.4 | Generación de QR por mesa desde el mapa | 🔒 Pendiente |
+| 8.5 | Tests del Bloque 8 | 🔒 Pendiente |
+| 9.1 | Ingresos desglosados por método de pago y período | 🔒 Pendiente |
+| 9.2 | Mesa que más ingresos genera | 🔒 Pendiente |
+| 9.3 | Platos más pedidos | 🔒 Pendiente |
+| 9.4 | Horas punta y ticket medio por mesa | 🔒 Pendiente |
+| 9.5 | Tests del Bloque 9 | 🔒 Pendiente |
+| 11.1 | Design system (colores Zampa, tipografía, tokens Tailwind) | 🔒 Pendiente |
+| 11.2 | Layout principal y navegación (sidebar, topbar, dark mode) | 🔒 Pendiente |
+| 11.3 | Vistas del panel admin | 🔒 Pendiente |
+| 11.4 | Carta digital pública (diseño final) | 🔒 Pendiente |
+| 11.5 | Panel de cocina y panel de barra | 🔒 Pendiente |
+| 11.6 | Dashboard del gerente y pantallas de pago | 🔒 Pendiente |
 
 ---
 
@@ -126,11 +154,11 @@ npm run dev              # Vite HMR en <http://localhost:5173> (solo desarrollo)
 
 ## Equipo
 
-| Miembro | Rol |
-| ------- | --- |
-| **BenjaminDTS** | Arquitectura Backend y Base de Datos |
-| **SebastianBCF** | Frontend y Vistas (Blade + Tailwind) |
-| **Ayrton** | QA, Testing y Sistemas |
+| Miembro |
+| ------- |
+| **BenjaminDTS** |
+| **SebastianBCF** |
+| **Ayrton** |
 
 ---
 
@@ -157,4 +185,4 @@ GROQ_API_KEY=
 
 ## Licencia
 
-Propietaria — © BenjaminDTS/SebastianBCF/AyrtonAlania. Todos los derechos reservados.
+Propietaria — © BenjaminDTS, SebastianBCF, Ayrton. Todos los derechos reservados.
