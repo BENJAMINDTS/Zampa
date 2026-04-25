@@ -51,7 +51,7 @@ class TapasController extends Controller
             'tapas_enabled'     => ['sometimes', 'boolean'],
             'tapas_free'        => ['sometimes', 'boolean'],
             'max_tapa_variants' => ['required', 'integer', 'min:1', 'max:20'],
-            'tapa_price'        => ['nullable', 'numeric', 'min:0', 'max:999.99'],
+            'tapa_price'        => ['required_if:tapas_free,0', 'nullable', 'numeric', 'min:0', 'max:999.99'],
         ]);
 
         $tapas_enabled = $request->boolean('tapas_enabled');
