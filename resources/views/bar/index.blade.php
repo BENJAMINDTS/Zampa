@@ -14,19 +14,40 @@
         class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-indigo-50 border border-indigo-400 rounded-lg px-4 py-3 mb-2 shadow-sm"
         role="alert"
       >
-        <span class="text-indigo-800 font-medium text-sm">
-          &#128179; <strong x-text="order.table"></strong> &mdash; solicita la cuenta
-        </span>
+        <div class="flex items-center gap-2 min-w-0">
+          <span class="text-indigo-800 font-medium text-sm">
+            &#128179; <strong x-text="order.table"></strong> &mdash; solicita la cuenta
+          </span>
+          <span
+            x-show="order.payment_method === 'cash'"
+            class="inline-flex items-center gap-1 text-xs font-semibold bg-green-100 text-green-700 px-2 py-0.5 rounded-full"
+            aria-label="Paga en efectivo"
+          >&#128181; Efectivo</span>
+          <span
+            x-show="order.payment_method === 'card'"
+            class="inline-flex items-center gap-1 text-xs font-semibold bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full"
+            aria-label="Paga con tarjeta"
+          >&#128179; Tarjeta</span>
+        </div>
         <div class="flex items-center gap-2 shrink-0">
-          <button
-            @click="cashPayment(order)"
-            :disabled="order.paying"
-            class="bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white text-xs font-semibold px-3 py-1.5 rounded focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition"
-            :aria-label="'Cobrar en efectivo: ' + order.table"
-          >
-            <span x-show="!order.paying">&#128181; Cobrar en efectivo</span>
-            <span x-show="order.paying">...</span>
-          </button>
+          <template x-if="order.payment_method === 'cash'">
+            <button
+              @click="cashPayment(order)"
+              :disabled="order.paying"
+              class="bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white text-xs font-semibold px-3 py-1.5 rounded focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition"
+              :aria-label="'Cobrar en efectivo: ' + order.table"
+            >
+              <span x-show="!order.paying">&#128181; Cobrar en efectivo</span>
+              <span x-show="order.paying">...</span>
+            </button>
+          </template>
+          <template x-if="order.payment_method === 'card'">
+            <button
+              disabled
+              class="bg-indigo-200 text-indigo-500 text-xs font-semibold px-3 py-1.5 rounded cursor-not-allowed"
+              :aria-label="'Cobro con tarjeta pendiente: ' + order.table"
+            >&#128179; Cobrar con tarjeta</button>
+          </template>
           <button
             @click="dismiss(order.id)"
             class="bg-white hover:bg-indigo-100 text-indigo-700 border border-indigo-300 text-xs font-semibold px-3 py-1.5 rounded focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 transition"
