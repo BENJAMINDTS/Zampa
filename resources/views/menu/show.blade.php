@@ -1033,7 +1033,7 @@
                             {{ __('Las tapas son gratuitas. Puedes pedirlas indicándolo en tu comanda.') }}
                         @else
                             {{ __('Precio por tapa:') }}
-                            <span class="font-semibold">{{ number_format($tapaConfig->tapa_price, 2) }} €</span>
+                            <span class="font-semibold">{{ number_format($tapaConfig->tapa_price ?? 0, 2) }} €</span>
                         @endif
                         &bull; {{ __('Máximo') }} {{ $tapaConfig->max_tapa_variants }} {{ Str::plural('variante', $tapaConfig->max_tapa_variants) }} {{ __('distintas.') }}
                     </p>
