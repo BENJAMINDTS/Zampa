@@ -2,16 +2,17 @@
 
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\Plan;
 use App\Models\Table;
 use App\Models\TapaConfig;
 use App\Models\User;
-use Tests\Support\CreatesTenants;
 
-uses(CreatesTenants::class);
 uses(Illuminate\Foundation\Testing\RefreshDatabase::class);
 
 beforeEach(function () {
-    $this->setupTenants();
+    $plan        = \App\Models\Plan::factory()->create();
+    $this->user  = User::factory()->create(['plan_id' => $plan->id, 'role' => 'admin']);
+    $this->other = User::factory()->create(['plan_id' => $plan->id, 'role' => 'admin']);
 });
 
 // ─── Acceso y autenticación ───────────────────────────────────────────────────
@@ -268,6 +269,44 @@ it('only counts bar items from active orders excluding closed ones', function ()
 
     // served orders still count; only closed is excluded
     expect($response->viewData('barItemsCount'))->toBe(5);
+});
+
+it('fails update when tapas are paid and tapa_price is missing', function () {
+    $this->actingAs($this->user)
+         ->put(route('tapas.update'), [
+             'tapas_enabled'     => '1',
+             'tapas_free'        => '0',
+             'max_tapa_variants' => 3,
+             // tapa_price intencionalmente ausente
+         ])
+         ->assertSessionHasErrors('tapa_price');
+});
+
+it('fails update when tapas are paid and tapa_price is invalid', function () {
+    $this->actingAs($this->user)
+         ->put(route('tapas.update'), [
+             'tapas_enabled'     => '1',
+             'tapas_free'        => '0',
+             'max_tapa_variants' => 3,
+             'tapa_price'        => 'abc',
+         ])
+         ->assertSessionHasErrors('tapa_price');
+});
+
+it('waiter role cannot access tapas config', function () {
+    $waiter = User::factory()->create(['role' => 'waiter']);
+
+    $this->actingAs($waiter)
+         ->get(route('tapas.edit'))
+         ->assertForbidden();
+});
+
+it('kitchen role cannot access tapas config', function () {
+    $kitchen = User::factory()->create(['role' => 'kitchen']);
+
+    $this->actingAs($kitchen)
+         ->get(route('tapas.edit'))
+         ->assertForbidden();
 });
 
 it('flash success message shown after saving tapa config', function () {
