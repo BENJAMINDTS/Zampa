@@ -33,10 +33,12 @@ class Order extends Model
         'payment_status',
         'note',
         'notification_ready',
+        'bill_requested',
     ];
 
     protected $casts = [
         'notification_ready' => 'boolean',
+        'bill_requested'     => 'boolean',
     ];
 
     /**
