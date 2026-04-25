@@ -233,12 +233,25 @@
                 requested: false,
                 sending:   false,
                 error:     null,
+                choosing:  false,
+                method:    null,
                 tableHash: '{{ $table->unique_hash }}',
 
-                async request() {
+                open() {
                     if (this.requested || this.sending) return;
-                    this.sending = true;
-                    this.error   = null;
+                    this.error    = null;
+                    this.choosing = true;
+                },
+
+                close() {
+                    this.choosing = false;
+                },
+
+                async request(method) {
+                    if (this.requested || this.sending) return;
+                    this.choosing = false;
+                    this.sending  = true;
+                    this.error    = null;
                     try {
                         const res = await fetch('/api/v1/bill-request/' + this.tableHash, {
                             method:  'POST',
@@ -247,10 +260,12 @@
                                 'Accept':       'application/json',
                                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
                             },
+                            body: JSON.stringify({ payment_method: method }),
                         });
                         const data = await res.json();
                         if (res.ok && data.success) {
                             this.requested = true;
+                            this.method    = method;
                         } else {
                             this.error = data.message ?? 'Error al solicitar la cuenta.';
                         }
@@ -542,7 +557,7 @@
              x-transition:leave-start="opacity-100 scale-100"
              x-transition:leave-end="opacity-0 scale-75">
             <button type="button"
-                    @click="$store.bill.request()"
+                    @click="$store.bill.open()"
                     :disabled="$store.bill.requested || $store.bill.sending"
                     aria-label="Solicitar la cuenta"
                     class="flex items-center gap-2 px-4 py-3 rounded-full shadow-xl font-bold text-sm
@@ -574,7 +589,7 @@
                         <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
                         </svg>
-                        Cuenta solicitada
+                        <span x-text="$store.bill.method === 'cash' ? 'Cuenta solicitada · Efectivo' : 'Cuenta solicitada · Tarjeta'"></span>
                     </span>
                 </template>
             </button>
@@ -584,6 +599,69 @@
                    x-text="$store.bill.error"></p>
             </template>
         </div>
+
+        {{-- ── Sheet: elección de método de pago ───────────────────── --}}
+        <div x-show="$store.bill.choosing"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
+             @click.self="$store.bill.close()"
+             @keydown.escape.window="$store.bill.close()"
+             aria-modal="true" role="dialog" aria-label="Elige cómo pagar">
+
+            <div x-show="$store.bill.choosing"
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="translate-y-full"
+                 x-transition:enter-end="translate-y-0"
+                 x-transition:leave="transition ease-in duration-200"
+                 x-transition:leave-start="translate-y-0"
+                 x-transition:leave-end="translate-y-full"
+                 class="absolute bottom-0 left-0 right-0 bg-white dark:bg-gray-900
+                        rounded-t-2xl shadow-2xl px-5 pb-8 pt-4">
+
+                <div class="w-10 h-1 rounded-full bg-gray-300 dark:bg-gray-600 mx-auto mb-5"></div>
+
+                <h2 class="text-lg font-bold text-gray-900 dark:text-white text-center mb-1">
+                    Solicitar la cuenta
+                </h2>
+                <p class="text-sm text-gray-500 dark:text-gray-400 text-center mb-6">
+                    ¿Cómo quieres pagar?
+                </p>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <button type="button"
+                            @click="$store.bill.request('cash')"
+                            class="flex flex-col items-center justify-center gap-2 py-5 rounded-2xl
+                                   bg-gray-50 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700
+                                   hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-900/20
+                                   transition-colors focus:outline-none focus:ring-2 focus:ring-green-500">
+                        <span class="text-3xl" aria-hidden="true">💵</span>
+                        <span class="font-semibold text-sm text-gray-800 dark:text-gray-200">Efectivo</span>
+                    </button>
+
+                    <button type="button"
+                            @click="$store.bill.request('card')"
+                            class="flex flex-col items-center justify-center gap-2 py-5 rounded-2xl
+                                   bg-gray-50 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700
+                                   hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20
+                                   transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <span class="text-3xl" aria-hidden="true">💳</span>
+                        <span class="font-semibold text-sm text-gray-800 dark:text-gray-200">Tarjeta</span>
+                    </button>
+                </div>
+
+                <button type="button"
+                        @click="$store.bill.close()"
+                        class="w-full mt-4 py-2.5 rounded-xl text-sm font-medium text-gray-500 dark:text-gray-400
+                               hover:text-gray-700 dark:hover:text-gray-200 focus:outline-none focus:underline transition-colors">
+                    Cancelar
+                </button>
+            </div>
+        </div>{{-- /sheet --}}
 
         {{-- ── FAB Carrito ─────────────────────────────────────────── --}}
         <div class="fixed bottom-6 right-4 z-50"
