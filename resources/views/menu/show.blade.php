@@ -227,6 +227,41 @@
                 },
             }));
 
+            // ── Solicitud de cuenta ──────────────────────────────────────
+            Alpine.store('bill', {
+                active:    @json($hasActiveOrder),
+                requested: false,
+                sending:   false,
+                error:     null,
+                tableHash: '{{ $table->unique_hash }}',
+
+                async request() {
+                    if (this.requested || this.sending) return;
+                    this.sending = true;
+                    this.error   = null;
+                    try {
+                        const res = await fetch('/api/v1/bill-request/' + this.tableHash, {
+                            method:  'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept':       'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
+                            },
+                        });
+                        const data = await res.json();
+                        if (res.ok && data.success) {
+                            this.requested = true;
+                        } else {
+                            this.error = data.message ?? 'Error al solicitar la cuenta.';
+                        }
+                    } catch {
+                        this.error = 'Error de conexión. Inténtalo de nuevo.';
+                    } finally {
+                        this.sending = false;
+                    }
+                },
+            });
+
             // ── Widget de chat IA ────────────────────────────────────────
             Alpine.data('chatWidget', () => ({
                 open:           false,
@@ -496,6 +531,59 @@
                 </div>
             </div>
         </div>{{-- /chatWidget --}}
+
+        {{-- ── FAB Solicitar cuenta ────────────────────────────────── --}}
+        <div class="fixed bottom-6 left-4 z-50"
+             x-show="$store.bill.active"
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0 scale-75"
+             x-transition:enter-end="opacity-100 scale-100"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100 scale-100"
+             x-transition:leave-end="opacity-0 scale-75">
+            <button type="button"
+                    @click="$store.bill.request()"
+                    :disabled="$store.bill.requested || $store.bill.sending"
+                    aria-label="Solicitar la cuenta"
+                    class="flex items-center gap-2 px-4 py-3 rounded-full shadow-xl font-bold text-sm
+                           transition-colors focus:outline-none focus:ring-4 focus:ring-indigo-400
+                           disabled:opacity-70 disabled:cursor-not-allowed"
+                    :class="$store.bill.requested
+                        ? 'bg-green-600 text-white'
+                        : 'bg-indigo-600 hover:bg-indigo-700 text-white'">
+                <template x-if="!$store.bill.requested && !$store.bill.sending">
+                    <span class="flex items-center gap-2">
+                        <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                  d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"/>
+                        </svg>
+                        Pedir la cuenta
+                    </span>
+                </template>
+                <template x-if="$store.bill.sending">
+                    <span class="flex items-center gap-2">
+                        <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+                        </svg>
+                        Enviando...
+                    </span>
+                </template>
+                <template x-if="$store.bill.requested">
+                    <span class="flex items-center gap-2">
+                        <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        Cuenta solicitada
+                    </span>
+                </template>
+            </button>
+            <template x-if="$store.bill.error">
+                <p class="mt-1 text-xs text-red-600 bg-white rounded px-2 py-1 shadow"
+                   role="alert"
+                   x-text="$store.bill.error"></p>
+            </template>
+        </div>
 
         {{-- ── FAB Carrito ─────────────────────────────────────────── --}}
         <div class="fixed bottom-6 right-4 z-50"
