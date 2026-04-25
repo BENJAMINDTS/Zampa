@@ -66,7 +66,7 @@ class MenuController extends Controller
             $tapaConfig    = $config;
             $barItemsCount = OrderItem::whereHas('order', fn ($q) =>
                 $q->where('table_id', $table->id)
-                  ->whereNotIn('status', ['closed', 'cancelled'])
+                  ->where('status', '!=', 'closed')
             )->where('destination', 'bar')->sum('quantity');
         }
 
