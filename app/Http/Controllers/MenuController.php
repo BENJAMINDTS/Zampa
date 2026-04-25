@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Category;
+use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Table;
 use Illuminate\View\View;
@@ -70,6 +71,10 @@ class MenuController extends Controller
             )->where('destination', 'bar')->sum('quantity');
         }
 
-        return view('menu.show', compact('table', 'categories', 'allergens', 'tapaConfig', 'barItemsCount'));
+        $hasActiveOrder = Order::where('table_id', $table->id)
+            ->whereIn('status', ['pending', 'cooking', 'ready'])
+            ->exists();
+
+        return view('menu.show', compact('table', 'categories', 'allergens', 'tapaConfig', 'barItemsCount', 'hasActiveOrder'));
     }
 }
