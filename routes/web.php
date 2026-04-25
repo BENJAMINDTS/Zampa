@@ -36,9 +36,11 @@ Route::middleware('auth')->group(function () {
     Route::post('/productos/{product}/ingredientes', [ProductController::class, 'syncIngredients'])
          ->name('products.ingredients.sync');
 
-    // Configuración de tapas — accesible para el gerente (admin)
-    Route::get('/tapas/config', [TapasController::class, 'edit'])->name('tapas.edit');
-    Route::put('/tapas/config', [TapasController::class, 'update'])->name('tapas.update');
+    // Configuración de tapas — solo accesible para el gerente (admin)
+    Route::middleware('role:admin')->group(function () {
+        Route::get('/tapas/config', [TapasController::class, 'edit'])->name('tapas.edit');
+        Route::put('/tapas/config', [TapasController::class, 'update'])->name('tapas.update');
+    });
 
     // Gestión de mesas y códigos QR
     Route::get('/mesas', [TableController::class, 'index'])->name('tables.index');
