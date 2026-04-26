@@ -67,6 +67,11 @@ Route::middleware('auth')->group(function () {
              ->name('notifications.ready');
         Route::patch('/notifications/{order}/dismiss', [NotificationController::class, 'dismiss'])
              ->name('notifications.dismiss');
+
+        Route::get('/notifications/bill-requests', [NotificationController::class, 'billRequests'])
+             ->name('notifications.bill.requests');
+        Route::patch('/notifications/{order}/dismiss-bill-request', [NotificationController::class, 'dismissBillRequest'])
+             ->name('notifications.bill.dismiss');
     });
 });
 

@@ -53,4 +53,39 @@ class NotificationController extends Controller
 
         return response()->json(['success' => true]);
     }
+
+    /**
+     * Devuelve los pedidos con bill_requested=true del restaurante autenticado.
+     *
+     * @return JsonResponse
+     */
+    public function billRequests(): JsonResponse
+    {
+        $orders = Order::with('table')
+            ->where('bill_requested', true)
+            ->whereHas('table', fn ($q) => $q->where('user_id', Auth::id()))
+            ->get()
+            ->map(fn (Order $order) => [
+                'id'    => $order->id,
+                'table' => $order->table->name,
+            ])
+            ->values();
+
+        return response()->json(['orders' => $orders]);
+    }
+
+    /**
+     * Descarta la solicitud de cuenta de un pedido concreto.
+     *
+     * @param  Order  $order
+     * @return JsonResponse
+     */
+    public function dismissBillRequest(Order $order): JsonResponse
+    {
+        abort_if($order->table->user_id !== Auth::id(), 403, 'Acceso denegado.');
+
+        $order->update(['bill_requested' => false]);
+
+        return response()->json(['success' => true]);
+    }
 }
