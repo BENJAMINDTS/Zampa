@@ -20,13 +20,13 @@ class CardPaymentController extends Controller
     public function __construct(private readonly StripeService $stripe) {}
 
     /**
-     * Crea un PaymentIntent de Stripe para el pedido activo de la mesa.
-     * Devuelve el client_secret que necesita Stripe.js en el cliente.
+     * Devuelve el total del pedido activo para calcular porcentajes de propina.
+     * No crea ningún PaymentIntent en Stripe.
      *
-     * @param  string  $hash  El unique_hash de la mesa
+     * @param  string  $hash
      * @return JsonResponse
      */
-    public function intent(string $hash): JsonResponse
+    public function total(string $hash): JsonResponse
     {
         $table = Table::where('unique_hash', $hash)->firstOrFail();
 
@@ -42,16 +42,54 @@ class CardPaymentController extends Controller
             ], 404);
         }
 
+        return response()->json(['success' => true, 'total' => $order->total]);
+    }
+
+    /**
+     * Crea un PaymentIntent de Stripe para el pedido activo de la mesa.
+     * Acepta una propina opcional que se suma al total del pedido.
+     * Devuelve el client_secret que necesita Stripe.js en el cliente.
+     *
+     * @param  Request  $request
+     * @param  string   $hash
+     * @return JsonResponse
+     */
+    public function intent(Request $request, string $hash): JsonResponse
+    {
+        $validated = $request->validate([
+            'tip' => 'nullable|numeric|min:0|max:500',
+        ]);
+
+        $tip = (float) ($validated['tip'] ?? 0);
+
+        $table = Table::where('unique_hash', $hash)->firstOrFail();
+
+        $order = Order::where('table_id', $table->id)
+            ->whereIn('status', ['pending', 'cooking', 'ready'])
+            ->latest()
+            ->first();
+
+        if (! $order) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No hay un pedido activo en esta mesa.',
+            ], 404);
+        }
+
+        $grandTotal = $order->total + $tip;
+
         $result = $this->stripe->createPaymentIntent(
-            amount:   (int) round($order->total * 100),
+            amount:   (int) round($grandTotal * 100),
             currency: 'eur',
-            metadata: ['order_id' => $order->id, 'table_name' => $table->name],
+            metadata: ['order_id' => $order->id, 'table_name' => $table->name, 'tip' => $tip],
         );
 
         return response()->json([
             'success'       => true,
             'client_secret' => $result['client_secret'],
             'total'         => $order->total,
+            'tip'           => $tip,
+            'grand_total'   => $grandTotal,
         ]);
     }
 
@@ -67,6 +105,7 @@ class CardPaymentController extends Controller
     {
         $validated = $request->validate([
             'payment_intent_id' => 'required|string',
+            'tip'               => 'nullable|numeric|min:0|max:500',
         ]);
 
         $table = Table::where('unique_hash', $hash)->firstOrFail();
@@ -97,6 +136,7 @@ class CardPaymentController extends Controller
             'payment_status' => 'paid',
             'status'         => 'closed',
             'bill_requested' => false,
+            'tip'            => $validated['tip'] ?? 0,
         ]);
 
         return response()->json(['success' => true]);
