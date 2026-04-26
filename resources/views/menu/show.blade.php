@@ -243,8 +243,8 @@
                 showingTip:  false,
                 tipAmount:   0,
                 tipPercent:  null,
-                orderTotal:  0,
-                grandTotal:  0,
+                orderTotal:  @json((float) $activeOrderTotal),
+                grandTotal:  @json((float) $activeOrderTotal),
 
                 // Estado de pago con tarjeta
                 payingCard:   false,
@@ -295,32 +295,13 @@
                     }
                 },
 
-                // Paso 1 — Pago con tarjeta: obtiene el total y abre la pantalla de propina
-                async openCardPayment() {
+                // Paso 1 — Pago con tarjeta: abre la pantalla de propina
+                openCardPayment() {
                     this.choosing   = false;
-                    this.sending    = true;
-                    this.error      = null;
-                    try {
-                        const res = await fetch('/api/v1/payment/' + this.tableHash + '/total', {
-                            headers: { 'Accept': 'application/json' },
-                        });
-                        const data = await res.json();
-                        if (!res.ok) {
-                            this.error = data.message ?? 'No se pudo iniciar el pago.';
-                            this.choosing = true;
-                            return;
-                        }
-                        this.orderTotal = data.total;
-                        this.grandTotal = data.total;
-                        this.tipAmount  = 0;
-                        this.tipPercent = null;
-                        this.showingTip = true;
-                    } catch {
-                        this.error    = 'Error de conexión. Inténtalo de nuevo.';
-                        this.choosing = true;
-                    } finally {
-                        this.sending = false;
-                    }
+                    this.tipAmount  = 0;
+                    this.tipPercent = null;
+                    this.grandTotal = this.orderTotal;
+                    this.showingTip = true;
                 },
 
                 // Selecciona un porcentaje de propina predefinido
