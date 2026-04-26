@@ -38,6 +38,12 @@
                         {{ __('Tapas') }}
                     </x-nav-link>
                     @endif
+                    {{-- Desglose de ingresos: visible solo para admin --}}
+                    @if(Auth::user()->role === 'admin')
+                    <x-nav-link :href="route('manager.income')" :active="request()->routeIs('manager.*')">
+                        {{ __('Ingresos') }}
+                    </x-nav-link>
+                    @endif
                     {{-- Panel de Cocina: visible solo para admin y kitchen --}}
                     @if(in_array(Auth::user()->role, ['admin', 'kitchen']))
                     <span
@@ -153,6 +159,12 @@
                 @if(Auth::user()->role === 'admin')
                 <x-responsive-nav-link :href="route('tapas.edit')" :active="request()->routeIs('tapas.*')">
                     {{ __('Tapas') }}
+                </x-responsive-nav-link>
+                @endif
+                {{-- Desglose de ingresos (Versión Móvil) --}}
+                @if(Auth::user()->role === 'admin')
+                <x-responsive-nav-link :href="route('manager.income')" :active="request()->routeIs('manager.*')">
+                    {{ __('Ingresos') }}
                 </x-responsive-nav-link>
                 @endif
                 {{-- Panel de Cocina (Versión Móvil) --}}
