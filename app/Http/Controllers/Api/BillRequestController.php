@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Table;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 /**
  * Gestiona la solicitud de cuenta desde la carta digital pública.
@@ -15,14 +16,19 @@ use Illuminate\Http\JsonResponse;
 class BillRequestController extends Controller
 {
     /**
-     * El cliente solicita la cuenta desde la carta pública.
-     * Localiza el pedido activo de la mesa y activa el flag bill_requested.
+     * El cliente solicita la cuenta desde la carta pública indicando
+     * su método de pago preferido (cash o card).
      *
-     * @param  string  $hash  El unique_hash de la mesa
+     * @param  Request  $request
+     * @param  string   $hash  El unique_hash de la mesa
      * @return JsonResponse
      */
-    public function store(string $hash): JsonResponse
+    public function store(Request $request, string $hash): JsonResponse
     {
+        $validated = $request->validate([
+            'payment_method' => 'required|in:cash,card',
+        ]);
+
         $table = Table::where('unique_hash', $hash)->firstOrFail();
 
         $order = Order::where('table_id', $table->id)
@@ -37,7 +43,10 @@ class BillRequestController extends Controller
             ], 404);
         }
 
-        $order->update(['bill_requested' => true]);
+        $order->update([
+            'bill_requested'           => true,
+            'requested_payment_method' => $validated['payment_method'],
+        ]);
 
         return response()->json(['success' => true]);
     }

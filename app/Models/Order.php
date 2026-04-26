@@ -34,6 +34,7 @@ class Order extends Model
         'note',
         'notification_ready',
         'bill_requested',
+        'requested_payment_method',
     ];
 
     protected $casts = [

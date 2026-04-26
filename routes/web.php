@@ -1,6 +1,7 @@
 <?php
 use App\Http\Controllers\IngredientController;
 use App\Http\Controllers\BarPanelController;
+use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\TapasController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\KitchenController;
@@ -72,6 +73,10 @@ Route::middleware('auth')->group(function () {
              ->name('notifications.bill.requests');
         Route::patch('/notifications/{order}/dismiss-bill-request', [NotificationController::class, 'dismissBillRequest'])
              ->name('notifications.bill.dismiss');
+
+        // Pagos desde la mesa — efectivo
+        Route::post('/payments/{order}/cash', [PaymentController::class, 'cashPayment'])
+             ->name('payments.cash');
     });
 });
 
