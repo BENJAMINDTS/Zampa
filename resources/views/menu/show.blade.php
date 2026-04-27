@@ -22,7 +22,9 @@
                 'price'       => (float) $p->price,
                 'categoryId'  => $category->id,
                 'destination' => $category->destination,
-                'allergenIds' => $p->ingredients->where('is_allergen', true)->pluck('id')->values()->toArray(),
+                'allergenTypes' => $p->ingredients->where('is_allergen', true)
+                    ->map(fn ($i) => $i->allergen_type ?? 'name:'.$i->name)
+                    ->unique()->values()->toArray(),
                 'removable'   => $p->ingredients
                     ->filter(fn ($i) => $i->pivot->is_removable)
                     ->map(fn ($i) => ['id' => $i->id, 'name' => $i->name])
@@ -175,6 +177,10 @@
                  */
                 setDestination(dest) {
                     this.activeDestination = this.activeDestination === dest ? null : dest;
+                    if (this.activeCategory !== null && !this.isCategoryVisible(this.activeCategory)) {
+                        this.activeCategory = null;
+                    }
+                    this.activeAllergens = this.activeAllergens.filter(a => this.visibleAllergenKeys.includes(a));
                 },
 
                 /**
@@ -196,7 +202,7 @@
                     if (!p) return true;
                     if (this.activeCategory !== null && p.categoryId !== this.activeCategory) return false;
                     if (this.activeDestination !== null && p.destination !== this.activeDestination) return false;
-                    if (this.activeAllergens.some(id => p.allergenIds.includes(id))) return false;
+                    if (this.activeAllergens.some(type => p.allergenTypes.includes(type))) return false;
                     return true;
                 },
 
@@ -210,6 +216,14 @@
                     const items = this.products.filter(p => p.categoryId === categoryId);
                     if (items.length === 0) return true;
                     return items.some(p => this.isProductVisible(p.id));
+                },
+
+                get visibleAllergenKeys() {
+                    return [...new Set(
+                        this.products
+                            .filter(p => this.activeDestination === null || p.destination === this.activeDestination)
+                            .flatMap(p => p.allergenTypes)
+                    )];
                 },
 
                 get visibleCount() {
@@ -1293,38 +1307,60 @@
 
                 {{-- Grupo: Alérgenos --}}
                 @if ($allergens->isNotEmpty())
-                    <div class="flex items-center gap-2 overflow-x-auto pb-1"
+                    <div x-show="visibleAllergenKeys.length > 0"
+                         class="flex items-center flex-wrap gap-2 py-1"
                          role="group" aria-label="Filtrar por alérgenos ausentes">
                         <span class="flex-shrink-0 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                             Sin
                         </span>
 
                         @foreach ($allergens as $allergen)
-                            <button type="button"
-                                    @click="toggleAllergen({{ $allergen->id }})"
-                                    :aria-pressed="activeAllergens.includes({{ $allergen->id }})"
-                                    :class="activeAllergens.includes({{ $allergen->id }})
-                                        ? 'ring-2 ring-orange-500 bg-orange-50 dark:bg-orange-900/30'
-                                        : 'bg-white dark:bg-gray-800 opacity-70 hover:opacity-100'"
-                                    class="flex flex-col items-center gap-1 p-2 rounded-lg border border-gray-200
-                                           dark:border-gray-700 transition-all duration-200 cursor-pointer
-                                           focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2
-                                           dark:focus:ring-offset-gray-900"
-                                    aria-label="{{ $allergen->allergenTypeName() ?? $allergen->name }}">
-                                @if($allergen->allergen_type)
-                                    <img src="{{ $allergen->allergenIconPath() }}"
-                                         alt="{{ $allergen->allergenTypeName() }}"
-                                         class="h-10 w-10 rounded-full">
-                                    <span class="text-xs text-gray-600 dark:text-gray-400 text-center leading-tight max-w-[4rem]">
-                                        {{ $allergen->allergenTypeName() }}
-                                    </span>
-                                @else
-                                    <span class="h-10 w-10 flex items-center justify-center bg-yellow-100 dark:bg-yellow-900 rounded-full text-xl" aria-hidden="true">⚠️</span>
-                                    <span class="text-xs text-gray-600 dark:text-gray-400 text-center leading-tight max-w-[4rem]">
-                                        {{ $allergen->name }}
-                                    </span>
-                                @endif
-                            </button>
+                            @php
+                                $allergenKey  = $allergen->allergen_type ? "'{$allergen->allergen_type}'" : "'name:{$allergen->name}'";
+                                $allergenName = $allergen->allergenTypeName() ?? $allergen->name;
+                            @endphp
+                            <div class="relative" x-data="{ tip: false }"
+                                 x-show="visibleAllergenKeys.includes({{ $allergenKey }})">
+                                <button type="button"
+                                        @click="toggleAllergen({{ $allergenKey }})"
+                                        @mouseenter="tip = true"
+                                        @mouseleave="tip = false"
+                                        @touchstart.passive="tip = true; setTimeout(() => tip = false, 1400)"
+                                        :aria-pressed="activeAllergens.includes({{ $allergenKey }})"
+                                        :class="activeAllergens.includes({{ $allergenKey }})
+                                            ? 'border-orange-500 opacity-100 ring-2 ring-orange-400 ring-offset-2 ring-offset-gray-900'
+                                            : 'border-transparent opacity-60 hover:opacity-100'"
+                                        class="p-1 rounded-full border-2 border-transparent transition-all duration-200 cursor-pointer
+                                               focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2
+                                               dark:focus:ring-offset-gray-900"
+                                        aria-label="{{ $allergenName }}">
+                                    @if($allergen->allergen_type)
+                                        <div class="h-12 w-12 rounded-full overflow-hidden">
+                                            <img src="{{ $allergen->allergenIconPath() }}"
+                                                 alt="{{ $allergenName }}"
+                                                 class="h-full w-full object-contain">
+                                        </div>
+                                    @else
+                                        <div class="h-12 w-12 flex items-center justify-center bg-yellow-100 dark:bg-yellow-900 rounded-full">
+                                            <span class="text-2xl" aria-hidden="true">⚠️</span>
+                                        </div>
+                                    @endif
+                                </button>
+
+                                <div x-show="tip"
+                                     x-transition:enter="transition ease-out duration-150"
+                                     x-transition:enter-start="opacity-0 -translate-y-1"
+                                     x-transition:enter-end="opacity-100 translate-y-0"
+                                     x-transition:leave="transition ease-in duration-100"
+                                     x-transition:leave-start="opacity-100"
+                                     x-transition:leave-end="opacity-0"
+                                     class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1
+                                            text-xs font-medium text-white bg-gray-900 dark:bg-gray-700
+                                            rounded-md whitespace-nowrap shadow-lg z-20 pointer-events-none"
+                                     role="tooltip">
+                                    {{ $allergenName }}
+                                </div>
+                            </div>
                         @endforeach
                     </div>
                 @endif
@@ -1372,7 +1408,7 @@
                         </li>
 
                         @foreach ($categories as $category)
-                            <li>
+                            <li x-show="isCategoryVisible({{ $category->id }})">
                                 <button type="button"
                                         @click="setCategory({{ $category->id }})"
                                         :aria-pressed="activeCategory === {{ $category->id }}"
