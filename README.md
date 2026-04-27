@@ -75,7 +75,7 @@ npm run dev              # Vite HMR en <http://localhost:5173> (solo desarrollo)
 
 ## Progreso del desarrollo
 
-**Progreso global: 57%** (27/47 sub-bloques completados)
+**Progreso global: 60%** (35/58 sub-bloques completados)
 
 | Sub-bloque | Descripción | Estado |
 | ---------- | ----------- | ------ |
@@ -106,14 +106,25 @@ npm run dev              # Vite HMR en <http://localhost:5173> (solo desarrollo)
 | 6.1 | Enrutado de ítems por destino (kitchen / bar) | ✅ Completado |
 | 6.2 | Panel de Barra para el camarero | ✅ Completado |
 | 6.3 | Notificación al camarero cuando cocina completa una comanda | ✅ Completado |
-| 6.4 | Sistema de Tapas configurable por el gerente | 🔒 Pendiente |
-| 6.5 | Tests del Bloque 6 | 🔒 Pendiente |
-| 7.1 | Solicitud de cuenta desde la carta pública | 🔒 Pendiente |
-| 7.2 | Pago en efectivo | 🔒 Pendiente |
-| 7.3 | Pago con tarjeta vía Stripe (modo test) | 🔒 Pendiente |
-| 7.4 | Pantalla de propina antes de pagar con tarjeta | 🔒 Pendiente |
-| 7.5 | Desglose de ingresos para el gerente | 🔒 Pendiente |
-| 7.6 | Tests del Bloque 7 | 🔒 Pendiente |
+| 6.4 | Sistema de Tapas configurable por el gerente | ✅ Completado |
+| 6.5 | Tests del Bloque 6 | ✅ Completado |
+| 7.1 | Solicitud de cuenta desde la carta pública | ✅ Completado |
+| 7.2 | Pago en efectivo | ✅ Completado |
+| 7.3 | Pago con tarjeta vía Stripe (modo test) | ✅ Completado |
+| 7.4 | Pantalla de propina antes de pagar con tarjeta | ✅ Completado |
+| 7.5 | Desglose de ingresos para el gerente | ✅ Completado |
+| 7.6 | Tests del Bloque 7 | ✅ Completado |
+| 12.1 | Migración `admin_id` nullable FK en `users` | 🔒 Pendiente |
+| 12.2 | Helper `ownerUserId()` en User model + actualizar controllers multitenancy | 🔒 Pendiente |
+| 12.3 | `StaffController` — listar, crear y eliminar staff | 🔒 Pendiente |
+| 12.4 | Vistas del panel de staff (tabla + formulario de alta) | 🔒 Pendiente |
+| 12.5 | Tests del Bloque 12 | 🔒 Pendiente |
+| 13.1 | Migración `superadmin` + campos negocio en `users` + seeder equipo | 🔒 Pendiente |
+| 13.2 | Middleware `role:superadmin` + rutas `/superadmin/` + layout propio | 🔒 Pendiente |
+| 13.3 | Gestión de planes — CRUD completo | 🔒 Pendiente |
+| 13.4 | Gestión de negocios — crear admins, asignar plan, ver stats | 🔒 Pendiente |
+| 13.5 | Mapa de negocios — Leaflet.js con pin por negocio | 🔒 Pendiente |
+| 13.6 | Tests del Bloque 13 | 🔒 Pendiente |
 | 8.1 | Interfaz drag & drop para crear, mover y eliminar mesas | 🔒 Pendiente |
 | 8.2 | Límite de mesas según plan del gerente | 🔒 Pendiente |
 | 8.3 | Formas de mesa (cuadrada, redonda, rectangular) | 🔒 Pendiente |
