@@ -33,6 +33,7 @@ class BillRequestController extends Controller
 
         $order = Order::where('table_id', $table->id)
             ->whereIn('status', ['pending', 'cooking', 'ready'])
+            ->where('payment_status', 'pending')
             ->latest()
             ->first();
 
@@ -41,6 +42,13 @@ class BillRequestController extends Controller
                 'success' => false,
                 'message' => 'No hay un pedido activo en esta mesa.',
             ], 404);
+        }
+
+        if ($order->bill_requested) {
+            return response()->json([
+                'success' => false,
+                'message' => 'La cuenta ya fue solicitada. El camarero está en camino.',
+            ], 422);
         }
 
         $order->update([
