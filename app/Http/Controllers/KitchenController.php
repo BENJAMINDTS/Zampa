@@ -40,7 +40,8 @@ class KitchenController extends Controller
     public function badgeCount(): JsonResponse
     {
         $count = Order::whereHas('table', fn($q) => $q->where('user_id', Auth::id()))
-            ->where('status', 'pending')
+            ->whereHas('items', fn($q) => $q->where('destination', 'kitchen')->where('status', 'queued'))
+            ->whereIn('status', ['pending', 'cooking'])
             ->count();
 
         return response()->json(['pending_count' => $count]);
