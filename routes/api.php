@@ -13,6 +13,9 @@ Route::post('/v1/bill-request/{hash}', [BillRequestController::class, 'store'])
     ->name('api.bill.request');
 
 // Pago con tarjeta — rutas públicas (sin autenticación, contexto por table_hash)
+Route::get('/v1/payment/{hash}/total',    [CardPaymentController::class, 'total'])
+    ->middleware('throttle:30,1')
+    ->name('api.payment.total');
 Route::post('/v1/payment/{hash}/intent',  [CardPaymentController::class, 'intent'])
     ->middleware('throttle:10,1')
     ->name('api.payment.intent');

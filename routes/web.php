@@ -1,6 +1,7 @@
 <?php
 use App\Http\Controllers\IngredientController;
 use App\Http\Controllers\BarPanelController;
+use App\Http\Controllers\ManagerRevenueController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\TapasController;
 use App\Http\Controllers\CategoryController;
@@ -37,10 +38,12 @@ Route::middleware('auth')->group(function () {
     Route::post('/productos/{product}/ingredientes', [ProductController::class, 'syncIngredients'])
          ->name('products.ingredients.sync');
 
-    // Configuración de tapas — solo accesible para el gerente (admin)
+    // Rutas exclusivas del gerente (admin)
     Route::middleware('role:admin')->group(function () {
         Route::get('/tapas/config', [TapasController::class, 'edit'])->name('tapas.edit');
         Route::put('/tapas/config', [TapasController::class, 'update'])->name('tapas.update');
+
+        Route::get('/manager/income', [ManagerRevenueController::class, 'index'])->name('manager.income');
     });
 
     // Gestión de mesas y códigos QR

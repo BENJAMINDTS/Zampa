@@ -71,12 +71,16 @@ class MenuController extends Controller
             )->where('destination', 'bar')->sum('quantity');
         }
 
-        $hasActiveOrder  = Order::where('table_id', $table->id)
+        $activeOrder = Order::where('table_id', $table->id)
             ->whereIn('status', ['pending', 'cooking', 'ready'])
-            ->exists();
+            ->latest()
+            ->first();
+
+        $hasActiveOrder    = (bool) $activeOrder;
+        $activeOrderTotal  = $activeOrder?->total ?? 0;
 
         $stripePublicKey = config('services.stripe.key');
 
-        return view('menu.show', compact('table', 'categories', 'allergens', 'tapaConfig', 'barItemsCount', 'hasActiveOrder', 'stripePublicKey'));
+        return view('menu.show', compact('table', 'categories', 'allergens', 'tapaConfig', 'barItemsCount', 'hasActiveOrder', 'activeOrderTotal', 'stripePublicKey'));
     }
 }

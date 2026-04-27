@@ -239,6 +239,13 @@
                 method:      null,
                 tableHash:   '{{ $table->unique_hash }}',
 
+                // Estado de la pantalla de propina
+                showingTip:  false,
+                tipAmount:   0,
+                tipPercent:  null,
+                orderTotal:  @json((float) $activeOrderTotal),
+                grandTotal:  @json((float) $activeOrderTotal),
+
                 // Estado de pago con tarjeta
                 payingCard:   false,
                 stripeReady:  false,
@@ -288,12 +295,45 @@
                     }
                 },
 
-                // Pago con tarjeta: abre el sheet de Stripe y crea el PaymentIntent
-                async openCardPayment() {
-                    this.choosing    = false;
+                // Paso 1 — Pago con tarjeta: abre la pantalla de propina
+                openCardPayment() {
+                    this.choosing   = false;
+                    this.tipAmount  = 0;
+                    this.tipPercent = null;
+                    this.grandTotal = this.orderTotal;
+                    this.showingTip = true;
+                },
+
+                // Selecciona un porcentaje de propina predefinido
+                setTipPercent(pct) {
+                    this.tipPercent = pct;
+                    this.tipAmount  = Math.round(this.orderTotal * pct) / 100;
+                    this.grandTotal = this.orderTotal + this.tipAmount;
+                },
+
+                // Actualiza la propina desde el input personalizado
+                updateCustomTip(value) {
+                    this.tipPercent = null;
+                    const parsed    = parseFloat(value) || 0;
+                    this.tipAmount  = Math.max(0, Math.round(parsed * 100) / 100);
+                    this.grandTotal = this.orderTotal + this.tipAmount;
+                },
+
+                // Cierra la pantalla de propina y vuelve a elegir método de pago
+                closeTip() {
+                    this.showingTip = false;
+                    this.tipAmount  = 0;
+                    this.tipPercent = null;
+                    this.choosing   = true;
+                },
+
+                // Paso 2 — Crea el PaymentIntent con la propina y abre Stripe Elements
+                async proceedToStripe() {
+                    this.showingTip  = false;
                     this.payingCard  = true;
                     this.stripeReady = false;
                     this.stripeError = null;
+                    this.sending     = true;
                     try {
                         const res = await fetch('/api/v1/payment/' + this.tableHash + '/intent', {
                             method:  'POST',
@@ -302,6 +342,7 @@
                                 'Accept':       'application/json',
                                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
                             },
+                            body: JSON.stringify({ tip: this.tipAmount }),
                         });
                         const data = await res.json();
                         if (!res.ok) {
@@ -309,12 +350,14 @@
                             this.payingCard  = false;
                             return;
                         }
-                        this.stripeTotal = data.total;
-                        // Montar Stripe Elements tras actualizar el DOM
+                        this.stripeTotal = data.grand_total;
+                        this.grandTotal  = data.grand_total;
                         setTimeout(() => this._mountStripe(data.client_secret), 80);
                     } catch {
                         this.stripeError = 'Error de conexión al iniciar el pago.';
                         this.payingCard  = false;
+                    } finally {
+                        this.sending = false;
                     }
                 },
 
@@ -360,7 +403,7 @@
                                     'Accept':       'application/json',
                                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
                                 },
-                                body: JSON.stringify({ payment_intent_id: paymentIntent.id }),
+                                body: JSON.stringify({ payment_intent_id: paymentIntent.id, tip: this.tipAmount }),
                             });
                             const data = await res.json();
                             if (res.ok && data.success) {
@@ -766,6 +809,132 @@
             </div>
         </div>{{-- /sheet --}}
 
+        {{-- ── Sheet: propina (antes del pago con tarjeta) ───────── --}}
+        <div x-show="$store.bill.showingTip"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
+             @click.self="$store.bill.closeTip()"
+             @keydown.escape.window="$store.bill.closeTip()"
+             aria-modal="true" role="dialog" aria-label="Añadir propina">
+
+            <div x-show="$store.bill.showingTip"
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="translate-y-full"
+                 x-transition:enter-end="translate-y-0"
+                 x-transition:leave="transition ease-in duration-200"
+                 x-transition:leave-start="translate-y-0"
+                 x-transition:leave-end="translate-y-full"
+                 class="absolute bottom-0 left-0 right-0 bg-white dark:bg-gray-900
+                        rounded-t-2xl shadow-2xl px-5 pb-8 pt-4">
+
+                <div class="w-10 h-1 rounded-full bg-gray-300 dark:bg-gray-600 mx-auto mb-5"></div>
+
+                {{-- Cabecera --}}
+                <div class="flex items-center justify-between mb-5">
+                    <div>
+                        <h2 class="text-lg font-bold text-gray-900 dark:text-white">¿Quieres dejar propina?</h2>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">La propina es completamente opcional</p>
+                    </div>
+                    <button type="button"
+                            @click="$store.bill.closeTip()"
+                            aria-label="Cancelar propina"
+                            class="p-1.5 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100
+                                   dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400">
+                        <svg aria-hidden="true" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+
+                {{-- Resumen del pedido --}}
+                <div class="bg-gray-50 dark:bg-gray-800 rounded-xl px-4 py-3 mb-5 flex justify-between items-center">
+                    <span class="text-sm text-gray-500 dark:text-gray-400">Total del pedido</span>
+                    <span class="text-lg font-bold text-gray-900 dark:text-white"
+                          x-text="$store.bill.orderTotal.toFixed(2).replace('.', ',') + ' €'"></span>
+                </div>
+
+                {{-- Botones de porcentaje --}}
+                <div class="grid grid-cols-4 gap-2 mb-4" role="group" aria-label="Porcentaje de propina">
+                    <template x-for="pct in [5, 10, 15, 20]" :key="pct">
+                        <button type="button"
+                                @click="$store.bill.setTipPercent(pct)"
+                                :aria-pressed="$store.bill.tipPercent === pct"
+                                :class="$store.bill.tipPercent === pct
+                                    ? 'ring-2 ring-indigo-500 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border-indigo-400'
+                                    : 'bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700'"
+                                class="flex flex-col items-center py-3 rounded-xl border-2 font-semibold text-sm
+                                       transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <span x-text="pct + '%'"></span>
+                            <span class="text-xs font-normal mt-0.5 text-gray-500 dark:text-gray-400"
+                                  x-text="(Math.round($store.bill.orderTotal * pct) / 100).toFixed(2).replace('.', ',') + ' €'"></span>
+                        </button>
+                    </template>
+                </div>
+
+                {{-- Input de propina personalizada --}}
+                <div class="relative mb-5">
+                    <label for="custom-tip-input" class="sr-only">Propina personalizada en euros</label>
+                    <input type="number"
+                           id="custom-tip-input"
+                           min="0"
+                           step="0.50"
+                           placeholder="Otro importe"
+                           @input="$store.bill.updateCustomTip($event.target.value)"
+                           :value="$store.bill.tipPercent === null && $store.bill.tipAmount > 0 ? $store.bill.tipAmount : ''"
+                           aria-describedby="custom-tip-hint"
+                           class="w-full rounded-xl border border-gray-300 dark:border-gray-600
+                                  bg-white dark:bg-gray-800 text-gray-900 dark:text-white
+                                  px-4 py-3 pr-10 text-right placeholder-gray-400
+                                  focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                    <span class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium pointer-events-none"
+                          aria-hidden="true">€</span>
+                </div>
+                <p id="custom-tip-hint" class="sr-only">Escribe un importe personalizado en euros</p>
+
+                {{-- Desglose total + propina --}}
+                <div class="space-y-1 mb-5">
+                    <template x-if="$store.bill.tipAmount > 0">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500 dark:text-gray-400">Propina</span>
+                            <span class="font-medium text-gray-700 dark:text-gray-300"
+                                  x-text="'+ ' + $store.bill.tipAmount.toFixed(2).replace('.', ',') + ' €'"></span>
+                        </div>
+                    </template>
+                    <div class="flex justify-between text-base font-bold border-t border-gray-200 dark:border-gray-700 pt-2">
+                        <span class="text-gray-900 dark:text-white">Total a pagar</span>
+                        <span class="text-indigo-600 dark:text-indigo-400"
+                              x-text="$store.bill.grandTotal.toFixed(2).replace('.', ',') + ' €'"></span>
+                    </div>
+                </div>
+
+                {{-- Botón continuar --}}
+                <button type="button"
+                        @click="$store.bill.proceedToStripe()"
+                        class="w-full py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-700
+                               text-white font-bold text-base shadow-sm transition-colors
+                               focus:outline-none focus:ring-4 focus:ring-indigo-400">
+                    <span x-show="$store.bill.tipAmount > 0">
+                        💳 Pagar <span x-text="$store.bill.grandTotal.toFixed(2).replace('.', ',') + ' €'"></span> con propina
+                    </span>
+                    <span x-show="$store.bill.tipAmount <= 0">
+                        💳 Pagar sin propina
+                    </span>
+                </button>
+
+                <button type="button"
+                        @click="$store.bill.closeTip()"
+                        class="w-full mt-3 py-2.5 rounded-xl text-sm font-medium text-gray-500 dark:text-gray-400
+                               hover:text-gray-700 dark:hover:text-gray-200 focus:outline-none focus:underline transition-colors">
+                    Cancelar
+                </button>
+            </div>
+        </div>{{-- /tip sheet --}}
+
         {{-- ── Sheet: pago con tarjeta (Stripe Elements) ──────────── --}}
         <div x-show="$store.bill.payingCard"
              x-transition:enter="transition ease-out duration-300"
@@ -799,6 +968,12 @@
                             <span class="font-semibold text-gray-900 dark:text-white"
                                   x-text="$store.bill.stripeTotal.toFixed(2).replace('.', ',') + ' €'"></span>
                         </p>
+                        <template x-if="$store.bill.tipAmount > 0">
+                            <p class="text-xs text-indigo-500 dark:text-indigo-400 mt-0.5">
+                                Incluye propina de
+                                <span x-text="$store.bill.tipAmount.toFixed(2).replace('.', ',') + ' €'"></span>
+                            </p>
+                        </template>
                     </div>
                     <button type="button"
                             @click="$store.bill.closeCardPayment()"
