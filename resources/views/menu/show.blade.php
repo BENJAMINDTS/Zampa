@@ -137,6 +137,7 @@
                         });
                         const data = await res.json();
                         if (res.ok && data.success) {
+                            Alpine.store('bill').active = true;
                             this.sent  = true;
                             this.items = [];
                             this.open  = false;
@@ -232,7 +233,7 @@
             // ── Solicitud de cuenta ──────────────────────────────────────
             Alpine.store('bill', {
                 active:      @json($hasActiveOrder),
-                requested:   false,
+                requested:   @json($billRequested),
                 sending:     false,
                 error:       null,
                 choosing:    false,
@@ -286,6 +287,7 @@
                             this.requested = true;
                             this.method    = 'cash';
                         } else {
+                            if (res.status === 404) this.active = false;
                             this.error = data.message ?? 'Error al solicitar la cuenta.';
                         }
                     } catch {
@@ -295,12 +297,26 @@
                     }
                 },
 
-                // Paso 1 — Pago con tarjeta: abre la pantalla de propina
-                openCardPayment() {
-                    this.choosing   = false;
+                // Paso 1 — Pago con tarjeta: obtiene el total actual y abre la pantalla de propina
+                async openCardPayment() {
+                    this.choosing = false;
+                    try {
+                        const res  = await fetch('/api/v1/payment/' + this.tableHash + '/total', {
+                            headers: { 'Accept': 'application/json' },
+                        });
+                        const data = await res.json();
+                        if (!res.ok || !data.success) {
+                            this.active = false;
+                            this.error  = data.message ?? 'No hay un pedido activo.';
+                            return;
+                        }
+                        this.orderTotal = data.total;
+                        this.grandTotal = data.total;
+                    } catch {
+                        // si falla el fetch se usa el total cacheado en page load
+                    }
                     this.tipAmount  = 0;
                     this.tipPercent = null;
-                    this.grandTotal = this.orderTotal;
                     this.showingTip = true;
                 },
 
@@ -352,7 +368,7 @@
                         }
                         this.stripeTotal = data.grand_total;
                         this.grandTotal  = data.grand_total;
-                        setTimeout(() => this._mountStripe(data.client_secret), 80);
+                        requestAnimationFrame(() => requestAnimationFrame(() => this._mountStripe(data.client_secret)));
                     } catch {
                         this.stripeError = 'Error de conexión al iniciar el pago.';
                         this.payingCard  = false;
@@ -365,13 +381,19 @@
                     const pk = document.querySelector('meta[name="stripe-key"]')?.content ?? '';
                     if (!pk || !window.Stripe) {
                         this.stripeError = 'Stripe no disponible. Recarga la página.';
+                        this.payingCard  = false;
                         return;
                     }
-                    this._stripe   = Stripe(pk);
-                    this._elements = this._stripe.elements({ clientSecret, locale: 'es' });
-                    const el = this._elements.create('payment');
-                    el.mount('#stripe-payment-element');
-                    el.on('ready', () => { this.stripeReady = true; });
+                    try {
+                        this._stripe   = Stripe(pk);
+                        this._elements = this._stripe.elements({ clientSecret, locale: 'es' });
+                        const el = this._elements.create('payment');
+                        el.mount('#stripe-payment-element');
+                        el.on('ready', () => { this.stripeReady = true; });
+                    } catch (e) {
+                        this.stripeError = 'Error al cargar el formulario de pago. Inténtalo de nuevo.';
+                        this.payingCard  = false;
+                    }
                 },
 
                 closeCardPayment() {
@@ -388,7 +410,7 @@
                     try {
                         const { error, paymentIntent } = await this._stripe.confirmPayment({
                             elements:      this._elements,
-                            confirmParams: {},
+                            confirmParams: { return_url: window.location.href },
                             redirect:      'if_required',
                         });
                         if (error) {
@@ -410,6 +432,7 @@
                                 this.payingCard  = false;
                                 this.paymentDone = true;
                                 this.requested   = true;
+                                this.active      = false;
                                 this.method      = 'card';
                             } else {
                                 this.stripeError = data.message ?? 'Error al confirmar el pago.';
