@@ -32,6 +32,7 @@ class CardPaymentController extends Controller
 
         $order = Order::where('table_id', $table->id)
             ->whereIn('status', ['pending', 'cooking', 'ready'])
+            ->where('payment_status', 'pending')
             ->latest()
             ->first();
 
@@ -66,6 +67,7 @@ class CardPaymentController extends Controller
 
         $order = Order::where('table_id', $table->id)
             ->whereIn('status', ['pending', 'cooking', 'ready'])
+            ->where('payment_status', 'pending')
             ->latest()
             ->first();
 
@@ -112,6 +114,7 @@ class CardPaymentController extends Controller
 
         $order = Order::where('table_id', $table->id)
             ->whereIn('status', ['pending', 'cooking', 'ready'])
+            ->where('payment_status', 'pending')
             ->latest()
             ->first();
 
