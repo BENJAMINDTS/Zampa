@@ -55,7 +55,7 @@ class MenuController extends Controller
         $allergens = $categories
             ->flatMap(fn ($c) => $c->products)
             ->flatMap(fn ($p) => $p->ingredients->where('is_allergen', true))
-            ->unique('id')
+            ->unique(fn ($i) => $i->allergen_type ?? 'name:'.$i->name)
             ->sortBy('name')
             ->values();
 
