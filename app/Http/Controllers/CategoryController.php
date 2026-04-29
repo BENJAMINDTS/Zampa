@@ -26,11 +26,8 @@ class CategoryController extends Controller
      */
     public function index(): View
     {
-        // Obtener el usuario actual
-        $user = Auth::user();
-
-        // Obtener sus categorías mediante la relación definida en el modelo User
-        $categories = $user->categories()->paginate(15);
+        $ownerId    = Auth::user()->ownerUserId();
+        $categories = Category::where('user_id', $ownerId)->paginate(15);
 
         return view('categories.index', compact('categories'));
     }
@@ -59,8 +56,9 @@ class CategoryController extends Controller
             'destination' => 'required|in:kitchen,bar', // Solo acepta 'kitchen' o 'bar'
         ]);
 
-        // 2. Crear la categoría asociada al usuario
-        $request->user()->categories()->create($validated);
+        // 2. Crear la categoría bajo el propietario del restaurante
+        $ownerId = Auth::user()->ownerUserId();
+        Category::create(array_merge($validated, ['user_id' => $ownerId]));
 
         // 3. Redirigir al listado con mensaje de éxito
         return redirect()->route('categories.index')->with('success', 'Categoría creada correctamente.');
@@ -86,7 +84,7 @@ class CategoryController extends Controller
     public function edit(Category $category): View
     {
         // Protección Multitenancy: solo el dueño puede editar su categoría
-        abort_if($category->user_id !== Auth::id(), 403, 'No tienes permiso para editar esta categoría.');
+        abort_if($category->user_id !== Auth::user()->ownerUserId(), 403, 'No tienes permiso para editar esta categoría.');
 
         return view('categories.edit', compact('category'));
     }
@@ -100,7 +98,7 @@ class CategoryController extends Controller
      */
     public function update(Request $request, Category $category): RedirectResponse
     {
-        abort_if($category->user_id !== Auth::id(), 403);
+        abort_if($category->user_id !== Auth::user()->ownerUserId(), 403);
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
@@ -120,7 +118,7 @@ class CategoryController extends Controller
      */
     public function destroy(Category $category): RedirectResponse
     {
-        abort_if($category->user_id !== Auth::id(), 403);
+        abort_if($category->user_id !== Auth::user()->ownerUserId(), 403);
 
         $category->delete();
 
