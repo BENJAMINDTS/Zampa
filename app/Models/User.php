@@ -17,12 +17,14 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  *
  * @package App\Models
  * @property int $id
- * @property int|null $plan_id  ID del plan de suscripción (si aplica)
- * @property string $name       Nombre completo del usuario
- * @property string $email      Correo electrónico (login)
- * @property string $role       Rol: 'admin', 'waiter', 'kitchen'
+ * @property int|null $plan_id   ID del plan de suscripción (si aplica)
+ * @property int|null $admin_id  ID del gerente propietario (null si es admin)
+ * @property string $name        Nombre completo del usuario
+ * @property string $email       Correo electrónico (login)
+ * @property string $role        Rol: 'admin', 'waiter', 'kitchen'
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
+ * @author BenjaminDTS
  */
 class User extends Authenticatable
 {
@@ -39,6 +41,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'admin_id',
     ];
 
     /**
@@ -126,5 +129,49 @@ class User extends Authenticatable
     public function tapaConfig(): HasOne
     {
         return $this->hasOne(TapaConfig::class);
+    }
+
+    /**
+     * Obtiene el gerente (admin) al que pertenece este miembro de staff.
+     *
+     * @return BelongsTo
+     */
+    public function admin(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'admin_id');
+    }
+
+    /**
+     * Obtiene los miembros de staff (camareros y cocineros) gestionados por este admin.
+     *
+     * @return HasMany
+     */
+    public function staff(): HasMany
+    {
+        return $this->hasMany(User::class, 'admin_id');
+    }
+
+    /* -------------------------------------------------------------------------- */
+    /* HELPERS DE ROL                               */
+    /* -------------------------------------------------------------------------- */
+
+    /**
+     * Indica si el usuario es un gerente (admin del restaurante).
+     *
+     * @return bool
+     */
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    /**
+     * Indica si el usuario es personal del restaurante (waiter o kitchen).
+     *
+     * @return bool
+     */
+    public function isStaff(): bool
+    {
+        return in_array($this->role, ['waiter', 'kitchen'], true);
     }
 }
