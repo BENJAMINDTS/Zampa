@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 use App\Models\User;
 use App\Models\Plan;
 use App\Models\Table;
@@ -20,55 +20,87 @@ class DatabaseSeeder extends Seeder
      * Seed the application's database.
      *
      * Crea un escenario completo de prueba:
-     * 1. Plan Premium
-     * 2. Usuario Admin (admin@zampa.app / password)
-     * 3. 10 Mesas, 20 Ingredientes, 5 Categorías
-     * 4. Productos conectados con Ingredientes (Pivot)
+     * 1. Tres superadmins del equipo Zampa (BenjaminDTS, SebastianBCF, Ayrton)
+     * 2. Plan Premium
+     * 3. Usuario Admin de demo (admin@zampa.app / password) con datos de negocio
+     * 4. 10 Mesas, 20 Ingredientes, 5 Categorías con Productos conectados
+     *
+     * @return void
      */
     public function run(): void
     {
-        // 1. Crear un Plan Premium
-        $plan = Plan::factory()->create([
-            'name' => 'Plan Premium',
-            'price' => 29.99,
-            'max_tables' => 50
-        ]);
+        // 1. Superadmins del equipo Zampa
+        User::firstOrCreate(
+            ['email' => 'benjamin@zampa.app'],
+            [
+                'name'     => 'BenjaminDTS',
+                'password' => Hash::make('password'),
+                'role'     => 'superadmin',
+                'admin_id' => null,
+            ]
+        );
 
-        // 2. Crear TU usuario Admin
-        // Le asignamos el plan creado arriba.
-        $user = User::factory()->create([
-            'name' => 'Admin Zampa',
-            'email' => 'admin@zampa.app',
-            'password' => bcrypt('password'),
-            'role' => 'admin',
-            'plan_id' => $plan->id,
-            'admin_id' => null,
-        ]);
+        User::firstOrCreate(
+            ['email' => 'sebastian@zampa.app'],
+            [
+                'name'     => 'SebastianBCF',
+                'password' => Hash::make('password'),
+                'role'     => 'superadmin',
+                'admin_id' => null,
+            ]
+        );
 
-        // 3. Crear 10 Mesas para este usuario
+        User::firstOrCreate(
+            ['email' => 'ayrton@zampa.app'],
+            [
+                'name'     => 'Ayrton',
+                'password' => Hash::make('password'),
+                'role'     => 'superadmin',
+                'admin_id' => null,
+            ]
+        );
+
+        // 2. Crear un Plan Premium
+        $plan = Plan::firstOrCreate(
+            ['name' => 'Plan Premium'],
+            ['price' => 29.99, 'max_tables' => 50]
+        );
+
+        // 3. Admin de demo con datos de negocio
+        $user = User::firstOrCreate(
+            ['email' => 'admin@zampa.app'],
+            [
+                'name'          => 'Admin Demo',
+                'password'      => Hash::make('password'),
+                'role'          => 'admin',
+                'plan_id'       => $plan->id,
+                'admin_id'      => null,
+                'business_name' => 'Bar Zampa Demo',
+                'address'       => 'Calle Mayor 1, Madrid',
+                'lat'           => 40.4168,
+                'lng'           => -3.7038,
+            ]
+        );
+
+        // 4. Crear 10 Mesas para este usuario
         Table::factory(10)->create(['user_id' => $user->id]);
 
-        // 4. Crear 20 Ingredientes base
+        // 5. Crear 20 Ingredientes base
         $ingredients = Ingredient::factory(20)->create(['user_id' => $user->id]);
 
-        // 5. Crear 5 Categorías y llenarlas de productos
-        // Usamos 'each' para iterar sobre cada categoría creada
+        // 6. Crear 5 Categorías y llenarlas de productos
         Category::factory(5)->create(['user_id' => $user->id])->each(function ($category) use ($user, $ingredients) {
-
-            // Por cada categoría, creamos 4 productos
             $products = Product::factory(4)->create([
-                'user_id' => $user->id,
-                'category_id' => $category->id
+                'user_id'     => $user->id,
+                'category_id' => $category->id,
             ]);
 
-            // A cada producto le asignamos 3 ingredientes aleatorios (Tabla Pivote)
             foreach ($products as $product) {
                 $product->ingredients()->attach(
                     $ingredients->random(3),
-                    ['quantity_base' => 1] // Dato extra en la tabla intermedia
+                    ['quantity_base' => 1]
                 );
             }
-            
         });
     }
 }
