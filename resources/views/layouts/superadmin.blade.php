@@ -119,10 +119,8 @@
 
             {{-- Top bar --}}
             <header class="bg-slate-900 border-b border-slate-800 px-6 py-4 flex items-center justify-between flex-shrink-0">
-                <div>
-                    @isset($header)
-                        <div class="text-white font-semibold text-lg">{{ $header }}</div>
-                    @endisset
+                <div class="text-white font-semibold text-lg">
+                    @yield('header')
                 </div>
                 <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold
                              bg-amber-400/10 text-amber-400 ring-1 ring-amber-400/30">
@@ -131,7 +129,7 @@
             </header>
 
             <main id="main-content" class="flex-1 overflow-auto p-6 sm:p-8">
-                {{ $slot }}
+                @yield('content')
             </main>
 
         </div>
