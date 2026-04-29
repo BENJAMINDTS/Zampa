@@ -26,8 +26,8 @@ class IngredientController extends Controller
      */
     public function index(): \Illuminate\View\View
     {
-        $user = Auth::user();
-        $ingredients = $user->ingredients()->paginate(15); // Usamos la relación del modelo User
+        $ownerId     = Auth::user()->ownerUserId();
+        $ingredients = Ingredient::where('user_id', $ownerId)->paginate(15);
 
         return view('ingredients.index', compact('ingredients'));
     }
@@ -56,7 +56,8 @@ class IngredientController extends Controller
             'allergen_type' => ['nullable', 'string', Rule::in(array_keys(Ingredient::ALLERGEN_TYPES))],
         ]);
 
-        $request->user()->ingredients()->create($validated);
+        $ownerId = Auth::user()->ownerUserId();
+        Ingredient::create(array_merge($validated, ['user_id' => $ownerId]));
 
         return redirect()->route('ingredients.index')->with('success', 'Ingrediente creado correctamente.');
     }
@@ -77,7 +78,7 @@ class IngredientController extends Controller
      */
     public function edit(Ingredient $ingredient): \Illuminate\View\View
     {
-        abort_if($ingredient->user_id !== Auth::id(), 403, 'Acceso denegado.');
+        abort_if($ingredient->user_id !== Auth::user()->ownerUserId(), 403, 'Acceso denegado.');
 
         return view('ingredients.edit', compact('ingredient'));
     }
@@ -91,7 +92,7 @@ class IngredientController extends Controller
      */
     public function update(Request $request, Ingredient $ingredient): \Illuminate\Http\RedirectResponse
     {
-        abort_if($ingredient->user_id !== Auth::id(), 403, 'Acceso denegado.');
+        abort_if($ingredient->user_id !== Auth::user()->ownerUserId(), 403, 'Acceso denegado.');
 
         $validated = $request->validate([
             'name'         => 'required|string|max:255',
@@ -112,7 +113,7 @@ class IngredientController extends Controller
      */
     public function destroy(Ingredient $ingredient): \Illuminate\Http\RedirectResponse
     {
-        abort_if($ingredient->user_id !== Auth::id(), 403, 'Acceso denegado.');
+        abort_if($ingredient->user_id !== Auth::user()->ownerUserId(), 403, 'Acceso denegado.');
 
         $ingredient->delete();
 

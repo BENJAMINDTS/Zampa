@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
  * Gestiona los flujos de pago desde el panel del camarero.
  *
  * @author SebastianBCF
+ * @author BenjaminDTS
  */
 class PaymentController extends Controller
 {
@@ -23,7 +24,7 @@ class PaymentController extends Controller
      */
     public function cashPayment(Order $order): JsonResponse
     {
-        abort_if($order->table->user_id !== Auth::id(), 403, 'Acceso denegado.');
+        abort_if($order->table->user_id !== Auth::user()->ownerUserId(), 403, 'Acceso denegado.');
         abort_if($order->status === 'closed', 422, 'Este pedido ya está cerrado.');
 
         $order->update([

@@ -174,4 +174,16 @@ class User extends Authenticatable
     {
         return in_array($this->role, ['waiter', 'kitchen'], true);
     }
+
+    /**
+     * Devuelve el user_id del propietario real de los recursos del restaurante.
+     * Si el usuario es admin: devuelve su propio id.
+     * Si el usuario es staff: devuelve el id de su gerente (admin_id).
+     *
+     * @return int
+     */
+    public function ownerUserId(): int
+    {
+        return $this->admin_id ?? $this->id;
+    }
 }

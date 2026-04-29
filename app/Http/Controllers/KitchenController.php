@@ -39,7 +39,8 @@ class KitchenController extends Controller
      */
     public function badgeCount(): JsonResponse
     {
-        $count = Order::whereHas('table', fn($q) => $q->where('user_id', Auth::id()))
+        $ownerId = Auth::user()->ownerUserId();
+        $count   = Order::whereHas('table', fn($q) => $q->where('user_id', $ownerId))
             ->whereHas('items', fn($q) => $q->where('destination', 'kitchen')->where('status', 'queued'))
             ->whereIn('status', ['pending', 'cooking'])
             ->count();
@@ -76,7 +77,8 @@ class KitchenController extends Controller
             ->filter(fn($order) => count($order['items']) > 0)
             ->values();
 
-        $pendingCount = Order::whereHas('table', fn($q) => $q->where('user_id', Auth::id()))
+        $ownerId      = Auth::user()->ownerUserId();
+        $pendingCount = Order::whereHas('table', fn($q) => $q->where('user_id', $ownerId))
             ->where('status', 'pending')
             ->count();
 
@@ -96,7 +98,7 @@ class KitchenController extends Controller
     {
         $order = $item->order()->with('table')->first();
 
-        abort_if($order->table->user_id !== Auth::id(), 403, 'Acceso denegado.');
+        abort_if($order->table->user_id !== Auth::user()->ownerUserId(), 403, 'Acceso denegado.');
         abort_if($item->destination !== 'kitchen', 403, 'Este ítem no pertenece a cocina.');
 
         $item->update(['status' => 'ready']);
@@ -129,7 +131,7 @@ class KitchenController extends Controller
      */
     public function markOrderServed(Order $order): JsonResponse
     {
-        abort_if($order->table->user_id !== Auth::id(), 403, 'Acceso denegado.');
+        abort_if($order->table->user_id !== Auth::user()->ownerUserId(), 403, 'Acceso denegado.');
         abort_if($order->status !== 'ready', 422, 'El pedido no está listo para servir.');
 
         $order->update(['status' => 'served', 'notification_ready' => false]);
@@ -152,7 +154,7 @@ class KitchenController extends Controller
                 ->where('destination', 'kitchen')
                 ->with(['product', 'modifications.ingredient']),
         ])
-        ->whereHas('table', fn($q) => $q->where('user_id', Auth::id()))
+        ->whereHas('table', fn($q) => $q->where('user_id', Auth::user()->ownerUserId()))
         ->whereHas('items', fn($q) => $q->where('destination', 'kitchen')->where('status', 'queued'))
         ->whereIn('status', ['pending', 'cooking'])
         ->orderBy('created_at')
