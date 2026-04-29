@@ -11,6 +11,9 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\Ingredient;
 
+/**
+ * @author BenjaminDTS
+ */
 class DatabaseSeeder extends Seeder
 {
     /**
@@ -39,6 +42,7 @@ class DatabaseSeeder extends Seeder
             'password' => bcrypt('password'),
             'role' => 'admin',
             'plan_id' => $plan->id,
+            'admin_id' => null,
         ]);
 
         // 3. Crear 10 Mesas para este usuario
