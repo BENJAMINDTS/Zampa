@@ -12,6 +12,10 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TableController;
+use App\Http\Controllers\SuperAdmin\SuperAdminDashboardController;
+use App\Http\Controllers\SuperAdmin\SuperAdminPlanController;
+use App\Http\Controllers\SuperAdmin\SuperAdminBusinessController;
+use App\Http\Controllers\SuperAdmin\SuperAdminMapController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -88,6 +92,31 @@ Route::middleware('auth')->group(function () {
         Route::post('/payments/{order}/cash', [PaymentController::class, 'cashPayment'])
              ->name('payments.cash');
     });
+});
+
+// Panel de superadministración — acceso exclusivo a rol superadmin
+Route::middleware(['auth', 'role.superadmin'])
+     ->prefix('superadmin')
+     ->name('superadmin.')
+     ->group(function () {
+
+    Route::get('/', fn () => redirect()->route('superadmin.dashboard'));
+
+    Route::get('/dashboard', [SuperAdminDashboardController::class, 'index'])
+         ->name('dashboard');
+
+    // Gestión de planes (Bloque 13.3)
+    Route::resource('plans', SuperAdminPlanController::class);
+
+    // Gestión de negocios (Bloque 13.4)
+    Route::resource('businesses', SuperAdminBusinessController::class)
+         ->only(['index', 'create', 'store', 'destroy']);
+    Route::patch('businesses/{business}/toggle', [SuperAdminBusinessController::class, 'toggle'])
+         ->name('businesses.toggle');
+
+    // Mapa de negocios (Bloque 13.5)
+    Route::get('map', [SuperAdminMapController::class, 'index'])
+         ->name('map');
 });
 
 require __DIR__.'/auth.php';
