@@ -1,5 +1,6 @@
 <?php
 use App\Http\Controllers\IngredientController;
+use App\Http\Controllers\StaffController;
 use App\Http\Controllers\BarPanelController;
 use App\Http\Controllers\ManagerRevenueController;
 use App\Http\Controllers\PaymentController;
@@ -44,6 +45,12 @@ Route::middleware('auth')->group(function () {
         Route::put('/tapas/config', [TapasController::class, 'update'])->name('tapas.update');
 
         Route::get('/manager/income', [ManagerRevenueController::class, 'index'])->name('manager.income');
+
+        // Gestión de personal del restaurante
+        Route::get('/staff', [StaffController::class, 'index'])->name('staff.index');
+        Route::get('/staff/create', [StaffController::class, 'create'])->name('staff.create');
+        Route::post('/staff', [StaffController::class, 'store'])->name('staff.store');
+        Route::delete('/staff/{staff}', [StaffController::class, 'destroy'])->name('staff.destroy');
     });
 
     // Gestión de mesas y códigos QR
