@@ -63,7 +63,7 @@ class NotificationController extends Controller
     {
         $orders = Order::with('table')
             ->where('bill_requested', true)
-            ->whereHas('table', fn ($q) => $q->where('user_id', Auth::id()))
+            ->whereHas('table', fn ($q) => $q->where('user_id', Auth::user()->ownerUserId()))
             ->get()
             ->map(fn (Order $order) => [
                 'id'              => $order->id,
