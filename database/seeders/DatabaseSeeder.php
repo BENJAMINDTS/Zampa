@@ -82,13 +82,34 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        // 4. Crear 10 Mesas para este usuario
+        // 4. Staff del gerente demo: camarero y cocinero
+        User::firstOrCreate(
+            ['email' => 'camarero@zampa.app'],
+            [
+                'name'     => 'Camarero Demo',
+                'password' => Hash::make('password'),
+                'role'     => 'waiter',
+                'admin_id' => $user->id,
+            ]
+        );
+
+        User::firstOrCreate(
+            ['email' => 'cocinero@zampa.app'],
+            [
+                'name'     => 'Cocinero Demo',
+                'password' => Hash::make('password'),
+                'role'     => 'kitchen',
+                'admin_id' => $user->id,
+            ]
+        );
+
+        // 5. Crear 10 Mesas para este usuario
         Table::factory(10)->create(['user_id' => $user->id]);
 
-        // 5. Crear 20 Ingredientes base
+        // 6. Crear 20 Ingredientes base
         $ingredients = Ingredient::factory(20)->create(['user_id' => $user->id]);
 
-        // 6. Crear 5 Categorías y llenarlas de productos
+        // 7. Crear 5 Categorías y llenarlas de productos
         Category::factory(5)->create(['user_id' => $user->id])->each(function ($category) use ($user, $ingredients) {
             $products = Product::factory(4)->create([
                 'user_id'     => $user->id,
