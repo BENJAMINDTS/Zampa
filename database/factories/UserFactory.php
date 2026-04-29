@@ -74,4 +74,32 @@ class UserFactory extends Factory
     {
         return $this->state(['admin_id' => $admin->id]);
     }
+
+    /**
+     * Estado: superadmin del sistema SaaS (nivel máximo).
+     *
+     * @return static
+     */
+    public function superadmin(): static
+    {
+        return $this->state([
+            'role'     => 'superadmin',
+            'admin_id' => null,
+        ]);
+    }
+
+    /**
+     * Estado: admin con datos de negocio rellenos (business_name, address, lat, lng).
+     *
+     * @return static
+     */
+    public function withBusiness(): static
+    {
+        return $this->state([
+            'business_name' => fake()->company(),
+            'address'       => fake()->address(),
+            'lat'           => fake()->latitude(35, 44),
+            'lng'           => fake()->longitude(-9, 4),
+        ]);
+    }
 }
