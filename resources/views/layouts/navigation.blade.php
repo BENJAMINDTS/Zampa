@@ -1,3 +1,4 @@
+{{-- @author SebastianBCF --}}
 <nav x-data="{ open: false }" class="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700">
     <!-- Primary Navigation Menu -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -42,6 +43,12 @@
                     @if(Auth::user()->role === 'admin')
                     <x-nav-link :href="route('manager.income')" :active="request()->routeIs('manager.*')">
                         {{ __('Ingresos') }}
+                    </x-nav-link>
+                    @endif
+                    {{-- Gestión de personal: visible solo para admin --}}
+                    @if(Auth::user()->isAdmin())
+                    <x-nav-link :href="route('staff.index')" :active="request()->routeIs('staff.*')">
+                        {{ __('Mi equipo') }}
                     </x-nav-link>
                     @endif
                     {{-- Panel de Cocina: visible solo para admin y kitchen --}}
@@ -165,6 +172,12 @@
                 @if(Auth::user()->role === 'admin')
                 <x-responsive-nav-link :href="route('manager.income')" :active="request()->routeIs('manager.*')">
                     {{ __('Ingresos') }}
+                </x-responsive-nav-link>
+                @endif
+                {{-- Gestión de personal (Versión Móvil) --}}
+                @if(Auth::user()->isAdmin())
+                <x-responsive-nav-link :href="route('staff.index')" :active="request()->routeIs('staff.*')">
+                    {{ __('Mi equipo') }}
                 </x-responsive-nav-link>
                 @endif
                 {{-- Panel de Cocina (Versión Móvil) --}}
