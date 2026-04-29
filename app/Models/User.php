@@ -21,7 +21,11 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property int|null $admin_id  ID del gerente propietario (null si es admin)
  * @property string $name        Nombre completo del usuario
  * @property string $email       Correo electrónico (login)
- * @property string $role        Rol: 'admin', 'waiter', 'kitchen'
+ * @property string $role          Rol: 'admin', 'waiter', 'kitchen', 'superadmin'
+ * @property string|null $business_name  Nombre del negocio (solo admins/gerentes)
+ * @property string|null $address        Dirección del negocio
+ * @property float|null  $lat            Latitud del negocio
+ * @property float|null  $lng            Longitud del negocio
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @author BenjaminDTS
@@ -42,6 +46,10 @@ class User extends Authenticatable
         'password',
         'role',
         'admin_id',
+        'business_name',
+        'address',
+        'lat',
+        'lng',
     ];
 
     /**
@@ -154,6 +162,16 @@ class User extends Authenticatable
     /* -------------------------------------------------------------------------- */
     /* HELPERS DE ROL                               */
     /* -------------------------------------------------------------------------- */
+
+    /**
+     * Indica si el usuario es superadmin (nivel máximo del sistema SaaS).
+     *
+     * @return bool
+     */
+    public function isSuperAdmin(): bool
+    {
+        return $this->role === 'superadmin';
+    }
 
     /**
      * Indica si el usuario es un gerente (admin del restaurante).
