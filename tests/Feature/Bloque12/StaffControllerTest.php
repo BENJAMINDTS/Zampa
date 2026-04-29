@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * @author AyrtonAlania
+ */
+
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -38,7 +42,7 @@ it('returns 403 for kitchen trying to access staff index', function () {
         ->assertForbidden();
 });
 
-// ─── SCOPE (solo ve su propio personal) ───────────────────────────────────────
+// ─── LISTADO ──────────────────────────────────────────────────────────────────
 
 it('shows only staff belonging to the authenticated admin', function () {
     $ownStaff = User::factory()->waiter()->staffOf($this->admin)->create(['name' => 'Mi Camarero']);
@@ -54,6 +58,16 @@ it('does not show staff from another admin', function () {
     $this->actingAs($this->admin)
         ->get(route('staff.index'))
         ->assertDontSee('Ajeno Camarero');
+});
+
+it('paginates staff at 15 per page', function () {
+    User::factory()->waiter()->staffOf($this->admin)->count(20)->create();
+
+    $response = $this->actingAs($this->admin)
+        ->get(route('staff.index'));
+
+    $response->assertOk();
+    expect($response->viewData('staff')->count())->toBe(15);
 });
 
 // ─── CREACIÓN ─────────────────────────────────────────────────────────────────
@@ -107,6 +121,32 @@ it('new staff has the admins id as admin_id', function () {
         'email'    => 'staff@test.com',
         'admin_id' => $this->admin->id,
     ]);
+});
+
+it('new staff has the correct role', function () {
+    $this->actingAs($this->admin)
+        ->post(route('staff.store'), [
+            'name'                  => 'Cocinero Correcto',
+            'email'                 => 'cocinero2@test.com',
+            'password'              => 'secret123',
+            'password_confirmation' => 'secret123',
+            'role'                  => 'kitchen',
+        ]);
+
+    $created = User::where('email', 'cocinero2@test.com')->first();
+    expect($created->role)->toBe('kitchen');
+});
+
+it('shows success flash after creating staff', function () {
+    $this->actingAs($this->admin)
+        ->post(route('staff.store'), [
+            'name'                  => 'Flash Test',
+            'email'                 => 'flash@test.com',
+            'password'              => 'secret123',
+            'password_confirmation' => 'secret123',
+            'role'                  => 'waiter',
+        ])
+        ->assertSessionHas('success');
 });
 
 // ─── VALIDACIÓN ───────────────────────────────────────────────────────────────
@@ -171,9 +211,33 @@ it('fails to create staff with role admin', function () {
         ->assertSessionHasErrors('role');
 });
 
+it('fails to create staff without password', function () {
+    $this->actingAs($this->admin)
+        ->post(route('staff.store'), [
+            'name'                  => 'Sin Password',
+            'email'                 => 'sinpass@test.com',
+            'password'              => '',
+            'password_confirmation' => '',
+            'role'                  => 'waiter',
+        ])
+        ->assertSessionHasErrors('password');
+});
+
+it('fails to create staff when passwords do not match', function () {
+    $this->actingAs($this->admin)
+        ->post(route('staff.store'), [
+            'name'                  => 'Mismatch',
+            'email'                 => 'mismatch@test.com',
+            'password'              => 'secret123',
+            'password_confirmation' => 'diferente456',
+            'role'                  => 'waiter',
+        ])
+        ->assertSessionHasErrors('password');
+});
+
 // ─── ELIMINACIÓN ──────────────────────────────────────────────────────────────
 
-it('admin can delete their own staff', function () {
+it('admin can delete their own staff member', function () {
     $this->actingAs($this->admin)
         ->delete(route('staff.destroy', $this->waiterUser))
         ->assertRedirect(route('staff.index'))
@@ -192,14 +256,18 @@ it('returns 403 when admin tries to delete staff from another admin', function (
     $this->assertDatabaseHas('users', ['id' => $foreignStaff->id]);
 });
 
-it('deleted staff cannot login after deletion', function () {
+it('staff member cannot access the system after deletion', function () {
     $email = $this->waiterUser->email;
 
     $this->actingAs($this->admin)
         ->delete(route('staff.destroy', $this->waiterUser));
 
     $this->assertDatabaseMissing('users', ['email' => $email]);
-
-    // El usuario no existe en BD, por lo que cualquier intento de login falla
     $this->assertNull(User::where('email', $email)->first());
+});
+
+it('shows success flash after deleting staff', function () {
+    $this->actingAs($this->admin)
+        ->delete(route('staff.destroy', $this->waiterUser))
+        ->assertSessionHas('success');
 });
