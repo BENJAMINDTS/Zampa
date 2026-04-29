@@ -28,7 +28,8 @@ class ProductController extends Controller
    */
   public function index(): View
   {
-    $products = Product::where('user_id', Auth::id())->with('allergens')->paginate(15);
+    $ownerId  = Auth::user()->ownerUserId();
+    $products = Product::where('user_id', $ownerId)->with('allergens')->paginate(15);
     return view('products.index', compact('products'));
   }
 
@@ -40,7 +41,8 @@ class ProductController extends Controller
    */
   public function create(): View
   {
-    $categories = Category::where('user_id', Auth::id())->get();
+    $ownerId    = Auth::user()->ownerUserId();
+    $categories = Category::where('user_id', $ownerId)->get();
     return view('products.create', compact('categories'));
   }
 
@@ -57,11 +59,11 @@ class ProductController extends Controller
       'name'        => 'required|string|max:255',
       'description' => 'nullable|string',
       'price'       => 'required|numeric|min:0',
-      'category_id' => ['required', Rule::exists('categories', 'id')->where('user_id', Auth::id())],
+      'category_id' => ['required', Rule::exists('categories', 'id')->where('user_id', Auth::user()->ownerUserId())],
       'image'       => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
     ]);
 
-    $validatedData['user_id'] = Auth::id();
+    $validatedData['user_id'] = Auth::user()->ownerUserId();
 
     if ($request->hasFile('image')) {
       /** @var string $path Ruta donde se almacena temporalmente la imagen */
@@ -97,11 +99,12 @@ class ProductController extends Controller
 
     {
 
-        abort_if($product->user_id !== Auth::id(), 403, 'No tienes permiso para editar este plato.');
- 
+        $ownerId = Auth::user()->ownerUserId();
+        abort_if($product->user_id !== $ownerId, 403, 'No tienes permiso para editar este plato.');
+
         $product->load('allergens');
 
-        $categories = Category::where('user_id', Auth::id())->get();
+        $categories = Category::where('user_id', $ownerId)->get();
 
         return view('products.edit', compact('product', 'categories'));
 
@@ -125,8 +128,8 @@ class ProductController extends Controller
 
     {
 
-        abort_if($product->user_id !== Auth::id(), 403);
- 
+        abort_if($product->user_id !== Auth::user()->ownerUserId(), 403);
+
         $validatedData = $request->validate([
 
             'name'        => 'required|string|max:255',
@@ -177,7 +180,7 @@ class ProductController extends Controller
 
     {
 
-        abort_if($product->user_id !== Auth::id(), 403);
+        abort_if($product->user_id !== Auth::user()->ownerUserId(), 403);
 
         $product->delete();
 
@@ -193,11 +196,12 @@ class ProductController extends Controller
      */
     public function editIngredients(Product $product): View
     {
-        abort_if($product->user_id !== Auth::id(), 403, 'Acceso denegado.');
+        $ownerId = Auth::user()->ownerUserId();
+        abort_if($product->user_id !== $ownerId, 403, 'Acceso denegado.');
 
         $product->load('ingredients');
 
-        $ingredients = Ingredient::where('user_id', Auth::id())
+        $ingredients = Ingredient::where('user_id', $ownerId)
                                  ->orderBy('name')
                                  ->get();
 
@@ -213,7 +217,7 @@ class ProductController extends Controller
      */
     public function syncIngredients(Request $request, Product $product): RedirectResponse
     {
-        abort_if($product->user_id !== Auth::id(), 403, 'Acceso denegado.');
+        abort_if($product->user_id !== Auth::user()->ownerUserId(), 403, 'Acceso denegado.');
 
         $validated = $request->validate([
             'ingredients'                     => 'nullable|array',
