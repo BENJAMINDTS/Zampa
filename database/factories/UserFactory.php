@@ -2,12 +2,14 @@
 
 namespace Database\Factories;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\User>
+ * @author BenjaminDTS
  */
 class UserFactory extends Factory
 {
@@ -40,5 +42,36 @@ class UserFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'email_verified_at' => null,
         ]);
+    }
+
+    /**
+     * Estado: usuario con rol camarero.
+     *
+     * @return static
+     */
+    public function waiter(): static
+    {
+        return $this->state(['role' => 'waiter']);
+    }
+
+    /**
+     * Estado: usuario con rol cocinero.
+     *
+     * @return static
+     */
+    public function kitchen(): static
+    {
+        return $this->state(['role' => 'kitchen']);
+    }
+
+    /**
+     * Estado: usuario que pertenece al personal de un admin concreto.
+     *
+     * @param  \App\Models\User  $admin
+     * @return static
+     */
+    public function staffOf(User $admin): static
+    {
+        return $this->state(['admin_id' => $admin->id]);
     }
 }
