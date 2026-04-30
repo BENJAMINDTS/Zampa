@@ -15,6 +15,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $name       Nombre del plan
  * @property float $price     Coste mensual
  * @property int $max_tables    Límite de mesas permitidas
+ *
+ * @author BenjaminDTS
  */
 class Plan extends Model
 {
@@ -22,11 +24,28 @@ class Plan extends Model
 
     protected $fillable = ['name', 'price', 'max_tables'];
 
+    protected $casts = [
+        'price'      => 'decimal:2',
+        'max_tables' => 'integer',
+    ];
+
     /**
      * Usuarios (Restaurantes) que tienen contratado este plan.
+     *
+     * @return HasMany
      */
     public function users(): HasMany
     {
         return $this->hasMany(User::class);
+    }
+
+    /**
+     * Indica si hay negocios asignados a este plan.
+     *
+     * @return bool
+     */
+    public function hasActiveBusinesses(): bool
+    {
+        return $this->users()->exists();
     }
 }
