@@ -26,11 +26,12 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => fake()->name(),
+            'name'  => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
+            'active' => true,
         ];
     }
 
@@ -73,6 +74,29 @@ class UserFactory extends Factory
     public function staffOf(User $admin): static
     {
         return $this->state(['admin_id' => $admin->id]);
+    }
+
+    /**
+     * Estado: gerente de un restaurante (admin activo por defecto).
+     *
+     * @return static
+     */
+    public function admin(): static
+    {
+        return $this->state([
+            'role'   => 'admin',
+            'active' => true,
+        ]);
+    }
+
+    /**
+     * Estado: cuenta desactivada por el superadmin.
+     *
+     * @return static
+     */
+    public function inactive(): static
+    {
+        return $this->state(['active' => false]);
     }
 
     /**
