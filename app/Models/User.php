@@ -5,8 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use App\Models\Order;
+use App\Models\Table;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
@@ -17,8 +20,9 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  *
  * @package App\Models
  * @property int $id
- * @property int|null $plan_id   ID del plan de suscripción (si aplica)
- * @property int|null $admin_id  ID del gerente propietario (null si es admin)
+ * @property int|null $plan_id        ID del plan de suscripción (si aplica)
+ * @property int|null $admin_id       ID del gerente propietario (null si es admin)
+ * @property bool     $active         Si el negocio está activo en la plataforma
  * @property string $name        Nombre completo del usuario
  * @property string $email       Correo electrónico (login)
  * @property string $role          Rol: 'admin', 'waiter', 'kitchen', 'superadmin'
@@ -41,6 +45,7 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'plan_id',
+        'active',
         'name',
         'email',
         'password',
@@ -72,6 +77,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'active' => 'boolean',
         ];
     }
 
@@ -159,6 +165,16 @@ class User extends Authenticatable
         return $this->hasMany(User::class, 'admin_id');
     }
 
+    /**
+     * Obtiene todos los pedidos del negocio a través de sus mesas.
+     *
+     * @return HasManyThrough
+     */
+    public function orders(): HasManyThrough
+    {
+        return $this->hasManyThrough(Order::class, Table::class);
+    }
+
     /* -------------------------------------------------------------------------- */
     /* HELPERS DE ROL                               */
     /* -------------------------------------------------------------------------- */
@@ -191,6 +207,16 @@ class User extends Authenticatable
     public function isStaff(): bool
     {
         return in_array($this->role, ['waiter', 'kitchen'], true);
+    }
+
+    /**
+     * Indica si el negocio/usuario está activo en la plataforma.
+     *
+     * @return bool
+     */
+    public function isActive(): bool
+    {
+        return (bool) $this->active;
     }
 
     /**
