@@ -76,6 +76,29 @@ class UserFactory extends Factory
     }
 
     /**
+     * Estado: gerente de un restaurante (admin activo por defecto).
+     *
+     * @return static
+     */
+    public function admin(): static
+    {
+        return $this->state([
+            'role'   => 'admin',
+            'active' => true,
+        ]);
+    }
+
+    /**
+     * Estado: cuenta desactivada por el superadmin.
+     *
+     * @return static
+     */
+    public function inactive(): static
+    {
+        return $this->state(['active' => false]);
+    }
+
+    /**
      * Estado: superadmin del sistema SaaS (nivel máximo).
      *
      * @return static
