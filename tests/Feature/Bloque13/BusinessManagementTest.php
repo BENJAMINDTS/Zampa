@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * @author AyrtonAlania
+ */
+
 use App\Models\Plan;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -25,6 +29,14 @@ it('shows businesses index to superadmin', function () {
 
 it('returns 403 for admin trying to access business management', function () {
     $this->actingAs($this->admin)
+         ->get(route('superadmin.businesses.index'))
+         ->assertForbidden();
+});
+
+it('returns 403 for waiter trying to access business management', function () {
+    $waiter = User::factory()->waiter()->create();
+
+    $this->actingAs($waiter)
          ->get(route('superadmin.businesses.index'))
          ->assertForbidden();
 });
@@ -69,6 +81,22 @@ it('superadmin can create a new admin business', function () {
     ]);
 });
 
+it('new business has null admin_id', function () {
+    $this->actingAs($this->superadmin)
+         ->post(route('superadmin.businesses.store'), [
+             'name'                  => 'Test Admin',
+             'email'                 => 'test@nulladmin.es',
+             'password'              => 'secret123',
+             'password_confirmation' => 'secret123',
+             'business_name'         => 'Negocio Null',
+             'address'               => 'Calle Nula 1',
+             'plan_id'               => $this->plan->id,
+         ]);
+
+    $created = User::where('email', 'test@nulladmin.es')->first();
+    expect($created->admin_id)->toBeNull();
+});
+
 it('new business has role admin and active true', function () {
     $this->actingAs($this->superadmin)
          ->post(route('superadmin.businesses.store'), [
@@ -86,6 +114,34 @@ it('new business has role admin and active true', function () {
     expect($created->role)->toBe('admin')
         ->and($created->active)->toBeTrue()
         ->and($created->plan_id)->toBe($this->plan->id);
+});
+
+it('fails to create business without email', function () {
+    $this->actingAs($this->superadmin)
+         ->post(route('superadmin.businesses.store'), [
+             'name'                  => 'Juan García',
+             'email'                 => '',
+             'password'              => 'secret123',
+             'password_confirmation' => 'secret123',
+             'business_name'         => 'El Rincón',
+             'address'               => 'Calle Mayor 1',
+             'plan_id'               => $this->plan->id,
+         ])
+         ->assertSessionHasErrors('email');
+});
+
+it('fails to create business without business name', function () {
+    $this->actingAs($this->superadmin)
+         ->post(route('superadmin.businesses.store'), [
+             'name'                  => 'Juan García',
+             'email'                 => 'juan3@rincon.es',
+             'password'              => 'secret123',
+             'password_confirmation' => 'secret123',
+             'business_name'         => '',
+             'address'               => 'Calle Mayor 1',
+             'plan_id'               => $this->plan->id,
+         ])
+         ->assertSessionHasErrors('business_name');
 });
 
 it('fails to create business without plan', function () {
@@ -179,6 +235,26 @@ it('superadmin can delete a business', function () {
          ->assertSessionHas('success');
 
     $this->assertDatabaseMissing('users', ['id' => $toDelete->id]);
+});
+
+it('after hard delete staff of deleted admin has null admin_id', function () {
+    $toDelete = User::factory()->admin()->withBusiness()->create(['plan_id' => $this->plan->id]);
+    $staff    = User::factory()->waiter()->create(['admin_id' => $toDelete->id]);
+
+    $this->actingAs($this->superadmin)
+         ->delete(route('superadmin.businesses.destroy', $toDelete));
+
+    expect($staff->fresh()->admin_id)->toBeNull();
+});
+
+it('after hard delete staff is not also deleted', function () {
+    $toDelete = User::factory()->admin()->withBusiness()->create(['plan_id' => $this->plan->id]);
+    $staff    = User::factory()->waiter()->create(['admin_id' => $toDelete->id]);
+
+    $this->actingAs($this->superadmin)
+         ->delete(route('superadmin.businesses.destroy', $toDelete));
+
+    $this->assertDatabaseHas('users', ['id' => $staff->id]);
 });
 
 it('returns 403 when trying to toggle a non-admin user', function () {
