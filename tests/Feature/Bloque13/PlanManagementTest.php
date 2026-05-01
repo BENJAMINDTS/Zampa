@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * @author AyrtonAlania
+ */
+
 use App\Models\Plan;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -26,6 +30,14 @@ it('shows plans index to superadmin', function () {
 
 it('returns 403 for admin trying to access plans management', function () {
     $this->actingAs($this->admin)
+         ->get(route('superadmin.plans.index'))
+         ->assertForbidden();
+});
+
+it('returns 403 for waiter trying to manage plans', function () {
+    $waiter = User::factory()->waiter()->create();
+
+    $this->actingAs($waiter)
          ->get(route('superadmin.plans.index'))
          ->assertForbidden();
 });
