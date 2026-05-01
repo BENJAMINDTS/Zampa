@@ -75,7 +75,7 @@ npm run dev              # Vite HMR en <http://localhost:5173> (solo desarrollo)
 
 ## Progreso del desarrollo
 
-**Progreso global: 60%** (35/58 sub-bloques completados)
+**Progreso global: 71%** (41/58 sub-bloques completados)
 
 | Sub-bloque | Descripción | Estado |
 | ---------- | ----------- | ------ |
@@ -114,17 +114,17 @@ npm run dev              # Vite HMR en <http://localhost:5173> (solo desarrollo)
 | 7.4 | Pantalla de propina antes de pagar con tarjeta | ✅ Completado |
 | 7.5 | Desglose de ingresos para el gerente | ✅ Completado |
 | 7.6 | Tests del Bloque 7 | ✅ Completado |
-| 12.1 | Migración `admin_id` nullable FK en `users` | 🔒 Pendiente |
-| 12.2 | Helper `ownerUserId()` en User model + actualizar controllers multitenancy | 🔒 Pendiente |
-| 12.3 | `StaffController` — listar, crear y eliminar staff | 🔒 Pendiente |
-| 12.4 | Vistas del panel de staff (tabla + formulario de alta) | 🔒 Pendiente |
-| 12.5 | Tests del Bloque 12 | 🔒 Pendiente |
-| 13.1 | Migración `superadmin` + campos negocio en `users` + seeder equipo | 🔒 Pendiente |
-| 13.2 | Middleware `role:superadmin` + rutas `/superadmin/` + layout propio | 🔒 Pendiente |
-| 13.3 | Gestión de planes — CRUD completo | 🔒 Pendiente |
-| 13.4 | Gestión de negocios — crear admins, asignar plan, ver stats | 🔒 Pendiente |
-| 13.5 | Mapa de negocios — Leaflet.js con pin por negocio | 🔒 Pendiente |
-| 13.6 | Tests del Bloque 13 | 🔒 Pendiente |
+| 12.1 | Migración `admin_id` nullable FK en `users` | ✅ Completado |
+| 12.2 | Helper `ownerUserId()` en User model + actualizar controllers multitenancy | ✅ Completado |
+| 12.3 | `StaffController` — listar, crear y eliminar staff | ✅ Completado |
+| 12.4 | Vistas del panel de staff (tabla + formulario de alta) | ✅ Completado |
+| 12.5 | Tests del Bloque 12 | ✅ Completado |
+| 13.1 | Migración `superadmin` + campos negocio en `users` + seeder equipo | ✅ Completado |
+| 13.2 | Middleware `role:superadmin` + rutas `/superadmin/` + layout propio | ✅ Completado |
+| 13.3 | Gestión de planes — CRUD completo | ✅ Completado |
+| 13.4 | Gestión de negocios — crear admins, asignar plan, ver stats | ✅ Completado |
+| 13.5 | Mapa de negocios — Leaflet.js con pin por negocio | ✅ Completado |
+| 13.6 | Tests del Bloque 13 | ✅ Completado |
 | 8.1 | Interfaz drag & drop para crear, mover y eliminar mesas | 🔒 Pendiente |
 | 8.2 | Límite de mesas según plan del gerente | 🔒 Pendiente |
 | 8.3 | Formas de mesa (cuadrada, redonda, rectangular) | 🔒 Pendiente |
@@ -148,8 +148,8 @@ npm run dev              # Vite HMR en <http://localhost:5173> (solo desarrollo)
 
 | Tabla | Relación clave |
 | ----- | -------------- |
-| plans | 1:N con users |
-| users | Centro del Multitenancy (user_id en todo) |
+| plans | 1:N con users — campos: `name`, `price`, `max_tables` |
+| users | Centro del Multitenancy — campos nuevos B12/B13: `admin_id` (FK nullable, nullOnDelete), `role` (admin/waiter/kitchen/superadmin), `active` (boolean), `plan_id` (FK nullable), `business_name`, `address`, `lat`, `lng` |
 | categories | user_id FK — campo `destination`: kitchen / bar |
 | ingredients | user_id FK — campo `is_allergen` (boolean) |
 | products | user_id FK, category_id FK, image (string) |

@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * @author AyrtonAlania
+ */
+
 use App\Models\Plan;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -104,6 +108,18 @@ it('businesses without coordinates are counted in withoutCoords', function () {
     $withoutCoords = $response->viewData('withoutCoords');
 
     expect($withoutCoords)->toBe(2);
+});
+
+it('withoutCoords only counts admins not all users', function () {
+    // 1 admin sin coords
+    User::factory()->admin()->create(['lat' => null, 'lng' => null]);
+    // staff huérfano sin coords — no debe inflar el contador
+    User::factory()->waiter()->create(['lat' => null, 'lng' => null]);
+
+    $response      = $this->actingAs($this->superadmin)->get(route('superadmin.map'));
+    $withoutCoords = $response->viewData('withoutCoords');
+
+    expect($withoutCoords)->toBe(1);
 });
 
 // ──────────────────────────────────────────────
