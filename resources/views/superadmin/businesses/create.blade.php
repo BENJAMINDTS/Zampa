@@ -375,10 +375,15 @@
         dropdown.classList.remove('hidden');
     }
 
+    function normalizeQuery(q) {
+        // "N4", "Nº4", "No 4", "Num 4" → "4" so Nominatim finds house-level results
+        return q.replace(/\bN[oº°úum]*\.?\s*(\d+)/gi, '$1').trim();
+    }
+
     function fetchSuggestions(query) {
         currentQuery = query;
         const url = 'https://nominatim.openstreetmap.org/search'
-            + '?q=' + encodeURIComponent(query)
+            + '?q=' + encodeURIComponent(normalizeQuery(query))
             + '&format=json&limit=5&addressdetails=1';
 
         fetch(url, { headers: { 'Accept-Language': 'es' } })
