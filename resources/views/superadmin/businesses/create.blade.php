@@ -70,39 +70,52 @@
                     @enderror
                 </div>
 
-                {{-- Lat / Lng --}}
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label for="lat" class="block text-sm font-medium text-slate-300 mb-1.5">Latitud</label>
-                        <input id="lat"
-                               name="lat"
-                               type="number"
-                               step="0.0000001"
-                               value="{{ old('lat') }}"
-                               aria-describedby="{{ $errors->has('lat') ? 'error-lat' : '' }}"
-                               class="w-full rounded-lg bg-slate-800 border border-slate-700 text-white placeholder-slate-500
-                                      px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400
-                                      {{ $errors->has('lat') ? 'border-red-500 focus:ring-red-500' : '' }}"
-                               placeholder="40.4168">
-                        @error('lat')
-                            <p id="error-lat" role="alert" class="mt-1.5 text-xs text-red-400">{{ $message }}</p>
-                        @enderror
+                {{-- Ubicación — mapa interactivo --}}
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-1.5">
+                        Ubicación <span class="text-slate-500 font-normal">(opcional — haz clic en el mapa)</span>
+                    </label>
+                    <div id="location-picker"
+                         style="height: 300px;"
+                         class="rounded-lg border border-slate-700 mb-3"
+                         aria-label="Selector de ubicación en mapa"
+                         role="img">
                     </div>
-                    <div>
-                        <label for="lng" class="block text-sm font-medium text-slate-300 mb-1.5">Longitud</label>
-                        <input id="lng"
-                               name="lng"
-                               type="number"
-                               step="0.0000001"
-                               value="{{ old('lng') }}"
-                               aria-describedby="{{ $errors->has('lng') ? 'error-lng' : '' }}"
-                               class="w-full rounded-lg bg-slate-800 border border-slate-700 text-white placeholder-slate-500
-                                      px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400
-                                      {{ $errors->has('lng') ? 'border-red-500 focus:ring-red-500' : '' }}"
-                               placeholder="-3.7038">
-                        @error('lng')
-                            <p id="error-lng" role="alert" class="mt-1.5 text-xs text-red-400">{{ $message }}</p>
-                        @enderror
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="lat" class="block text-xs font-medium text-slate-400 mb-1">Latitud</label>
+                            <input id="lat"
+                                   name="lat"
+                                   type="number"
+                                   step="0.0000001"
+                                   value="{{ old('lat') }}"
+                                   readonly
+                                   aria-describedby="{{ $errors->has('lat') ? 'error-lat' : '' }}"
+                                   class="w-full rounded-lg bg-slate-700 border border-slate-600 text-slate-300
+                                          px-3 py-2 text-xs focus:outline-none cursor-default
+                                          {{ $errors->has('lat') ? 'border-red-500' : '' }}"
+                                   placeholder="Selecciona en el mapa">
+                            @error('lat')
+                                <p id="error-lat" role="alert" class="mt-1 text-xs text-red-400">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        <div>
+                            <label for="lng" class="block text-xs font-medium text-slate-400 mb-1">Longitud</label>
+                            <input id="lng"
+                                   name="lng"
+                                   type="number"
+                                   step="0.0000001"
+                                   value="{{ old('lng') }}"
+                                   readonly
+                                   aria-describedby="{{ $errors->has('lng') ? 'error-lng' : '' }}"
+                                   class="w-full rounded-lg bg-slate-700 border border-slate-600 text-slate-300
+                                          px-3 py-2 text-xs focus:outline-none cursor-default
+                                          {{ $errors->has('lng') ? 'border-red-500' : '' }}"
+                                   placeholder="Selecciona en el mapa">
+                            @error('lng')
+                                <p id="error-lng" role="alert" class="mt-1 text-xs text-red-400">{{ $message }}</p>
+                            @enderror
+                        </div>
                     </div>
                 </div>
 
@@ -228,3 +241,64 @@
 </div>
 
 @endsection
+
+@push('styles')
+<link rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""/>
+@endpush
+
+@push('scripts')
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+        crossorigin=""></script>
+<script>
+(function () {
+    const latInput = document.getElementById('lat');
+    const lngInput = document.getElementById('lng');
+
+    const initialLat = parseFloat(latInput.value) || 40.4168;
+    const initialLng = parseFloat(lngInput.value) || -3.7038;
+    const hasInitial  = latInput.value !== '' && lngInput.value !== '';
+
+    const map = L.map('location-picker').setView([initialLat, initialLng], hasInitial ? 13 : 6);
+
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    let marker = hasInitial
+        ? L.marker([initialLat, initialLng], { draggable: true }).addTo(map)
+        : null;
+
+    function setCoords(lat, lng) {
+        latInput.value = lat.toFixed(7);
+        lngInput.value = lng.toFixed(7);
+    }
+
+    if (marker) {
+        marker.on('dragend', function () {
+            const pos = marker.getLatLng();
+            setCoords(pos.lat, pos.lng);
+        });
+    }
+
+    map.on('click', function (e) {
+        const { lat, lng } = e.latlng;
+        setCoords(lat, lng);
+
+        if (marker) {
+            marker.setLatLng(e.latlng);
+        } else {
+            marker = L.marker(e.latlng, { draggable: true }).addTo(map);
+            marker.on('dragend', function () {
+                const pos = marker.getLatLng();
+                setCoords(pos.lat, pos.lng);
+            });
+        }
+    });
+}());
+</script>
+@endpush
