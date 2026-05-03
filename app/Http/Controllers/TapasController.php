@@ -14,7 +14,7 @@ use Illuminate\View\View;
  *
  * Permite al gerente configurar el sistema de tapas del restaurante:
  * activar/desactivar, modo gratuito/de pago, precio, variantes máximas,
- * tapa extra de pago y horario de apertura de cocina.
+ * tapa extra de pago y tramos horarios de apertura de cocina.
  *
  * @author BenjaminDTS
  */
@@ -37,10 +37,10 @@ class TapasController extends Controller
                 'tapa_price'         => null,
                 'extra_tapa_enabled' => false,
                 'extra_tapa_price'   => null,
-                'kitchen_opens_at'   => null,
-                'kitchen_closes_at'  => null,
             ]
         );
+
+        $tapaConfig->load('schedules');
 
         return view('tapas.edit', compact('tapaConfig'));
     }
@@ -48,6 +48,7 @@ class TapasController extends Controller
     /**
      * Guarda la configuración de tapas del restaurante.
      * Al activar tapas crea automáticamente la categoría 'Tapas' con destination=kitchen.
+     * Reemplaza los tramos horarios de cocina por los enviados en el formulario.
      *
      * @param  Request $request
      * @return RedirectResponse
@@ -55,20 +56,21 @@ class TapasController extends Controller
     public function update(Request $request): RedirectResponse
     {
         $request->validate([
-            'tapas_enabled'      => ['sometimes', 'boolean'],
-            'tapas_free'         => ['sometimes', 'boolean'],
-            'max_tapa_variants'  => ['required', 'integer', 'min:1', 'max:20'],
-            'tapa_price'         => ['required_if:tapas_free,0', 'nullable', 'numeric', 'min:0', 'max:999.99'],
-            'extra_tapa_enabled' => ['sometimes', 'boolean'],
-            'extra_tapa_price'   => ['required_if:extra_tapa_enabled,1', 'nullable', 'numeric', 'min:0', 'max:999.99'],
-            'kitchen_opens_at'   => ['nullable', 'date_format:H:i', 'required_with:kitchen_closes_at'],
-            'kitchen_closes_at'  => ['nullable', 'date_format:H:i', 'required_with:kitchen_opens_at'],
+            'tapas_enabled'            => ['sometimes', 'boolean'],
+            'tapas_free'               => ['sometimes', 'boolean'],
+            'max_tapa_variants'        => ['required', 'integer', 'min:1', 'max:20'],
+            'tapa_price'               => ['required_if:tapas_free,0', 'nullable', 'numeric', 'min:0', 'max:999.99'],
+            'extra_tapa_enabled'       => ['sometimes', 'boolean'],
+            'extra_tapa_price'         => ['required_if:extra_tapa_enabled,1', 'nullable', 'numeric', 'min:0', 'max:999.99'],
+            'schedules'                => ['nullable', 'array', 'max:10'],
+            'schedules.*.opens_at'     => ['required', 'date_format:H:i'],
+            'schedules.*.closes_at'    => ['required', 'date_format:H:i'],
         ]);
 
-        $userId        = Auth::id();
-        $tapasEnabled  = $request->boolean('tapas_enabled');
-        $tapas_free    = $request->boolean('tapas_free');
-        $extraEnabled  = $request->boolean('extra_tapa_enabled');
+        $userId       = Auth::id();
+        $tapasEnabled = $request->boolean('tapas_enabled');
+        $tapasFree    = $request->boolean('tapas_free');
+        $extraEnabled = $request->boolean('extra_tapa_enabled');
 
         if ($tapasEnabled) {
             Category::firstOrCreate(
@@ -77,19 +79,26 @@ class TapasController extends Controller
             );
         }
 
-        TapaConfig::updateOrCreate(
+        $config = TapaConfig::updateOrCreate(
             ['user_id' => $userId],
             [
                 'tapas_enabled'      => $tapasEnabled,
-                'tapas_free'         => $tapas_free,
+                'tapas_free'         => $tapasFree,
                 'max_tapa_variants'  => $request->integer('max_tapa_variants'),
-                'tapa_price'         => $tapas_free ? null : ($request->input('tapa_price') ?? null),
+                'tapa_price'         => $tapasFree ? null : ($request->input('tapa_price') ?? null),
                 'extra_tapa_enabled' => $extraEnabled,
                 'extra_tapa_price'   => $extraEnabled ? ($request->input('extra_tapa_price') ?? null) : null,
-                'kitchen_opens_at'   => $request->input('kitchen_opens_at') ?: null,
-                'kitchen_closes_at'  => $request->input('kitchen_closes_at') ?: null,
             ]
         );
+
+        $config->schedules()->delete();
+
+        foreach ($request->input('schedules', []) as $slot) {
+            $config->schedules()->create([
+                'opens_at'  => $slot['opens_at'],
+                'closes_at' => $slot['closes_at'],
+            ]);
+        }
 
         return redirect()->route('tapas.edit')
                          ->with('success', 'Configuración de tapas guardada correctamente.');
