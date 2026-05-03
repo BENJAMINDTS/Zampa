@@ -328,8 +328,24 @@
         dropdown.classList.add('hidden');
     }
 
+    function formatAddress(item) {
+        const a = item.address || {};
+        const parts = [];
+
+        let street = a.road || a.pedestrian || a.footway || a.path || '';
+        if (a.house_number) street += ' ' + a.house_number;
+        if (street) parts.push(street);
+
+        const city = a.city || a.town || a.village || a.municipality || a.county || '';
+        if (city) parts.push(city);
+
+        if (a.postcode) parts.push(a.postcode);
+
+        return parts.length ? parts.join(', ') : item.display_name;
+    }
+
     function selectSuggestion(item) {
-        addressInput.value = item.display_name;
+        addressInput.value = formatAddress(item);
         closeSuggestions();
         const latlng = L.latLng(parseFloat(item.lat), parseFloat(item.lon));
         map.setView(latlng, 15);
@@ -348,7 +364,7 @@
             const li = document.createElement('li');
             li.className = 'px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-700 hover:text-white cursor-pointer';
             li.setAttribute('role', 'option');
-            li.textContent = item.display_name;
+            li.textContent = formatAddress(item);
             li.addEventListener('mousedown', function (e) {
                 e.preventDefault();
                 selectSuggestion(item);
@@ -363,7 +379,7 @@
         currentQuery = query;
         const url = 'https://nominatim.openstreetmap.org/search'
             + '?q=' + encodeURIComponent(query)
-            + '&format=json&limit=5&addressdetails=0';
+            + '&format=json&limit=5&addressdetails=1';
 
         fetch(url, { headers: { 'Accept-Language': 'es' } })
             .then(function (res) { return res.json(); })
