@@ -83,18 +83,15 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div class="p-5 rounded-xl bg-slate-900 border border-slate-800">
                 <p class="text-slate-400 text-xs uppercase tracking-widest mb-1">Negocios registrados</p>
-                <p class="text-3xl font-bold text-white">—</p>
-                <p class="text-slate-500 text-sm mt-1">Disponible en B13.4</p>
+                <p class="text-3xl font-bold text-white">{{ $totalBusinesses }}</p>
             </div>
             <div class="p-5 rounded-xl bg-slate-900 border border-slate-800">
-                <p class="text-slate-400 text-xs uppercase tracking-widest mb-1">Planes activos</p>
-                <p class="text-3xl font-bold text-white">—</p>
-                <p class="text-slate-500 text-sm mt-1">Disponible en B13.3</p>
+                <p class="text-slate-400 text-xs uppercase tracking-widest mb-1">Planes disponibles</p>
+                <p class="text-3xl font-bold text-white">{{ $totalPlans }}</p>
             </div>
             <div class="p-5 rounded-xl bg-slate-900 border border-slate-800">
                 <p class="text-slate-400 text-xs uppercase tracking-widest mb-1">Negocios activos</p>
-                <p class="text-3xl font-bold text-white">—</p>
-                <p class="text-slate-500 text-sm mt-1">Disponible en B13.4</p>
+                <p class="text-3xl font-bold text-white">{{ $activeBusinesses }}</p>
             </div>
         </div>
     </section>
