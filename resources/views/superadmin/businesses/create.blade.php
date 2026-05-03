@@ -306,11 +306,13 @@
     // ── Autocomplete de dirección vía Nominatim ──────────────────────────────
 
     const dropdown = document.createElement('ul');
-    dropdown.className = 'absolute z-50 w-full bg-slate-800 border border-slate-600 rounded-lg mt-1 shadow-xl hidden';
+    dropdown.className = 'absolute w-full bg-slate-800 border border-slate-600 rounded-lg mt-1 shadow-xl hidden';
+    dropdown.style.zIndex = '2000';
     dropdown.setAttribute('role', 'listbox');
     dropdown.setAttribute('aria-label', 'Sugerencias de dirección');
 
     addressInput.parentElement.style.position = 'relative';
+    addressInput.parentElement.style.zIndex   = '2000';
     addressInput.parentElement.appendChild(dropdown);
 
     let debounceTimer = null;
