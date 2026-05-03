@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\SuperAdmin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Plan;
+use App\Models\User;
 use Illuminate\View\View;
 
 /**
@@ -17,6 +19,14 @@ class SuperAdminDashboardController extends Controller
      */
     public function index(): View
     {
-        return view('superadmin.dashboard');
+        $totalBusinesses  = User::where('role', 'admin')->count();
+        $activeBusinesses = User::where('role', 'admin')->where('active', true)->count();
+        $totalPlans       = Plan::count();
+
+        return view('superadmin.dashboard', compact(
+            'totalBusinesses',
+            'activeBusinesses',
+            'totalPlans',
+        ));
     }
 }
