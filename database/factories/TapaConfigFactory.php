@@ -25,8 +25,6 @@ class TapaConfigFactory extends Factory
             'tapa_price'         => null,
             'extra_tapa_enabled' => false,
             'extra_tapa_price'   => null,
-            'kitchen_opens_at'   => null,
-            'kitchen_closes_at'  => null,
         ];
     }
 }
