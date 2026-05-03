@@ -328,12 +328,22 @@
         dropdown.classList.add('hidden');
     }
 
-    function formatAddress(item) {
+    function extractHouseNumber(query) {
+        // "N4", "Nº 4", "No4", "Num. 4" → "4"
+        let m = query.match(/\bN[oº°úum]*\.?\s*(\d+)/i);
+        if (m) return m[1];
+        // Standalone number adjacent to a street name (e.g. "Calle X 4")
+        m = query.match(/(?<!\d)(\d{1,4})(?!\d)/);
+        return m ? m[1] : null;
+    }
+
+    function formatAddress(item, originalQuery) {
         const a = item.address || {};
         const parts = [];
 
         let street = a.road || a.pedestrian || a.footway || a.path || '';
-        if (a.house_number) street += ' ' + a.house_number;
+        const houseNum = a.house_number || (originalQuery ? extractHouseNumber(originalQuery) : null);
+        if (houseNum) street += ' ' + houseNum;
         if (street) parts.push(street);
 
         const city = a.city || a.town || a.village || a.municipality || a.county || '';
@@ -344,15 +354,15 @@
         return parts.length ? parts.join(', ') : item.display_name;
     }
 
-    function selectSuggestion(item) {
-        addressInput.value = formatAddress(item);
+    function selectSuggestion(item, originalQuery) {
+        addressInput.value = formatAddress(item, originalQuery);
         closeSuggestions();
         const latlng = L.latLng(parseFloat(item.lat), parseFloat(item.lon));
         map.setView(latlng, 15);
         placeMarker(latlng);
     }
 
-    function renderSuggestions(results) {
+    function renderSuggestions(results, originalQuery) {
         dropdown.innerHTML = '';
 
         if (!results.length) {
@@ -364,10 +374,10 @@
             const li = document.createElement('li');
             li.className = 'px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-700 hover:text-white cursor-pointer';
             li.setAttribute('role', 'option');
-            li.textContent = formatAddress(item);
+            li.textContent = formatAddress(item, originalQuery);
             li.addEventListener('mousedown', function (e) {
                 e.preventDefault();
-                selectSuggestion(item);
+                selectSuggestion(item, originalQuery);
             });
             dropdown.appendChild(li);
         });
@@ -390,7 +400,7 @@
             .then(function (res) { return res.json(); })
             .then(function (data) {
                 if (currentQuery === query) {
-                    renderSuggestions(data);
+                    renderSuggestions(data, query);
                 }
             })
             .catch(function () { closeSuggestions(); });
