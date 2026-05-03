@@ -16,6 +16,7 @@ use App\Http\Controllers\SuperAdmin\SuperAdminDashboardController;
 use App\Http\Controllers\SuperAdmin\SuperAdminPlanController;
 use App\Http\Controllers\SuperAdmin\SuperAdminBusinessController;
 use App\Http\Controllers\SuperAdmin\SuperAdminMapController;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -28,6 +29,10 @@ Route::get('/carta/{hash}', [MenuController::class, 'show'])
     ->name('menu.show');
 
 Route::get('/dashboard', function () {
+    if (Auth::user()->isSuperAdmin()) {
+        return redirect()->route('superadmin.dashboard');
+    }
+
     return view('dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
