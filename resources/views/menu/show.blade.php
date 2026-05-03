@@ -35,30 +35,32 @@
                     ->values(),
             ]);
         })->values();
+
+        $tapaProductsForAlpine = $tapaProducts->map(fn ($p) => [
+            'id'    => $p->id,
+            'name'  => $p->name,
+            'price' => (float) $p->price,
+        ])->values();
+
+        $tapaConfigForAlpine = [
+            'enabled'       => $tapaConfig?->tapas_enabled ?? false,
+            'free'          => $tapaConfig?->tapas_free ?? true,
+            'tapaPrice'     => (float) ($tapaConfig?->tapa_price ?? 0),
+            'extraEnabled'  => $tapaConfig?->extra_tapa_enabled ?? false,
+            'extraPrice'    => (float) ($tapaConfig?->extra_tapa_price ?? 0),
+            'maxVariants'   => $tapaConfig?->max_tapa_variants ?? 0,
+            'shouldSuggest' => $shouldSuggest,
+            'variantsUsed'  => $tapaVariantsUsed,
+            'barItemsCount' => (int) $barItemsCount,
+            'kitchenOpen'   => $kitchenOpen,
+        ];
     @endphp
 
     {{-- Los datos se inyectan en un <script> separado para evitar conflictos
          de escapado al pasar JSON como argumento en x-data. --}}
     <script id="menu-products" type="application/json">@json($productsForAlpine)</script>
-    <script id="tapa-config" type="application/json">@json([
-        'enabled'       => $tapaConfig?->tapas_enabled ?? false,
-        'free'          => $tapaConfig?->tapas_free ?? true,
-        'tapaPrice'     => (float) ($tapaConfig?->tapa_price ?? 0),
-        'extraEnabled'  => $tapaConfig?->extra_tapa_enabled ?? false,
-        'extraPrice'    => (float) ($tapaConfig?->extra_tapa_price ?? 0),
-        'maxVariants'   => $tapaConfig?->max_tapa_variants ?? 0,
-        'shouldSuggest' => $shouldSuggest,
-        'variantsUsed'  => $tapaVariantsUsed,
-        'barItemsCount' => (int) $barItemsCount,
-        'kitchenOpen'   => $kitchenOpen,
-    ])</script>
-    <script id="tapa-products" type="application/json">@json(
-        $tapaProducts->map(fn ($p) => [
-            'id'    => $p->id,
-            'name'  => $p->name,
-            'price' => (float) $p->price,
-        ])->values()
-    )</script>
+    <script id="tapa-config" type="application/json">@json($tapaConfigForAlpine)</script>
+    <script id="tapa-products" type="application/json">@json($tapaProductsForAlpine)</script>
 
     <script>
         document.addEventListener('alpine:init', () => {
