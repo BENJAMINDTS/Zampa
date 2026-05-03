@@ -255,12 +255,13 @@
         crossorigin=""></script>
 <script>
 (function () {
-    const latInput = document.getElementById('lat');
-    const lngInput = document.getElementById('lng');
+    const latInput     = document.getElementById('lat');
+    const lngInput     = document.getElementById('lng');
+    const addressInput = document.getElementById('address');
 
     const initialLat = parseFloat(latInput.value) || 40.4168;
     const initialLng = parseFloat(lngInput.value) || -3.7038;
-    const hasInitial  = latInput.value !== '' && lngInput.value !== '';
+    const hasInitial = latInput.value !== '' && lngInput.value !== '';
 
     const map = L.map('location-picker').setView([initialLat, initialLng], hasInitial ? 13 : 6);
 
@@ -278,6 +279,19 @@
         lngInput.value = lng.toFixed(7);
     }
 
+    function placeMarker(latlng) {
+        if (marker) {
+            marker.setLatLng(latlng);
+        } else {
+            marker = L.marker(latlng, { draggable: true }).addTo(map);
+            marker.on('dragend', function () {
+                const pos = marker.getLatLng();
+                setCoords(pos.lat, pos.lng);
+            });
+        }
+        setCoords(latlng.lat, latlng.lng);
+    }
+
     if (marker) {
         marker.on('dragend', function () {
             const pos = marker.getLatLng();
@@ -286,18 +300,99 @@
     }
 
     map.on('click', function (e) {
-        const { lat, lng } = e.latlng;
-        setCoords(lat, lng);
+        placeMarker(e.latlng);
+    });
 
-        if (marker) {
-            marker.setLatLng(e.latlng);
-        } else {
-            marker = L.marker(e.latlng, { draggable: true }).addTo(map);
-            marker.on('dragend', function () {
-                const pos = marker.getLatLng();
-                setCoords(pos.lat, pos.lng);
-            });
+    // ── Autocomplete de dirección vía Nominatim ──────────────────────────────
+
+    const dropdown = document.createElement('ul');
+    dropdown.className = 'absolute z-50 w-full bg-slate-800 border border-slate-600 rounded-lg mt-1 shadow-xl hidden';
+    dropdown.setAttribute('role', 'listbox');
+    dropdown.setAttribute('aria-label', 'Sugerencias de dirección');
+
+    addressInput.parentElement.style.position = 'relative';
+    addressInput.parentElement.appendChild(dropdown);
+
+    let debounceTimer = null;
+    let currentQuery  = '';
+
+    addressInput.setAttribute('autocomplete', 'off');
+    addressInput.setAttribute('aria-autocomplete', 'list');
+    addressInput.setAttribute('aria-controls', 'address-suggestions');
+    dropdown.id = 'address-suggestions';
+
+    function closeSuggestions() {
+        dropdown.innerHTML = '';
+        dropdown.classList.add('hidden');
+    }
+
+    function selectSuggestion(item) {
+        addressInput.value = item.display_name;
+        closeSuggestions();
+        const latlng = L.latLng(parseFloat(item.lat), parseFloat(item.lon));
+        map.setView(latlng, 15);
+        placeMarker(latlng);
+    }
+
+    function renderSuggestions(results) {
+        dropdown.innerHTML = '';
+
+        if (!results.length) {
+            closeSuggestions();
+            return;
         }
+
+        results.forEach(function (item) {
+            const li = document.createElement('li');
+            li.className = 'px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-700 hover:text-white cursor-pointer';
+            li.setAttribute('role', 'option');
+            li.textContent = item.display_name;
+            li.addEventListener('mousedown', function (e) {
+                e.preventDefault();
+                selectSuggestion(item);
+            });
+            dropdown.appendChild(li);
+        });
+
+        dropdown.classList.remove('hidden');
+    }
+
+    function fetchSuggestions(query) {
+        currentQuery = query;
+        const url = 'https://nominatim.openstreetmap.org/search'
+            + '?q=' + encodeURIComponent(query)
+            + '&format=json&limit=5&addressdetails=0';
+
+        fetch(url, { headers: { 'Accept-Language': 'es' } })
+            .then(function (res) { return res.json(); })
+            .then(function (data) {
+                if (currentQuery === query) {
+                    renderSuggestions(data);
+                }
+            })
+            .catch(function () { closeSuggestions(); });
+    }
+
+    addressInput.addEventListener('input', function () {
+        const query = addressInput.value.trim();
+        clearTimeout(debounceTimer);
+
+        if (query.length < 3) {
+            closeSuggestions();
+            return;
+        }
+
+        debounceTimer = setTimeout(function () {
+            fetchSuggestions(query);
+        }, 450);
+    });
+
+    addressInput.addEventListener('blur', function () {
+        setTimeout(closeSuggestions, 150);
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') closeSuggestions();
     });
 }());
 </script>
