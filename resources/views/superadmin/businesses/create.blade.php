@@ -279,6 +279,21 @@
         lngInput.value = lng.toFixed(7);
     }
 
+    function reverseGeocode(lat, lng) {
+        const url = 'https://nominatim.openstreetmap.org/reverse'
+            + '?lat=' + lat + '&lon=' + lng
+            + '&format=json&addressdetails=1';
+
+        fetch(url, { headers: { 'Accept-Language': 'es' } })
+            .then(function (res) { return res.json(); })
+            .then(function (data) {
+                if (data && data.address) {
+                    addressInput.value = formatAddress(data, null);
+                }
+            })
+            .catch(function () {});
+    }
+
     function placeMarker(latlng) {
         if (marker) {
             marker.setLatLng(latlng);
@@ -287,6 +302,7 @@
             marker.on('dragend', function () {
                 const pos = marker.getLatLng();
                 setCoords(pos.lat, pos.lng);
+                reverseGeocode(pos.lat, pos.lng);
             });
         }
         setCoords(latlng.lat, latlng.lng);
@@ -296,11 +312,13 @@
         marker.on('dragend', function () {
             const pos = marker.getLatLng();
             setCoords(pos.lat, pos.lng);
+            reverseGeocode(pos.lat, pos.lng);
         });
     }
 
     map.on('click', function (e) {
         placeMarker(e.latlng);
+        reverseGeocode(e.latlng.lat, e.latlng.lng);
     });
 
     // ── Autocomplete de dirección vía Nominatim ──────────────────────────────
