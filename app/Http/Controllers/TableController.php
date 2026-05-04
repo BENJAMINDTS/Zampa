@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Table;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -16,6 +18,7 @@ use SimpleSoftwareIO\QrCode\Facades\QrCode;
  * Permite al gerente ver todas sus mesas con el QR generado
  * para cada una, descargar el QR en formato PNG o SVG, y
  * regenerar el unique_hash invalidando el QR anterior.
+ * Incluye el mapa visual drag & drop para crear, mover y eliminar mesas.
  *
  * @author AyrtonAlania
  */
@@ -34,6 +37,106 @@ class TableController extends Controller
             ->get();
 
         return view('tables.index', compact('tables'));
+    }
+
+    /**
+     * Muestra el mapa visual interactivo con drag & drop para gestionar mesas.
+     *
+     * @return View
+     */
+    public function map(): View
+    {
+        $tables    = Table::where('user_id', Auth::id())->orderBy('name')->get();
+        $maxTables = Auth::user()->plan?->max_tables ?? 10;
+
+        return view('tables.map', compact('tables', 'maxTables'));
+    }
+
+    /**
+     * Crea una nueva mesa desde el mapa visual.
+     *
+     * @param  Request  $request
+     * @return JsonResponse
+     */
+    public function store(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'name'       => 'required|string|max:50',
+            'shape'      => 'required|in:square,round,rectangle',
+            'position_x' => 'required|integer|min:0',
+            'position_y' => 'required|integer|min:0',
+            'width'      => 'required|integer|min:60|max:400',
+            'height'     => 'required|integer|min:60|max:400',
+        ]);
+
+        $count     = Table::where('user_id', Auth::id())->count();
+        $maxTables = Auth::user()->plan?->max_tables ?? 10;
+
+        if ($count >= $maxTables) {
+            return response()->json([
+                'success' => false,
+                'message' => "Has alcanzado el límite de {$maxTables} mesas de tu plan.",
+            ], 422);
+        }
+
+        $table = Table::create([
+            ...$data,
+            'user_id'     => Auth::id(),
+            'unique_hash' => Str::uuid()->toString(),
+            'status'      => 'free',
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'data'    => $table,
+            'message' => "Mesa \"{$table->name}\" creada.",
+        ], 201);
+    }
+
+    /**
+     * Persiste la posición y dimensiones de una mesa tras soltarla en el mapa.
+     *
+     * @param  Request  $request
+     * @param  Table    $table
+     * @return JsonResponse
+     */
+    public function updatePosition(Request $request, Table $table): JsonResponse
+    {
+        abort_if($table->user_id !== Auth::id(), 403, 'Acceso denegado.');
+
+        $data = $request->validate([
+            'position_x' => 'required|integer|min:0',
+            'position_y' => 'required|integer|min:0',
+            'width'      => 'required|integer|min:60|max:400',
+            'height'     => 'required|integer|min:60|max:400',
+        ]);
+
+        $table->update($data);
+
+        return response()->json([
+            'success' => true,
+            'data'    => $table,
+            'message' => 'Posición guardada.',
+        ]);
+    }
+
+    /**
+     * Elimina una mesa del mapa y de la base de datos.
+     *
+     * @param  Table  $table
+     * @return JsonResponse
+     */
+    public function destroy(Table $table): JsonResponse
+    {
+        abort_if($table->user_id !== Auth::id(), 403, 'Acceso denegado.');
+
+        $name = $table->name;
+        $table->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => "Mesa \"{$name}\" eliminada.",
+        ]);
     }
 
     /**

@@ -60,6 +60,12 @@ Route::middleware(['auth', 'business.active'])->group(function () {
         Route::get('/staff/create', [StaffController::class, 'create'])->name('staff.create');
         Route::post('/staff', [StaffController::class, 'store'])->name('staff.store');
         Route::delete('/staff/{staff}', [StaffController::class, 'destroy'])->name('staff.destroy');
+
+        // Mapa visual de mesas (Bloque 8.1) — solo admin
+        Route::get('/mesas/mapa', [TableController::class, 'map'])->name('tables.map');
+        Route::post('/mesas', [TableController::class, 'store'])->name('tables.store');
+        Route::patch('/mesas/{table}/posicion', [TableController::class, 'updatePosition'])->name('tables.updatePosition');
+        Route::delete('/mesas/{table}', [TableController::class, 'destroy'])->name('tables.destroy');
     });
 
     // Gestión de mesas y códigos QR
