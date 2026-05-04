@@ -18,6 +18,12 @@
 
             <div class="bg-white dark:bg-gray-800 shadow sm:rounded-lg p-6 sm:p-8">
 
+                @php
+                    $schedulesForAlpine = $tapaConfig->schedules->map(function ($s) {
+                        return ['opens_at' => substr($s->opens_at, 0, 5), 'closes_at' => substr($s->closes_at, 0, 5)];
+                    })->values();
+                @endphp
+
                 <form
                     method="POST"
                     action="{{ route('tapas.update') }}"
@@ -25,7 +31,7 @@
                         tapas_enabled:      {{ $tapaConfig->tapas_enabled ? 'true' : 'false' }},
                         tapas_free:         {{ $tapaConfig->tapas_free ? 'true' : 'false' }},
                         extra_tapa_enabled: {{ $tapaConfig->extra_tapa_enabled ? 'true' : 'false' }},
-                        schedules: @json($tapaConfig->schedules->map(fn ($s) => ['opens_at' => substr($s->opens_at, 0, 5), 'closes_at' => substr($s->closes_at, 0, 5)])->values()),
+                        schedules: @json($schedulesForAlpine),
                         addSchedule()    { this.schedules.push({ opens_at: '', closes_at: '' }); },
                         removeSchedule(i){ this.schedules.splice(i, 1); }
                     }"
