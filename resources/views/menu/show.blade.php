@@ -1529,9 +1529,9 @@
                     </p>
                     <p class="text-xs text-blue-700 dark:text-blue-400 mt-0.5">
                         {{ __('Ahora solo se sirven bebidas.') }}
-                        @if($tapaConfig?->kitchen_opens_at)
+                        @if($nextOpeningTime)
                             {{ __('La cocina abre a las') }}
-                            <span class="font-semibold">{{ substr($tapaConfig->kitchen_opens_at, 0, 5) }}</span>.
+                            <span class="font-semibold">{{ $nextOpeningTime }}</span>.
                         @endif
                     </p>
                 </div>
