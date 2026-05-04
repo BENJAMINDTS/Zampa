@@ -346,3 +346,114 @@ it('public menu route returns 404 with invalid hash', function () {
     $this->get(route('menu.show', 'hash-invalido-xyz'))
          ->assertNotFound();
 });
+
+// ─── Límite del plan (Bloque 8.2) ─────────────────────────────────────────────
+
+it('allows creation when one slot remains in plan', function () {
+    Table::factory()->for($this->admin)->count(4)->create();
+
+    $this->actingAs($this->admin)
+         ->postJson(route('tables.store'), [
+             'name'       => 'Última Mesa',
+             'shape'      => 'square',
+             'position_x' => 0,
+             'position_y' => 0,
+             'width'      => 100,
+             'height'     => 100,
+         ])
+         ->assertCreated()
+         ->assertJsonPath('success', true);
+});
+
+it('blocks creation at exactly the plan limit', function () {
+    Table::factory()->for($this->admin)->count(5)->create();
+
+    $this->actingAs($this->admin)
+         ->postJson(route('tables.store'), [
+             'name'       => 'Mesa Extra',
+             'shape'      => 'square',
+             'position_x' => 0,
+             'position_y' => 0,
+             'width'      => 100,
+             'height'     => 100,
+         ])
+         ->assertUnprocessable()
+         ->assertJsonPath('success', false);
+
+    expect(Table::where('user_id', $this->admin->id)->count())->toBe(5);
+});
+
+it('limit error message includes the plan max_tables value', function () {
+    Table::factory()->for($this->admin)->count(5)->create();
+
+    $response = $this->actingAs($this->admin)
+                     ->postJson(route('tables.store'), [
+                         'name'       => 'Mesa X',
+                         'shape'      => 'square',
+                         'position_x' => 0,
+                         'position_y' => 0,
+                         'width'      => 100,
+                         'height'     => 100,
+                     ]);
+
+    expect($response->json('message'))->toContain('5');
+});
+
+it('counts only own tables towards the plan limit', function () {
+    Table::factory()->for($this->other)->count(5)->create();
+
+    $this->actingAs($this->admin)
+         ->postJson(route('tables.store'), [
+             'name'       => 'Mesa Propia',
+             'shape'      => 'round',
+             'position_x' => 0,
+             'position_y' => 0,
+             'width'      => 100,
+             'height'     => 100,
+         ])
+         ->assertCreated()
+         ->assertJsonPath('success', true);
+});
+
+it('user without plan defaults to limit of 10', function () {
+    $admin = User::factory()->admin()->create(['plan_id' => null]);
+    Table::factory()->for($admin)->count(10)->create();
+
+    $this->actingAs($admin)
+         ->postJson(route('tables.store'), [
+             'name'       => 'Mesa Sin Plan',
+             'shape'      => 'square',
+             'position_x' => 0,
+             'position_y' => 0,
+             'width'      => 100,
+             'height'     => 100,
+         ])
+         ->assertUnprocessable()
+         ->assertJsonPath('success', false);
+});
+
+it('user without plan can still create up to 10 tables', function () {
+    $admin = User::factory()->admin()->create(['plan_id' => null]);
+    Table::factory()->for($admin)->count(9)->create();
+
+    $this->actingAs($admin)
+         ->postJson(route('tables.store'), [
+             'name'       => 'Mesa 10',
+             'shape'      => 'square',
+             'position_x' => 0,
+             'position_y' => 0,
+             'width'      => 100,
+             'height'     => 100,
+         ])
+         ->assertCreated();
+});
+
+it('index view shows correct table count against plan limit', function () {
+    Table::factory()->for($this->admin)->count(3)->create();
+
+    $response = $this->actingAs($this->admin)
+                     ->get(route('tables.index'));
+
+    $response->assertViewHas('maxTables', 5);
+    expect($response->viewData('tables')->count())->toBe(3);
+});
