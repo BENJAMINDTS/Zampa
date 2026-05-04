@@ -32,11 +32,10 @@ class TableController extends Controller
      */
     public function index(): View
     {
-        $tables = Table::where('user_id', Auth::id())
-            ->orderBy('name')
-            ->get();
+        $tables    = Table::where('user_id', Auth::id())->orderBy('name')->get();
+        $maxTables = Auth::user()->plan?->max_tables ?? 10;
 
-        return view('tables.index', compact('tables'));
+        return view('tables.index', compact('tables', 'maxTables'));
     }
 
     /**

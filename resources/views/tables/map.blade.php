@@ -19,9 +19,33 @@
 
         <div class="flex items-center gap-3">
             <h1 class="text-lg font-bold text-gray-900 dark:text-white">Plano del restaurante</h1>
-            <span class="text-sm text-gray-400 dark:text-gray-500">
-                <span x-text="tables.length"></span> / {{ $maxTables }} mesas
-            </span>
+
+            {{-- Contador con colores y barra de progreso --}}
+            <div class="flex flex-col gap-1">
+                <span class="text-sm font-medium transition-colors"
+                      :class="{
+                          'text-emerald-600 dark:text-emerald-400': tables.length / {{ $maxTables }} < 0.8,
+                          'text-amber-600  dark:text-amber-400':    tables.length / {{ $maxTables }} >= 0.8 && tables.length < {{ $maxTables }},
+                          'text-red-600    dark:text-red-400':      tables.length >= {{ $maxTables }}
+                      }"
+                      :aria-label="`${tables.length} de {{ $maxTables }} mesas usadas`">
+                    <span x-text="tables.length"></span> de {{ $maxTables }} mesas usadas
+                </span>
+                <div class="w-32 h-1.5 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden"
+                     role="progressbar"
+                     :aria-valuenow="tables.length"
+                     aria-valuemin="0"
+                     aria-valuemax="{{ $maxTables }}">
+                    <div class="h-full rounded-full transition-all duration-300"
+                         :style="`width:${Math.min(tables.length / {{ $maxTables }} * 100, 100)}%`"
+                         :class="{
+                             'bg-emerald-500': tables.length / {{ $maxTables }} < 0.8,
+                             'bg-amber-500':   tables.length / {{ $maxTables }} >= 0.8 && tables.length < {{ $maxTables }},
+                             'bg-red-500':     tables.length >= {{ $maxTables }}
+                         }">
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="flex items-center gap-2">
@@ -66,7 +90,9 @@
             </p>
 
             {{-- Cuadrada --}}
-            <div class="palette-item group flex flex-col items-center gap-2 cursor-grab active:cursor-grabbing select-none"
+            <div class="palette-item group flex flex-col items-center gap-2 select-none transition-opacity"
+                 :class="tables.length >= {{ $maxTables }} ? 'opacity-40 cursor-not-allowed' : 'cursor-grab active:cursor-grabbing'"
+                 :title="tables.length >= {{ $maxTables }} ? 'Límite de mesas alcanzado' : 'Arrastrar al plano'"
                  data-shape="square" data-width="100" data-height="100">
                 <div class="w-14 h-14 rounded-lg border-2 border-dashed border-indigo-400
                             bg-indigo-50 dark:bg-indigo-900/30
@@ -80,7 +106,9 @@
             </div>
 
             {{-- Redonda --}}
-            <div class="palette-item group flex flex-col items-center gap-2 cursor-grab active:cursor-grabbing select-none"
+            <div class="palette-item group flex flex-col items-center gap-2 select-none transition-opacity"
+                 :class="tables.length >= {{ $maxTables }} ? 'opacity-40 cursor-not-allowed' : 'cursor-grab active:cursor-grabbing'"
+                 :title="tables.length >= {{ $maxTables }} ? 'Límite de mesas alcanzado' : 'Arrastrar al plano'"
                  data-shape="round" data-width="100" data-height="100">
                 <div class="w-14 h-14 rounded-full border-2 border-dashed border-emerald-400
                             bg-emerald-50 dark:bg-emerald-900/30
@@ -94,7 +122,9 @@
             </div>
 
             {{-- Rectangular --}}
-            <div class="palette-item group flex flex-col items-center gap-2 cursor-grab active:cursor-grabbing select-none"
+            <div class="palette-item group flex flex-col items-center gap-2 select-none transition-opacity"
+                 :class="tables.length >= {{ $maxTables }} ? 'opacity-40 cursor-not-allowed' : 'cursor-grab active:cursor-grabbing'"
+                 :title="tables.length >= {{ $maxTables }} ? 'Límite de mesas alcanzado' : 'Arrastrar al plano'"
                  data-shape="rectangle" data-width="150" data-height="90">
                 <div class="w-14 h-9 rounded-lg border-2 border-dashed border-amber-400
                             bg-amber-50 dark:bg-amber-900/30
@@ -407,6 +437,11 @@ document.addEventListener('alpine:init', () => {
                 inertia: false,
                 listeners: {
                     start: (event) => {
+                        if (this.tables.length >= {{ $maxTables }}) {
+                            this.showToast(`Límite de {{ $maxTables }} mesas alcanzado.`, true);
+                            return;
+                        }
+
                         dropShape = event.target.dataset.shape;
                         dropW     = parseInt(event.target.dataset.width)  || 100;
                         dropH     = parseInt(event.target.dataset.height) || 100;
@@ -448,10 +483,6 @@ document.addEventListener('alpine:init', () => {
                             cy >= canvasRect.top  && cy <= canvasRect.bottom;
 
                         if (!overCanvas) return;
-                        if (this.tables.length >= {{ $maxTables }}) {
-                            this.showToast('Límite de mesas alcanzado.', true);
-                            return;
-                        }
 
                         const name = await Alpine.store('tableModal').prompt();
                         if (!name) return;
