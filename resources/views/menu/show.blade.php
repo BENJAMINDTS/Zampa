@@ -35,16 +35,42 @@
                     ->values(),
             ]);
         })->values();
+
+        $tapaProductsForAlpine = $tapaProducts->map(fn ($p) => [
+            'id'    => $p->id,
+            'name'  => $p->name,
+            'price' => (float) $p->price,
+        ])->values();
+
+        $tapaConfigForAlpine = [
+            'enabled'       => $tapaConfig?->tapas_enabled ?? false,
+            'free'          => $tapaConfig?->tapas_free ?? true,
+            'tapaPrice'     => (float) ($tapaConfig?->tapa_price ?? 0),
+            'extraEnabled'  => $tapaConfig?->extra_tapa_enabled ?? false,
+            'extraPrice'    => (float) ($tapaConfig?->extra_tapa_price ?? 0),
+            'maxVariants'   => $tapaConfig?->max_tapa_variants ?? 0,
+            'shouldSuggest' => $shouldSuggest,
+            'variantsUsed'  => $tapaVariantsUsed,
+            'barItemsCount' => (int) $barItemsCount,
+            'kitchenOpen'   => $kitchenOpen,
+        ];
     @endphp
 
     {{-- Los datos se inyectan en un <script> separado para evitar conflictos
          de escapado al pasar JSON como argumento en x-data. --}}
     <script id="menu-products" type="application/json">@json($productsForAlpine)</script>
+    <script id="tapa-config" type="application/json">@json($tapaConfigForAlpine)</script>
+    <script id="tapa-products" type="application/json">@json($tapaProductsForAlpine)</script>
 
     <script>
         document.addEventListener('alpine:init', () => {
             const raw  = document.getElementById('menu-products');
             const list = raw ? JSON.parse(raw.textContent) : [];
+
+            const rawTapa      = document.getElementById('tapa-config');
+            const tapaConfig   = rawTapa ? JSON.parse(rawTapa.textContent) : {};
+            const rawTapaProd  = document.getElementById('tapa-products');
+            const tapaProdList = rawTapaProd ? JSON.parse(rawTapaProd.textContent) : [];
 
             // ── Carrito global ──────────────────────────────────────────
             Alpine.store('cart', {
@@ -54,6 +80,12 @@
                 sent:    false,
                 error:   null,
                 tableHash: '{{ $table->unique_hash }}',
+
+                showTapaModal:  false,
+                tapaConfig:     tapaConfig,
+                tapaProducts:   tapaProdList,
+                _barItemsCount: tapaConfig.barItemsCount ?? 0,
+                _variantsUsed:  tapaConfig.variantsUsed  ?? 0,
 
                 add(product) {
                     const existing = this.items.find(i => i.productId === product.id);
@@ -70,6 +102,38 @@
                             extras:     product.extras    || [],
                         });
                     }
+                    if (product.destination === 'bar') {
+                        this._barItemsCount++;
+                        this._checkTapaSuggestion();
+                    }
+                },
+
+                _checkTapaSuggestion() {
+                    const cfg = this.tapaConfig;
+                    if (!cfg.enabled)                             return;
+                    if (!cfg.kitchenOpen)                         return;
+                    if (this._barItemsCount <= 0)                 return;
+                    if (this._variantsUsed >= cfg.maxVariants)    return;
+                    if (this.tapaProducts.length === 0)           return;
+                    this.showTapaModal = true;
+                },
+
+                closeTapaModal() {
+                    this.showTapaModal = false;
+                },
+
+                addTapa(tapaProduct) {
+                    const price = this.tapaConfig.free ? 0 : this.tapaConfig.tapaPrice;
+                    this.add({
+                        id:          tapaProduct.id,
+                        name:        tapaProduct.name,
+                        price:       price,
+                        destination: 'kitchen',
+                        removable:   [],
+                        extras:      [],
+                    });
+                    this._variantsUsed++;
+                    this.showTapaModal = false;
                 },
 
                 inc(idx) { this.items[idx].quantity++; },
@@ -1454,6 +1518,26 @@
         {{-- ── Contenido principal ──────────────────────────────────── --}}
         <main id="main-content" class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-10">
 
+            {{-- ── Banner cocina cerrada ──────────────────────────────── --}}
+            @if(!$kitchenOpen)
+            <div role="status"
+                 class="rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                <span aria-hidden="true" class="text-2xl leading-none">🕐</span>
+                <div class="flex-1">
+                    <p class="text-sm font-semibold text-blue-800 dark:text-blue-300">
+                        {{ __('La cocina está cerrada en este momento') }}
+                    </p>
+                    <p class="text-xs text-blue-700 dark:text-blue-400 mt-0.5">
+                        {{ __('Ahora solo se sirven bebidas.') }}
+                        @if($tapaConfig?->kitchen_opens_at)
+                            {{ __('La cocina abre a las') }}
+                            <span class="font-semibold">{{ substr($tapaConfig->kitchen_opens_at, 0, 5) }}</span>.
+                        @endif
+                    </p>
+                </div>
+            </div>
+            @endif
+
             {{-- Estado vacío cuando los filtros excluyen todo --}}
             <div x-show="hasActiveFilters && visibleCount === 0"
                  x-transition
@@ -1625,17 +1709,111 @@
                     </p>
                     <p class="text-xs text-amber-700 dark:text-amber-400 mt-0.5">
                         @if($tapaConfig->tapas_free)
-                            {{ __('Las tapas son gratuitas. Puedes pedirlas indicándolo en tu comanda.') }}
+                            {{ __('Las tapas son gratuitas. Al añadir una bebida te sugeriremos tu tapa.') }}
                         @else
                             {{ __('Precio por tapa:') }}
                             <span class="font-semibold">{{ number_format($tapaConfig->tapa_price ?? 0, 2) }} €</span>
                         @endif
                         &bull; {{ __('Máximo') }} {{ $tapaConfig->max_tapa_variants }} {{ Str::plural('variante', $tapaConfig->max_tapa_variants) }} {{ __('distintas.') }}
+                        @if($tapaConfig->extra_tapa_enabled)
+                            &bull; {{ __('Tapa extra disponible por') }}
+                            <span class="font-semibold">{{ number_format($tapaConfig->extra_tapa_price ?? 0, 2) }} €</span>.
+                        @endif
                     </p>
                 </div>
             </div>
         </section>
         @endif
+
+        {{-- ── Modal sugerencia de tapa ────────────────────────────── --}}
+        <div x-show="$store.cart.showTapaModal"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
+             @click.self="$store.cart.closeTapaModal()"
+             @keydown.escape.window="$store.cart.closeTapaModal()"
+             aria-modal="true"
+             role="dialog"
+             aria-label="Elige tu tapa"
+             style="display:none">
+
+            <div x-show="$store.cart.showTapaModal"
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="translate-y-full"
+                 x-transition:enter-end="translate-y-0"
+                 x-transition:leave="transition ease-in duration-200"
+                 x-transition:leave-start="translate-y-0"
+                 x-transition:leave-end="translate-y-full"
+                 class="absolute bottom-0 left-0 right-0 bg-white dark:bg-gray-900
+                        rounded-t-2xl shadow-2xl px-5 pb-8 pt-4 max-h-[85dvh] overflow-y-auto">
+
+                <div class="w-10 h-1 rounded-full bg-gray-300 dark:bg-gray-600 mx-auto mb-4"></div>
+
+                <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-1">
+                    🍽️ {{ __('¿Quieres una tapa?') }}
+                </h2>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mb-4"
+                   x-text="'Te quedan ' + ($store.cart.tapaConfig.maxVariants - $store.cart._variantsUsed) + ' variante(s) disponible(s).'">
+                </p>
+
+                <ul class="space-y-2 mb-4" aria-label="Tapas disponibles">
+                    <template x-for="tapa in $store.cart.tapaProducts" :key="tapa.id">
+                        <li>
+                            <button type="button"
+                                    @click="$store.cart.addTapa(tapa)"
+                                    class="w-full flex items-center justify-between px-4 py-3 rounded-xl
+                                           bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700
+                                           hover:bg-amber-100 dark:hover:bg-amber-800/30 transition-colors
+                                           focus:outline-none focus:ring-2 focus:ring-amber-500">
+                                <span class="font-medium text-gray-900 dark:text-white" x-text="tapa.name"></span>
+                                <span class="text-sm font-semibold text-amber-700 dark:text-amber-300"
+                                      x-text="$store.cart.tapaConfig.free ? 'Gratis' : ($store.cart.tapaConfig.tapaPrice.toFixed(2).replace('.', ',') + ' €')">
+                                </span>
+                            </button>
+                        </li>
+                    </template>
+                </ul>
+
+                {{-- Tapa extra (si está habilitada) --}}
+                <template x-if="$store.cart.tapaConfig.extraEnabled">
+                    <div class="border-t border-gray-200 dark:border-gray-700 pt-4 mb-4">
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                            {{ __('Tapa extra (no consume variante)') }} —
+                            <span x-text="$store.cart.tapaConfig.extraPrice.toFixed(2).replace('.', ',') + ' €'"></span>
+                        </p>
+                        <template x-for="tapa in $store.cart.tapaProducts" :key="'extra-' + tapa.id">
+                            <button type="button"
+                                    @click="$store.cart.add({
+                                        id: tapa.id,
+                                        name: tapa.name + ' (extra)',
+                                        price: $store.cart.tapaConfig.extraPrice,
+                                        destination: 'kitchen',
+                                        removable: [],
+                                        extras: []
+                                    }); $store.cart.closeTapaModal()"
+                                    class="w-full mb-2 px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600
+                                           text-sm text-left text-gray-700 dark:text-gray-300
+                                           hover:border-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-400
+                                           transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    x-text="tapa.name + ' (+' + $store.cart.tapaConfig.extraPrice.toFixed(2).replace('.', ',') + ' €)'">
+                            </button>
+                        </template>
+                    </div>
+                </template>
+
+                <button type="button"
+                        @click="$store.cart.closeTapaModal()"
+                        class="w-full py-2.5 rounded-xl text-sm font-medium text-gray-500 dark:text-gray-400
+                               hover:text-gray-700 dark:hover:text-gray-200
+                               focus:outline-none focus:underline transition-colors">
+                    {{ __('Ahora no') }}
+                </button>
+            </div>
+        </div>
 
         {{-- ── Footer ──────────────────────────────────────────────── --}}
         <footer class="mt-12 border-t border-gray-200 dark:border-gray-800 py-6 text-center">

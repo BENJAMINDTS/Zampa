@@ -2,14 +2,18 @@
 
 /**
  * @author AyrtonAlania
+ * @author BenjaminDTS
  */
 
+use App\Models\Category;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Plan;
+use App\Models\Product;
 use App\Models\Table;
 use App\Models\TapaConfig;
 use App\Models\User;
+use Illuminate\Support\Carbon;
 
 uses(Illuminate\Foundation\Testing\RefreshDatabase::class);
 
@@ -134,6 +138,27 @@ it('tapa_price is cleared when tapas_free is switched to true', function () {
         'user_id'    => $this->user->id,
         'tapa_price' => null,
     ]);
+});
+
+it('fails update when tapas are paid and tapa_price is missing', function () {
+    $this->actingAs($this->user)
+         ->put(route('tapas.update'), [
+             'tapas_enabled'     => '1',
+             'tapas_free'        => '0',
+             'max_tapa_variants' => 3,
+         ])
+         ->assertSessionHasErrors('tapa_price');
+});
+
+it('fails update when tapas are paid and tapa_price is invalid', function () {
+    $this->actingAs($this->user)
+         ->put(route('tapas.update'), [
+             'tapas_enabled'     => '1',
+             'tapas_free'        => '0',
+             'max_tapa_variants' => 3,
+             'tapa_price'        => 'abc',
+         ])
+         ->assertSessionHasErrors('tapa_price');
 });
 
 // ─── Variantes máximas ────────────────────────────────────────────────────────
@@ -275,28 +300,6 @@ it('only counts bar items from active orders excluding closed ones', function ()
     expect($response->viewData('barItemsCount'))->toBe(5);
 });
 
-it('fails update when tapas are paid and tapa_price is missing', function () {
-    $this->actingAs($this->user)
-         ->put(route('tapas.update'), [
-             'tapas_enabled'     => '1',
-             'tapas_free'        => '0',
-             'max_tapa_variants' => 3,
-             // tapa_price intencionalmente ausente
-         ])
-         ->assertSessionHasErrors('tapa_price');
-});
-
-it('fails update when tapas are paid and tapa_price is invalid', function () {
-    $this->actingAs($this->user)
-         ->put(route('tapas.update'), [
-             'tapas_enabled'     => '1',
-             'tapas_free'        => '0',
-             'max_tapa_variants' => 3,
-             'tapa_price'        => 'abc',
-         ])
-         ->assertSessionHasErrors('tapa_price');
-});
-
 it('waiter role cannot access tapas config', function () {
     $waiter = User::factory()->create(['role' => 'waiter']);
 
@@ -321,4 +324,444 @@ it('flash success message shown after saving tapa config', function () {
              'max_tapa_variants' => 3,
          ])
          ->assertSessionHas('success');
+});
+
+// ─── Categoría automática de Tapas ───────────────────────────────────────────
+
+it('creates Tapas category when tapas are enabled for the first time', function () {
+    $this->assertDatabaseMissing('categories', ['user_id' => $this->user->id, 'name' => 'Tapas']);
+
+    $this->actingAs($this->user)
+         ->put(route('tapas.update'), [
+             'tapas_enabled'     => '1',
+             'tapas_free'        => '1',
+             'max_tapa_variants' => 3,
+         ]);
+
+    $this->assertDatabaseHas('categories', [
+        'user_id' => $this->user->id,
+        'name'    => 'Tapas',
+    ]);
+});
+
+it('creates Tapas category with destination kitchen', function () {
+    $this->actingAs($this->user)
+         ->put(route('tapas.update'), [
+             'tapas_enabled'     => '1',
+             'tapas_free'        => '1',
+             'max_tapa_variants' => 3,
+         ]);
+
+    $this->assertDatabaseHas('categories', [
+        'user_id'     => $this->user->id,
+        'name'        => 'Tapas',
+        'destination' => 'kitchen',
+    ]);
+});
+
+it('does not create duplicate Tapas category if already exists', function () {
+    Category::factory()->create([
+        'user_id'     => $this->user->id,
+        'name'        => 'Tapas',
+        'destination' => 'kitchen',
+    ]);
+
+    $this->actingAs($this->user)
+         ->put(route('tapas.update'), [
+             'tapas_enabled'     => '1',
+             'tapas_free'        => '1',
+             'max_tapa_variants' => 3,
+         ]);
+
+    expect(Category::where('user_id', $this->user->id)->where('name', 'Tapas')->count())->toBe(1);
+});
+
+it('does not delete Tapas category when tapas are disabled', function () {
+    Category::factory()->create([
+        'user_id'     => $this->user->id,
+        'name'        => 'Tapas',
+        'destination' => 'kitchen',
+    ]);
+
+    TapaConfig::factory()->create([
+        'user_id'       => $this->user->id,
+        'tapas_enabled' => true,
+    ]);
+
+    $this->actingAs($this->user)
+         ->put(route('tapas.update'), [
+             'tapas_enabled'     => '0',
+             'tapas_free'        => '1',
+             'max_tapa_variants' => 3,
+         ]);
+
+    $this->assertDatabaseHas('categories', [
+        'user_id' => $this->user->id,
+        'name'    => 'Tapas',
+    ]);
+});
+
+// ─── Tapa extra ───────────────────────────────────────────────────────────────
+
+it('fails to save extra tapa enabled without extra tapa price', function () {
+    $this->actingAs($this->user)
+         ->put(route('tapas.update'), [
+             'tapas_enabled'      => '1',
+             'tapas_free'         => '1',
+             'max_tapa_variants'  => 3,
+             'extra_tapa_enabled' => '1',
+             // extra_tapa_price ausente
+         ])
+         ->assertSessionHasErrors('extra_tapa_price');
+});
+
+it('allows saving extra tapa disabled without extra tapa price', function () {
+    $this->actingAs($this->user)
+         ->put(route('tapas.update'), [
+             'tapas_enabled'      => '1',
+             'tapas_free'         => '1',
+             'max_tapa_variants'  => 3,
+             'extra_tapa_enabled' => '0',
+         ])
+         ->assertSessionMissing('errors')
+         ->assertRedirect(route('tapas.edit'));
+});
+
+it('saves extra tapa config correctly', function () {
+    $this->actingAs($this->user)
+         ->put(route('tapas.update'), [
+             'tapas_enabled'      => '1',
+             'tapas_free'         => '1',
+             'max_tapa_variants'  => 3,
+             'extra_tapa_enabled' => '1',
+             'extra_tapa_price'   => '2.50',
+         ]);
+
+    $config = TapaConfig::where('user_id', $this->user->id)->first();
+
+    expect($config->extra_tapa_enabled)->toBeTrue()
+        ->and((float) $config->extra_tapa_price)->toBe(2.50);
+});
+
+it('clears extra tapa price when extra tapa is disabled', function () {
+    TapaConfig::factory()->create([
+        'user_id'            => $this->user->id,
+        'tapas_enabled'      => true,
+        'extra_tapa_enabled' => true,
+        'extra_tapa_price'   => 2.00,
+    ]);
+
+    $this->actingAs($this->user)
+         ->put(route('tapas.update'), [
+             'tapas_enabled'      => '1',
+             'tapas_free'         => '1',
+             'max_tapa_variants'  => 3,
+             'extra_tapa_enabled' => '0',
+         ]);
+
+    $this->assertDatabaseHas('tapa_configs', [
+        'user_id'          => $this->user->id,
+        'extra_tapa_price' => null,
+    ]);
+});
+
+// ─── Horario de cocina ────────────────────────────────────────────────────────
+
+it('saves kitchen schedule fields correctly', function () {
+    $this->actingAs($this->user)
+         ->put(route('tapas.update'), [
+             'tapas_enabled'      => '1',
+             'tapas_free'         => '1',
+             'max_tapa_variants'  => 3,
+             'kitchen_opens_at'   => '10:00',
+             'kitchen_closes_at'  => '23:00',
+         ]);
+
+    $config = TapaConfig::where('user_id', $this->user->id)->first();
+
+    expect($config->kitchen_opens_at)->toStartWith('10:00')
+        ->and($config->kitchen_closes_at)->toStartWith('23:00');
+});
+
+it('allows null kitchen schedule meaning always open', function () {
+    $this->actingAs($this->user)
+         ->put(route('tapas.update'), [
+             'tapas_enabled'     => '1',
+             'tapas_free'        => '1',
+             'max_tapa_variants' => 3,
+         ])
+         ->assertRedirect(route('tapas.edit'));
+
+    $this->assertDatabaseHas('tapa_configs', [
+        'user_id'          => $this->user->id,
+        'kitchen_opens_at' => null,
+        'kitchen_closes_at' => null,
+    ]);
+});
+
+it('fails when only kitchen_opens_at is provided without kitchen_closes_at', function () {
+    $this->actingAs($this->user)
+         ->put(route('tapas.update'), [
+             'tapas_enabled'     => '1',
+             'tapas_free'        => '1',
+             'max_tapa_variants' => 3,
+             'kitchen_opens_at'  => '10:00',
+             // kitchen_closes_at ausente
+         ])
+         ->assertSessionHasErrors('kitchen_closes_at');
+});
+
+it('fails when only kitchen_closes_at is provided without kitchen_opens_at', function () {
+    $this->actingAs($this->user)
+         ->put(route('tapas.update'), [
+             'tapas_enabled'      => '1',
+             'tapas_free'         => '1',
+             'max_tapa_variants'  => 3,
+             'kitchen_closes_at'  => '23:00',
+             // kitchen_opens_at ausente
+         ])
+         ->assertSessionHasErrors('kitchen_opens_at');
+});
+
+it('menu hides kitchen categories when kitchen is closed', function () {
+    Carbon::setTestNow('2026-05-03 15:00:00');
+
+    TapaConfig::factory()->create([
+        'user_id'           => $this->user->id,
+        'tapas_enabled'     => true,
+        'kitchen_opens_at'  => '17:00',
+        'kitchen_closes_at' => '23:00',
+    ]);
+
+    $table           = Table::factory()->create(['user_id' => $this->user->id]);
+    $kitchenCategory = Category::factory()->create(['user_id' => $this->user->id, 'destination' => 'kitchen']);
+    $barCategory     = Category::factory()->create(['user_id' => $this->user->id, 'destination' => 'bar']);
+
+    Product::factory()->create(['user_id' => $this->user->id, 'category_id' => $kitchenCategory->id, 'is_active' => true]);
+    Product::factory()->create(['user_id' => $this->user->id, 'category_id' => $barCategory->id, 'is_active' => true]);
+
+    $response = $this->get(route('menu.show', $table->unique_hash));
+
+    $response->assertOk();
+    expect($response->viewData('kitchenOpen'))->toBeFalse();
+
+    $categories = $response->viewData('categories');
+    $destinations = $categories->pluck('destination')->unique()->values()->toArray();
+    expect($destinations)->not->toContain('kitchen');
+
+    Carbon::setTestNow();
+});
+
+it('menu shows all categories when no schedule is configured', function () {
+    TapaConfig::factory()->create([
+        'user_id'           => $this->user->id,
+        'tapas_enabled'     => true,
+        'kitchen_opens_at'  => null,
+        'kitchen_closes_at' => null,
+    ]);
+
+    $table           = Table::factory()->create(['user_id' => $this->user->id]);
+    $kitchenCategory = Category::factory()->create(['user_id' => $this->user->id, 'destination' => 'kitchen']);
+    $barCategory     = Category::factory()->create(['user_id' => $this->user->id, 'destination' => 'bar']);
+
+    Product::factory()->create(['user_id' => $this->user->id, 'category_id' => $kitchenCategory->id, 'is_active' => true]);
+    Product::factory()->create(['user_id' => $this->user->id, 'category_id' => $barCategory->id, 'is_active' => true]);
+
+    $response = $this->get(route('menu.show', $table->unique_hash));
+
+    $response->assertOk();
+    expect($response->viewData('kitchenOpen'))->toBeTrue();
+
+    $categories   = $response->viewData('categories');
+    $destinations = $categories->pluck('destination')->unique()->sort()->values()->toArray();
+    expect($destinations)->toContain('kitchen')
+        ->and($destinations)->toContain('bar');
+});
+
+// ─── Sugerencia de tapa ───────────────────────────────────────────────────────
+
+it('shouldSuggest is true when conditions are met', function () {
+    Carbon::setTestNow('2026-05-03 12:00:00');
+
+    TapaConfig::factory()->create([
+        'user_id'           => $this->user->id,
+        'tapas_enabled'     => true,
+        'max_tapa_variants' => 3,
+        'kitchen_opens_at'  => '10:00',
+        'kitchen_closes_at' => '23:00',
+    ]);
+
+    $table        = Table::factory()->create(['user_id' => $this->user->id]);
+    $tapaCategory = Category::factory()->create(['user_id' => $this->user->id, 'name' => 'Tapas', 'destination' => 'kitchen']);
+    Product::factory()->create(['user_id' => $this->user->id, 'category_id' => $tapaCategory->id, 'is_active' => true]);
+
+    $order = Order::factory()->create(['table_id' => $table->id, 'status' => 'pending']);
+    OrderItem::factory()->create(['order_id' => $order->id, 'destination' => 'bar', 'quantity' => 1]);
+
+    $response = $this->get(route('menu.show', $table->unique_hash));
+    $response->assertOk();
+    expect($response->viewData('shouldSuggest'))->toBeTrue();
+
+    Carbon::setTestNow();
+});
+
+it('shouldSuggest is false when tapas are disabled', function () {
+    TapaConfig::factory()->create([
+        'user_id'       => $this->user->id,
+        'tapas_enabled' => false,
+    ]);
+
+    $table = Table::factory()->create(['user_id' => $this->user->id]);
+    $order = Order::factory()->create(['table_id' => $table->id, 'status' => 'pending']);
+    OrderItem::factory()->create(['order_id' => $order->id, 'destination' => 'bar', 'quantity' => 2]);
+
+    $response = $this->get(route('menu.show', $table->unique_hash));
+    $response->assertOk();
+    expect($response->viewData('shouldSuggest'))->toBeFalse();
+});
+
+it('shouldSuggest is false when kitchen is closed', function () {
+    Carbon::setTestNow('2026-05-03 15:00:00');
+
+    TapaConfig::factory()->create([
+        'user_id'           => $this->user->id,
+        'tapas_enabled'     => true,
+        'max_tapa_variants' => 3,
+        'kitchen_opens_at'  => '17:00',
+        'kitchen_closes_at' => '23:00',
+    ]);
+
+    $table        = Table::factory()->create(['user_id' => $this->user->id]);
+    $tapaCategory = Category::factory()->create(['user_id' => $this->user->id, 'name' => 'Tapas', 'destination' => 'kitchen']);
+    Product::factory()->create(['user_id' => $this->user->id, 'category_id' => $tapaCategory->id, 'is_active' => true]);
+
+    $order = Order::factory()->create(['table_id' => $table->id, 'status' => 'pending']);
+    OrderItem::factory()->create(['order_id' => $order->id, 'destination' => 'bar', 'quantity' => 1]);
+
+    $response = $this->get(route('menu.show', $table->unique_hash));
+    $response->assertOk();
+    expect($response->viewData('shouldSuggest'))->toBeFalse();
+
+    Carbon::setTestNow();
+});
+
+it('shouldSuggest is false when max variants already reached', function () {
+    Carbon::setTestNow('2026-05-03 12:00:00');
+
+    TapaConfig::factory()->create([
+        'user_id'           => $this->user->id,
+        'tapas_enabled'     => true,
+        'max_tapa_variants' => 2,
+        'kitchen_opens_at'  => '10:00',
+        'kitchen_closes_at' => '23:00',
+    ]);
+
+    $table        = Table::factory()->create(['user_id' => $this->user->id]);
+    $tapaCategory = Category::factory()->create(['user_id' => $this->user->id, 'name' => 'Tapas', 'destination' => 'kitchen']);
+    $product1     = Product::factory()->create(['user_id' => $this->user->id, 'category_id' => $tapaCategory->id, 'is_active' => true]);
+    $product2     = Product::factory()->create(['user_id' => $this->user->id, 'category_id' => $tapaCategory->id, 'is_active' => true]);
+    Product::factory()->create(['user_id' => $this->user->id, 'category_id' => $tapaCategory->id, 'is_active' => true]);
+
+    $order = Order::factory()->create(['table_id' => $table->id, 'status' => 'pending']);
+    OrderItem::factory()->create(['order_id' => $order->id, 'destination' => 'bar', 'quantity' => 3]);
+    // 2 variantes distintas de tapa ya pedidas (igual al max)
+    OrderItem::factory()->create(['order_id' => $order->id, 'destination' => 'kitchen', 'product_id' => $product1->id, 'quantity' => 1]);
+    OrderItem::factory()->create(['order_id' => $order->id, 'destination' => 'kitchen', 'product_id' => $product2->id, 'quantity' => 1]);
+
+    $response = $this->get(route('menu.show', $table->unique_hash));
+    $response->assertOk();
+    expect($response->viewData('shouldSuggest'))->toBeFalse();
+
+    Carbon::setTestNow();
+});
+
+it('tapa products in view are limited to products from Tapas category', function () {
+    Carbon::setTestNow('2026-05-03 12:00:00');
+
+    TapaConfig::factory()->create([
+        'user_id'           => $this->user->id,
+        'tapas_enabled'     => true,
+        'max_tapa_variants' => 5,
+        'kitchen_opens_at'  => '10:00',
+        'kitchen_closes_at' => '23:00',
+    ]);
+
+    $table        = Table::factory()->create(['user_id' => $this->user->id]);
+    $tapaCategory = Category::factory()->create(['user_id' => $this->user->id, 'name' => 'Tapas', 'destination' => 'kitchen']);
+    $otherCat     = Category::factory()->create(['user_id' => $this->user->id, 'destination' => 'kitchen']);
+
+    $tapaProduct  = Product::factory()->create(['user_id' => $this->user->id, 'category_id' => $tapaCategory->id, 'is_active' => true]);
+    Product::factory()->create(['user_id' => $this->user->id, 'category_id' => $otherCat->id, 'is_active' => true]);
+
+    $order = Order::factory()->create(['table_id' => $table->id, 'status' => 'pending']);
+    OrderItem::factory()->create(['order_id' => $order->id, 'destination' => 'bar', 'quantity' => 1]);
+
+    $response = $this->get(route('menu.show', $table->unique_hash));
+    $response->assertOk();
+
+    $tapaProducts = $response->viewData('tapaProducts');
+    expect($tapaProducts)->toHaveCount(1)
+        ->and($tapaProducts->first()->id)->toBe($tapaProduct->id);
+
+    Carbon::setTestNow();
+});
+
+it('tapa products only include active products from Tapas category', function () {
+    Carbon::setTestNow('2026-05-03 12:00:00');
+
+    TapaConfig::factory()->create([
+        'user_id'           => $this->user->id,
+        'tapas_enabled'     => true,
+        'max_tapa_variants' => 5,
+        'kitchen_opens_at'  => '10:00',
+        'kitchen_closes_at' => '23:00',
+    ]);
+
+    $table        = Table::factory()->create(['user_id' => $this->user->id]);
+    $tapaCategory = Category::factory()->create(['user_id' => $this->user->id, 'name' => 'Tapas', 'destination' => 'kitchen']);
+
+    $active   = Product::factory()->create(['user_id' => $this->user->id, 'category_id' => $tapaCategory->id, 'is_active' => true]);
+    Product::factory()->create(['user_id' => $this->user->id, 'category_id' => $tapaCategory->id, 'is_active' => false]);
+
+    $order = Order::factory()->create(['table_id' => $table->id, 'status' => 'pending']);
+    OrderItem::factory()->create(['order_id' => $order->id, 'destination' => 'bar', 'quantity' => 1]);
+
+    $response = $this->get(route('menu.show', $table->unique_hash));
+    $response->assertOk();
+
+    $tapaProducts = $response->viewData('tapaProducts');
+    expect($tapaProducts)->toHaveCount(1)
+        ->and($tapaProducts->first()->id)->toBe($active->id);
+
+    Carbon::setTestNow();
+});
+
+it('tapaVariantsUsed counts distinct tapa products in active orders', function () {
+    Carbon::setTestNow('2026-05-03 12:00:00');
+
+    TapaConfig::factory()->create([
+        'user_id'           => $this->user->id,
+        'tapas_enabled'     => true,
+        'max_tapa_variants' => 5,
+        'kitchen_opens_at'  => '10:00',
+        'kitchen_closes_at' => '23:00',
+    ]);
+
+    $table        = Table::factory()->create(['user_id' => $this->user->id]);
+    $tapaCategory = Category::factory()->create(['user_id' => $this->user->id, 'name' => 'Tapas', 'destination' => 'kitchen']);
+    $product1     = Product::factory()->create(['user_id' => $this->user->id, 'category_id' => $tapaCategory->id, 'is_active' => true]);
+    $product2     = Product::factory()->create(['user_id' => $this->user->id, 'category_id' => $tapaCategory->id, 'is_active' => true]);
+    Product::factory()->create(['user_id' => $this->user->id, 'category_id' => $tapaCategory->id, 'is_active' => true]);
+
+    $order = Order::factory()->create(['table_id' => $table->id, 'status' => 'pending']);
+    // Misma variante pedida 2 veces: solo cuenta como 1
+    OrderItem::factory()->create(['order_id' => $order->id, 'destination' => 'kitchen', 'product_id' => $product1->id, 'quantity' => 2]);
+    OrderItem::factory()->create(['order_id' => $order->id, 'destination' => 'kitchen', 'product_id' => $product2->id, 'quantity' => 1]);
+    OrderItem::factory()->create(['order_id' => $order->id, 'destination' => 'bar', 'quantity' => 3]);
+
+    $response = $this->get(route('menu.show', $table->unique_hash));
+    $response->assertOk();
+    expect($response->viewData('tapaVariantsUsed'))->toBe(2);
+
+    Carbon::setTestNow();
 });
