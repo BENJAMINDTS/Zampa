@@ -465,25 +465,62 @@ it('clears extra tapa price when extra tapa is disabled', function () {
     ]);
 });
 
-// ─── Horario de cocina ────────────────────────────────────────────────────────
+// ─── Horario de cocina (multi-tramo) ─────────────────────────────────────────
 
-it('saves kitchen schedule fields correctly', function () {
+it('saves a single kitchen schedule slot correctly', function () {
     $this->actingAs($this->user)
          ->put(route('tapas.update'), [
-             'tapas_enabled'      => '1',
-             'tapas_free'         => '1',
-             'max_tapa_variants'  => 3,
-             'kitchen_opens_at'   => '10:00',
-             'kitchen_closes_at'  => '23:00',
+             'tapas_enabled'     => '1',
+             'tapas_free'        => '1',
+             'max_tapa_variants' => 3,
+             'schedules'         => [
+                 ['opens_at' => '10:00', 'closes_at' => '16:00'],
+             ],
+         ])
+         ->assertRedirect(route('tapas.edit'));
+
+    $config = TapaConfig::where('user_id', $this->user->id)->first();
+    expect($config->schedules()->count())->toBe(1);
+    expect($config->schedules()->first()->opens_at)->toStartWith('10:00');
+});
+
+it('saves multiple kitchen schedule slots correctly', function () {
+    $this->actingAs($this->user)
+         ->put(route('tapas.update'), [
+             'tapas_enabled'     => '1',
+             'tapas_free'        => '1',
+             'max_tapa_variants' => 3,
+             'schedules'         => [
+                 ['opens_at' => '13:00', 'closes_at' => '16:30'],
+                 ['opens_at' => '20:00', 'closes_at' => '23:30'],
+             ],
          ]);
 
     $config = TapaConfig::where('user_id', $this->user->id)->first();
-
-    expect($config->kitchen_opens_at)->toStartWith('10:00')
-        ->and($config->kitchen_closes_at)->toStartWith('23:00');
+    expect($config->schedules()->count())->toBe(2);
 });
 
-it('allows null kitchen schedule meaning always open', function () {
+it('replaces existing schedules on update', function () {
+    $config = TapaConfig::factory()->create(['user_id' => $this->user->id, 'tapas_enabled' => true]);
+    $config->schedules()->create(['opens_at' => '09:00', 'closes_at' => '14:00']);
+    $config->schedules()->create(['opens_at' => '19:00', 'closes_at' => '23:00']);
+
+    $this->actingAs($this->user)
+         ->put(route('tapas.update'), [
+             'tapas_enabled'     => '1',
+             'tapas_free'        => '1',
+             'max_tapa_variants' => 3,
+             'schedules'         => [
+                 ['opens_at' => '12:00', 'closes_at' => '15:00'],
+             ],
+         ]);
+
+    $config->refresh();
+    expect($config->schedules()->count())->toBe(1);
+    expect($config->schedules()->first()->opens_at)->toStartWith('12:00');
+});
+
+it('allows no schedules meaning kitchen always open', function () {
     $this->actingAs($this->user)
          ->put(route('tapas.update'), [
              'tapas_enabled'     => '1',
@@ -492,46 +529,54 @@ it('allows null kitchen schedule meaning always open', function () {
          ])
          ->assertRedirect(route('tapas.edit'));
 
-    $this->assertDatabaseHas('tapa_configs', [
-        'user_id'          => $this->user->id,
-        'kitchen_opens_at' => null,
-        'kitchen_closes_at' => null,
-    ]);
+    $config = TapaConfig::where('user_id', $this->user->id)->first();
+    expect($config->schedules()->count())->toBe(0);
 });
 
-it('fails when only kitchen_opens_at is provided without kitchen_closes_at', function () {
+it('fails when a schedule slot is missing closes_at', function () {
     $this->actingAs($this->user)
          ->put(route('tapas.update'), [
              'tapas_enabled'     => '1',
              'tapas_free'        => '1',
              'max_tapa_variants' => 3,
-             'kitchen_opens_at'  => '10:00',
-             // kitchen_closes_at ausente
+             'schedules'         => [
+                 ['opens_at' => '10:00'],
+             ],
          ])
-         ->assertSessionHasErrors('kitchen_closes_at');
+         ->assertSessionHasErrors('schedules.0.closes_at');
 });
 
-it('fails when only kitchen_closes_at is provided without kitchen_opens_at', function () {
+it('fails when a schedule slot has invalid time format', function () {
     $this->actingAs($this->user)
          ->put(route('tapas.update'), [
-             'tapas_enabled'      => '1',
-             'tapas_free'         => '1',
-             'max_tapa_variants'  => 3,
-             'kitchen_closes_at'  => '23:00',
-             // kitchen_opens_at ausente
+             'tapas_enabled'     => '1',
+             'tapas_free'        => '1',
+             'max_tapa_variants' => 3,
+             'schedules'         => [
+                 ['opens_at' => 'not-a-time', 'closes_at' => '23:00'],
+             ],
          ])
-         ->assertSessionHasErrors('kitchen_opens_at');
+         ->assertSessionHasErrors('schedules.0.opens_at');
+});
+
+it('fails when schedules array exceeds 10 slots', function () {
+    $slots = array_fill(0, 11, ['opens_at' => '10:00', 'closes_at' => '11:00']);
+
+    $this->actingAs($this->user)
+         ->put(route('tapas.update'), [
+             'tapas_enabled'     => '1',
+             'tapas_free'        => '1',
+             'max_tapa_variants' => 3,
+             'schedules'         => $slots,
+         ])
+         ->assertSessionHasErrors('schedules');
 });
 
 it('menu hides kitchen categories when kitchen is closed', function () {
     Carbon::setTestNow('2026-05-03 15:00:00');
 
-    TapaConfig::factory()->create([
-        'user_id'           => $this->user->id,
-        'tapas_enabled'     => true,
-        'kitchen_opens_at'  => '17:00',
-        'kitchen_closes_at' => '23:00',
-    ]);
+    $config = TapaConfig::factory()->create(['user_id' => $this->user->id, 'tapas_enabled' => true]);
+    $config->schedules()->create(['opens_at' => '17:00:00', 'closes_at' => '23:00:00']);
 
     $table           = Table::factory()->create(['user_id' => $this->user->id]);
     $kitchenCategory = Category::factory()->create(['user_id' => $this->user->id, 'destination' => 'kitchen']);
@@ -545,7 +590,7 @@ it('menu hides kitchen categories when kitchen is closed', function () {
     $response->assertOk();
     expect($response->viewData('kitchenOpen'))->toBeFalse();
 
-    $categories = $response->viewData('categories');
+    $categories   = $response->viewData('categories');
     $destinations = $categories->pluck('destination')->unique()->values()->toArray();
     expect($destinations)->not->toContain('kitchen');
 
@@ -553,12 +598,8 @@ it('menu hides kitchen categories when kitchen is closed', function () {
 });
 
 it('menu shows all categories when no schedule is configured', function () {
-    TapaConfig::factory()->create([
-        'user_id'           => $this->user->id,
-        'tapas_enabled'     => true,
-        'kitchen_opens_at'  => null,
-        'kitchen_closes_at' => null,
-    ]);
+    TapaConfig::factory()->create(['user_id' => $this->user->id, 'tapas_enabled' => true]);
+    // Sin schedules → cocina siempre abierta
 
     $table           = Table::factory()->create(['user_id' => $this->user->id]);
     $kitchenCategory = Category::factory()->create(['user_id' => $this->user->id, 'destination' => 'kitchen']);
@@ -578,18 +619,37 @@ it('menu shows all categories when no schedule is configured', function () {
         ->and($destinations)->toContain('bar');
 });
 
+it('menu is open when current time falls within any of multiple schedules', function () {
+    Carbon::setTestNow('2026-05-03 21:00:00');
+
+    $config = TapaConfig::factory()->create(['user_id' => $this->user->id, 'tapas_enabled' => true]);
+    // Mediodía: ya cerrado
+    $config->schedules()->create(['opens_at' => '13:00:00', 'closes_at' => '16:30:00']);
+    // Noche: abierto ahora
+    $config->schedules()->create(['opens_at' => '20:00:00', 'closes_at' => '23:30:00']);
+
+    $table       = Table::factory()->create(['user_id' => $this->user->id]);
+    $barCategory = Category::factory()->create(['user_id' => $this->user->id, 'destination' => 'bar']);
+    Product::factory()->create(['user_id' => $this->user->id, 'category_id' => $barCategory->id, 'is_active' => true]);
+
+    $response = $this->get(route('menu.show', $table->unique_hash));
+    $response->assertOk();
+    expect($response->viewData('kitchenOpen'))->toBeTrue();
+
+    Carbon::setTestNow();
+});
+
 // ─── Sugerencia de tapa ───────────────────────────────────────────────────────
 
 it('shouldSuggest is true when conditions are met', function () {
     Carbon::setTestNow('2026-05-03 12:00:00');
 
-    TapaConfig::factory()->create([
+    $config = TapaConfig::factory()->create([
         'user_id'           => $this->user->id,
         'tapas_enabled'     => true,
         'max_tapa_variants' => 3,
-        'kitchen_opens_at'  => '10:00',
-        'kitchen_closes_at' => '23:00',
     ]);
+    $config->schedules()->create(['opens_at' => '10:00:00', 'closes_at' => '23:00:00']);
 
     $table        = Table::factory()->create(['user_id' => $this->user->id]);
     $tapaCategory = Category::factory()->create(['user_id' => $this->user->id, 'name' => 'Tapas', 'destination' => 'kitchen']);
@@ -623,13 +683,12 @@ it('shouldSuggest is false when tapas are disabled', function () {
 it('shouldSuggest is false when kitchen is closed', function () {
     Carbon::setTestNow('2026-05-03 15:00:00');
 
-    TapaConfig::factory()->create([
+    $config = TapaConfig::factory()->create([
         'user_id'           => $this->user->id,
         'tapas_enabled'     => true,
         'max_tapa_variants' => 3,
-        'kitchen_opens_at'  => '17:00',
-        'kitchen_closes_at' => '23:00',
     ]);
+    $config->schedules()->create(['opens_at' => '17:00:00', 'closes_at' => '23:00:00']);
 
     $table        = Table::factory()->create(['user_id' => $this->user->id]);
     $tapaCategory = Category::factory()->create(['user_id' => $this->user->id, 'name' => 'Tapas', 'destination' => 'kitchen']);
@@ -648,13 +707,12 @@ it('shouldSuggest is false when kitchen is closed', function () {
 it('shouldSuggest is false when max variants already reached', function () {
     Carbon::setTestNow('2026-05-03 12:00:00');
 
-    TapaConfig::factory()->create([
+    $config = TapaConfig::factory()->create([
         'user_id'           => $this->user->id,
         'tapas_enabled'     => true,
         'max_tapa_variants' => 2,
-        'kitchen_opens_at'  => '10:00',
-        'kitchen_closes_at' => '23:00',
     ]);
+    $config->schedules()->create(['opens_at' => '10:00:00', 'closes_at' => '23:00:00']);
 
     $table        = Table::factory()->create(['user_id' => $this->user->id]);
     $tapaCategory = Category::factory()->create(['user_id' => $this->user->id, 'name' => 'Tapas', 'destination' => 'kitchen']);
@@ -678,13 +736,12 @@ it('shouldSuggest is false when max variants already reached', function () {
 it('tapa products in view are limited to products from Tapas category', function () {
     Carbon::setTestNow('2026-05-03 12:00:00');
 
-    TapaConfig::factory()->create([
+    $config = TapaConfig::factory()->create([
         'user_id'           => $this->user->id,
         'tapas_enabled'     => true,
         'max_tapa_variants' => 5,
-        'kitchen_opens_at'  => '10:00',
-        'kitchen_closes_at' => '23:00',
     ]);
+    $config->schedules()->create(['opens_at' => '10:00:00', 'closes_at' => '23:00:00']);
 
     $table        = Table::factory()->create(['user_id' => $this->user->id]);
     $tapaCategory = Category::factory()->create(['user_id' => $this->user->id, 'name' => 'Tapas', 'destination' => 'kitchen']);
@@ -709,13 +766,12 @@ it('tapa products in view are limited to products from Tapas category', function
 it('tapa products only include active products from Tapas category', function () {
     Carbon::setTestNow('2026-05-03 12:00:00');
 
-    TapaConfig::factory()->create([
+    $config = TapaConfig::factory()->create([
         'user_id'           => $this->user->id,
         'tapas_enabled'     => true,
         'max_tapa_variants' => 5,
-        'kitchen_opens_at'  => '10:00',
-        'kitchen_closes_at' => '23:00',
     ]);
+    $config->schedules()->create(['opens_at' => '10:00:00', 'closes_at' => '23:00:00']);
 
     $table        = Table::factory()->create(['user_id' => $this->user->id]);
     $tapaCategory = Category::factory()->create(['user_id' => $this->user->id, 'name' => 'Tapas', 'destination' => 'kitchen']);
@@ -739,13 +795,12 @@ it('tapa products only include active products from Tapas category', function ()
 it('tapaVariantsUsed counts distinct tapa products in active orders', function () {
     Carbon::setTestNow('2026-05-03 12:00:00');
 
-    TapaConfig::factory()->create([
+    $config = TapaConfig::factory()->create([
         'user_id'           => $this->user->id,
         'tapas_enabled'     => true,
         'max_tapa_variants' => 5,
-        'kitchen_opens_at'  => '10:00',
-        'kitchen_closes_at' => '23:00',
     ]);
+    $config->schedules()->create(['opens_at' => '10:00:00', 'closes_at' => '23:00:00']);
 
     $table        = Table::factory()->create(['user_id' => $this->user->id]);
     $tapaCategory = Category::factory()->create(['user_id' => $this->user->id, 'name' => 'Tapas', 'destination' => 'kitchen']);
