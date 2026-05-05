@@ -194,6 +194,25 @@ class TableController extends Controller
     }
 
     /**
+     * Devuelve el QR de una mesa como SVG inline para mostrarlo en el mapa.
+     *
+     * @param  Table  $table
+     * @return Response
+     */
+    public function showQr(Table $table): Response
+    {
+        abort_if($table->user_id !== Auth::id(), 403, 'Acceso denegado.');
+
+        $url = route('menu.show', $table->unique_hash);
+        $svg = QrCode::format('svg')
+            ->size(200)
+            ->margin(1)
+            ->generate($url);
+
+        return response($svg, 200, ['Content-Type' => 'image/svg+xml']);
+    }
+
+    /**
      * Descarga el código QR de una mesa en formato SVG.
      *
      * @param  Table  $table
