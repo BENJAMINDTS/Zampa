@@ -121,6 +121,30 @@ class TableController extends Controller
     }
 
     /**
+     * Actualiza el nombre de una mesa existente.
+     *
+     * @param  Request  $request
+     * @param  Table    $table
+     * @return JsonResponse
+     */
+    public function updateName(Request $request, Table $table): JsonResponse
+    {
+        abort_if($table->user_id !== Auth::id(), 403, 'Acceso denegado.');
+
+        $data = $request->validate([
+            'name' => 'required|string|max:50',
+        ]);
+
+        $table->update($data);
+
+        return response()->json([
+            'success' => true,
+            'data'    => $table,
+            'message' => "Mesa renombrada a \"{$table->name}\".",
+        ]);
+    }
+
+    /**
      * Actualiza la forma visual de una mesa existente en el mapa.
      *
      * @param  Request  $request

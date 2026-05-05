@@ -250,6 +250,21 @@
                                  role="dialog"
                                  :aria-label="`Forma de mesa ${table.name}`">
 
+                                {{-- Editar nombre --}}
+                                <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">Nombre</p>
+                                <div class="flex gap-1 mb-3">
+                                    <input type="text"
+                                           :value="table.name"
+                                           @keydown.enter.stop="updateName(table, $event.target.value); $event.target.blur()"
+                                           @blur.stop="updateName(table, $event.target.value)"
+                                           @click.stop
+                                           maxlength="50"
+                                           class="w-full rounded-lg border border-gray-300 dark:border-gray-600
+                                                  bg-white dark:bg-gray-700 text-gray-900 dark:text-white
+                                                  px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                           :aria-label="`Nombre de la mesa ${table.name}`">
+                                </div>
+
                                 <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">Forma</p>
                                 <div class="flex gap-1.5" role="group" aria-label="Seleccionar forma">
                                     <button type="button"
@@ -703,6 +718,40 @@ document.addEventListener('alpine:init', () => {
             } catch {
                 table.shape = prev;
                 this.showToast('Error de red al cambiar la forma.', true);
+            }
+        },
+
+        // ── AJAX: actualizar nombre de mesa existente ─────────────────────────
+        async updateName(table, name) {
+            name = name.trim();
+            if (!name || name === table.name) return;
+
+            const prev  = table.name;
+            table.name  = name;
+
+            try {
+                const res = await fetch(`/mesas/${table.id}/nombre`, {
+                    method:  'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept':       'application/json',
+                    },
+                    body: JSON.stringify({ name }),
+                });
+
+                const json = await res.json();
+
+                if (!res.ok || !json.success) {
+                    table.name = prev;
+                    this.showToast(json.message ?? 'Error al renombrar la mesa.', true);
+                    return;
+                }
+
+                this.showToast(json.message);
+            } catch {
+                table.name = prev;
+                this.showToast('Error de red al renombrar la mesa.', true);
             }
         },
 

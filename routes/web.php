@@ -66,6 +66,7 @@ Route::middleware(['auth', 'business.active'])->group(function () {
         Route::post('/mesas', [TableController::class, 'store'])->name('tables.store');
         Route::patch('/mesas/{table}/posicion', [TableController::class, 'updatePosition'])->name('tables.updatePosition');
         Route::patch('/mesas/{table}/forma', [TableController::class, 'updateShape'])->name('tables.updateShape');
+        Route::patch('/mesas/{table}/nombre', [TableController::class, 'updateName'])->name('tables.updateName');
         Route::delete('/mesas/{table}', [TableController::class, 'destroy'])->name('tables.destroy');
     });
 
