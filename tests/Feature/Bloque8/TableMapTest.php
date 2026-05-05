@@ -457,3 +457,118 @@ it('index view shows correct table count against plan limit', function () {
     $response->assertViewHas('maxTables', 5);
     expect($response->viewData('tables')->count())->toBe(3);
 });
+
+// ─── Bloque 8.3 — Formas y rotación ──────────────────────────────────────────
+
+it('updatePosition persists rotation when provided', function () {
+    $table = Table::factory()->for($this->admin)->create(['rotation' => 0]);
+
+    $this->actingAs($this->admin)
+         ->patchJson(route('tables.updatePosition', $table), [
+             'position_x' => 100,
+             'position_y' => 100,
+             'width'      => 100,
+             'height'     => 100,
+             'rotation'   => 45,
+         ])
+         ->assertOk()
+         ->assertJsonPath('success', true);
+
+    expect($table->fresh()->rotation)->toBe(45);
+});
+
+it('updatePosition works without rotation field (backward compatibility)', function () {
+    $table = Table::factory()->for($this->admin)->create(['rotation' => 30]);
+
+    $this->actingAs($this->admin)
+         ->patchJson(route('tables.updatePosition', $table), [
+             'position_x' => 50,
+             'position_y' => 50,
+             'width'      => 100,
+             'height'     => 100,
+         ])
+         ->assertOk();
+
+    expect($table->fresh()->rotation)->toBe(30);
+});
+
+it('admin can change shape of own table', function () {
+    $table = Table::factory()->for($this->admin)->create(['shape' => 'square']);
+
+    $this->actingAs($this->admin)
+         ->patchJson(route('tables.updateShape', $table), ['shape' => 'round'])
+         ->assertOk()
+         ->assertJsonPath('success', true);
+
+    expect($table->fresh()->shape)->toBe('round');
+});
+
+it('updateShape persists the new shape in the database', function () {
+    $table = Table::factory()->for($this->admin)->create(['shape' => 'square']);
+
+    $this->actingAs($this->admin)
+         ->patchJson(route('tables.updateShape', $table), ['shape' => 'rectangle']);
+
+    expect($table->fresh()->shape)->toBe('rectangle');
+});
+
+it('returns 403 when changing shape of another admins table', function () {
+    $table = Table::factory()->for($this->other)->create();
+
+    $this->actingAs($this->admin)
+         ->patchJson(route('tables.updateShape', $table), ['shape' => 'round'])
+         ->assertForbidden();
+});
+
+it('returns 401 for unauthenticated user on updateShape', function () {
+    $table = Table::factory()->for($this->admin)->create();
+
+    $this->patchJson(route('tables.updateShape', $table), ['shape' => 'round'])
+         ->assertUnauthorized();
+});
+
+it('fails updateShape with invalid shape value', function () {
+    $table = Table::factory()->for($this->admin)->create();
+
+    $this->actingAs($this->admin)
+         ->patchJson(route('tables.updateShape', $table), ['shape' => 'triangle'])
+         ->assertUnprocessable();
+});
+
+it('fails updateShape without shape field', function () {
+    $table = Table::factory()->for($this->admin)->create();
+
+    $this->actingAs($this->admin)
+         ->patchJson(route('tables.updateShape', $table), [])
+         ->assertUnprocessable();
+});
+
+it('fails updatePosition with rotation out of bounds', function () {
+    $table = Table::factory()->for($this->admin)->create();
+
+    $this->actingAs($this->admin)
+         ->patchJson(route('tables.updatePosition', $table), [
+             'position_x' => 0,
+             'position_y' => 0,
+             'width'      => 100,
+             'height'     => 100,
+             'rotation'   => 400,
+         ])
+         ->assertUnprocessable();
+});
+
+it('stores all three shapes correctly on creation', function () {
+    foreach (['square', 'round', 'rectangle'] as $shape) {
+        $this->actingAs($this->admin)
+             ->postJson(route('tables.store'), [
+                 'name'       => "Mesa {$shape}",
+                 'shape'      => $shape,
+                 'position_x' => 0,
+                 'position_y' => 0,
+                 'width'      => 100,
+                 'height'     => 100,
+             ])
+             ->assertCreated()
+             ->assertJsonPath('data.shape', $shape);
+    }
+});
