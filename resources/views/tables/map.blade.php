@@ -1,5 +1,5 @@
 {{--
- | Bloque 8.1 — Mapa visual de mesas con drag & drop
+ | Bloques 8.1 y 8.3 — Mapa visual de mesas con drag & drop y formas configurables
  | interact.js para arrastrar/redimensionar mesas en el plano del restaurante.
  | @author AyrtonAlania
 --}}
@@ -158,6 +158,7 @@
                        border-2 border-dashed border-gray-200 dark:border-gray-700"
                 style="width: 1200px; height: 800px; min-width: 100%;"
                 aria-label="Plano del restaurante"
+                @click="editingTableId = null"
             >
                 {{-- Cuadrícula decorativa --}}
                 <svg class="absolute inset-0 w-full h-full pointer-events-none opacity-30 dark:opacity-10"
@@ -176,7 +177,9 @@
                         :data-table-id="table.id"
                         class="table-item absolute group select-none touch-none"
                         :style="`left:${table.position_x}px; top:${table.position_y}px;
-                                 width:${table.width}px; height:${table.height}px;`"
+                                 width:${table.width}px; height:${table.height}px;
+                                 transform: rotate(${table.rotation ?? 0}deg);
+                                 transform-origin: center;`"
                         :aria-label="`Mesa ${table.name}`"
                     >
                         {{-- Fondo de la mesa --}}
@@ -203,6 +206,22 @@
                                   :title="table.status === 'occupied' ? 'Ocupada' : 'Libre'">
                             </span>
 
+                            {{-- Botón editar forma --}}
+                            <button type="button"
+                                    @click.stop="editingTableId = editingTableId === table.id ? null : table.id"
+                                    class="absolute -top-2.5 -right-9
+                                           w-6 h-6 rounded-full bg-gray-600 dark:bg-gray-500 text-white
+                                           flex items-center justify-center
+                                           opacity-0 group-hover:opacity-100 transition-opacity
+                                           hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-400
+                                           shadow-md"
+                                    :aria-label="`Editar forma de mesa ${table.name}`"
+                                    :aria-expanded="editingTableId === table.id">
+                                <svg aria-hidden="true" class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z"/>
+                                </svg>
+                            </button>
+
                             {{-- Botón eliminar --}}
                             <button type="button"
                                     @click.stop="deleteTable(table)"
@@ -217,6 +236,96 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
                                 </svg>
                             </button>
+
+                            {{-- Panel de edición (forma + rotación) --}}
+                            <div x-show="editingTableId === table.id"
+                                 x-transition:enter="transition ease-out duration-150"
+                                 x-transition:enter-start="opacity-0 scale-95"
+                                 x-transition:enter-end="opacity-100 scale-100"
+                                 @click.stop
+                                 class="absolute top-7 right-0 z-20
+                                        bg-white dark:bg-gray-800 rounded-xl shadow-xl
+                                        border border-gray-200 dark:border-gray-700
+                                        p-3 min-w-max"
+                                 role="dialog"
+                                 :aria-label="`Opciones de mesa ${table.name}`">
+
+                                {{-- Selector de forma --}}
+                                <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">Forma</p>
+                                <div class="flex gap-1.5 mb-3" role="group" aria-label="Seleccionar forma">
+                                    {{-- Cuadrada --}}
+                                    <button type="button"
+                                            @click.stop="updateShape(table, 'square')"
+                                            :class="table.shape === 'square'
+                                                ? 'bg-indigo-600 text-white ring-2 ring-indigo-400'
+                                                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30'"
+                                            class="w-9 h-9 rounded-lg flex items-center justify-center transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                                            title="Cuadrada"
+                                            aria-label="Forma cuadrada">
+                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                            <rect x="3" y="3" width="18" height="18" rx="3"/>
+                                        </svg>
+                                    </button>
+                                    {{-- Redonda --}}
+                                    <button type="button"
+                                            @click.stop="updateShape(table, 'round')"
+                                            :class="table.shape === 'round'
+                                                ? 'bg-indigo-600 text-white ring-2 ring-indigo-400'
+                                                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30'"
+                                            class="w-9 h-9 rounded-lg flex items-center justify-center transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                                            title="Redonda"
+                                            aria-label="Forma redonda">
+                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                            <circle cx="12" cy="12" r="9"/>
+                                        </svg>
+                                    </button>
+                                    {{-- Rectangular --}}
+                                    <button type="button"
+                                            @click.stop="updateShape(table, 'rectangle')"
+                                            :class="table.shape === 'rectangle'
+                                                ? 'bg-indigo-600 text-white ring-2 ring-indigo-400'
+                                                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30'"
+                                            class="w-9 h-9 rounded-lg flex items-center justify-center transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                                            title="Rectangular"
+                                            aria-label="Forma rectangular">
+                                        <svg class="w-5 h-3" fill="currentColor" viewBox="0 0 24 14" aria-hidden="true">
+                                            <rect x="0" y="0" width="24" height="14" rx="3"/>
+                                        </svg>
+                                    </button>
+                                </div>
+
+                                {{-- Control de rotación --}}
+                                <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">Rotación</p>
+                                <div class="flex items-center gap-2">
+                                    <button type="button"
+                                            @click.stop="rotateTable(table, -15)"
+                                            class="w-7 h-7 rounded-lg bg-gray-100 dark:bg-gray-700
+                                                   text-gray-600 dark:text-gray-300
+                                                   hover:bg-gray-200 dark:hover:bg-gray-600
+                                                   flex items-center justify-center transition-colors
+                                                   focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                                            aria-label="Rotar 15 grados a la izquierda">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3"/>
+                                        </svg>
+                                    </button>
+                                    <span class="text-sm font-mono font-medium text-gray-700 dark:text-gray-200 w-10 text-center"
+                                          x-text="(table.rotation ?? 0) + '°'">
+                                    </span>
+                                    <button type="button"
+                                            @click.stop="rotateTable(table, 15)"
+                                            class="w-7 h-7 rounded-lg bg-gray-100 dark:bg-gray-700
+                                                   text-gray-600 dark:text-gray-300
+                                                   hover:bg-gray-200 dark:hover:bg-gray-600
+                                                   flex items-center justify-center transition-colors
+                                                   focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                                            aria-label="Rotar 15 grados a la derecha">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 15l6-6m0 0l-6-6m6 6H9a6 6 0 000 12h3"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
 
                         {{-- Handle de redimensionado (esquina inferior derecha) --}}
@@ -341,6 +450,7 @@ document.addEventListener('alpine:init', () => {
     Alpine.data('tableMap', () => ({
         tables:               @json($tables),
         isDraggingFromPalette: false,
+        editingTableId:       null,
         toast:                { show: false, msg: '', error: false, _timer: null },
 
         init() {
@@ -528,7 +638,7 @@ document.addEventListener('alpine:init', () => {
             }
         },
 
-        // ── AJAX: persistir posición ──────────────────────────────────────────
+        // ── AJAX: persistir posición, dimensiones y rotación ─────────────────
         async persistPosition(id, x, y, w, h) {
             const table = this.tables.find(t => t.id === id);
             if (table) {
@@ -546,7 +656,13 @@ document.addEventListener('alpine:init', () => {
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                         'Accept':       'application/json',
                     },
-                    body: JSON.stringify({ position_x: x, position_y: y, width: w, height: h }),
+                    body: JSON.stringify({
+                        position_x: x,
+                        position_y: y,
+                        width:      w,
+                        height:     h,
+                        rotation:   table?.rotation ?? 0,
+                    }),
                 });
 
                 if (!res.ok) {
@@ -555,6 +671,44 @@ document.addEventListener('alpine:init', () => {
             } catch {
                 this.showToast('Error de red al guardar posición.', true);
             }
+        },
+
+        // ── AJAX: actualizar forma de mesa existente ──────────────────────────
+        async updateShape(table, shape) {
+            const prev = table.shape;
+            table.shape       = shape;
+            this.editingTableId = null;
+
+            try {
+                const res = await fetch(`/mesas/${table.id}/forma`, {
+                    method:  'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept':       'application/json',
+                    },
+                    body: JSON.stringify({ shape }),
+                });
+
+                const json = await res.json();
+
+                if (!res.ok || !json.success) {
+                    table.shape = prev;
+                    this.showToast(json.message ?? 'Error al cambiar la forma.', true);
+                    return;
+                }
+
+                this.showToast(json.message);
+            } catch {
+                table.shape = prev;
+                this.showToast('Error de red al cambiar la forma.', true);
+            }
+        },
+
+        // ── Rotar mesa y persistir ────────────────────────────────────────────
+        async rotateTable(table, delta) {
+            table.rotation = ((table.rotation ?? 0) + delta + 360) % 360;
+            await this.persistPosition(table.id, table.position_x, table.position_y, table.width, table.height);
         },
 
         // ── AJAX: eliminar mesa ───────────────────────────────────────────────
