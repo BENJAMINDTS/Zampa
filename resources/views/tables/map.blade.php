@@ -307,7 +307,10 @@
                         {{-- Handle de redimensionado (esquina inferior derecha) --}}
                         <div class="resize-handle absolute bottom-0 right-0
                                     w-4 h-4 cursor-se-resize opacity-0 group-hover:opacity-100
-                                    transition-opacity">
+                                    transition-opacity"
+                             @mousedown.stop.prevent="startResize($event, table)"
+                             role="button"
+                             :aria-label="`Redimensionar mesa ${table.name}`">
                             <svg aria-hidden="true" viewBox="0 0 10 10" fill="none" class="w-full h-full text-indigo-400">
                                 <path d="M9 1L1 9M9 5L5 9M9 9H9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
                             </svg>
@@ -450,7 +453,7 @@ document.addEventListener('alpine:init', () => {
 
             interact('.table-item')
                 .draggable({
-                    ignoreFrom:  '.rotation-handle',
+                    ignoreFrom:  '.rotation-handle, .resize-handle',
                     inertia:    false,
                     autoScroll: true,
                     modifiers: [
@@ -478,33 +481,7 @@ document.addEventListener('alpine:init', () => {
                         },
                     },
                 })
-                .resizable({
-                    ignoreFrom: '.rotation-handle',
-                    edges:   { left: false, right: true, bottom: true, top: false },
-                    inertia: false,
-                    modifiers: [
-                        interact.modifiers.restrictSize({
-                            min: { width: 60, height: 60 },
-                            max: { width: 400, height: 400 },
-                        }),
-                    ],
-                    listeners: {
-                        move: (event) => {
-                            const el = event.target;
-                            el.style.width  = `${event.rect.width}px`;
-                            el.style.height = `${event.rect.height}px`;
-                        },
-                        end: (event) => {
-                            const el = event.target;
-                            const id = parseInt(el.dataset.tableId);
-                            const x  = Math.round(parseFloat(el.style.left) || 0);
-                            const y  = Math.round(parseFloat(el.style.top)  || 0);
-                            const w  = Math.round(parseFloat(el.style.width)  || 100);
-                            const h  = Math.round(parseFloat(el.style.height) || 100);
-                            this.persistPosition(id, x, y, w, h);
-                        },
-                    },
-                });
+                ;
         },
 
         // ── Reinicializar interact después de añadir una mesa ─────────────────
@@ -615,6 +592,51 @@ document.addEventListener('alpine:init', () => {
             } catch {
                 this.showToast('Error de red al crear la mesa.', true);
             }
+        },
+
+        // ── Resize libre en espacio local del elemento rotado ────────────────
+        startResize(event, table) {
+            const θRad    = (table.rotation ?? 0) * Math.PI / 180;
+            const cosθ    = Math.cos(θRad);
+            const sinθ    = Math.sin(θRad);
+            const startMX = event.clientX;
+            const startMY = event.clientY;
+            const startW  = table.width;
+            const startH  = table.height;
+            const startPx = table.position_x;
+            const startPy = table.position_y;
+
+            document.body.style.cursor = 'se-resize';
+
+            const onMove = (e) => {
+                const dx = e.clientX - startMX;
+                const dy = e.clientY - startMY;
+
+                // Proyectar delta de pantalla al espacio local del elemento (rotación inversa)
+                const localDX =  dx * cosθ + dy * sinθ;
+                const localDY = -dx * sinθ + dy * cosθ;
+
+                const newW = Math.min(400, Math.max(60, startW + localDX));
+                const newH = Math.min(400, Math.max(60, startH + localDY));
+                const dW   = newW - startW;
+                const dH   = newH - startH;
+
+                table.width      = Math.round(newW);
+                table.height     = Math.round(newH);
+                // Corregir posición CSS para que la esquina visual superior-izquierda no se mueva
+                table.position_x = Math.max(0, Math.round(startPx + dW / 2 * (cosθ - 1) - dH / 2 * sinθ));
+                table.position_y = Math.max(0, Math.round(startPy + dW / 2 * sinθ + dH / 2 * (cosθ - 1)));
+            };
+
+            const onUp = async () => {
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('mouseup',   onUp);
+                document.body.style.cursor = '';
+                await this.persistPosition(table.id, table.position_x, table.position_y, table.width, table.height);
+            };
+
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup',   onUp);
         },
 
         // ── AJAX: persistir posición, dimensiones y rotación ─────────────────
