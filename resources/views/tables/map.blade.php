@@ -346,7 +346,8 @@
 </div>
 
 {{-- Modal de confirmación de eliminación --}}
-<div x-show="deleteModal.show"
+<div x-data
+     x-show="$store.deleteModal.show"
      x-transition:enter="transition ease-out duration-200"
      x-transition:enter-start="opacity-0"
      x-transition:enter-end="opacity-100"
@@ -357,7 +358,7 @@
      role="alertdialog"
      aria-labelledby="delete-modal-title"
      aria-describedby="delete-modal-desc"
-     @keydown.escape.window="resolveDelete(false)">
+     @keydown.escape.window="$store.deleteModal.resolve(false)">
 
     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-sm mx-4"
          x-transition:enter="transition ease-out duration-200"
@@ -380,13 +381,14 @@
 
         <p id="delete-modal-desc"
            class="text-sm text-center text-gray-500 dark:text-gray-400 mb-6">
-            ¿Eliminar <span class="font-semibold text-gray-700 dark:text-gray-200" x-text="`"${deleteModal.table?.name}"`"></span>?
+            ¿Eliminar <span class="font-semibold text-gray-700 dark:text-gray-200"
+                            x-text="`&quot;${$store.deleteModal.table?.name}&quot;`"></span>?
             Esta acción no se puede deshacer.
         </p>
 
         <div class="flex gap-3">
             <button type="button"
-                    @click="resolveDelete(false)"
+                    @click="$store.deleteModal.resolve(false)"
                     class="flex-1 px-4 py-2 rounded-xl text-sm font-medium
                            text-gray-700 dark:text-gray-200
                            bg-gray-100 dark:bg-gray-700
@@ -396,8 +398,8 @@
                 Cancelar
             </button>
             <button type="button"
-                    @click="resolveDelete(true)"
-                    x-init="$watch('deleteModal.show', v => v && $nextTick(() => $el.focus()))"
+                    @click="$store.deleteModal.resolve(true)"
+                    x-init="$watch('$store.deleteModal.show', v => v && $nextTick(() => $el.focus()))"
                     class="flex-1 px-4 py-2 rounded-xl text-sm font-medium text-white
                            bg-red-600 hover:bg-red-700
                            focus:outline-none focus:ring-2 focus:ring-red-400
@@ -503,6 +505,26 @@ document.addEventListener('alpine:init', () => {
         },
     });
 
+    // ── Store para el modal de confirmación de borrado ────────────────────────
+    Alpine.store('deleteModal', {
+        show:     false,
+        table:    null,
+        _resolve: null,
+
+        prompt(table) {
+            this.table = table;
+            this.show  = true;
+            return new Promise(resolve => { this._resolve = resolve; });
+        },
+
+        resolve(confirmed) {
+            this.show = false;
+            this._resolve?.(confirmed);
+            this.table    = null;
+            this._resolve = null;
+        },
+    });
+
     // ── Componente principal del mapa ─────────────────────────────────────────
     Alpine.data('tableMap', () => ({
         tables:                @json($tables),
@@ -510,7 +532,6 @@ document.addEventListener('alpine:init', () => {
         editingTableId:        null,
         isRotating:            false,
         toast:                 { show: false, msg: '', error: false, _timer: null },
-        deleteModal:           { show: false, table: null, _resolve: null },
 
         init() {
             this.$nextTick(() => {
@@ -848,23 +869,9 @@ document.addEventListener('alpine:init', () => {
             document.addEventListener('mouseup',   onUp);
         },
 
-        // ── Modal de confirmación de borrado ──────────────────────────────────
-        confirmDeleteTable(table) {
-            this.deleteModal.table = table;
-            this.deleteModal.show  = true;
-            return new Promise(resolve => { this.deleteModal._resolve = resolve; });
-        },
-
-        resolveDelete(confirmed) {
-            this.deleteModal.show = false;
-            this.deleteModal._resolve?.(confirmed);
-            this.deleteModal.table    = null;
-            this.deleteModal._resolve = null;
-        },
-
         // ── AJAX: eliminar mesa ───────────────────────────────────────────────
         async deleteTable(table) {
-            const confirmed = await this.confirmDeleteTable(table);
+            const confirmed = await Alpine.store('deleteModal').prompt(table);
             if (!confirmed) return;
 
             try {
