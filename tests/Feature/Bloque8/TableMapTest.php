@@ -572,3 +572,60 @@ it('stores all three shapes correctly on creation', function () {
              ->assertJsonPath('data.shape', $shape);
     }
 });
+
+// ─── Bloque 8.4 — QR desde el mapa ───────────────────────────────────────────
+
+it('showQr returns svg for own table', function () {
+    $table = Table::factory()->for($this->admin)->create();
+
+    $response = $this->actingAs($this->admin)
+                     ->get(route('tables.qr.show', $table));
+
+    $response->assertOk();
+    expect($response->headers->get('Content-Type'))->toContain('image/svg+xml');
+});
+
+it('showQr response contains svg markup', function () {
+    $table = Table::factory()->for($this->admin)->create();
+
+    $response = $this->actingAs($this->admin)
+                     ->get(route('tables.qr.show', $table));
+
+    expect($response->content())->toContain('<svg');
+});
+
+it('showQr returns 403 for another admins table', function () {
+    $table = Table::factory()->for($this->other)->create();
+
+    $this->actingAs($this->admin)
+         ->get(route('tables.qr.show', $table))
+         ->assertForbidden();
+});
+
+it('showQr redirects unauthenticated user to login', function () {
+    $table = Table::factory()->for($this->admin)->create();
+
+    $this->get(route('tables.qr.show', $table))
+         ->assertRedirect(route('login'));
+});
+
+it('showQr returns 404 for non-existent table', function () {
+    $this->actingAs($this->admin)
+         ->get(route('tables.qr.show', 99999))
+         ->assertNotFound();
+});
+
+it('showQr returns different svg content for tables with different hashes', function () {
+    $tableA = Table::factory()->for($this->admin)->create();
+    $tableB = Table::factory()->for($this->admin)->create();
+
+    $svgA = $this->actingAs($this->admin)
+                 ->get(route('tables.qr.show', $tableA))
+                 ->content();
+
+    $svgB = $this->actingAs($this->admin)
+                 ->get(route('tables.qr.show', $tableB))
+                 ->content();
+
+    expect($svgA)->not->toBe($svgB);
+});
