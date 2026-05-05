@@ -72,6 +72,7 @@ Route::middleware(['auth', 'business.active'])->group(function () {
 
     // Gestión de mesas y códigos QR
     Route::get('/mesas', [TableController::class, 'index'])->name('tables.index');
+    Route::get('/mesas/{table}/qr', [TableController::class, 'showQr'])->name('tables.qr.show');
     Route::get('/mesas/{table}/qr/descargar', [TableController::class, 'downloadQr'])->name('tables.qr.download');
     Route::post('/mesas/{table}/qr/regenerar', [TableController::class, 'regenerateHash'])->name('tables.qr.regenerate');
 

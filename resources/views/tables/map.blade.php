@@ -209,7 +209,7 @@
                             {{-- Botón editar forma --}}
                             <button type="button"
                                     @click.stop="editingTableId = editingTableId === table.id ? null : table.id"
-                                    class="absolute -top-2.5 -right-9
+                                    class="absolute -top-2.5 -right-16
                                            w-6 h-6 rounded-full bg-gray-600 dark:bg-gray-500 text-white
                                            flex items-center justify-center
                                            opacity-0 group-hover:opacity-100 transition-opacity
@@ -219,6 +219,21 @@
                                     :aria-expanded="editingTableId === table.id">
                                 <svg aria-hidden="true" class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z"/>
+                                </svg>
+                            </button>
+
+                            {{-- Botón QR --}}
+                            <button type="button"
+                                    @click.stop="$store.qrModal.open(table)"
+                                    class="absolute -top-2.5 -right-9
+                                           w-6 h-6 rounded-full bg-indigo-500 text-white
+                                           flex items-center justify-center
+                                           opacity-0 group-hover:opacity-100 transition-opacity
+                                           hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-400
+                                           shadow-md"
+                                    :aria-label="`Ver QR de la mesa ${table.name}`">
+                                <svg aria-hidden="true" class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M3 3h7v7H3V3zm2 2v3h3V5H5zm9-2h7v7h-7V3zm2 2v3h3V5h-3zM3 14h7v7H3v-7zm2 2v3h3v-3H5zm11.5-2a.5.5 0 01.5.5v1h1.5a.5.5 0 010 1H17v1.5a.5.5 0 01-1 0V17h-1.5a.5.5 0 010-1H16v-1.5a.5.5 0 01.5-.5zm3 3a.5.5 0 01.5.5V21h-2.5a.5.5 0 010-1H21v-1.5a.5.5 0 01.5-.5z"/>
                                 </svg>
                             </button>
 
@@ -303,15 +318,19 @@
                                     flex flex-col items-center gap-0
                                     opacity-0 group-hover:opacity-100 transition-opacity z-10"
                              @mousedown.stop.prevent="startRotation($event, table)"
+                             @mouseenter.stop="rotTooltip = { show: true, x: $event.clientX, y: $event.clientY, deg: table.rotation ?? 0 }"
+                             @mousemove.stop="rotTooltip.x = $event.clientX; rotTooltip.y = $event.clientY; rotTooltip.deg = table.rotation ?? 0"
+                             @mouseleave.stop="if (!isRotating) rotTooltip.show = false"
                              role="button"
                              tabindex="0"
+                             style="cursor: url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2720%27 height=%2720%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27M21 2v6h-6%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M3 12a9 9 0 0 1 15-6.7L21 8%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M3 22v-6h6%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M21 12a9 9 0 0 1-15 6.7L3 16%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M21 2v6h-6%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M3 12a9 9 0 0 1 15-6.7L21 8%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M3 22v-6h6%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M21 12a9 9 0 0 1-15 6.7L3 16%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3C/svg%3E') 10 10, grab;"
                              :aria-label="`Rotar mesa ${table.name} (arrastra para girar)`">
                             <div class="w-6 h-6 rounded-full
                                         bg-white dark:bg-gray-800
                                         border-2 border-indigo-400 shadow-md
                                         flex items-center justify-center text-indigo-500
-                                        cursor-grab active:cursor-grabbing
-                                        hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors">
+                                        transition-all duration-150
+                                        hover:bg-indigo-600 hover:border-indigo-700 hover:text-white hover:scale-110">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" aria-hidden="true">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/>
                                 </svg>
@@ -333,6 +352,22 @@
                     </div>
                 </template>
 
+                {{-- Indicador de grados de rotación (sigue al cursor) --}}
+                <div x-show="rotTooltip.show"
+                     x-transition:enter="transition ease-out duration-75"
+                     x-transition:enter-start="opacity-0 scale-95"
+                     x-transition:enter-end="opacity-100 scale-100"
+                     class="fixed pointer-events-none z-[200] select-none"
+                     :style="`left:${rotTooltip.x + 18}px; top:${rotTooltip.y - 10}px`"
+                     aria-hidden="true">
+                    <span class="inline-flex items-center gap-0.5
+                                 bg-gray-900/90 text-white
+                                 text-xs font-mono font-semibold
+                                 px-1.5 py-0.5 rounded-md shadow-lg ring-1 ring-white/10">
+                        <span x-text="rotTooltip.deg > 180 ? rotTooltip.deg - 360 : rotTooltip.deg"></span>°
+                    </span>
+                </div>
+
                 {{-- Indicador de zona de soltar --}}
                 <div x-show="isDraggingFromPalette"
                      class="absolute inset-0 rounded-xl border-4 border-dashed border-indigo-400
@@ -342,6 +377,86 @@
                 </div>
             </div>
         </main>
+    </div>
+</div>
+
+{{-- Modal de QR de mesa --}}
+<div x-data
+     x-show="$store.qrModal.show"
+     x-transition:enter="transition ease-out duration-200"
+     x-transition:enter-start="opacity-0"
+     x-transition:enter-end="opacity-100"
+     x-transition:leave="transition ease-in duration-150"
+     x-transition:leave-end="opacity-0"
+     class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+     aria-modal="true"
+     role="dialog"
+     aria-labelledby="qr-modal-title"
+     @keydown.escape.window="$store.qrModal.close()">
+
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-sm mx-4"
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0 scale-95"
+         x-transition:enter-end="opacity-100 scale-100"
+         @click.stop>
+
+        <div class="flex items-center justify-between mb-4">
+            <h2 id="qr-modal-title"
+                class="text-lg font-bold text-gray-900 dark:text-white"
+                x-text="`QR — ${$store.qrModal.table?.name ?? ''}`">
+            </h2>
+            <button type="button"
+                    @click="$store.qrModal.close()"
+                    class="w-8 h-8 rounded-full flex items-center justify-center
+                           text-gray-400 hover:text-gray-600 dark:hover:text-gray-200
+                           hover:bg-gray-100 dark:hover:bg-gray-700
+                           focus:outline-none focus:ring-2 focus:ring-gray-400 transition-colors"
+                    aria-label="Cerrar modal de QR">
+                <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+
+        {{-- QR SVG inline --}}
+        <div class="flex justify-center mb-4 p-3 bg-white rounded-xl border border-gray-200 dark:border-gray-700">
+            <img :src="`/mesas/${$store.qrModal.table?.id}/qr`"
+                 :alt="`Código QR de la mesa ${$store.qrModal.table?.name}`"
+                 class="w-48 h-48"
+                 x-show="$store.qrModal.table">
+        </div>
+
+        {{-- URL de la carta --}}
+        <p class="text-xs text-center text-gray-500 dark:text-gray-400 mb-1 font-medium uppercase tracking-wide">
+            Enlace de la carta
+        </p>
+        <p class="text-xs text-center text-indigo-600 dark:text-indigo-400 break-all mb-4 font-mono"
+           x-text="`${window.location.origin}/carta/${$store.qrModal.table?.unique_hash ?? ''}`">
+        </p>
+
+        <div class="flex gap-3">
+            <button type="button"
+                    @click="$store.qrModal.close()"
+                    class="flex-1 px-4 py-2 rounded-xl text-sm font-medium
+                           text-gray-700 dark:text-gray-200
+                           bg-gray-100 dark:bg-gray-700
+                           hover:bg-gray-200 dark:hover:bg-gray-600
+                           focus:outline-none focus:ring-2 focus:ring-gray-400
+                           transition-colors">
+                Cerrar
+            </button>
+            <a :href="`/mesas/${$store.qrModal.table?.id}/qr/descargar`"
+               class="flex-1 px-4 py-2 rounded-xl text-sm font-medium text-center text-white
+                      bg-indigo-600 hover:bg-indigo-700
+                      focus:outline-none focus:ring-2 focus:ring-indigo-400
+                      transition-colors inline-flex items-center justify-center gap-1.5"
+               aria-label="Descargar QR en SVG">
+                <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/>
+                </svg>
+                Descargar SVG
+            </a>
+        </div>
     </div>
 </div>
 
@@ -505,6 +620,22 @@ document.addEventListener('alpine:init', () => {
         },
     });
 
+    // ── Store para el modal de QR de mesa ────────────────────────────────────
+    Alpine.store('qrModal', {
+        show:  false,
+        table: null,
+
+        open(table) {
+            this.table = table;
+            this.show  = true;
+        },
+
+        close() {
+            this.show  = false;
+            this.table = null;
+        },
+    });
+
     // ── Store para el modal de confirmación de borrado ────────────────────────
     Alpine.store('deleteModal', {
         show:     false,
@@ -532,6 +663,7 @@ document.addEventListener('alpine:init', () => {
         editingTableId:        null,
         isRotating:            false,
         toast:                 { show: false, msg: '', error: false, _timer: null },
+        rotTooltip:            { show: false, x: 0, y: 0, deg: 0 },
 
         init() {
             this.$nextTick(() => {
@@ -847,20 +979,25 @@ document.addEventListener('alpine:init', () => {
             const centerY    = canvasRect.top  + table.position_y + table.height / 2;
 
             this.isRotating            = true;
-            document.body.style.cursor = 'grabbing';
+            this.rotTooltip.show       = true;
+            document.body.style.cursor = "url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2720%27 height=%2720%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27M21 2v6h-6%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M3 12a9 9 0 0 1 15-6.7L21 8%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M3 22v-6h6%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M21 12a9 9 0 0 1-15 6.7L3 16%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M21 2v6h-6%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M3 12a9 9 0 0 1 15-6.7L21 8%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M3 22v-6h6%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M21 12a9 9 0 0 1-15 6.7L3 16%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3C/svg%3E') 10 10, grabbing";
 
             const onMove = (e) => {
                 const dx    = e.clientX - centerX;
                 const dy    = e.clientY - centerY;
                 let   angle = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
                 angle = ((angle % 360) + 360) % 360;
-                table.rotation = Math.round(angle);
+                table.rotation     = Math.round(angle);
+                this.rotTooltip.x  = e.clientX;
+                this.rotTooltip.y  = e.clientY;
+                this.rotTooltip.deg = table.rotation;
             };
 
             const onUp = async () => {
                 document.removeEventListener('mousemove', onMove);
                 document.removeEventListener('mouseup',   onUp);
                 this.isRotating            = false;
+                this.rotTooltip.show       = false;
                 document.body.style.cursor = '';
                 await this.persistPosition(table.id, table.position_x, table.position_y, table.width, table.height);
             };
