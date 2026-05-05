@@ -345,6 +345,69 @@
     </div>
 </div>
 
+{{-- Modal de confirmación de eliminación --}}
+<div x-show="deleteModal.show"
+     x-transition:enter="transition ease-out duration-200"
+     x-transition:enter-start="opacity-0"
+     x-transition:enter-end="opacity-100"
+     x-transition:leave="transition ease-in duration-150"
+     x-transition:leave-end="opacity-0"
+     class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+     aria-modal="true"
+     role="alertdialog"
+     aria-labelledby="delete-modal-title"
+     aria-describedby="delete-modal-desc"
+     @keydown.escape.window="resolveDelete(false)">
+
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-sm mx-4"
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0 scale-95"
+         x-transition:enter-end="opacity-100 scale-100"
+         @click.stop>
+
+        {{-- Icono de advertencia --}}
+        <div class="flex items-center justify-center w-12 h-12 mx-auto mb-4
+                    rounded-full bg-red-100 dark:bg-red-900/30">
+            <svg class="w-6 h-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/>
+            </svg>
+        </div>
+
+        <h2 id="delete-modal-title"
+            class="text-lg font-bold text-center text-gray-900 dark:text-white mb-2">
+            Eliminar mesa
+        </h2>
+
+        <p id="delete-modal-desc"
+           class="text-sm text-center text-gray-500 dark:text-gray-400 mb-6">
+            ¿Eliminar <span class="font-semibold text-gray-700 dark:text-gray-200" x-text="`"${deleteModal.table?.name}"`"></span>?
+            Esta acción no se puede deshacer.
+        </p>
+
+        <div class="flex gap-3">
+            <button type="button"
+                    @click="resolveDelete(false)"
+                    class="flex-1 px-4 py-2 rounded-xl text-sm font-medium
+                           text-gray-700 dark:text-gray-200
+                           bg-gray-100 dark:bg-gray-700
+                           hover:bg-gray-200 dark:hover:bg-gray-600
+                           focus:outline-none focus:ring-2 focus:ring-gray-400
+                           transition-colors">
+                Cancelar
+            </button>
+            <button type="button"
+                    @click="resolveDelete(true)"
+                    x-init="$watch('deleteModal.show', v => v && $nextTick(() => $el.focus()))"
+                    class="flex-1 px-4 py-2 rounded-xl text-sm font-medium text-white
+                           bg-red-600 hover:bg-red-700
+                           focus:outline-none focus:ring-2 focus:ring-red-400
+                           transition-colors">
+                Eliminar
+            </button>
+        </div>
+    </div>
+</div>
+
 {{-- Ghost element — sigue al cursor mientras se arrastra desde la paleta --}}
 <div id="palette-ghost"
      class="fixed pointer-events-none z-50 hidden opacity-70
@@ -447,6 +510,7 @@ document.addEventListener('alpine:init', () => {
         editingTableId:        null,
         isRotating:            false,
         toast:                 { show: false, msg: '', error: false, _timer: null },
+        deleteModal:           { show: false, table: null, _resolve: null },
 
         init() {
             this.$nextTick(() => {
@@ -784,9 +848,24 @@ document.addEventListener('alpine:init', () => {
             document.addEventListener('mouseup',   onUp);
         },
 
+        // ── Modal de confirmación de borrado ──────────────────────────────────
+        confirmDeleteTable(table) {
+            this.deleteModal.table = table;
+            this.deleteModal.show  = true;
+            return new Promise(resolve => { this.deleteModal._resolve = resolve; });
+        },
+
+        resolveDelete(confirmed) {
+            this.deleteModal.show = false;
+            this.deleteModal._resolve?.(confirmed);
+            this.deleteModal.table    = null;
+            this.deleteModal._resolve = null;
+        },
+
         // ── AJAX: eliminar mesa ───────────────────────────────────────────────
         async deleteTable(table) {
-            if (!confirm(`¿Eliminar la mesa "${table.name}"? Esta acción no se puede deshacer.`)) return;
+            const confirmed = await this.confirmDeleteTable(table);
+            if (!confirmed) return;
 
             try {
                 const res = await fetch(`/mesas/${table.id}`, {
