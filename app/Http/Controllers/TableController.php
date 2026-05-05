@@ -93,7 +93,7 @@ class TableController extends Controller
     }
 
     /**
-     * Persiste la posición y dimensiones de una mesa tras soltarla en el mapa.
+     * Persiste la posición, dimensiones y rotación de una mesa tras moverla en el mapa.
      *
      * @param  Request  $request
      * @param  Table    $table
@@ -108,6 +108,7 @@ class TableController extends Controller
             'position_y' => 'required|integer|min:0',
             'width'      => 'required|integer|min:60|max:400',
             'height'     => 'required|integer|min:60|max:400',
+            'rotation'   => 'sometimes|integer|min:0|max:359',
         ]);
 
         $table->update($data);
@@ -116,6 +117,36 @@ class TableController extends Controller
             'success' => true,
             'data'    => $table,
             'message' => 'Posición guardada.',
+        ]);
+    }
+
+    /**
+     * Actualiza la forma visual de una mesa existente en el mapa.
+     *
+     * @param  Request  $request
+     * @param  Table    $table
+     * @return JsonResponse
+     */
+    public function updateShape(Request $request, Table $table): JsonResponse
+    {
+        abort_if($table->user_id !== Auth::id(), 403, 'Acceso denegado.');
+
+        $data = $request->validate([
+            'shape' => 'required|in:square,round,rectangle',
+        ]);
+
+        $table->update($data);
+
+        $label = match ($data['shape']) {
+            'square'    => 'cuadrada',
+            'round'     => 'redonda',
+            'rectangle' => 'rectangular',
+        };
+
+        return response()->json([
+            'success' => true,
+            'data'    => $table,
+            'message' => "Forma de \"{$table->name}\" cambiada a {$label}.",
         ]);
     }
 
