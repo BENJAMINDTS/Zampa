@@ -323,7 +323,7 @@
                              @mouseleave.stop="if (!isRotating) rotTooltip.show = false"
                              role="button"
                              tabindex="0"
-                             style="cursor: url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2720%27 height=%2720%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%234f46e5%27 stroke-width=%272.5%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27M21 2v6h-6%27/%3E%3Cpath d=%27M3 12a9 9 0 0 1 15-6.7L21 8%27/%3E%3Cpath d=%27M3 22v-6h6%27/%3E%3Cpath d=%27M21 12a9 9 0 0 1-15 6.7L3 16%27/%3E%3C/svg%3E') 10 10, grab;"
+                             style="cursor: url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2720%27 height=%2720%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%23111827%27 stroke-width=%272.5%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27M21 2v6h-6%27/%3E%3Cpath d=%27M3 12a9 9 0 0 1 15-6.7L21 8%27/%3E%3Cpath d=%27M3 22v-6h6%27/%3E%3Cpath d=%27M21 12a9 9 0 0 1-15 6.7L3 16%27/%3E%3C/svg%3E') 10 10, grab;"
                              :aria-label="`Rotar mesa ${table.name} (arrastra para girar)`">
                             <div class="w-6 h-6 rounded-full
                                         bg-white dark:bg-gray-800
@@ -980,7 +980,7 @@ document.addEventListener('alpine:init', () => {
 
             this.isRotating            = true;
             this.rotTooltip.show       = true;
-            document.body.style.cursor = "url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2720%27 height=%2720%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%234f46e5%27 stroke-width=%272.5%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27M21 2v6h-6%27/%3E%3Cpath d=%27M3 12a9 9 0 0 1 15-6.7L21 8%27/%3E%3Cpath d=%27M3 22v-6h6%27/%3E%3Cpath d=%27M21 12a9 9 0 0 1-15 6.7L3 16%27/%3E%3C/svg%3E') 10 10, grabbing";
+            document.body.style.cursor = "url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2720%27 height=%2720%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%23111827%27 stroke-width=%272.5%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27M21 2v6h-6%27/%3E%3Cpath d=%27M3 12a9 9 0 0 1 15-6.7L21 8%27/%3E%3Cpath d=%27M3 22v-6h6%27/%3E%3Cpath d=%27M21 12a9 9 0 0 1-15 6.7L3 16%27/%3E%3C/svg%3E') 10 10, grabbing";
 
             const onMove = (e) => {
                 const dx    = e.clientX - centerX;
