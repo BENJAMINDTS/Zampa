@@ -364,7 +364,7 @@
                                  bg-gray-900/90 text-white
                                  text-xs font-mono font-semibold
                                  px-1.5 py-0.5 rounded-md shadow-lg ring-1 ring-white/10">
-                        <span x-text="rotTooltip.deg"></span>°
+                        <span x-text="rotTooltip.deg > 180 ? rotTooltip.deg - 360 : rotTooltip.deg"></span>°
                     </span>
                 </div>
 
