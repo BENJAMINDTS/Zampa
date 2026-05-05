@@ -1,5 +1,5 @@
 {{--
- | Bloque 8.1 — Mapa visual de mesas con drag & drop
+ | Bloques 8.1 y 8.3 — Mapa visual de mesas con drag & drop y formas configurables
  | interact.js para arrastrar/redimensionar mesas en el plano del restaurante.
  | @author AyrtonAlania
 --}}
@@ -64,11 +64,11 @@
             </div>
 
             <a href="{{ route('tables.index') }}"
-               class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium
-                      bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200
-                      hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+               class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-white
+                      bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors"
+               aria-label="Ir a la gestión de QR de mesas">
                 <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5zM6.75 6.75h.75v.75h-.75v-.75zM6.75 16.5h.75v.75h-.75v-.75zM16.5 6.75h.75v.75h-.75v-.75zM13.5 13.5h.75v.75h-.75v-.75zM13.5 18.75h.75v.75h-.75v-.75zM18.75 13.5h.75v.75h-.75v-.75zM18.75 18.75h.75v.75h-.75v-.75zM16.5 16.5h.75v.75h-.75v-.75z"/>
                 </svg>
                 Ver QR
             </a>
@@ -158,6 +158,7 @@
                        border-2 border-dashed border-gray-200 dark:border-gray-700"
                 style="width: 1200px; height: 800px; min-width: 100%;"
                 aria-label="Plano del restaurante"
+                @click="editingTableId = null"
             >
                 {{-- Cuadrícula decorativa --}}
                 <svg class="absolute inset-0 w-full h-full pointer-events-none opacity-30 dark:opacity-10"
@@ -176,7 +177,9 @@
                         :data-table-id="table.id"
                         class="table-item absolute group select-none touch-none"
                         :style="`left:${table.position_x}px; top:${table.position_y}px;
-                                 width:${table.width}px; height:${table.height}px;`"
+                                 width:${table.width}px; height:${table.height}px;
+                                 transform: rotate(${table.rotation ?? 0}deg);
+                                 transform-origin: center;`"
                         :aria-label="`Mesa ${table.name}`"
                     >
                         {{-- Fondo de la mesa --}}
@@ -203,6 +206,22 @@
                                   :title="table.status === 'occupied' ? 'Ocupada' : 'Libre'">
                             </span>
 
+                            {{-- Botón editar forma --}}
+                            <button type="button"
+                                    @click.stop="editingTableId = editingTableId === table.id ? null : table.id"
+                                    class="absolute -top-2.5 -right-9
+                                           w-6 h-6 rounded-full bg-gray-600 dark:bg-gray-500 text-white
+                                           flex items-center justify-center
+                                           opacity-0 group-hover:opacity-100 transition-opacity
+                                           hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-400
+                                           shadow-md"
+                                    :aria-label="`Editar forma de mesa ${table.name}`"
+                                    :aria-expanded="editingTableId === table.id">
+                                <svg aria-hidden="true" class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z"/>
+                                </svg>
+                            </button>
+
                             {{-- Botón eliminar --}}
                             <button type="button"
                                     @click.stop="deleteTable(table)"
@@ -217,12 +236,96 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
                                 </svg>
                             </button>
+
+                            {{-- Panel de edición (solo forma) --}}
+                            <div x-show="editingTableId === table.id"
+                                 x-transition:enter="transition ease-out duration-150"
+                                 x-transition:enter-start="opacity-0 scale-95"
+                                 x-transition:enter-end="opacity-100 scale-100"
+                                 @click.stop
+                                 class="absolute top-7 right-0 z-20
+                                        bg-white dark:bg-gray-800 rounded-xl shadow-xl
+                                        border border-gray-200 dark:border-gray-700
+                                        p-3 min-w-max"
+                                 role="dialog"
+                                 :aria-label="`Forma de mesa ${table.name}`">
+
+                                {{-- Editar nombre --}}
+                                <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">Nombre</p>
+                                <div class="flex gap-1 mb-3">
+                                    <input type="text"
+                                           :value="table.name"
+                                           @keydown.enter.stop="updateName(table, $event.target.value); $event.target.blur()"
+                                           @blur.stop="updateName(table, $event.target.value)"
+                                           @click.stop
+                                           maxlength="50"
+                                           class="w-full rounded-lg border border-gray-300 dark:border-gray-600
+                                                  bg-white dark:bg-gray-700 text-gray-900 dark:text-white
+                                                  px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                           :aria-label="`Nombre de la mesa ${table.name}`">
+                                </div>
+
+                                <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">Forma</p>
+                                <div class="flex gap-1.5" role="group" aria-label="Seleccionar forma">
+                                    <button type="button"
+                                            @click.stop="updateShape(table, 'square')"
+                                            :class="table.shape === 'square'
+                                                ? 'bg-indigo-600 text-white ring-2 ring-indigo-400'
+                                                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30'"
+                                            class="w-9 h-9 rounded-lg flex items-center justify-center transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                                            aria-label="Forma cuadrada">
+                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/></svg>
+                                    </button>
+                                    <button type="button"
+                                            @click.stop="updateShape(table, 'round')"
+                                            :class="table.shape === 'round'
+                                                ? 'bg-indigo-600 text-white ring-2 ring-indigo-400'
+                                                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30'"
+                                            class="w-9 h-9 rounded-lg flex items-center justify-center transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                                            aria-label="Forma redonda">
+                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/></svg>
+                                    </button>
+                                    <button type="button"
+                                            @click.stop="updateShape(table, 'rectangle')"
+                                            :class="table.shape === 'rectangle'
+                                                ? 'bg-indigo-600 text-white ring-2 ring-indigo-400'
+                                                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30'"
+                                            class="w-9 h-9 rounded-lg flex items-center justify-center transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                                            aria-label="Forma rectangular">
+                                        <svg class="w-5 h-3" fill="currentColor" viewBox="0 0 24 14" aria-hidden="true"><rect x="0" y="0" width="24" height="14" rx="3"/></svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Handle de rotación — arrastra para girar la mesa --}}
+                        <div class="rotation-handle absolute -top-9 left-1/2 -translate-x-1/2
+                                    flex flex-col items-center gap-0
+                                    opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                             @mousedown.stop.prevent="startRotation($event, table)"
+                             role="button"
+                             tabindex="0"
+                             :aria-label="`Rotar mesa ${table.name} (arrastra para girar)`">
+                            <div class="w-6 h-6 rounded-full
+                                        bg-white dark:bg-gray-800
+                                        border-2 border-indigo-400 shadow-md
+                                        flex items-center justify-center text-indigo-500
+                                        cursor-grab active:cursor-grabbing
+                                        hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/>
+                                </svg>
+                            </div>
+                            <div class="w-px h-3 bg-indigo-400"></div>
                         </div>
 
                         {{-- Handle de redimensionado (esquina inferior derecha) --}}
                         <div class="resize-handle absolute bottom-0 right-0
                                     w-4 h-4 cursor-se-resize opacity-0 group-hover:opacity-100
-                                    transition-opacity">
+                                    transition-opacity"
+                             @mousedown.stop.prevent="startResize($event, table)"
+                             role="button"
+                             :aria-label="`Redimensionar mesa ${table.name}`">
                             <svg aria-hidden="true" viewBox="0 0 10 10" fill="none" class="w-full h-full text-indigo-400">
                                 <path d="M9 1L1 9M9 5L5 9M9 9H9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
                             </svg>
@@ -239,6 +342,71 @@
                 </div>
             </div>
         </main>
+    </div>
+</div>
+
+{{-- Modal de confirmación de eliminación --}}
+<div x-data
+     x-show="$store.deleteModal.show"
+     x-transition:enter="transition ease-out duration-200"
+     x-transition:enter-start="opacity-0"
+     x-transition:enter-end="opacity-100"
+     x-transition:leave="transition ease-in duration-150"
+     x-transition:leave-end="opacity-0"
+     class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+     aria-modal="true"
+     role="alertdialog"
+     aria-labelledby="delete-modal-title"
+     aria-describedby="delete-modal-desc"
+     @keydown.escape.window="$store.deleteModal.resolve(false)">
+
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-sm mx-4"
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0 scale-95"
+         x-transition:enter-end="opacity-100 scale-100"
+         @click.stop>
+
+        {{-- Icono de advertencia --}}
+        <div class="flex items-center justify-center w-12 h-12 mx-auto mb-4
+                    rounded-full bg-red-100 dark:bg-red-900/30">
+            <svg class="w-6 h-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/>
+            </svg>
+        </div>
+
+        <h2 id="delete-modal-title"
+            class="text-lg font-bold text-center text-gray-900 dark:text-white mb-2">
+            Eliminar mesa
+        </h2>
+
+        <p id="delete-modal-desc"
+           class="text-sm text-center text-gray-500 dark:text-gray-400 mb-6">
+            ¿Eliminar <span class="font-semibold text-gray-700 dark:text-gray-200"
+                            x-text="`&quot;${$store.deleteModal.table?.name}&quot;`"></span>?
+            Esta acción no se puede deshacer.
+        </p>
+
+        <div class="flex gap-3">
+            <button type="button"
+                    @click="$store.deleteModal.resolve(false)"
+                    class="flex-1 px-4 py-2 rounded-xl text-sm font-medium
+                           text-gray-700 dark:text-gray-200
+                           bg-gray-100 dark:bg-gray-700
+                           hover:bg-gray-200 dark:hover:bg-gray-600
+                           focus:outline-none focus:ring-2 focus:ring-gray-400
+                           transition-colors">
+                Cancelar
+            </button>
+            <button type="button"
+                    @click="$store.deleteModal.resolve(true)"
+                    x-init="$watch('$store.deleteModal.show', v => v && $nextTick(() => $el.focus()))"
+                    class="flex-1 px-4 py-2 rounded-xl text-sm font-medium text-white
+                           bg-red-600 hover:bg-red-700
+                           focus:outline-none focus:ring-2 focus:ring-red-400
+                           transition-colors">
+                Eliminar
+            </button>
+        </div>
     </div>
 </div>
 
@@ -337,11 +505,33 @@ document.addEventListener('alpine:init', () => {
         },
     });
 
+    // ── Store para el modal de confirmación de borrado ────────────────────────
+    Alpine.store('deleteModal', {
+        show:     false,
+        table:    null,
+        _resolve: null,
+
+        prompt(table) {
+            this.table = table;
+            this.show  = true;
+            return new Promise(resolve => { this._resolve = resolve; });
+        },
+
+        resolve(confirmed) {
+            this.show = false;
+            this._resolve?.(confirmed);
+            this.table    = null;
+            this._resolve = null;
+        },
+    });
+
     // ── Componente principal del mapa ─────────────────────────────────────────
     Alpine.data('tableMap', () => ({
-        tables:               @json($tables),
+        tables:                @json($tables),
         isDraggingFromPalette: false,
-        toast:                { show: false, msg: '', error: false, _timer: null },
+        editingTableId:        null,
+        isRotating:            false,
+        toast:                 { show: false, msg: '', error: false, _timer: null },
 
         init() {
             this.$nextTick(() => {
@@ -363,6 +553,7 @@ document.addEventListener('alpine:init', () => {
 
             interact('.table-item')
                 .draggable({
+                    ignoreFrom:  '.rotation-handle, .resize-handle',
                     inertia:    false,
                     autoScroll: true,
                     modifiers: [
@@ -390,32 +581,7 @@ document.addEventListener('alpine:init', () => {
                         },
                     },
                 })
-                .resizable({
-                    edges:   { left: false, right: true, bottom: true, top: false },
-                    inertia: false,
-                    modifiers: [
-                        interact.modifiers.restrictSize({
-                            min: { width: 60, height: 60 },
-                            max: { width: 400, height: 400 },
-                        }),
-                    ],
-                    listeners: {
-                        move: (event) => {
-                            const el = event.target;
-                            el.style.width  = `${event.rect.width}px`;
-                            el.style.height = `${event.rect.height}px`;
-                        },
-                        end: (event) => {
-                            const el = event.target;
-                            const id = parseInt(el.dataset.tableId);
-                            const x  = Math.round(parseFloat(el.style.left) || 0);
-                            const y  = Math.round(parseFloat(el.style.top)  || 0);
-                            const w  = Math.round(parseFloat(el.style.width)  || 100);
-                            const h  = Math.round(parseFloat(el.style.height) || 100);
-                            this.persistPosition(id, x, y, w, h);
-                        },
-                    },
-                });
+                ;
         },
 
         // ── Reinicializar interact después de añadir una mesa ─────────────────
@@ -528,7 +694,52 @@ document.addEventListener('alpine:init', () => {
             }
         },
 
-        // ── AJAX: persistir posición ──────────────────────────────────────────
+        // ── Resize libre en espacio local del elemento rotado ────────────────
+        startResize(event, table) {
+            const θRad    = (table.rotation ?? 0) * Math.PI / 180;
+            const cosθ    = Math.cos(θRad);
+            const sinθ    = Math.sin(θRad);
+            const startMX = event.clientX;
+            const startMY = event.clientY;
+            const startW  = table.width;
+            const startH  = table.height;
+            const startPx = table.position_x;
+            const startPy = table.position_y;
+
+            document.body.style.cursor = 'se-resize';
+
+            const onMove = (e) => {
+                const dx = e.clientX - startMX;
+                const dy = e.clientY - startMY;
+
+                // Proyectar delta de pantalla al espacio local del elemento (rotación inversa)
+                const localDX =  dx * cosθ + dy * sinθ;
+                const localDY = -dx * sinθ + dy * cosθ;
+
+                const newW = Math.min(400, Math.max(60, startW + localDX));
+                const newH = Math.min(400, Math.max(60, startH + localDY));
+                const dW   = newW - startW;
+                const dH   = newH - startH;
+
+                table.width      = Math.round(newW);
+                table.height     = Math.round(newH);
+                // Corregir posición CSS para que la esquina visual superior-izquierda no se mueva
+                table.position_x = Math.max(0, Math.round(startPx + dW / 2 * (cosθ - 1) - dH / 2 * sinθ));
+                table.position_y = Math.max(0, Math.round(startPy + dW / 2 * sinθ + dH / 2 * (cosθ - 1)));
+            };
+
+            const onUp = async () => {
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('mouseup',   onUp);
+                document.body.style.cursor = '';
+                await this.persistPosition(table.id, table.position_x, table.position_y, table.width, table.height);
+            };
+
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup',   onUp);
+        },
+
+        // ── AJAX: persistir posición, dimensiones y rotación ─────────────────
         async persistPosition(id, x, y, w, h) {
             const table = this.tables.find(t => t.id === id);
             if (table) {
@@ -546,7 +757,13 @@ document.addEventListener('alpine:init', () => {
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                         'Accept':       'application/json',
                     },
-                    body: JSON.stringify({ position_x: x, position_y: y, width: w, height: h }),
+                    body: JSON.stringify({
+                        position_x: x,
+                        position_y: y,
+                        width:      w,
+                        height:     h,
+                        rotation:   table?.rotation ?? 0,
+                    }),
                 });
 
                 if (!res.ok) {
@@ -557,9 +774,105 @@ document.addEventListener('alpine:init', () => {
             }
         },
 
+        // ── AJAX: actualizar forma de mesa existente ──────────────────────────
+        async updateShape(table, shape) {
+            const prev = table.shape;
+            table.shape       = shape;
+            this.editingTableId = null;
+
+            try {
+                const res = await fetch(`/mesas/${table.id}/forma`, {
+                    method:  'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept':       'application/json',
+                    },
+                    body: JSON.stringify({ shape }),
+                });
+
+                const json = await res.json();
+
+                if (!res.ok || !json.success) {
+                    table.shape = prev;
+                    this.showToast(json.message ?? 'Error al cambiar la forma.', true);
+                    return;
+                }
+
+                this.showToast(json.message);
+            } catch {
+                table.shape = prev;
+                this.showToast('Error de red al cambiar la forma.', true);
+            }
+        },
+
+        // ── AJAX: actualizar nombre de mesa existente ─────────────────────────
+        async updateName(table, name) {
+            name = name.trim();
+            if (!name || name === table.name) return;
+
+            const prev  = table.name;
+            table.name  = name;
+
+            try {
+                const res = await fetch(`/mesas/${table.id}/nombre`, {
+                    method:  'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept':       'application/json',
+                    },
+                    body: JSON.stringify({ name }),
+                });
+
+                const json = await res.json();
+
+                if (!res.ok || !json.success) {
+                    table.name = prev;
+                    this.showToast(json.message ?? 'Error al renombrar la mesa.', true);
+                    return;
+                }
+
+                this.showToast(json.message);
+            } catch {
+                table.name = prev;
+                this.showToast('Error de red al renombrar la mesa.', true);
+            }
+        },
+
+        // ── Rotación libre arrastrando el handle (estilo Canva) ───────────────
+        startRotation(event, table) {
+            const canvasRect = this.$refs.canvas.getBoundingClientRect();
+            const centerX    = canvasRect.left + table.position_x + table.width  / 2;
+            const centerY    = canvasRect.top  + table.position_y + table.height / 2;
+
+            this.isRotating            = true;
+            document.body.style.cursor = 'grabbing';
+
+            const onMove = (e) => {
+                const dx    = e.clientX - centerX;
+                const dy    = e.clientY - centerY;
+                let   angle = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
+                angle = ((angle % 360) + 360) % 360;
+                table.rotation = Math.round(angle);
+            };
+
+            const onUp = async () => {
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('mouseup',   onUp);
+                this.isRotating            = false;
+                document.body.style.cursor = '';
+                await this.persistPosition(table.id, table.position_x, table.position_y, table.width, table.height);
+            };
+
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup',   onUp);
+        },
+
         // ── AJAX: eliminar mesa ───────────────────────────────────────────────
         async deleteTable(table) {
-            if (!confirm(`¿Eliminar la mesa "${table.name}"? Esta acción no se puede deshacer.`)) return;
+            const confirmed = await Alpine.store('deleteModal').prompt(table);
+            if (!confirmed) return;
 
             try {
                 const res = await fetch(`/mesas/${table.id}`, {
