@@ -75,7 +75,7 @@ npm run dev              # Vite HMR en <http://localhost:5173> (solo desarrollo)
 
 ## Progreso del desarrollo
 
-**Progreso global: 71%** (41/58 sub-bloques completados)
+**Progreso global: 79%** (46/58 sub-bloques completados)
 
 | Sub-bloque | Descripción | Estado |
 | ---------- | ----------- | ------ |
@@ -125,11 +125,11 @@ npm run dev              # Vite HMR en <http://localhost:5173> (solo desarrollo)
 | 13.4 | Gestión de negocios — crear admins, asignar plan, ver stats | ✅ Completado |
 | 13.5 | Mapa de negocios — Leaflet.js con pin por negocio | ✅ Completado |
 | 13.6 | Tests del Bloque 13 | ✅ Completado |
-| 8.1 | Interfaz drag & drop para crear, mover y eliminar mesas | 🔒 Pendiente |
-| 8.2 | Límite de mesas según plan del gerente | 🔒 Pendiente |
-| 8.3 | Formas de mesa (cuadrada, redonda, rectangular) | 🔒 Pendiente |
-| 8.4 | Generación de QR por mesa desde el mapa | 🔒 Pendiente |
-| 8.5 | Tests del Bloque 8 | 🔒 Pendiente |
+| 8.1 | Interfaz drag & drop para crear, mover y eliminar mesas | ✅ Completado |
+| 8.2 | Límite de mesas según plan del gerente | ✅ Completado |
+| 8.3 | Formas de mesa (cuadrada, redonda, rectangular) | ✅ Completado |
+| 8.4 | Generación de QR por mesa desde el mapa | ✅ Completado |
+| 8.5 | Tests del Bloque 8 | ✅ Completado |
 | 9.1 | Ingresos desglosados por método de pago y período | 🔒 Pendiente |
 | 9.2 | Mesa que más ingresos genera | 🔒 Pendiente |
 | 9.3 | Platos más pedidos | 🔒 Pendiente |
