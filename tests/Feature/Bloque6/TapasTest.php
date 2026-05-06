@@ -1094,6 +1094,43 @@ it('allows deleting Tapas category when tapas_disabled', function () {
     $this->assertDatabaseMissing('categories', ['id' => $tapasCategory->id]);
 });
 
+it('tapas category products are not shown in main menu listing when tapas enabled', function () {
+    TapaConfig::factory()->create([
+        'user_id'       => $this->user->id,
+        'tapas_enabled' => true,
+    ]);
+
+    $table        = Table::factory()->create(['user_id' => $this->user->id]);
+    $tapaCategory = Category::factory()->create(['user_id' => $this->user->id, 'name' => 'Tapas', 'destination' => 'kitchen']);
+    $barCategory  = Category::factory()->create(['user_id' => $this->user->id, 'destination' => 'bar']);
+
+    Product::factory()->create(['user_id' => $this->user->id, 'category_id' => $tapaCategory->id, 'is_active' => true]);
+    Product::factory()->create(['user_id' => $this->user->id, 'category_id' => $barCategory->id, 'is_active' => true]);
+
+    $response = $this->get(route('menu.show', $table->unique_hash));
+
+    $response->assertOk();
+    $categories = $response->viewData('categories');
+    expect($categories->pluck('name')->toArray())->not->toContain('Tapas');
+});
+
+it('tapas category products appear in main listing when tapas disabled', function () {
+    TapaConfig::factory()->create([
+        'user_id'       => $this->user->id,
+        'tapas_enabled' => false,
+    ]);
+
+    $table        = Table::factory()->create(['user_id' => $this->user->id]);
+    $tapaCategory = Category::factory()->create(['user_id' => $this->user->id, 'name' => 'Tapas', 'destination' => 'kitchen']);
+    Product::factory()->create(['user_id' => $this->user->id, 'category_id' => $tapaCategory->id, 'is_active' => true]);
+
+    $response = $this->get(route('menu.show', $table->unique_hash));
+    $response->assertOk();
+
+    $categories = $response->viewData('categories');
+    expect($categories->pluck('name')->toArray())->toContain('Tapas');
+});
+
 // ─── tapaVariantsUsed counts distinct tapa products ──────────────────────────
 
 it('tapaVariantsUsed counts distinct tapa products in active orders', function () {
