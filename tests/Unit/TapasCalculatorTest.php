@@ -148,3 +148,75 @@ it('shouldSuggestTapa returns true when all conditions are met', function () {
 
     expect($config->shouldSuggestTapa(2, 1))->toBeTrue();
 });
+
+// ─── getPriceForProduct ───────────────────────────────────────────────────────
+
+it('getPriceForProduct returns 0 when tapas are free regardless of product price', function () {
+    $config = new TapaConfig([
+        'tapas_enabled' => true,
+        'tapas_free'    => true,
+        'price_mode'    => 'fixed',
+        'tapa_price'    => '3.00',
+    ]);
+
+    $product        = new \App\Models\Product();
+    $product->price = 9.99;
+
+    expect($config->getPriceForProduct($product))->toBe(0.0);
+});
+
+it('getPriceForProduct returns global fixed price when mode is fixed', function () {
+    $config = new TapaConfig([
+        'tapas_enabled' => true,
+        'tapas_free'    => false,
+        'price_mode'    => 'fixed',
+        'tapa_price'    => '1.50',
+    ]);
+
+    $product        = new \App\Models\Product();
+    $product->price = 9.99;
+
+    expect($config->getPriceForProduct($product))->toBe(1.50);
+});
+
+it('getPriceForProduct returns product price when mode is per_product', function () {
+    $config = new TapaConfig([
+        'tapas_enabled' => true,
+        'tapas_free'    => false,
+        'price_mode'    => 'per_product',
+        'tapa_price'    => null,
+    ]);
+
+    $product        = new \App\Models\Product();
+    $product->price = 3.75;
+
+    expect($config->getPriceForProduct($product))->toBe(3.75);
+});
+
+it('getPriceForProduct returns 0 when tapas are free even with per_product mode', function () {
+    $config = new TapaConfig([
+        'tapas_enabled' => true,
+        'tapas_free'    => true,
+        'price_mode'    => 'per_product',
+        'tapa_price'    => null,
+    ]);
+
+    $product        = new \App\Models\Product();
+    $product->price = 5.00;
+
+    expect($config->getPriceForProduct($product))->toBe(0.0);
+});
+
+it('getPriceForProduct returns 0 when fixed mode and tapa_price is null', function () {
+    $config = new TapaConfig([
+        'tapas_enabled' => true,
+        'tapas_free'    => false,
+        'price_mode'    => 'fixed',
+        'tapa_price'    => null,
+    ]);
+
+    $product        = new \App\Models\Product();
+    $product->price = 4.00;
+
+    expect($config->getPriceForProduct($product))->toBe(0.0);
+});
