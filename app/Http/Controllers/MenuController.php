@@ -41,6 +41,7 @@ class MenuController extends Controller
 
         $categories = Category::where('user_id', $table->user_id)
             ->when(! $kitchenOpen, fn ($q) => $q->where('destination', 'bar'))
+            ->when($config && $config->tapas_enabled, fn ($q) => $q->where('name', '!=', 'Tapas'))
             ->with([
                 'products' => function ($query) {
                     $query->where('is_active', true)
