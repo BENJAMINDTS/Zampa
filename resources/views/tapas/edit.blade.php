@@ -30,6 +30,7 @@
                     x-data="{
                         tapas_enabled:      {{ $tapaConfig->tapas_enabled ? 'true' : 'false' }},
                         tapas_free:         {{ $tapaConfig->tapas_free ? 'true' : 'false' }},
+                        price_mode:         '{{ old('price_mode', $tapaConfig->price_mode ?? 'fixed') }}',
                         extra_tapa_enabled: {{ $tapaConfig->extra_tapa_enabled ? 'true' : 'false' }},
                         schedules: @json($schedulesForAlpine),
                         addSchedule()    { this.schedules.push({ opens_at: '', closes_at: '' }); },
@@ -95,10 +96,62 @@
                             <input type="hidden" name="tapas_free" :value="tapas_free ? '1' : '0'">
                         </div>
 
-                        {{-- Precio por tapa (solo si de pago) --}}
+                        {{-- Modalidad de precio (solo si de pago) --}}
                         <div x-show="!tapas_free" x-transition>
+                            <fieldset>
+                                <legend class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    {{ __('Modalidad de precio') }}
+                                    <span aria-hidden="true" class="text-red-500 ml-0.5">*</span>
+                                </legend>
+                                <p id="price-mode-desc" class="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                                    {{ __('Elige cómo se calcula el precio que ve el cliente para cada tapa.') }}
+                                </p>
+                                <div class="space-y-3" aria-describedby="price-mode-desc">
+                                    <label class="flex items-start gap-3 cursor-pointer">
+                                        <input
+                                            type="radio"
+                                            name="price_mode"
+                                            value="fixed"
+                                            x-model="price_mode"
+                                            class="mt-0.5 h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                        >
+                                        <span>
+                                            <span class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                {{ __('Precio fijo para todas las tapas') }}
+                                            </span>
+                                            <span class="block text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                                {{ __('Configuras un único precio que aplica a todas las tapas del menú.') }}
+                                            </span>
+                                        </span>
+                                    </label>
+                                    <label class="flex items-start gap-3 cursor-pointer">
+                                        <input
+                                            type="radio"
+                                            name="price_mode"
+                                            value="per_product"
+                                            x-model="price_mode"
+                                            class="mt-0.5 h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                        >
+                                        <span>
+                                            <span class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                {{ __('Precio individual por producto') }}
+                                            </span>
+                                            <span class="block text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                                {{ __('Cada tapa usa el precio configurado en su ficha de producto.') }}
+                                            </span>
+                                        </span>
+                                    </label>
+                                </div>
+                                @error('price_mode')
+                                    <p id="error-price_mode" role="alert" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                @enderror
+                            </fieldset>
+                        </div>
+
+                        {{-- Precio fijo global (solo si de pago y modalidad fija) --}}
+                        <div x-show="!tapas_free && price_mode === 'fixed'" x-transition>
                             <label for="tapa_price" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                {{ __('Precio por tapa (€)') }}
+                                {{ __('Precio fijo por tapa (€)') }}
                                 <span aria-hidden="true" class="text-red-500 ml-0.5">*</span>
                             </label>
                             <input
@@ -117,6 +170,13 @@
                             @error('tapa_price')
                                 <p id="error-tapa_price" role="alert" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                             @enderror
+                        </div>
+
+                        {{-- Aviso precio por producto --}}
+                        <div x-show="!tapas_free && price_mode === 'per_product'" x-transition>
+                            <p class="text-sm text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-900/20 rounded-md px-3 py-2">
+                                {{ __('El precio de cada tapa se configura en la ficha del producto dentro de la categoría "Tapas".') }}
+                            </p>
                         </div>
 
                         {{-- ── SECCIÓN 2: Tapa extra ────────────────────── --}}

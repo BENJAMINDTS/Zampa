@@ -36,10 +36,12 @@
             ]);
         })->values();
 
+        // El precio de cada tapa se resuelve en backend (getPriceForProduct) para que
+        // Alpine no tenga que replicar la lógica de modalidad de precio.
         $tapaProductsForAlpine = $tapaProducts->map(fn ($p) => [
             'id'    => $p->id,
             'name'  => $p->name,
-            'price' => (float) $p->price,
+            'price' => $tapaConfig ? (float) $tapaConfig->getPriceForProduct($p) : (float) $p->price,
         ])->values();
 
         $tapaConfigForAlpine = [
@@ -123,11 +125,11 @@
                 },
 
                 addTapa(tapaProduct) {
-                    const price = this.tapaConfig.free ? 0 : this.tapaConfig.tapaPrice;
+                    // tapaProduct.price ya viene resuelto por getPriceForProduct() en el backend
                     this.add({
                         id:          tapaProduct.id,
                         name:        tapaProduct.name,
-                        price:       price,
+                        price:       tapaProduct.price,
                         destination: 'kitchen',
                         removable:   [],
                         extras:      [],

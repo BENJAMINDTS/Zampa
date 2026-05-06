@@ -13,15 +13,17 @@ use Illuminate\Support\Carbon;
  *
  * Configuración del sistema de tapas de un restaurante (relación 1:1 con User).
  * Permite al gerente activar tapas, definir si son gratuitas o de pago,
- * el precio unitario, el número máximo de variantes distintas por pedido,
- * la tapa extra de pago y los tramos horarios de apertura de cocina.
+ * la modalidad de precio (fijo global o por producto), el número máximo de
+ * variantes distintas por pedido, la tapa extra de pago y los tramos horarios
+ * de apertura de cocina.
  *
  * @package App\Models
  * @property int        $user_id
  * @property bool       $tapas_enabled       Si el sistema de tapas está activo
  * @property bool       $tapas_free          true = gratuitas, false = de pago
+ * @property string     $price_mode          'fixed' = precio global | 'per_product' = precio individual
  * @property int        $max_tapa_variants   Máximo de variantes distintas por mesa
- * @property float|null $tapa_price          Precio por tapa (solo si tapas_free = false)
+ * @property float|null $tapa_price          Precio fijo global (solo si price_mode = fixed y tapas_free = false)
  * @property bool       $extra_tapa_enabled  Si se permite pedir una tapa extra de pago
  * @property float|null $extra_tapa_price    Precio de la tapa extra (obligatorio si extra_tapa_enabled)
  *
@@ -38,6 +40,7 @@ class TapaConfig extends Model
         'user_id',
         'tapas_enabled',
         'tapas_free',
+        'price_mode',
         'max_tapa_variants',
         'tapa_price',
         'extra_tapa_enabled',
@@ -50,6 +53,7 @@ class TapaConfig extends Model
     protected $casts = [
         'tapas_enabled'      => 'boolean',
         'tapas_free'         => 'boolean',
+        'price_mode'         => 'string',
         'max_tapa_variants'  => 'integer',
         'tapa_price'         => 'decimal:2',
         'extra_tapa_enabled' => 'boolean',
@@ -157,5 +161,44 @@ class TapaConfig extends Model
         }
 
         return $tapaVariantsUsed < $this->max_tapa_variants;
+    }
+
+    /**
+     * Devuelve el precio que el cliente debe pagar por una tapa según la modalidad activa.
+     *
+     * Si tapas son gratuitas     → 0.0
+     * Si price_mode = 'fixed'    → precio fijo global (tapa_price)
+     * Si price_mode = per_product → precio individual del producto
+     *
+     * La tapa extra tiene siempre su propio precio (extra_tapa_price), independiente de esta lógica.
+     *
+     * @param  Product  $product
+     * @return float
+     */
+    public function getPriceForProduct(Product $product): float
+    {
+        if ($this->tapas_free) {
+            return 0.0;
+        }
+
+        if ($this->price_mode === 'fixed') {
+            return (float) ($this->tapa_price ?? 0);
+        }
+
+        return (float) $product->price;
+    }
+
+    /**
+     * Determina si un producto pertenece a la categoría "Tapas" de este restaurante.
+     * Usado para aplicar el precio de tapa en lugar del precio normal del producto.
+     *
+     * @param  Product  $product  Debe tener la relación 'category' cargada
+     * @return bool
+     */
+    public function isTapaProduct(Product $product): bool
+    {
+        return $product->category_id !== null
+            && $product->category?->name === 'Tapas'
+            && $product->category?->user_id === $this->user_id;
     }
 }

@@ -792,6 +792,347 @@ it('tapa products only include active products from Tapas category', function ()
     Carbon::setTestNow();
 });
 
+// ─── Modalidad de precio (price_mode) ────────────────────────────────────────
+
+it('saves price_mode fixed correctly', function () {
+    $this->actingAs($this->user)
+         ->put(route('tapas.update'), [
+             'tapas_enabled'     => '1',
+             'tapas_free'        => '0',
+             'price_mode'        => 'fixed',
+             'max_tapa_variants' => 3,
+             'tapa_price'        => '1.00',
+         ]);
+
+    $config = TapaConfig::where('user_id', $this->user->id)->first();
+    expect($config->price_mode)->toBe('fixed');
+});
+
+it('saves price_mode per_product correctly', function () {
+    $this->actingAs($this->user)
+         ->put(route('tapas.update'), [
+             'tapas_enabled'     => '1',
+             'tapas_free'        => '0',
+             'price_mode'        => 'per_product',
+             'max_tapa_variants' => 3,
+         ])
+         ->assertRedirect(route('tapas.edit'));
+
+    $config = TapaConfig::where('user_id', $this->user->id)->first();
+    expect($config->price_mode)->toBe('per_product')
+        ->and($config->tapa_price)->toBeNull();
+});
+
+it('fails to save paid tapas with fixed price mode and no global price', function () {
+    $this->actingAs($this->user)
+         ->put(route('tapas.update'), [
+             'tapas_enabled'     => '1',
+             'tapas_free'        => '0',
+             'price_mode'        => 'fixed',
+             'max_tapa_variants' => 3,
+             // tapa_price ausente
+         ])
+         ->assertSessionHasErrors('tapa_price');
+});
+
+it('allows saving paid tapas with per_product mode and no global price', function () {
+    $this->actingAs($this->user)
+         ->put(route('tapas.update'), [
+             'tapas_enabled'     => '1',
+             'tapas_free'        => '0',
+             'price_mode'        => 'per_product',
+             'max_tapa_variants' => 3,
+         ])
+         ->assertSessionMissing('errors')
+         ->assertRedirect(route('tapas.edit'));
+});
+
+it('allows saving free tapas without any price regardless of mode', function () {
+    $this->actingAs($this->user)
+         ->put(route('tapas.update'), [
+             'tapas_enabled'     => '1',
+             'tapas_free'        => '1',
+             'max_tapa_variants' => 3,
+         ])
+         ->assertSessionMissing('errors')
+         ->assertRedirect(route('tapas.edit'));
+
+    $config = TapaConfig::where('user_id', $this->user->id)->first();
+    expect($config->tapa_price)->toBeNull();
+});
+
+it('clears tapa_price when mode changes to per_product', function () {
+    TapaConfig::factory()->create([
+        'user_id'       => $this->user->id,
+        'tapas_free'    => false,
+        'price_mode'    => 'fixed',
+        'tapa_price'    => 2.50,
+    ]);
+
+    $this->actingAs($this->user)
+         ->put(route('tapas.update'), [
+             'tapas_enabled'     => '1',
+             'tapas_free'        => '0',
+             'price_mode'        => 'per_product',
+             'max_tapa_variants' => 3,
+         ]);
+
+    $this->assertDatabaseHas('tapa_configs', [
+        'user_id'    => $this->user->id,
+        'tapa_price' => null,
+        'price_mode' => 'per_product',
+    ]);
+});
+
+it('tapa order item saves resolved price for fixed mode not product price', function () {
+    $tapaConfig = TapaConfig::factory()->create([
+        'user_id'       => $this->user->id,
+        'tapas_enabled' => true,
+        'tapas_free'    => false,
+        'price_mode'    => 'fixed',
+        'tapa_price'    => 1.50,
+    ]);
+
+    $table        = Table::factory()->create(['user_id' => $this->user->id]);
+    $tapaCategory = Category::factory()->create(['user_id' => $this->user->id, 'name' => 'Tapas', 'destination' => 'kitchen']);
+    $tapaProduct  = Product::factory()->create([
+        'user_id'     => $this->user->id,
+        'category_id' => $tapaCategory->id,
+        'price'       => 9.99,
+        'is_active'   => true,
+    ]);
+
+    $response = $this->postJson('/api/v1/orders', [
+        'table_hash' => $table->unique_hash,
+        'items'      => [
+            ['product_id' => $tapaProduct->id, 'quantity' => 1],
+        ],
+    ]);
+
+    $response->assertCreated();
+    $this->assertDatabaseHas('order_items', [
+        'product_id' => $tapaProduct->id,
+        'price'      => 1.50,
+    ]);
+});
+
+it('tapa order item saves product price for per_product mode', function () {
+    TapaConfig::factory()->create([
+        'user_id'       => $this->user->id,
+        'tapas_enabled' => true,
+        'tapas_free'    => false,
+        'price_mode'    => 'per_product',
+        'tapa_price'    => null,
+    ]);
+
+    $table        = Table::factory()->create(['user_id' => $this->user->id]);
+    $tapaCategory = Category::factory()->create(['user_id' => $this->user->id, 'name' => 'Tapas', 'destination' => 'kitchen']);
+    $tapaProduct  = Product::factory()->create([
+        'user_id'     => $this->user->id,
+        'category_id' => $tapaCategory->id,
+        'price'       => 3.75,
+        'is_active'   => true,
+    ]);
+
+    $response = $this->postJson('/api/v1/orders', [
+        'table_hash' => $table->unique_hash,
+        'items'      => [
+            ['product_id' => $tapaProduct->id, 'quantity' => 1],
+        ],
+    ]);
+
+    $response->assertCreated();
+    $this->assertDatabaseHas('order_items', [
+        'product_id' => $tapaProduct->id,
+        'price'      => 3.75,
+    ]);
+});
+
+it('tapa order item saves 0 when tapas are free', function () {
+    TapaConfig::factory()->create([
+        'user_id'       => $this->user->id,
+        'tapas_enabled' => true,
+        'tapas_free'    => true,
+    ]);
+
+    $table        = Table::factory()->create(['user_id' => $this->user->id]);
+    $tapaCategory = Category::factory()->create(['user_id' => $this->user->id, 'name' => 'Tapas', 'destination' => 'kitchen']);
+    $tapaProduct  = Product::factory()->create([
+        'user_id'     => $this->user->id,
+        'category_id' => $tapaCategory->id,
+        'price'       => 5.00,
+        'is_active'   => true,
+    ]);
+
+    $response = $this->postJson('/api/v1/orders', [
+        'table_hash' => $table->unique_hash,
+        'items'      => [
+            ['product_id' => $tapaProduct->id, 'quantity' => 1],
+        ],
+    ]);
+
+    $response->assertCreated();
+    $this->assertDatabaseHas('order_items', [
+        'product_id' => $tapaProduct->id,
+        'price'      => 0,
+    ]);
+});
+
+it('non-tapa products always use product price regardless of tapa config', function () {
+    TapaConfig::factory()->create([
+        'user_id'       => $this->user->id,
+        'tapas_enabled' => true,
+        'tapas_free'    => false,
+        'price_mode'    => 'fixed',
+        'tapa_price'    => 1.00,
+    ]);
+
+    $table       = Table::factory()->create(['user_id' => $this->user->id]);
+    $barCategory = Category::factory()->create(['user_id' => $this->user->id, 'destination' => 'bar']);
+    $drink       = Product::factory()->create([
+        'user_id'     => $this->user->id,
+        'category_id' => $barCategory->id,
+        'price'       => 2.80,
+        'is_active'   => true,
+    ]);
+
+    $response = $this->postJson('/api/v1/orders', [
+        'table_hash' => $table->unique_hash,
+        'items'      => [
+            ['product_id' => $drink->id, 'quantity' => 1],
+        ],
+    ]);
+
+    $response->assertCreated();
+    $this->assertDatabaseHas('order_items', [
+        'product_id' => $drink->id,
+        'price'      => 2.80,
+    ]);
+});
+
+// ─── Protección de categoría Tapas ───────────────────────────────────────────
+
+it('blocks renaming Tapas category when tapas_enabled', function () {
+    TapaConfig::factory()->create([
+        'user_id'       => $this->user->id,
+        'tapas_enabled' => true,
+    ]);
+
+    $tapasCategory = Category::factory()->create([
+        'user_id'     => $this->user->id,
+        'name'        => 'Tapas',
+        'destination' => 'kitchen',
+    ]);
+
+    $this->actingAs($this->user)
+         ->put(route('categories.update', $tapasCategory), [
+             'name'        => 'Pinchos',
+             'destination' => 'kitchen',
+         ])
+         ->assertSessionHasErrors('name');
+
+    $this->assertDatabaseHas('categories', ['id' => $tapasCategory->id, 'name' => 'Tapas']);
+});
+
+it('allows renaming Tapas category when tapas_disabled', function () {
+    TapaConfig::factory()->create([
+        'user_id'       => $this->user->id,
+        'tapas_enabled' => false,
+    ]);
+
+    $tapasCategory = Category::factory()->create([
+        'user_id'     => $this->user->id,
+        'name'        => 'Tapas',
+        'destination' => 'kitchen',
+    ]);
+
+    $this->actingAs($this->user)
+         ->put(route('categories.update', $tapasCategory), [
+             'name'        => 'Pinchos',
+             'destination' => 'kitchen',
+         ])
+         ->assertRedirect(route('categories.index'));
+
+    $this->assertDatabaseHas('categories', ['id' => $tapasCategory->id, 'name' => 'Pinchos']);
+});
+
+it('blocks deleting Tapas category when tapas_enabled', function () {
+    TapaConfig::factory()->create([
+        'user_id'       => $this->user->id,
+        'tapas_enabled' => true,
+    ]);
+
+    $tapasCategory = Category::factory()->create([
+        'user_id'     => $this->user->id,
+        'name'        => 'Tapas',
+        'destination' => 'kitchen',
+    ]);
+
+    $this->actingAs($this->user)
+         ->delete(route('categories.destroy', $tapasCategory))
+         ->assertSessionHasErrors('general');
+
+    $this->assertDatabaseHas('categories', ['id' => $tapasCategory->id]);
+});
+
+it('allows deleting Tapas category when tapas_disabled', function () {
+    TapaConfig::factory()->create([
+        'user_id'       => $this->user->id,
+        'tapas_enabled' => false,
+    ]);
+
+    $tapasCategory = Category::factory()->create([
+        'user_id'     => $this->user->id,
+        'name'        => 'Tapas',
+        'destination' => 'kitchen',
+    ]);
+
+    $this->actingAs($this->user)
+         ->delete(route('categories.destroy', $tapasCategory))
+         ->assertRedirect(route('categories.index'));
+
+    $this->assertDatabaseMissing('categories', ['id' => $tapasCategory->id]);
+});
+
+it('tapas category products are not shown in main menu listing when tapas enabled', function () {
+    TapaConfig::factory()->create([
+        'user_id'       => $this->user->id,
+        'tapas_enabled' => true,
+    ]);
+
+    $table        = Table::factory()->create(['user_id' => $this->user->id]);
+    $tapaCategory = Category::factory()->create(['user_id' => $this->user->id, 'name' => 'Tapas', 'destination' => 'kitchen']);
+    $barCategory  = Category::factory()->create(['user_id' => $this->user->id, 'destination' => 'bar']);
+
+    Product::factory()->create(['user_id' => $this->user->id, 'category_id' => $tapaCategory->id, 'is_active' => true]);
+    Product::factory()->create(['user_id' => $this->user->id, 'category_id' => $barCategory->id, 'is_active' => true]);
+
+    $response = $this->get(route('menu.show', $table->unique_hash));
+
+    $response->assertOk();
+    $categories = $response->viewData('categories');
+    expect($categories->pluck('name')->toArray())->not->toContain('Tapas');
+});
+
+it('tapas category products appear in main listing when tapas disabled', function () {
+    TapaConfig::factory()->create([
+        'user_id'       => $this->user->id,
+        'tapas_enabled' => false,
+    ]);
+
+    $table        = Table::factory()->create(['user_id' => $this->user->id]);
+    $tapaCategory = Category::factory()->create(['user_id' => $this->user->id, 'name' => 'Tapas', 'destination' => 'kitchen']);
+    Product::factory()->create(['user_id' => $this->user->id, 'category_id' => $tapaCategory->id, 'is_active' => true]);
+
+    $response = $this->get(route('menu.show', $table->unique_hash));
+    $response->assertOk();
+
+    $categories = $response->viewData('categories');
+    expect($categories->pluck('name')->toArray())->toContain('Tapas');
+});
+
+// ─── tapaVariantsUsed counts distinct tapa products ──────────────────────────
+
 it('tapaVariantsUsed counts distinct tapa products in active orders', function () {
     Carbon::setTestNow('2026-05-03 12:00:00');
 

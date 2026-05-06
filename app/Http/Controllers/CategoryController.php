@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Category;
+use App\Models\TapaConfig;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
@@ -105,6 +106,14 @@ class CategoryController extends Controller
             'destination' => 'required|in:kitchen,bar',
         ]);
 
+        if ($category->name === 'Tapas' && $validated['name'] !== 'Tapas') {
+            $ownerId    = Auth::user()->ownerUserId();
+            $tapaConfig = TapaConfig::where('user_id', $ownerId)->first();
+            if ($tapaConfig?->tapas_enabled) {
+                return back()->withErrors(['name' => 'No puedes renombrar la categoría "Tapas" mientras el sistema de tapas esté activo.']);
+            }
+        }
+
         $category->update($validated);
 
         return redirect()->route('categories.index')->with('success', '¡Categoría actualizada correctamente!');
@@ -119,6 +128,14 @@ class CategoryController extends Controller
     public function destroy(Category $category): RedirectResponse
     {
         abort_if($category->user_id !== Auth::user()->ownerUserId(), 403);
+
+        if ($category->name === 'Tapas') {
+            $ownerId    = Auth::user()->ownerUserId();
+            $tapaConfig = TapaConfig::where('user_id', $ownerId)->first();
+            if ($tapaConfig?->tapas_enabled) {
+                return back()->withErrors(['general' => 'No puedes eliminar la categoría "Tapas" mientras el sistema de tapas esté activo.']);
+            }
+        }
 
         $category->delete();
 

@@ -21,6 +21,10 @@ class OrderController extends Controller
     /**
      * Persiste un nuevo pedido recibido desde la carta digital pública.
      *
+     * Para ítems de la categoría "Tapas", el precio del snapshot se resuelve
+     * usando TapaConfig::getPriceForProduct() según la modalidad activa,
+     * garantizando que lo cobrado coincide con lo mostrado al cliente.
+     *
      * @param  Request  $request
      * @return JsonResponse
      */
@@ -37,9 +41,10 @@ class OrderController extends Controller
             'items.*.modifications.*.amount_charged' => 'nullable|numeric|min:0',
         ]);
 
-        $table = Table::where('unique_hash', $validated['table_hash'])->firstOrFail();
+        $table      = Table::where('unique_hash', $validated['table_hash'])->firstOrFail();
+        $tapaConfig = $table->user->tapaConfig?->load('schedules');
 
-        $order = DB::transaction(function () use ($validated, $table) {
+        $order = DB::transaction(function () use ($validated, $table, $tapaConfig) {
             $order = Order::create([
                 'table_id'       => $table->id,
                 'status'         => 'pending',
@@ -52,18 +57,22 @@ class OrderController extends Controller
             foreach ($validated['items'] as $itemData) {
                 $product = Product::with('category')->findOrFail($itemData['product_id']);
 
+                $basePrice = ($tapaConfig && $tapaConfig->tapas_enabled && $tapaConfig->isTapaProduct($product))
+                    ? $tapaConfig->getPriceForProduct($product)
+                    : (float) $product->price;
+
                 $extraCharge = collect($itemData['modifications'] ?? [])
                     ->where('action', 'add')
                     ->sum('amount_charged');
 
-                $unitPrice = (float) $product->price + (float) $extraCharge;
+                $unitPrice = $basePrice + (float) $extraCharge;
                 $total    += $unitPrice * $itemData['quantity'];
 
                 $orderItem = OrderItem::create([
                     'order_id'    => $order->id,
                     'product_id'  => $product->id,
                     'quantity'    => $itemData['quantity'],
-                    'price'       => $product->price,
+                    'price'       => $basePrice,
                     'status'      => 'queued',
                     'destination' => $product->category->destination,
                 ]);
