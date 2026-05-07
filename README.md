@@ -168,7 +168,7 @@ php artisan make:factory NombreFactory --model=Nombre
 
 ## Progreso del desarrollo
 
-**Progreso global: 79%** (46/58 sub-bloques completados)
+**Progreso global: 88%** (51/58 sub-bloques completados)
 
 | Sub-bloque | Descripción | Estado |
 | ---------- | ----------- | ------ |
@@ -223,11 +223,11 @@ php artisan make:factory NombreFactory --model=Nombre
 | 13.4 | Gestión de negocios — crear admins, asignar plan, ver stats | Completado |
 | 13.5 | Mapa de negocios — Leaflet.js con pin por negocio | Completado |
 | 13.6 | Tests del Bloque 13 | Completado |
-| 9.1 | Ingresos desglosados por método de pago y período | Pendiente |
-| 9.2 | Mesa que más ingresos genera | Pendiente |
-| 9.3 | Platos más pedidos | Pendiente |
-| 9.4 | Horas punta y ticket medio por mesa | Pendiente |
-| 9.5 | Tests del Bloque 9 | Pendiente |
+| 9.1 | Ingresos desglosados por método de pago y período | Completado |
+| 9.2 | Mesa que más ingresos genera | Completado |
+| 9.3 | Platos más pedidos | Completado |
+| 9.4 | Horas punta y ticket medio por mesa | Completado |
+| 9.5 | Tests del Bloque 9 | Completado |
 | 11.1 | Design system (colores Zampa, tipografía, tokens Tailwind) | Pendiente |
 | 11.2 | Layout principal y navegación (sidebar, topbar, dark mode) | Pendiente |
 | 11.3 | Vistas del panel admin | Pendiente |
