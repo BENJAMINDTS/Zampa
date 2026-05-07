@@ -361,6 +361,7 @@ it('shows the table with highest revenue for the period', function () {
 
     $topTable = $this->actingAs($this->admin)
                      ->get(route('dashboard', ['period' => 'month']))
+                     ->assertOk()
                      ->viewData('topTable');
 
     expect($topTable->table_name)->toBe('Mesa 2');
@@ -382,6 +383,7 @@ it('top table calculation only includes the restaurants tables', function () {
 
     $topTable = $this->actingAs($this->admin)
                      ->get(route('dashboard', ['period' => 'month']))
+                     ->assertOk()
                      ->viewData('topTable');
 
     expect($topTable->table_name)->toBe('Mi Mesa');
@@ -401,6 +403,7 @@ it('top table calculation only counts paid orders', function () {
 
     $topTable = $this->actingAs($this->admin)
                      ->get(route('dashboard', ['period' => 'month']))
+                     ->assertOk()
                      ->viewData('topTable');
 
     expect((float) $topTable->table_revenue)->toBe(50.0);
@@ -410,6 +413,7 @@ it('top table calculation only counts paid orders', function () {
 it('returns null top table when no paid orders exist for the period', function () {
     $topTable = $this->actingAs($this->admin)
                      ->get(route('dashboard', ['period' => 'month']))
+                     ->assertOk()
                      ->viewData('topTable');
 
     expect($topTable)->toBeNull();
@@ -421,11 +425,12 @@ it('top table changes correctly when period filter changes', function () {
     Order::factory()->create([
         'table_id' => $table->id, 'payment_method' => 'cash',
         'payment_status' => 'paid', 'total' => 60.00,
-        'updated_at' => now()->subMonth()->midDay(),
+        'updated_at' => now()->subMonth()->startOfDay()->addHours(12),
     ]);
 
     $topTableMonth = $this->actingAs($this->admin)
                           ->get(route('dashboard', ['period' => 'month']))
+                          ->assertOk()
                           ->viewData('topTable');
 
     expect($topTableMonth)->toBeNull();
@@ -436,6 +441,7 @@ it('top table changes correctly when period filter changes', function () {
                                'from'   => now()->subMonth()->startOfMonth()->format('Y-m-d'),
                                'to'     => now()->subMonth()->endOfMonth()->format('Y-m-d'),
                            ]))
+                           ->assertOk()
                            ->viewData('topTable');
 
     expect((float) $topTableCustom->table_revenue)->toBe(60.0);
@@ -451,6 +457,7 @@ it('top table does not include tables from other restaurants', function () {
 
     $topTable = $this->actingAs($this->admin)
                      ->get(route('dashboard', ['period' => 'month']))
+                     ->assertOk()
                      ->viewData('topTable');
 
     expect($topTable)->toBeNull();
