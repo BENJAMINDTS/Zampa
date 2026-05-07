@@ -13,6 +13,7 @@ use Illuminate\View\View;
  * Panel principal del gerente con desglose de ingresos y métricas del negocio.
  *
  * @author BenjaminDTS
+ * @author AyrtonAlania
  */
 class DashboardController extends Controller
 {
