@@ -6,6 +6,7 @@ use App\Models\Order;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 /**
@@ -76,7 +77,23 @@ class DashboardController extends Controller
             ->limit(10)
             ->get();
 
-        return view('dashboard.index', compact('period', 'from', 'to', 'summary', 'topTable', 'topProducts'));
+        $hourExpr = DB::connection()->getDriverName() === 'sqlite'
+            ? "CAST(strftime('%H', orders.updated_at) AS INTEGER)"
+            : 'HOUR(orders.updated_at)';
+
+        $peakHours = (clone $base)
+            ->selectRaw("{$hourExpr} as hour, COUNT(*) as order_count")
+            ->groupByRaw($hourExpr)
+            ->orderByDesc('order_count')
+            ->limit(3)
+            ->get();
+
+        $grand     = (float) $summary->cash_revenue + (float) $summary->card_revenue + (float) $summary->tip_revenue;
+        $avgTicket = $summary->total_count > 0
+            ? round($grand / $summary->total_count, 2)
+            : 0.0;
+
+        return view('dashboard.index', compact('period', 'from', 'to', 'summary', 'topTable', 'topProducts', 'peakHours', 'avgTicket', 'grand'));
     }
 
     /**
