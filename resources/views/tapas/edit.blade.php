@@ -32,7 +32,7 @@
                         tapas_free:         {{ $tapaConfig->tapas_free ? 'true' : 'false' }},
                         price_mode:         '{{ old('price_mode', $tapaConfig->price_mode ?? 'fixed') }}',
                         extra_tapa_enabled: {{ $tapaConfig->extra_tapa_enabled ? 'true' : 'false' }},
-                        schedules: @json($schedulesForAlpine),
+                        schedules: {{ json_encode($schedulesForAlpine, JSON_HEX_QUOT) }},
                         addSchedule()    { this.schedules.push({ opens_at: '', closes_at: '' }); },
                         removeSchedule(i){ this.schedules.splice(i, 1); }
                     }"
