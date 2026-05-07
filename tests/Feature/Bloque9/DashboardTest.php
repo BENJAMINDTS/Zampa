@@ -419,6 +419,158 @@ it('returns null top table when no paid orders exist for the period', function (
     expect($topTable)->toBeNull();
 });
 
+// ─── Bloque 9.3: Platos más pedidos ───────────────────────────────────────────
+
+it('shows top ordered products for the period', function () {
+    $table    = Table::factory()->create(['user_id' => $this->admin->id]);
+    $category = \App\Models\Category::factory()->create(['user_id' => $this->admin->id, 'name' => 'Entrantes']);
+    $product  = \App\Models\Product::factory()->create(['user_id' => $this->admin->id, 'category_id' => $category->id, 'name' => 'Croquetas']);
+    $order    = Order::factory()->create(['table_id' => $table->id, 'payment_status' => 'paid', 'updated_at' => now()]);
+
+    \App\Models\OrderItem::factory()->create(['order_id' => $order->id, 'product_id' => $product->id, 'quantity' => 3, 'price' => 6.00]);
+
+    $topProducts = $this->actingAs($this->admin)
+                        ->get(route('dashboard', ['period' => 'month']))
+                        ->assertOk()
+                        ->viewData('topProducts');
+
+    expect($topProducts)->toHaveCount(1);
+    expect($topProducts->first()->product_name)->toBe('Croquetas');
+    expect((int) $topProducts->first()->times_ordered)->toBe(3);
+    expect((float) $topProducts->first()->product_revenue)->toBe(18.0);
+});
+
+it('top products only includes the restaurants products', function () {
+    $myTable    = Table::factory()->create(['user_id' => $this->admin->id]);
+    $otherTable = Table::factory()->create(['user_id' => $this->other->id]);
+
+    $myCat    = \App\Models\Category::factory()->create(['user_id' => $this->admin->id]);
+    $otherCat = \App\Models\Category::factory()->create(['user_id' => $this->other->id]);
+
+    $myProduct    = \App\Models\Product::factory()->create(['user_id' => $this->admin->id, 'category_id' => $myCat->id, 'name' => 'Mi Plato']);
+    $otherProduct = \App\Models\Product::factory()->create(['user_id' => $this->other->id, 'category_id' => $otherCat->id, 'name' => 'Plato Ajeno']);
+
+    $myOrder    = Order::factory()->create(['table_id' => $myTable->id, 'payment_status' => 'paid', 'updated_at' => now()]);
+    $otherOrder = Order::factory()->create(['table_id' => $otherTable->id, 'payment_status' => 'paid', 'updated_at' => now()]);
+
+    \App\Models\OrderItem::factory()->create(['order_id' => $myOrder->id, 'product_id' => $myProduct->id, 'quantity' => 1, 'price' => 10.00]);
+    \App\Models\OrderItem::factory()->create(['order_id' => $otherOrder->id, 'product_id' => $otherProduct->id, 'quantity' => 5, 'price' => 10.00]);
+
+    $topProducts = $this->actingAs($this->admin)
+                        ->get(route('dashboard', ['period' => 'month']))
+                        ->assertOk()
+                        ->viewData('topProducts');
+
+    expect($topProducts)->toHaveCount(1);
+    expect($topProducts->first()->product_name)->toBe('Mi Plato');
+});
+
+it('top products are ordered by quantity descending', function () {
+    $table = Table::factory()->create(['user_id' => $this->admin->id]);
+    $cat   = \App\Models\Category::factory()->create(['user_id' => $this->admin->id]);
+
+    $productA = \App\Models\Product::factory()->create(['user_id' => $this->admin->id, 'category_id' => $cat->id, 'name' => 'Plato A']);
+    $productB = \App\Models\Product::factory()->create(['user_id' => $this->admin->id, 'category_id' => $cat->id, 'name' => 'Plato B']);
+
+    $order = Order::factory()->create(['table_id' => $table->id, 'payment_status' => 'paid', 'updated_at' => now()]);
+
+    \App\Models\OrderItem::factory()->create(['order_id' => $order->id, 'product_id' => $productA->id, 'quantity' => 2, 'price' => 10.00]);
+    \App\Models\OrderItem::factory()->create(['order_id' => $order->id, 'product_id' => $productB->id, 'quantity' => 7, 'price' => 10.00]);
+
+    $topProducts = $this->actingAs($this->admin)
+                        ->get(route('dashboard', ['period' => 'month']))
+                        ->assertOk()
+                        ->viewData('topProducts');
+
+    expect($topProducts->first()->product_name)->toBe('Plato B');
+    expect($topProducts->last()->product_name)->toBe('Plato A');
+});
+
+it('top products calculation only counts paid orders', function () {
+    $table   = Table::factory()->create(['user_id' => $this->admin->id]);
+    $cat     = \App\Models\Category::factory()->create(['user_id' => $this->admin->id]);
+    $product = \App\Models\Product::factory()->create(['user_id' => $this->admin->id, 'category_id' => $cat->id]);
+
+    $paid    = Order::factory()->create(['table_id' => $table->id, 'payment_status' => 'paid',    'updated_at' => now()]);
+    $pending = Order::factory()->create(['table_id' => $table->id, 'payment_status' => 'pending', 'updated_at' => now()]);
+
+    \App\Models\OrderItem::factory()->create(['order_id' => $paid->id,    'product_id' => $product->id, 'quantity' => 2, 'price' => 5.00]);
+    \App\Models\OrderItem::factory()->create(['order_id' => $pending->id, 'product_id' => $product->id, 'quantity' => 9, 'price' => 5.00]);
+
+    $topProducts = $this->actingAs($this->admin)
+                        ->get(route('dashboard', ['period' => 'month']))
+                        ->assertOk()
+                        ->viewData('topProducts');
+
+    expect((int) $topProducts->first()->times_ordered)->toBe(2);
+});
+
+it('top products excludes tapas category products', function () {
+    $table     = Table::factory()->create(['user_id' => $this->admin->id]);
+    $normalCat = \App\Models\Category::factory()->create(['user_id' => $this->admin->id, 'name' => 'Entrantes']);
+    $tapasCat  = \App\Models\Category::factory()->create(['user_id' => $this->admin->id, 'name' => 'Tapas']);
+
+    $normalProduct = \App\Models\Product::factory()->create(['user_id' => $this->admin->id, 'category_id' => $normalCat->id, 'name' => 'Croquetas']);
+    $tapasProduct  = \App\Models\Product::factory()->create(['user_id' => $this->admin->id, 'category_id' => $tapasCat->id,  'name' => 'Tapa de queso']);
+
+    $order = Order::factory()->create(['table_id' => $table->id, 'payment_status' => 'paid', 'updated_at' => now()]);
+
+    \App\Models\OrderItem::factory()->create(['order_id' => $order->id, 'product_id' => $normalProduct->id, 'quantity' => 1, 'price' => 8.00]);
+    \App\Models\OrderItem::factory()->create(['order_id' => $order->id, 'product_id' => $tapasProduct->id,  'quantity' => 5, 'price' => 1.50]);
+
+    $topProducts = $this->actingAs($this->admin)
+                        ->get(route('dashboard', ['period' => 'month']))
+                        ->assertOk()
+                        ->viewData('topProducts');
+
+    $names = $topProducts->pluck('product_name')->toArray();
+    expect($names)->toContain('Croquetas');
+    expect($names)->not->toContain('Tapa de queso');
+});
+
+it('top products does not include products from other restaurants', function () {
+    $otherTable   = Table::factory()->create(['user_id' => $this->other->id]);
+    $otherCat     = \App\Models\Category::factory()->create(['user_id' => $this->other->id]);
+    $otherProduct = \App\Models\Product::factory()->create(['user_id' => $this->other->id, 'category_id' => $otherCat->id]);
+    $otherOrder   = Order::factory()->create(['table_id' => $otherTable->id, 'payment_status' => 'paid', 'updated_at' => now()]);
+
+    \App\Models\OrderItem::factory()->create(['order_id' => $otherOrder->id, 'product_id' => $otherProduct->id, 'quantity' => 10, 'price' => 10.00]);
+
+    $topProducts = $this->actingAs($this->admin)
+                        ->get(route('dashboard', ['period' => 'month']))
+                        ->assertOk()
+                        ->viewData('topProducts');
+
+    expect($topProducts)->toBeEmpty();
+});
+
+it('returns empty list when no paid orders exist for the period', function () {
+    $topProducts = $this->actingAs($this->admin)
+                        ->get(route('dashboard', ['period' => 'month']))
+                        ->assertOk()
+                        ->viewData('topProducts');
+
+    expect($topProducts)->toBeEmpty();
+});
+
+it('limits results to top 10 products', function () {
+    $table = Table::factory()->create(['user_id' => $this->admin->id]);
+    $cat   = \App\Models\Category::factory()->create(['user_id' => $this->admin->id]);
+    $order = Order::factory()->create(['table_id' => $table->id, 'payment_status' => 'paid', 'updated_at' => now()]);
+
+    foreach (range(1, 11) as $i) {
+        $product = \App\Models\Product::factory()->create(['user_id' => $this->admin->id, 'category_id' => $cat->id]);
+        \App\Models\OrderItem::factory()->create(['order_id' => $order->id, 'product_id' => $product->id, 'quantity' => $i, 'price' => 5.00]);
+    }
+
+    $topProducts = $this->actingAs($this->admin)
+                        ->get(route('dashboard', ['period' => 'month']))
+                        ->assertOk()
+                        ->viewData('topProducts');
+
+    expect($topProducts)->toHaveCount(10);
+});
+
 it('top table changes correctly when period filter changes', function () {
     $table = Table::factory()->create(['user_id' => $this->admin->id, 'name' => 'Mesa 1']);
 
