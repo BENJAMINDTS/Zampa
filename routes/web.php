@@ -1,4 +1,5 @@
 <?php
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\IngredientController;
 use App\Http\Controllers\StaffController;
 use App\Http\Controllers\BarPanelController;
@@ -28,13 +29,9 @@ Route::get('/carta/{hash}', [MenuController::class, 'show'])
     ->middleware('throttle:60,1')
     ->name('menu.show');
 
-Route::get('/dashboard', function () {
-    if (Auth::user()->isSuperAdmin()) {
-        return redirect()->route('superadmin.dashboard');
-    }
-
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/dashboard', [DashboardController::class, 'index'])
+    ->middleware(['auth', 'verified', 'business.active', 'role:admin'])
+    ->name('dashboard');
 
 Route::middleware(['auth', 'business.active'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
