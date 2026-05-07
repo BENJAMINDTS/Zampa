@@ -32,7 +32,7 @@ class ManagerRevenueController extends Controller
         // JOIN en lugar de whereHas para evitar N+1 y garantizar multitenancy en una sola query
         $base = Order::query()
             ->join('tables', 'orders.table_id', '=', 'tables.id')
-            ->where('tables.user_id', Auth::id())
+            ->where('tables.user_id', Auth::user()->ownerUserId())
             ->where('orders.payment_status', 'paid')
             ->where('orders.updated_at', '>=', $start->toDateTimeString());
 
