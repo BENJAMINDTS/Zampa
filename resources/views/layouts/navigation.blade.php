@@ -13,9 +13,12 @@
 
                 <!-- Navigation Links -->
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                    {{-- Dashboard: visible solo para gerente (admin) --}}
+                    @if(Auth::user()->role === 'admin')
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                         {{ __('Dashboard') }}
                     </x-nav-link>
+                    @endif
                     {{-- Usamos categories.* para que se quede marcado si estás en index o en create --}}
                     <x-nav-link :href="route('categories.index')" :active="request()->routeIs('categories.*')">
                         {{ __('Categorías') }}
@@ -143,9 +146,12 @@
         <!-- Responsive Navigation Menu -->
         <div id="responsive-nav-menu" :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
             <div class="pt-2 pb-3 space-y-1">
+                {{-- Dashboard: visible solo para gerente (admin) --}}
+                @if(Auth::user()->role === 'admin')
                 <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                     {{ __('Dashboard') }}
                 </x-responsive-nav-link>
+                @endif
                 {{-- NUEVO: Enlace a Categorías (Versión Móvil) --}}
                 <x-responsive-nav-link :href="route('categories.index')" :active="request()->routeIs('categories.*')">
                     {{ __('Categorías') }}
