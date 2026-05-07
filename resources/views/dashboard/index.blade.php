@@ -157,8 +157,48 @@
                 </div>
             </section>
 
-            {{-- ─── Bloque 9.2: Mesa que más ingresos genera (pendiente) ─────────── --}}
-            {{-- Se implementará en el Bloque 9.2 --}}
+            {{-- ─── Bloque 9.2: Mesa que más ingresos genera ────────────────────── --}}
+            <section aria-labelledby="top-table-heading">
+                <h2 id="top-table-heading"
+                    class="text-base font-semibold text-gray-900 dark:text-white mb-4">
+                    Mesa más rentable del período
+                </h2>
+
+                @if($topTable)
+                    <div role="region" aria-label="Mesa con mayor ingreso del período"
+                         class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm
+                                border border-gray-200 dark:border-gray-700 p-6
+                                flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+
+                        <div class="flex items-center gap-4">
+                            <span class="text-4xl" aria-hidden="true">🏆</span>
+                            <div>
+                                <p class="text-xl font-bold text-gray-900 dark:text-white">
+                                    {{ $topTable->table_name }}
+                                </p>
+                                <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                                    {{ $topTable->table_order_count }}
+                                    pedido{{ $topTable->table_order_count != 1 ? 's' : '' }} cobrado{{ $topTable->table_order_count != 1 ? 's' : '' }}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="text-right">
+                            <p class="text-3xl font-bold text-indigo-600 dark:text-indigo-400 tabular-nums">
+                                {{ number_format($topTable->table_revenue, 2, ',', '.') }}&nbsp;€
+                            </p>
+                            <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">ingresos totales</p>
+                        </div>
+                    </div>
+                @else
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm
+                                border border-gray-200 dark:border-gray-700 px-6 py-10 text-center">
+                        <p class="text-gray-400 dark:text-gray-500 text-sm">
+                            Sin pedidos cobrados en este período.
+                        </p>
+                    </div>
+                @endif
+            </section>
 
             {{-- ─── Bloque 9.3: Platos más pedidos (pendiente) ─────────────────── --}}
             {{-- Se implementará en el Bloque 9.3 --}}

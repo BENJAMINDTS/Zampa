@@ -56,7 +56,15 @@ class DashboardController extends Controller
                 'cash_count'   => 0, 'card_count'   => 0, 'total_count'  => 0,
             ];
 
-        return view('dashboard.index', compact('period', 'from', 'to', 'summary'));
+        $topTable = (clone $base)
+            ->select('tables.name as table_name')
+            ->selectRaw('SUM(orders.total) as table_revenue, COUNT(*) as table_order_count')
+            ->groupBy('tables.id', 'tables.name')
+            ->orderByDesc('table_revenue')
+            ->limit(1)
+            ->first();
+
+        return view('dashboard.index', compact('period', 'from', 'to', 'summary', 'topTable'));
     }
 
     /**

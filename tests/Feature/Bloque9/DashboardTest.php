@@ -343,3 +343,122 @@ it('staff admin can access dashboard and sees their admin restaurant data', func
 
     expect((float) $summary->cash_revenue)->toBe(55.0);
 });
+
+// ─── Bloque 9.2: Mesa más rentable ────────────────────────────────────────────
+
+it('shows the table with highest revenue for the period', function () {
+    $tableA = Table::factory()->create(['user_id' => $this->admin->id, 'name' => 'Mesa 1']);
+    $tableB = Table::factory()->create(['user_id' => $this->admin->id, 'name' => 'Mesa 2']);
+
+    Order::factory()->create([
+        'table_id' => $tableA->id, 'payment_method' => 'cash',
+        'payment_status' => 'paid', 'total' => 30.00, 'updated_at' => now(),
+    ]);
+    Order::factory()->create([
+        'table_id' => $tableB->id, 'payment_method' => 'cash',
+        'payment_status' => 'paid', 'total' => 80.00, 'updated_at' => now(),
+    ]);
+
+    $topTable = $this->actingAs($this->admin)
+                     ->get(route('dashboard', ['period' => 'month']))
+                     ->assertOk()
+                     ->viewData('topTable');
+
+    expect($topTable->table_name)->toBe('Mesa 2');
+    expect((float) $topTable->table_revenue)->toBe(80.0);
+});
+
+it('top table calculation only includes the restaurants tables', function () {
+    $myTable    = Table::factory()->create(['user_id' => $this->admin->id, 'name' => 'Mi Mesa']);
+    $otherTable = Table::factory()->create(['user_id' => $this->other->id, 'name' => 'Mesa Ajena']);
+
+    Order::factory()->create([
+        'table_id' => $myTable->id, 'payment_method' => 'cash',
+        'payment_status' => 'paid', 'total' => 40.00, 'updated_at' => now(),
+    ]);
+    Order::factory()->create([
+        'table_id' => $otherTable->id, 'payment_method' => 'cash',
+        'payment_status' => 'paid', 'total' => 200.00, 'updated_at' => now(),
+    ]);
+
+    $topTable = $this->actingAs($this->admin)
+                     ->get(route('dashboard', ['period' => 'month']))
+                     ->assertOk()
+                     ->viewData('topTable');
+
+    expect($topTable->table_name)->toBe('Mi Mesa');
+});
+
+it('top table calculation only counts paid orders', function () {
+    $table = Table::factory()->create(['user_id' => $this->admin->id, 'name' => 'Mesa 1']);
+
+    Order::factory()->create([
+        'table_id' => $table->id, 'payment_method' => 'cash',
+        'payment_status' => 'paid', 'total' => 50.00, 'updated_at' => now(),
+    ]);
+    Order::factory()->create([
+        'table_id' => $table->id, 'payment_method' => 'cash',
+        'payment_status' => 'pending', 'total' => 999.00, 'updated_at' => now(),
+    ]);
+
+    $topTable = $this->actingAs($this->admin)
+                     ->get(route('dashboard', ['period' => 'month']))
+                     ->assertOk()
+                     ->viewData('topTable');
+
+    expect((float) $topTable->table_revenue)->toBe(50.0);
+    expect((int) $topTable->table_order_count)->toBe(1);
+});
+
+it('returns null top table when no paid orders exist for the period', function () {
+    $topTable = $this->actingAs($this->admin)
+                     ->get(route('dashboard', ['period' => 'month']))
+                     ->assertOk()
+                     ->viewData('topTable');
+
+    expect($topTable)->toBeNull();
+});
+
+it('top table changes correctly when period filter changes', function () {
+    $table = Table::factory()->create(['user_id' => $this->admin->id, 'name' => 'Mesa 1']);
+
+    Order::factory()->create([
+        'table_id' => $table->id, 'payment_method' => 'cash',
+        'payment_status' => 'paid', 'total' => 60.00,
+        'updated_at' => now()->subMonth()->startOfDay()->addHours(12),
+    ]);
+
+    $topTableMonth = $this->actingAs($this->admin)
+                          ->get(route('dashboard', ['period' => 'month']))
+                          ->assertOk()
+                          ->viewData('topTable');
+
+    expect($topTableMonth)->toBeNull();
+
+    $topTableCustom = $this->actingAs($this->admin)
+                           ->get(route('dashboard', [
+                               'period' => 'custom',
+                               'from'   => now()->subMonth()->startOfMonth()->format('Y-m-d'),
+                               'to'     => now()->subMonth()->endOfMonth()->format('Y-m-d'),
+                           ]))
+                           ->assertOk()
+                           ->viewData('topTable');
+
+    expect((float) $topTableCustom->table_revenue)->toBe(60.0);
+});
+
+it('top table does not include tables from other restaurants', function () {
+    $otherTable = Table::factory()->create(['user_id' => $this->other->id]);
+
+    Order::factory()->create([
+        'table_id' => $otherTable->id, 'payment_method' => 'cash',
+        'payment_status' => 'paid', 'total' => 500.00, 'updated_at' => now(),
+    ]);
+
+    $topTable = $this->actingAs($this->admin)
+                     ->get(route('dashboard', ['period' => 'month']))
+                     ->assertOk()
+                     ->viewData('topTable');
+
+    expect($topTable)->toBeNull();
+});
