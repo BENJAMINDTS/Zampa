@@ -51,7 +51,10 @@ class DashboardController extends Controller
                 SUM(CASE WHEN orders.payment_method = 'card' THEN 1 ELSE 0 END)                         as card_count,
                 COUNT(*)                                                                                 as total_count
             ")
-            ->first();
+            ->first() ?? (object) [
+                'cash_revenue' => 0, 'card_revenue' => 0, 'tip_revenue'  => 0,
+                'cash_count'   => 0, 'card_count'   => 0, 'total_count'  => 0,
+            ];
 
         return view('dashboard.index', compact('period', 'from', 'to', 'summary'));
     }

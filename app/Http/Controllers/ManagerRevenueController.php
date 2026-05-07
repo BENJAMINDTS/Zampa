@@ -23,10 +23,10 @@ class ManagerRevenueController extends Controller
     {
         $period = $request->query('period', 'month');
 
-        $start = match ($period) {
-            'today' => now()->startOfDay(),
-            'week'  => now()->startOfWeek(),
-            default => now()->startOfMonth(),
+        [$start, $end] = match ($period) {
+            'today' => [now()->startOfDay(),  now()->endOfDay()],
+            'week'  => [now()->startOfWeek(), now()->endOfWeek()],
+            default => [now()->startOfMonth(), now()->endOfMonth()],
         };
 
         // JOIN en lugar de whereHas para evitar N+1 y garantizar multitenancy en una sola query
@@ -34,13 +34,13 @@ class ManagerRevenueController extends Controller
             ->join('tables', 'orders.table_id', '=', 'tables.id')
             ->where('tables.user_id', Auth::user()->ownerUserId())
             ->where('orders.payment_status', 'paid')
-            ->where('orders.updated_at', '>=', $start->toDateTimeString());
+            ->whereBetween('orders.updated_at', [$start, $end]);
 
         $summary = (clone $base)
             ->selectRaw("
                 COALESCE(SUM(CASE WHEN orders.payment_method = 'cash' THEN orders.total ELSE 0 END), 0) as cash_revenue,
                 COALESCE(SUM(CASE WHEN orders.payment_method = 'card' THEN orders.total ELSE 0 END), 0) as card_revenue,
-                COALESCE(SUM(orders.tip), 0)                                                             as tip_revenue,
+                COALESCE(SUM(CASE WHEN orders.payment_method = 'card' THEN orders.tip  ELSE 0 END), 0)  as tip_revenue,
                 SUM(CASE WHEN orders.payment_method = 'cash' THEN 1 ELSE 0 END)                         as cash_count,
                 SUM(CASE WHEN orders.payment_method = 'card' THEN 1 ELSE 0 END)                         as card_count,
                 COUNT(*)                                                                                 as total_count
