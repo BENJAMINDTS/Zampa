@@ -64,7 +64,19 @@ class DashboardController extends Controller
             ->limit(1)
             ->first();
 
-        return view('dashboard.index', compact('period', 'from', 'to', 'summary', 'topTable'));
+        $topProducts = (clone $base)
+            ->join('order_items', 'orders.id', '=', 'order_items.order_id')
+            ->join('products', 'order_items.product_id', '=', 'products.id')
+            ->join('categories', 'products.category_id', '=', 'categories.id')
+            ->where('categories.name', '!=', 'Tapas')
+            ->select('products.id', 'products.name as product_name')
+            ->selectRaw('SUM(order_items.quantity) as times_ordered, SUM(order_items.quantity * order_items.price) as product_revenue')
+            ->groupBy('products.id', 'products.name')
+            ->orderByDesc('times_ordered')
+            ->limit(10)
+            ->get();
+
+        return view('dashboard.index', compact('period', 'from', 'to', 'summary', 'topTable', 'topProducts'));
     }
 
     /**
