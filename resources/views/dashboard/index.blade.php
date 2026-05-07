@@ -138,7 +138,6 @@
                     </div>
 
                     {{-- Total global --}}
-                    @php $grand = $summary->cash_revenue + $summary->card_revenue + $summary->tip_revenue; @endphp
                     <div role="region" aria-label="Total global cobrado en el período"
                          class="bg-indigo-600 dark:bg-indigo-700 rounded-2xl shadow-sm p-5">
                         <div class="flex items-center gap-2 mb-3">
@@ -269,8 +268,79 @@
                 </div>
             </section>
 
-            {{-- ─── Bloque 9.4: Horas punta y ticket medio (pendiente) ────────── --}}
-            {{-- Se implementará en el Bloque 9.4 --}}
+            {{-- ─── Bloque 9.4: Horas punta y ticket medio ────────────────────── --}}
+            <section aria-labelledby="peak-hours-heading">
+                <h2 id="peak-hours-heading"
+                    class="text-base font-semibold text-gray-900 dark:text-white mb-4">
+                    Horas punta y ticket medio
+                </h2>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+                    {{-- Ticket medio --}}
+                    <div role="region" aria-label="Ticket medio del período"
+                         class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm
+                                border border-gray-200 dark:border-gray-700 p-5">
+                        <div class="flex items-center gap-2 mb-3">
+                            <span class="text-xl" aria-hidden="true">🧾</span>
+                            <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Ticket medio</span>
+                        </div>
+                        <p class="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
+                            {{ number_format($avgTicket, 2, ',', '.') }}&nbsp;€
+                        </p>
+                        <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">Por pedido cobrado</p>
+                    </div>
+
+                    {{-- Horas punta --}}
+                    <div role="region" aria-label="Horas punta del período"
+                         class="lg:col-span-2 bg-white dark:bg-gray-800 rounded-2xl shadow-sm
+                                border border-gray-200 dark:border-gray-700 p-5">
+                        <div class="flex items-center gap-2 mb-4">
+                            <span class="text-xl" aria-hidden="true">⏰</span>
+                            <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Horas punta (Top 3)</span>
+                        </div>
+
+                        @if($peakHours->isEmpty())
+                            <p class="text-sm text-gray-400 dark:text-gray-500">
+                                Sin pedidos cobrados en este período.
+                            </p>
+                        @else
+                            @php $maxCount = $peakHours->max('order_count'); @endphp
+                            <div class="space-y-3">
+                                @foreach($peakHours as $slot)
+                                    @php
+                                        $h    = (int) $slot->hour;
+                                        $next = $h === 23 ? '00' : str_pad($h + 1, 2, '0', STR_PAD_LEFT);
+                                        $label = str_pad($h, 2, '0', STR_PAD_LEFT) . ':00 – ' . $next . ':00';
+                                        $pct   = $maxCount > 0 ? round(($slot->order_count / $maxCount) * 100) : 0;
+                                    @endphp
+                                    <div>
+                                        <div class="flex items-center justify-between mb-1">
+                                            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                {{ $label }}
+                                            </span>
+                                            <span class="text-sm font-semibold text-gray-900 dark:text-white tabular-nums">
+                                                {{ $slot->order_count }}
+                                                pedido{{ $slot->order_count != 1 ? 's' : '' }}
+                                            </span>
+                                        </div>
+                                        <div class="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2"
+                                             role="progressbar"
+                                             aria-valuenow="{{ $slot->order_count }}"
+                                             aria-valuemin="0"
+                                             aria-valuemax="{{ $maxCount }}"
+                                             aria-label="{{ $label }}: {{ $slot->order_count }} pedidos">
+                                            <div class="bg-indigo-500 dark:bg-indigo-400 h-2 rounded-full transition-all"
+                                                 style="width: {{ $pct }}%"></div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
+                    </div>
+
+                </div>
+            </section>
 
         </div>
     </main>
