@@ -614,3 +614,152 @@ it('top table does not include tables from other restaurants', function () {
 
     expect($topTable)->toBeNull();
 });
+
+// ─── Bloque 9.4: Horas punta y ticket medio ───────────────────────────────────
+
+it('returns peak hours data in the view', function () {
+    $table = Table::factory()->create(['user_id' => $this->admin->id]);
+
+    Order::factory()->create([
+        'table_id'       => $table->id,
+        'payment_status' => 'paid',
+        'total'          => 20.00,
+        'updated_at'     => now()->startOfMonth()->addDays(2)->addHours(14),
+    ]);
+
+    $peakHours = $this->actingAs($this->admin)
+                      ->get(route('dashboard', ['period' => 'month']))
+                      ->assertOk()
+                      ->viewData('peakHours');
+
+    expect($peakHours)->not->toBeEmpty();
+    expect((int) $peakHours->first()->hour)->toBe(14);
+});
+
+it('peak hours returns top 3 hours ordered by order count descending', function () {
+    $table = Table::factory()->create(['user_id' => $this->admin->id]);
+    $day   = now()->startOfMonth()->addDays(2);
+
+    // Hour 14: 3 orders, Hour 20: 2 orders, Hour 9: 1 order (4th), Hour 11: 4 orders (1st)
+    foreach (range(1, 3) as $_) {
+        Order::factory()->create(['table_id' => $table->id, 'payment_status' => 'paid', 'total' => 10.00, 'updated_at' => $day->copy()->addHours(14)]);
+    }
+    foreach (range(1, 2) as $_) {
+        Order::factory()->create(['table_id' => $table->id, 'payment_status' => 'paid', 'total' => 10.00, 'updated_at' => $day->copy()->addHours(20)]);
+    }
+    Order::factory()->create(['table_id' => $table->id, 'payment_status' => 'paid', 'total' => 10.00, 'updated_at' => $day->copy()->addHours(9)]);
+    foreach (range(1, 4) as $_) {
+        Order::factory()->create(['table_id' => $table->id, 'payment_status' => 'paid', 'total' => 10.00, 'updated_at' => $day->copy()->addHours(11)]);
+    }
+
+    $peakHours = $this->actingAs($this->admin)
+                      ->get(route('dashboard', ['period' => 'month']))
+                      ->assertOk()
+                      ->viewData('peakHours');
+
+    expect($peakHours)->toHaveCount(3);
+    expect((int) $peakHours->first()->order_count)->toBe(4);
+    expect((int) $peakHours->first()->hour)->toBe(11);
+    expect((int) $peakHours->get(1)->order_count)->toBe(3);
+    expect((int) $peakHours->last()->order_count)->toBe(2);
+});
+
+it('peak hours returns empty collection when no paid orders exist', function () {
+    $peakHours = $this->actingAs($this->admin)
+                      ->get(route('dashboard', ['period' => 'month']))
+                      ->assertOk()
+                      ->viewData('peakHours');
+
+    expect($peakHours)->toBeEmpty();
+});
+
+it('peak hours only counts paid orders', function () {
+    $table = Table::factory()->create(['user_id' => $this->admin->id]);
+    $at    = now()->startOfMonth()->addDays(2)->addHours(14);
+
+    Order::factory()->create(['table_id' => $table->id, 'payment_status' => 'paid',    'total' => 10.00, 'updated_at' => $at]);
+    Order::factory()->create(['table_id' => $table->id, 'payment_status' => 'pending', 'total' => 10.00, 'updated_at' => $at]);
+
+    $peakHours = $this->actingAs($this->admin)
+                      ->get(route('dashboard', ['period' => 'month']))
+                      ->assertOk()
+                      ->viewData('peakHours');
+
+    expect($peakHours)->toHaveCount(1);
+    expect((int) $peakHours->first()->order_count)->toBe(1);
+});
+
+it('peak hours only includes tables from the same restaurant', function () {
+    $myTable    = Table::factory()->create(['user_id' => $this->admin->id]);
+    $otherTable = Table::factory()->create(['user_id' => $this->other->id]);
+    $at         = now()->startOfMonth()->addDays(2)->addHours(14);
+
+    Order::factory()->create(['table_id' => $myTable->id,    'payment_status' => 'paid', 'total' => 10.00, 'updated_at' => $at]);
+    Order::factory()->create(['table_id' => $otherTable->id, 'payment_status' => 'paid', 'total' => 10.00, 'updated_at' => $at]);
+
+    $peakHours = $this->actingAs($this->admin)
+                      ->get(route('dashboard', ['period' => 'month']))
+                      ->assertOk()
+                      ->viewData('peakHours');
+
+    expect($peakHours)->toHaveCount(1);
+    expect((int) $peakHours->first()->order_count)->toBe(1);
+});
+
+it('calculates average ticket correctly', function () {
+    $table = Table::factory()->create(['user_id' => $this->admin->id]);
+
+    Order::factory()->create([
+        'table_id' => $table->id, 'payment_method' => 'cash',
+        'payment_status' => 'paid', 'total' => 30.00, 'tip' => 0, 'updated_at' => now(),
+    ]);
+    Order::factory()->create([
+        'table_id' => $table->id, 'payment_method' => 'card',
+        'payment_status' => 'paid', 'total' => 50.00, 'tip' => 5.00, 'updated_at' => now(),
+    ]);
+
+    $avgTicket = $this->actingAs($this->admin)
+                      ->get(route('dashboard', ['period' => 'month']))
+                      ->assertOk()
+                      ->viewData('avgTicket');
+
+    // (30 + 50 + 5) / 2 = 42.5
+    expect((float) $avgTicket)->toBe(42.5);
+});
+
+it('returns zero average ticket when no paid orders exist for the period', function () {
+    $avgTicket = $this->actingAs($this->admin)
+                      ->get(route('dashboard', ['period' => 'month']))
+                      ->assertOk()
+                      ->viewData('avgTicket');
+
+    expect((float) $avgTicket)->toBe(0.0);
+});
+
+it('average ticket updates correctly when period filter changes', function () {
+    $table = Table::factory()->create(['user_id' => $this->admin->id]);
+
+    Order::factory()->create([
+        'table_id' => $table->id, 'payment_method' => 'cash', 'payment_status' => 'paid',
+        'total' => 60.00, 'tip' => 0,
+        'updated_at' => now()->subMonth()->startOfDay()->addHours(12),
+    ]);
+
+    $avgTicketMonth = $this->actingAs($this->admin)
+                           ->get(route('dashboard', ['period' => 'month']))
+                           ->assertOk()
+                           ->viewData('avgTicket');
+
+    expect((float) $avgTicketMonth)->toBe(0.0);
+
+    $avgTicketCustom = $this->actingAs($this->admin)
+                            ->get(route('dashboard', [
+                                'period' => 'custom',
+                                'from'   => now()->subMonth()->startOfMonth()->format('Y-m-d'),
+                                'to'     => now()->subMonth()->endOfMonth()->format('Y-m-d'),
+                            ]))
+                            ->assertOk()
+                            ->viewData('avgTicket');
+
+    expect((float) $avgTicketCustom)->toBe(60.0);
+});
