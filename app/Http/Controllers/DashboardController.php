@@ -25,7 +25,7 @@ class DashboardController extends Controller
         $from   = $request->query('from');
         $to     = $request->query('to');
 
-        if ($period === 'custom') {
+        if ($period === 'custom' && ($from !== null || $to !== null)) {
             $request->validate([
                 'from' => ['required', 'date'],
                 'to'   => ['required', 'date', 'after_or_equal:from'],
