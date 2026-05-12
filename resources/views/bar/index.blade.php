@@ -252,7 +252,7 @@
   <script>
     function notificationPolling() {
       return {
-        readyOrders: [],
+        readyOrders: @json($readyOrders),
 
         init() {
           this.poll();
