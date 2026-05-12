@@ -1142,15 +1142,15 @@ document.addEventListener('alpine:init', () => {
                             const id   = parseInt(el.dataset.tableId);
                             const item = this.tables.find(t => t.id === id) ?? this.elements.find(e => e.id === id);
                             if (item) {
-                                item.position_x = Math.max(0, Math.round(x));
-                                item.position_y = Math.max(0, Math.round(y));
+                                item.position_x = Math.round(x);
+                                item.position_y = Math.round(y);
                             }
                         },
                         end: (event) => {
                             const el  = event.target;
                             const id  = parseInt(el.dataset.tableId);
-                            const x   = Math.max(0, Math.round(parseFloat(el.style.left) || 0));
-                            const y   = Math.max(0, Math.round(parseFloat(el.style.top)  || 0));
+                            const x   = Math.round(parseFloat(el.style.left) || 0);
+                            const y   = Math.round(parseFloat(el.style.top)  || 0);
                             const w   = Math.round(parseFloat(el.style.width)  || 100);
                             const h   = Math.round(parseFloat(el.style.height) || 100);
                             this.persistPosition(id, x, y, w, h);
