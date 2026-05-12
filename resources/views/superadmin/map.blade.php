@@ -31,6 +31,31 @@
          role="img">
     </div>
 
+    {{-- Leyenda --}}
+    <div class="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm text-slate-300"
+         aria-label="Leyenda del mapa">
+        @foreach($planLegend as $entry)
+        <span class="flex items-center gap-2">
+            <span class="inline-block w-3 h-3 rounded-full border-2 border-white shadow"
+                  style="background: {{ $entry['color'] }}"
+                  aria-hidden="true"></span>
+            {{ $entry['label'] }}
+        </span>
+        @endforeach
+        <span class="flex items-center gap-2">
+            <span class="inline-block w-3 h-3 rounded-full border-2 border-white shadow"
+                  style="background: {{ $colorNoPlan }}"
+                  aria-hidden="true"></span>
+            Sin plan
+        </span>
+        <span class="flex items-center gap-2">
+            <span class="inline-block w-3 h-3 rounded-full border-2 border-white shadow"
+                  style="background: #ef4444"
+                  aria-hidden="true"></span>
+            Inactivo
+        </span>
+    </div>
+
 </div>
 
 @endsection
@@ -66,7 +91,7 @@
     const bounds = [];
 
     businesses.forEach(function (b) {
-        const color = b.active ? '#22c55e' : '#ef4444';
+        const color = b.active ? b.plan_color : '#ef4444';
 
         const icon = L.divIcon({
             className: '',
