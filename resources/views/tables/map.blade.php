@@ -484,7 +484,8 @@
                         :style="`left:${table.position_x}px; top:${table.position_y}px;
                                  width:${table.width}px; height:${table.height}px;
                                  transform: rotate(${table.rotation ?? 0}deg);
-                                 transform-origin: center;`"
+                                 transform-origin: center;
+                                 z-index: 10;`"
                         :aria-label="`Mesa ${table.name}`"
                     >
                         {{-- Fondo de la mesa --}}
