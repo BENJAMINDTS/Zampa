@@ -347,51 +347,43 @@
                     </div>
                 </template>
 
-                {{-- Elementos especiales: barra y taburetes (z-index 10, sin QR) --}}
-                <template x-for="element in elements" :key="'e'+element.id">
+                {{-- Barras especiales: usa table-item para interact.js, idéntico al sistema de mesas --}}
+                <template x-for="bar in elements.filter(e => e.shape === 'bar')" :key="'b'+bar.id">
                     <div
-                        :data-table-id="element.id"
-                        class="element-item absolute group select-none touch-none"
-                        :style="`left:${element.position_x}px; top:${element.position_y}px;
-                                 width:${element.width}px; height:${element.height}px;
-                                 transform:rotate(${element.rotation ?? 0}deg);
+                        :data-table-id="bar.id"
+                        class="table-item absolute group select-none touch-none"
+                        :style="`left:${bar.position_x}px; top:${bar.position_y}px;
+                                 width:${bar.width}px; height:${bar.height}px;
+                                 transform:rotate(${bar.rotation ?? 0}deg);
                                  transform-origin:center;
                                  z-index:10;`"
-                        :aria-label="element.shape === 'bar' ? `Barra: ${element.name}` : `Taburete: ${element.name}`"
+                        :aria-label="`Barra: ${bar.name}`"
                     >
                         <div class="w-full h-full relative flex items-center justify-center
+                                    rounded-lg
                                     bg-amber-100 dark:bg-amber-900/40
                                     border-2 border-amber-400 dark:border-amber-600
                                     shadow-md cursor-grab active:cursor-grabbing
-                                    transition-shadow hover:shadow-lg"
-                             :class="{
-                                'rounded-full': element.shape === 'stool',
-                                'rounded-lg':   element.shape === 'bar',
-                             }"
-                             @mousedown.prevent="startElementDrag($event, element)">
+                                    transition-shadow hover:shadow-lg">
 
                             <span class="text-xs font-semibold text-amber-800 dark:text-amber-300
                                          text-center px-1 leading-tight pointer-events-none"
-                                  x-text="element.name">
+                                  x-text="bar.name">
                             </span>
 
-                            {{-- Badge tipo --}}
-                            <span class="absolute top-1 left-1 text-xs text-amber-600 dark:text-amber-400 pointer-events-none leading-none"
-                                  x-text="element.shape === 'bar' ? '🍺' : '●'">
-                            </span>
+                            <span class="absolute top-1 left-1 text-xs text-amber-600 dark:text-amber-400 pointer-events-none leading-none">🍺</span>
 
                             {{-- Botón editar nombre --}}
                             <button type="button"
-                                    @mousedown.stop
-                                    @click.stop="editingTableId = editingTableId === element.id ? null : element.id"
+                                    @click.stop="editingTableId = editingTableId === bar.id ? null : bar.id"
                                     class="absolute -top-2.5 -right-9
                                            w-6 h-6 rounded-full bg-gray-600 dark:bg-gray-500 text-white
                                            flex items-center justify-center
                                            opacity-0 group-hover:opacity-100 transition-opacity
                                            hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-400
                                            shadow-md"
-                                    :aria-label="`Editar ${element.name}`"
-                                    :aria-expanded="editingTableId === element.id">
+                                    :aria-label="`Editar ${bar.name}`"
+                                    :aria-expanded="editingTableId === bar.id">
                                 <svg aria-hidden="true" class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z"/>
                                 </svg>
@@ -399,22 +391,21 @@
 
                             {{-- Botón eliminar --}}
                             <button type="button"
-                                    @mousedown.stop
-                                    @click.stop="deleteElement(element)"
+                                    @click.stop="deleteElement(bar)"
                                     class="absolute -top-2.5 -right-2.5
                                            w-6 h-6 rounded-full bg-red-500 text-white
                                            flex items-center justify-center
                                            opacity-0 group-hover:opacity-100 transition-opacity
                                            hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-400
                                            shadow-md"
-                                    :aria-label="`Eliminar ${element.name}`">
+                                    :aria-label="`Eliminar ${bar.name}`">
                                 <svg aria-hidden="true" class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
                                 </svg>
                             </button>
 
                             {{-- Panel de edición de nombre --}}
-                            <div x-show="editingTableId === element.id"
+                            <div x-show="editingTableId === bar.id"
                                  x-transition:enter="transition ease-out duration-150"
                                  x-transition:enter-start="opacity-0 scale-95"
                                  x-transition:enter-end="opacity-100 scale-100"
@@ -424,36 +415,35 @@
                                         border border-gray-200 dark:border-gray-700
                                         p-3 min-w-max"
                                  role="dialog"
-                                 :aria-label="`Editar ${element.name}`">
-
+                                 :aria-label="`Editar ${bar.name}`">
                                 <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">Nombre</p>
                                 <div class="flex gap-1">
                                     <input type="text"
-                                           :value="element.name"
-                                           @keydown.enter.stop="updateName(element, $event.target.value); $event.target.blur()"
-                                           @blur.stop="updateName(element, $event.target.value)"
+                                           :value="bar.name"
+                                           @keydown.enter.stop="updateName(bar, $event.target.value); $event.target.blur()"
+                                           @blur.stop="updateName(bar, $event.target.value)"
                                            @click.stop
                                            maxlength="50"
                                            class="w-full rounded-lg border border-gray-300 dark:border-gray-600
                                                   bg-white dark:bg-gray-700 text-gray-900 dark:text-white
                                                   px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
-                                           :aria-label="`Nombre de ${element.name}`">
+                                           :aria-label="`Nombre de ${bar.name}`">
                                 </div>
                             </div>
                         </div>
 
-                        {{-- Handle de rotación para elementos especiales --}}
+                        {{-- Handle de rotación --}}
                         <div class="rotation-handle absolute -top-9 left-1/2 -translate-x-1/2
                                     flex flex-col items-center gap-0
                                     opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                             @mousedown.stop.prevent="startRotation($event, element)"
-                             @mouseenter.stop="rotTooltip = { show: true, x: $event.clientX, y: $event.clientY, deg: element.rotation ?? 0 }"
-                             @mousemove.stop="rotTooltip.x = $event.clientX; rotTooltip.y = $event.clientY; rotTooltip.deg = element.rotation ?? 0"
+                             @mousedown.stop.prevent="startRotation($event, bar)"
+                             @mouseenter.stop="rotTooltip = { show: true, x: $event.clientX, y: $event.clientY, deg: bar.rotation ?? 0 }"
+                             @mousemove.stop="rotTooltip.x = $event.clientX; rotTooltip.y = $event.clientY; rotTooltip.deg = bar.rotation ?? 0"
                              @mouseleave.stop="if (!isRotating) rotTooltip.show = false"
                              role="button"
                              tabindex="0"
                              style="cursor: url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2720%27 height=%2720%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27M21 2v6h-6%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M3 12a9 9 0 0 1 15-6.7L21 8%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M3 22v-6h6%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M21 12a9 9 0 0 1-15 6.7L3 16%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M21 2v6h-6%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M3 12a9 9 0 0 1 15-6.7L21 8%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M3 22v-6h6%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M21 12a9 9 0 0 1-15 6.7L3 16%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3C/svg%3E') 10 10, grab;"
-                             :aria-label="`Rotar ${element.name} (arrastra para girar)`">
+                             :aria-label="`Rotar ${bar.name} (arrastra para girar)`">
                             <div class="w-6 h-6 rounded-full
                                         bg-white dark:bg-gray-800
                                         border-2 border-amber-400 shadow-md
@@ -471,9 +461,136 @@
                         <div class="resize-handle absolute bottom-0 right-0
                                     w-4 h-4 cursor-se-resize opacity-0 group-hover:opacity-100
                                     transition-opacity"
-                             @mousedown.stop.prevent="startResize($event, element)"
+                             @mousedown.stop.prevent="startResize($event, bar)"
                              role="button"
-                             :aria-label="`Redimensionar ${element.name}`">
+                             :aria-label="`Redimensionar ${bar.name}`">
+                            <svg aria-hidden="true" viewBox="0 0 10 10" fill="none" class="w-full h-full text-amber-400">
+                                <path d="M9 1L1 9M9 5L5 9M9 9H9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                    </div>
+                </template>
+
+                {{-- Taburetes: drag Alpine-nativo --}}
+                <template x-for="stool in elements.filter(e => e.shape === 'stool')" :key="'s'+stool.id">
+                    <div
+                        :data-table-id="stool.id"
+                        class="element-item absolute group select-none touch-none"
+                        :style="`left:${stool.position_x}px; top:${stool.position_y}px;
+                                 width:${stool.width}px; height:${stool.height}px;
+                                 transform:rotate(${stool.rotation ?? 0}deg);
+                                 transform-origin:center;
+                                 z-index:10;`"
+                        :aria-label="`Taburete: ${stool.name}`"
+                    >
+                        <div class="w-full h-full relative flex items-center justify-center
+                                    rounded-full
+                                    bg-amber-100 dark:bg-amber-900/40
+                                    border-2 border-amber-400 dark:border-amber-600
+                                    shadow-md cursor-grab active:cursor-grabbing
+                                    transition-shadow hover:shadow-lg"
+                             @mousedown.prevent="startElementDrag($event, stool)">
+
+                            <span class="text-xs font-semibold text-amber-800 dark:text-amber-300
+                                         text-center px-1 leading-tight pointer-events-none"
+                                  x-text="stool.name">
+                            </span>
+
+                            <span class="absolute top-1 left-1 text-xs text-amber-600 dark:text-amber-400 pointer-events-none leading-none">●</span>
+
+                            {{-- Botón editar nombre --}}
+                            <button type="button"
+                                    @mousedown.stop
+                                    @click.stop="editingTableId = editingTableId === stool.id ? null : stool.id"
+                                    class="absolute -top-2.5 -right-9
+                                           w-6 h-6 rounded-full bg-gray-600 dark:bg-gray-500 text-white
+                                           flex items-center justify-center
+                                           opacity-0 group-hover:opacity-100 transition-opacity
+                                           hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-400
+                                           shadow-md"
+                                    :aria-label="`Editar ${stool.name}`"
+                                    :aria-expanded="editingTableId === stool.id">
+                                <svg aria-hidden="true" class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z"/>
+                                </svg>
+                            </button>
+
+                            {{-- Botón eliminar --}}
+                            <button type="button"
+                                    @mousedown.stop
+                                    @click.stop="deleteElement(stool)"
+                                    class="absolute -top-2.5 -right-2.5
+                                           w-6 h-6 rounded-full bg-red-500 text-white
+                                           flex items-center justify-center
+                                           opacity-0 group-hover:opacity-100 transition-opacity
+                                           hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-400
+                                           shadow-md"
+                                    :aria-label="`Eliminar ${stool.name}`">
+                                <svg aria-hidden="true" class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                                </svg>
+                            </button>
+
+                            {{-- Panel de edición de nombre --}}
+                            <div x-show="editingTableId === stool.id"
+                                 x-transition:enter="transition ease-out duration-150"
+                                 x-transition:enter-start="opacity-0 scale-95"
+                                 x-transition:enter-end="opacity-100 scale-100"
+                                 @click.stop
+                                 class="absolute top-7 right-0 z-20
+                                        bg-white dark:bg-gray-800 rounded-xl shadow-xl
+                                        border border-gray-200 dark:border-gray-700
+                                        p-3 min-w-max"
+                                 role="dialog"
+                                 :aria-label="`Editar ${stool.name}`">
+                                <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">Nombre</p>
+                                <div class="flex gap-1">
+                                    <input type="text"
+                                           :value="stool.name"
+                                           @keydown.enter.stop="updateName(stool, $event.target.value); $event.target.blur()"
+                                           @blur.stop="updateName(stool, $event.target.value)"
+                                           @click.stop
+                                           maxlength="50"
+                                           class="w-full rounded-lg border border-gray-300 dark:border-gray-600
+                                                  bg-white dark:bg-gray-700 text-gray-900 dark:text-white
+                                                  px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                                           :aria-label="`Nombre de ${stool.name}`">
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Handle de rotación --}}
+                        <div class="rotation-handle absolute -top-9 left-1/2 -translate-x-1/2
+                                    flex flex-col items-center gap-0
+                                    opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                             @mousedown.stop.prevent="startRotation($event, stool)"
+                             @mouseenter.stop="rotTooltip = { show: true, x: $event.clientX, y: $event.clientY, deg: stool.rotation ?? 0 }"
+                             @mousemove.stop="rotTooltip.x = $event.clientX; rotTooltip.y = $event.clientY; rotTooltip.deg = stool.rotation ?? 0"
+                             @mouseleave.stop="if (!isRotating) rotTooltip.show = false"
+                             role="button"
+                             tabindex="0"
+                             style="cursor: url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2720%27 height=%2720%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27M21 2v6h-6%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M3 12a9 9 0 0 1 15-6.7L21 8%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M3 22v-6h6%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M21 12a9 9 0 0 1-15 6.7L3 16%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M21 2v6h-6%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M3 12a9 9 0 0 1 15-6.7L21 8%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M3 22v-6h6%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M21 12a9 9 0 0 1-15 6.7L3 16%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3C/svg%3E') 10 10, grab;"
+                             :aria-label="`Rotar ${stool.name} (arrastra para girar)`">
+                            <div class="w-6 h-6 rounded-full
+                                        bg-white dark:bg-gray-800
+                                        border-2 border-amber-400 shadow-md
+                                        flex items-center justify-center text-amber-500
+                                        transition-all duration-150
+                                        hover:bg-amber-500 hover:border-amber-600 hover:text-white hover:scale-110">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/>
+                                </svg>
+                            </div>
+                            <div class="w-px h-3 bg-amber-400"></div>
+                        </div>
+
+                        {{-- Handle de redimensionado --}}
+                        <div class="resize-handle absolute bottom-0 right-0
+                                    w-4 h-4 cursor-se-resize opacity-0 group-hover:opacity-100
+                                    transition-opacity"
+                             @mousedown.stop.prevent="startResize($event, stool)"
+                             role="button"
+                             :aria-label="`Redimensionar ${stool.name}`">
                             <svg aria-hidden="true" viewBox="0 0 10 10" fill="none" class="w-full h-full text-amber-400">
                                 <path d="M9 1L1 9M9 5L5 9M9 9H9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
                             </svg>
