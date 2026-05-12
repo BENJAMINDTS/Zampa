@@ -1080,24 +1080,30 @@ document.addEventListener('alpine:init', () => {
 
         // ── Drag nativo de elemento especial (barra/taburete) ────────────────
         startElementDrag(event, element) {
-            const canvasEl    = this.$refs.canvas;
-            const startMX     = event.clientX;
-            const startMY     = event.clientY;
-            const startPx     = element.position_x;
-            const startPy     = element.position_y;
+            const canvasEl  = this.$refs.canvas;
 
-            // Bounding box visual rotado: los límites se calculan una sola vez al iniciar el drag
-            const θRad        = ((element.rotation ?? 0) % 360) * Math.PI / 180;
-            const cosθ        = Math.abs(Math.cos(θRad));
-            const sinθ        = Math.abs(Math.sin(θRad));
-            const hw          = element.width  / 2;
-            const hh          = element.height / 2;
-            const halfVisualW = hw * cosθ + hh * sinθ;
-            const halfVisualH = hw * sinθ + hh * cosθ;
-            const minX        = Math.max(0, Math.round(halfVisualW - hw));
-            const maxX        = Math.round(canvasEl.offsetWidth  - hw - halfVisualW);
-            const minY        = Math.max(0, Math.round(halfVisualH - hh));
-            const maxY        = Math.round(canvasEl.offsetHeight - hh - halfVisualH);
+            // Leer posición real del DOM para evitar valor obsoleto del estado Alpine
+            const outerEl   = canvasEl.querySelector(`[data-table-id="${element.id}"]`);
+            const startPx   = outerEl ? (parseFloat(outerEl.style.left) || 0) : element.position_x;
+            const startPy   = outerEl ? (parseFloat(outerEl.style.top)  || 0) : element.position_y;
+            element.position_x = startPx;
+            element.position_y = startPy;
+
+            const startMX   = event.clientX;
+            const startMY   = event.clientY;
+
+            // Bounding box visual rotado (calculado una vez al iniciar el drag)
+            const θRad      = ((element.rotation ?? 0) % 360) * Math.PI / 180;
+            const cosθ      = Math.abs(Math.cos(θRad));
+            const sinθ      = Math.abs(Math.sin(θRad));
+            const hw        = element.width  / 2;
+            const hh        = element.height / 2;
+            const hvw       = hw * cosθ + hh * sinθ;
+            const hvh       = hw * sinθ + hh * cosθ;
+            const minX      = Math.max(0, Math.round(hvw - hw));
+            const maxX      = Math.round(canvasEl.offsetWidth  - hw - hvw);
+            const minY      = Math.max(0, Math.round(hvh - hh));
+            const maxY      = Math.round(canvasEl.offsetHeight - hh - hvh);
 
             document.body.style.cursor = 'grabbing';
 
