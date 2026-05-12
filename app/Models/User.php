@@ -33,6 +33,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @author BenjaminDTS
+ * @author SebastianBCF
  */
 class User extends Authenticatable
 {
@@ -229,5 +230,21 @@ class User extends Authenticatable
     public function ownerUserId(): int
     {
         return $this->admin_id ?? $this->id;
+    }
+
+    /**
+     * Devuelve el nombre de ruta de la pantalla principal según el rol del usuario.
+     * Usado para la redirección post-login y el logo del navbar.
+     *
+     * @return string
+     */
+    public function homeRoute(): string
+    {
+        return match ($this->role) {
+            'superadmin' => 'superadmin.dashboard',
+            'waiter'     => 'bar.index',
+            'kitchen'    => 'kitchen.index',
+            default      => 'dashboard',
+        };
     }
 }
