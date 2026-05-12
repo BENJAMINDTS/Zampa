@@ -250,10 +250,12 @@
                             height:${zone.height}px;
                             background-color:${zone.color}22;
                             border:2px solid ${zone.color};
-                            z-index:5;
+                            z-index:${editingZoneId === zone.id ? 20 : 5};
                             pointer-events:all;
+                            cursor:grab;
                         `"
                         :aria-label="`Zona ${zone.name}`"
+                        @mousedown.prevent.self="startZoneDrag($event, zone)"
                     >
                         {{-- Etiqueta de zona --}}
                         <span class="absolute bottom-1 left-1 text-xs font-semibold px-1.5 py-0.5 rounded pointer-events-none"
@@ -1036,42 +1038,42 @@ document.addEventListener('alpine:init', () => {
             this.$nextTick(() => this.initTableInteract());
         },
 
-        // ── Interactividad de zonas (drag para mover) ─────────────────────────
+        // ── Interactividad de zonas (drag nativo Alpine para mover) ──────────
         initZoneInteract() {
             interact('.zone-item').unset();
-
-            interact('.zone-item')
-                .draggable({
-                    ignoreFrom:  '.zone-resize-handle',
-                    inertia:    false,
-                    autoScroll: true,
-                    modifiers: [
-                        interact.modifiers.restrictRect({
-                            restriction: this.$refs.canvas,
-                            endOnly:     false,
-                        }),
-                    ],
-                    listeners: {
-                        move: (event) => {
-                            const el = event.target;
-                            const x  = (parseFloat(el.style.left) || 0) + event.dx;
-                            const y  = (parseFloat(el.style.top)  || 0) + event.dy;
-                            el.style.left = `${x}px`;
-                            el.style.top  = `${y}px`;
-                        },
-                        end: (event) => {
-                            const el  = event.target;
-                            const id  = parseInt(el.dataset.zoneId);
-                            const x   = Math.round(parseFloat(el.style.left) || 0);
-                            const y   = Math.round(parseFloat(el.style.top)  || 0);
-                            this.persistZonePosition(id, x, y);
-                        },
-                    },
-                });
         },
 
         reinitZoneInteract() {
             this.$nextTick(() => this.initZoneInteract());
+        },
+
+        // ── Drag nativo de zona: actualiza zone.position_x/y reactivamente ───
+        startZoneDrag(event, zone) {
+            const canvasEl  = this.$refs.canvas;
+            const canvasRect = canvasEl.getBoundingClientRect();
+            const startMX   = event.clientX;
+            const startMY   = event.clientY;
+            const startPx   = zone.position_x;
+            const startPy   = zone.position_y;
+
+            document.body.style.cursor = 'grabbing';
+
+            const onMove = (e) => {
+                const maxX = this.floorWidth  - zone.width;
+                const maxY = this.floorHeight - zone.height;
+                zone.position_x = Math.max(0, Math.min(maxX, Math.round(startPx + (e.clientX - startMX))));
+                zone.position_y = Math.max(0, Math.min(maxY, Math.round(startPy + (e.clientY - startMY))));
+            };
+
+            const onUp = async () => {
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('mouseup',   onUp);
+                document.body.style.cursor = '';
+                await this.persistZonePosition(zone.id, zone.position_x, zone.position_y);
+            };
+
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup',   onUp);
         },
 
         // ── Paleta: drag-to-create (mesas, especiales y zonas) ────────────────
@@ -1384,14 +1386,11 @@ document.addEventListener('alpine:init', () => {
 
         // ── AJAX: persistir posición de zona ──────────────────────────────────
         async persistZonePosition(id, x, y) {
-            const zone = this.zones.find(z => z.id === id);
-            if (zone) { zone.position_x = x; zone.position_y = y; }
-
             try {
                 const res = await fetch(`/zonas/${id}`, {
                     method:  'PATCH',
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 'Accept': 'application/json' },
-                    body: JSON.stringify({ position_x: x, position_y: y, width: zone?.width ?? 300, height: zone?.height ?? 200 }),
+                    body: JSON.stringify({ position_x: x, position_y: y }),
                 });
                 if (!res.ok) this.showToast('Error al guardar la posición de la zona.', true);
             } catch {
