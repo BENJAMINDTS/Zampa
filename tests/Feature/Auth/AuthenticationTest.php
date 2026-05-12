@@ -6,6 +6,9 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
+/**
+ * @author SebastianBCF
+ */
 class AuthenticationTest extends TestCase
 {
     use RefreshDatabase;
@@ -17,9 +20,9 @@ class AuthenticationTest extends TestCase
         $response->assertStatus(200);
     }
 
-    public function test_users_can_authenticate_using_the_login_screen(): void
+    public function test_admin_is_redirected_to_dashboard_after_login(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->admin()->create();
 
         $response = $this->post('/login', [
             'email' => $user->email,
@@ -28,6 +31,32 @@ class AuthenticationTest extends TestCase
 
         $this->assertAuthenticated();
         $response->assertRedirect(route('dashboard', absolute: false));
+    }
+
+    public function test_waiter_is_redirected_to_bar_panel_after_login(): void
+    {
+        $user = User::factory()->waiter()->create();
+
+        $response = $this->post('/login', [
+            'email' => $user->email,
+            'password' => 'password',
+        ]);
+
+        $this->assertAuthenticated();
+        $response->assertRedirect(route('bar.index', absolute: false));
+    }
+
+    public function test_kitchen_is_redirected_to_kitchen_panel_after_login(): void
+    {
+        $user = User::factory()->kitchen()->create();
+
+        $response = $this->post('/login', [
+            'email' => $user->email,
+            'password' => 'password',
+        ]);
+
+        $this->assertAuthenticated();
+        $response->assertRedirect(route('kitchen.index', absolute: false));
     }
 
     public function test_users_can_not_authenticate_with_invalid_password(): void
