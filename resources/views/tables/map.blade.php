@@ -253,6 +253,8 @@
                             z-index:${editingZoneId === zone.id ? 20 : 5};
                             pointer-events:all;
                             cursor:grab;
+                            transform:rotate(${zone.rotation ?? 0}deg);
+                            transform-origin:center;
                         `"
                         :aria-label="`Zona ${zone.name}`"
                         @mousedown.prevent.self="startZoneDrag($event, zone)"
@@ -331,6 +333,29 @@
                                        :aria-label="`Color de la zona ${zone.name}`">
                                 <span class="text-xs text-gray-500 font-mono" x-text="zone.color"></span>
                             </div>
+                        </div>
+
+                        {{-- Handle de rotación de zona (color sincronizado con zone.color) --}}
+                        <div class="absolute -top-9 left-1/2 -translate-x-1/2
+                                    flex flex-col items-center gap-0
+                                    opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                             @mousedown.stop.prevent="startZoneRotation($event, zone)"
+                             @mouseenter.stop="rotTooltip = { show: true, x: $event.clientX, y: $event.clientY, deg: zone.rotation ?? 0 }"
+                             @mousemove.stop="rotTooltip.x = $event.clientX; rotTooltip.y = $event.clientY; rotTooltip.deg = zone.rotation ?? 0"
+                             @mouseleave.stop="if (!isRotating) rotTooltip.show = false"
+                             role="button"
+                             tabindex="0"
+                             style="cursor: url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2720%27 height=%2720%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27M21 2v6h-6%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M3 12a9 9 0 0 1 15-6.7L21 8%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M3 22v-6h6%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M21 12a9 9 0 0 1-15 6.7L3 16%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M21 2v6h-6%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M3 12a9 9 0 0 1 15-6.7L21 8%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M3 22v-6h6%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M21 12a9 9 0 0 1-15 6.7L3 16%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3C/svg%3E') 10 10, grab;"
+                             :aria-label="`Rotar zona ${zone.name} (arrastra para girar)`">
+                            <div class="w-6 h-6 rounded-full bg-white dark:bg-gray-800 shadow-md
+                                        flex items-center justify-center
+                                        transition-all duration-150 hover:scale-110"
+                                 :style="`border:2px solid ${zone.color}; color:${zone.color};`">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/>
+                                </svg>
+                            </div>
+                            <div class="w-px h-3" :style="`background-color:${zone.color};`"></div>
                         </div>
 
                         {{-- Handle de redimensionado de zona --}}
@@ -1200,6 +1225,40 @@ document.addEventListener('alpine:init', () => {
             document.addEventListener('mouseup',   onUp);
         },
 
+        // ── Rotación libre de zona arrastrando el handle ─────────────────────
+        startZoneRotation(event, zone) {
+            const canvasRect = this.$refs.canvas.getBoundingClientRect();
+            const centerX    = canvasRect.left + zone.position_x + zone.width  / 2;
+            const centerY    = canvasRect.top  + zone.position_y + zone.height / 2;
+
+            this.isRotating            = true;
+            this.rotTooltip.show       = true;
+            document.body.style.cursor = "url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2720%27 height=%2720%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27M21 2v6h-6%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M3 12a9 9 0 0 1 15-6.7L21 8%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M3 22v-6h6%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M21 12a9 9 0 0 1-15 6.7L3 16%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M21 2v6h-6%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M3 12a9 9 0 0 1 15-6.7L21 8%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M3 22v-6h6%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M21 12a9 9 0 0 1-15 6.7L3 16%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3C/svg%3E') 10 10, grabbing";
+
+            const onMove = (e) => {
+                const dx    = e.clientX - centerX;
+                const dy    = e.clientY - centerY;
+                let   angle = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
+                angle = ((angle % 360) + 360) % 360;
+                zone.rotation       = Math.round(angle);
+                this.rotTooltip.x   = e.clientX;
+                this.rotTooltip.y   = e.clientY;
+                this.rotTooltip.deg = zone.rotation;
+            };
+
+            const onUp = async () => {
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('mouseup',   onUp);
+                this.isRotating            = false;
+                this.rotTooltip.show       = false;
+                document.body.style.cursor = '';
+                await this.persistZoneRotation(zone.id, zone.rotation ?? 0);
+            };
+
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup',   onUp);
+        },
+
         // ── Drag nativo de elemento especial (barra/taburete) ────────────────
         startElementDrag(event, element) {
             const startPx = element.position_x;
@@ -1545,6 +1604,20 @@ document.addEventListener('alpine:init', () => {
                     body: JSON.stringify({ position_x: x, position_y: y }),
                 });
                 if (!res.ok) this.showToast('Error al guardar la posición de la zona.', true);
+            } catch {
+                this.showToast('Error de red.', true);
+            }
+        },
+
+        // ── AJAX: persistir rotación de zona ──────────────────────────────────
+        async persistZoneRotation(id, rotation) {
+            try {
+                const res = await fetch(`/zonas/${id}`, {
+                    method:  'PATCH',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 'Accept': 'application/json' },
+                    body: JSON.stringify({ rotation }),
+                });
+                if (!res.ok) this.showToast('Error al guardar la rotación de la zona.', true);
             } catch {
                 this.showToast('Error de red.', true);
             }
