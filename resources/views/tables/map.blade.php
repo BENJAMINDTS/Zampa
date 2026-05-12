@@ -242,7 +242,7 @@
                 <template x-for="zone in zones" :key="'z'+zone.id">
                     <div
                         :data-zone-id="zone.id"
-                        class="zone-item absolute group select-none touch-none"
+                        class="zone-item absolute group select-none touch-none cursor-grab"
                         :style="`
                             left:${zone.position_x}px;
                             top:${zone.position_y}px;
@@ -252,7 +252,6 @@
                             border:2px solid ${zone.color};
                             z-index:${editingZoneId === zone.id ? 20 : 5};
                             pointer-events:all;
-                            cursor:grab;
                             transform:rotate(${zone.rotation ?? 0}deg);
                             transform-origin:center;
                         `"
