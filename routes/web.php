@@ -13,6 +13,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TableController;
+use App\Http\Controllers\ZoneController;
 use App\Http\Controllers\SuperAdmin\SuperAdminDashboardController;
 use App\Http\Controllers\SuperAdmin\SuperAdminPlanController;
 use App\Http\Controllers\SuperAdmin\SuperAdminBusinessController;
@@ -61,10 +62,16 @@ Route::middleware(['auth', 'business.active'])->group(function () {
         // Mapa visual de mesas (Bloques 8.1 y 8.3) — solo admin
         Route::get('/mesas/mapa', [TableController::class, 'map'])->name('tables.map');
         Route::post('/mesas', [TableController::class, 'store'])->name('tables.store');
+        Route::patch('/mesas/mapa/canvas', [TableController::class, 'updateCanvas'])->name('tables.canvas.update');
         Route::patch('/mesas/{table}/posicion', [TableController::class, 'updatePosition'])->name('tables.updatePosition');
         Route::patch('/mesas/{table}/forma', [TableController::class, 'updateShape'])->name('tables.updateShape');
         Route::patch('/mesas/{table}/nombre', [TableController::class, 'updateName'])->name('tables.updateName');
         Route::delete('/mesas/{table}', [TableController::class, 'destroy'])->name('tables.destroy');
+
+        // Gestión de zonas del plano — solo admin
+        Route::post('/zonas', [ZoneController::class, 'store'])->name('zones.store');
+        Route::patch('/zonas/{zone}', [ZoneController::class, 'update'])->name('zones.update');
+        Route::delete('/zonas/{zone}', [ZoneController::class, 'destroy'])->name('zones.destroy');
     });
 
     // Gestión de mesas y códigos QR
