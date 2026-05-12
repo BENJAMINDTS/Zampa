@@ -1133,11 +1133,18 @@ document.addEventListener('alpine:init', () => {
                     ],
                     listeners: {
                         move: (event) => {
-                            const el = event.target;
-                            const x  = (parseFloat(el.style.left) || 0) + event.dx;
-                            const y  = (parseFloat(el.style.top)  || 0) + event.dy;
+                            const el   = event.target;
+                            const x    = (parseFloat(el.style.left) || 0) + event.dx;
+                            const y    = (parseFloat(el.style.top)  || 0) + event.dy;
                             el.style.left = `${x}px`;
                             el.style.top  = `${y}px`;
+                            // Sync Alpine data during drag so `:style` re-renders never overwrite interact.js
+                            const id   = parseInt(el.dataset.tableId);
+                            const item = this.tables.find(t => t.id === id) ?? this.elements.find(e => e.id === id);
+                            if (item) {
+                                item.position_x = Math.max(0, Math.round(x));
+                                item.position_y = Math.max(0, Math.round(y));
+                            }
                         },
                         end: (event) => {
                             const el  = event.target;
