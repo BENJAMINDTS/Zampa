@@ -1086,8 +1086,11 @@ document.addEventListener('alpine:init', () => {
             document.body.style.cursor = 'grabbing';
 
             const onMove = (e) => {
-                element.position_x = Math.max(0, Math.round(startPx + (e.clientX - startMX)));
-                element.position_y = Math.max(0, Math.round(startPy + (e.clientY - startMY)));
+                const canvas = this.$refs.canvas;
+                const maxX = Math.max(0, canvas.offsetWidth  - element.width);
+                const maxY = Math.max(0, canvas.offsetHeight - element.height);
+                element.position_x = Math.max(0, Math.min(maxX, Math.round(startPx + (e.clientX - startMX))));
+                element.position_y = Math.max(0, Math.min(maxY, Math.round(startPy + (e.clientY - startMY))));
             };
 
             const onUp = async () => {
