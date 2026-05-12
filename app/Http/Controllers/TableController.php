@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
@@ -94,7 +95,7 @@ class TableController extends Controller
             'width'            => 'required|integer|min:40|max:800',
             'height'           => 'required|integer|min:40|max:400',
             'is_service_point' => 'sometimes|boolean',
-            'zone_id'          => 'sometimes|nullable|exists:zones,id',
+            'zone_id'          => ['sometimes', 'nullable', Rule::exists('zones', 'id')->where('user_id', Auth::id())],
         ]);
 
         $isServicePoint = $data['is_service_point'] ?? true;

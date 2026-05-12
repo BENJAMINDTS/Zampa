@@ -215,15 +215,34 @@ it('creating a stool does not count against plan limit', function () {
 
 it('gerente can assign a table to a zone', function () {
     $zone  = Zone::factory()->create(['user_id' => $this->user->id]);
-    $table = Table::factory()->create(['user_id' => $this->user->id]);
 
     $this->actingAs($this->user)
-         ->patchJson(route('tables.updatePosition', $table), [
+         ->postJson(route('tables.store'), [
+             'name'       => 'Mesa asignada',
+             'shape'      => 'square',
              'position_x' => 100,
              'position_y' => 100,
              'width'      => 100,
              'height'     => 100,
-             'rotation'   => 0,
+             'zone_id'    => $zone->id,
          ])
-         ->assertOk();
+         ->assertCreated();
+
+    $this->assertDatabaseHas('tables', ['name' => 'Mesa asignada', 'zone_id' => $zone->id]);
+});
+
+it('cannot assign a table to a zone owned by another restaurant', function () {
+    $foreignZone = Zone::factory()->create(['user_id' => $this->other->id]);
+
+    $this->actingAs($this->user)
+         ->postJson(route('tables.store'), [
+             'name'       => 'Mesa IDOR',
+             'shape'      => 'square',
+             'position_x' => 10,
+             'position_y' => 10,
+             'width'      => 100,
+             'height'     => 100,
+             'zone_id'    => $foreignZone->id,
+         ])
+         ->assertUnprocessable();
 });

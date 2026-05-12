@@ -18,7 +18,7 @@ class ZoneFactory extends Factory
         return [
             'user_id'    => User::factory(),
             'name'       => fake()->randomElement(['Terraza', 'Comedor interior', 'Barra', 'VIP', 'Jardín']),
-            'color'      => fake()->hexColor(),
+            'color'      => '#' . fake()->hexColor(),
             'position_x' => fake()->numberBetween(0, 400),
             'position_y' => fake()->numberBetween(0, 300),
             'width'      => fake()->numberBetween(150, 400),
