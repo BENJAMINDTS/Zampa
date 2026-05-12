@@ -264,7 +264,7 @@
                         {{-- Botón editar zona --}}
                         <button type="button"
                                 @click.stop="editingZoneId = editingZoneId === zone.id ? null : zone.id"
-                                class="absolute -top-2.5 -right-16
+                                class="absolute -top-2.5 -right-9
                                        w-6 h-6 rounded-full bg-gray-600 dark:bg-gray-500 text-white
                                        flex items-center justify-center
                                        opacity-0 group-hover:opacity-100 transition-opacity
