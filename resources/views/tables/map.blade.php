@@ -1142,8 +1142,8 @@ document.addEventListener('alpine:init', () => {
                         end: (event) => {
                             const el  = event.target;
                             const id  = parseInt(el.dataset.tableId);
-                            const x   = Math.round(parseFloat(el.style.left) || 0);
-                            const y   = Math.round(parseFloat(el.style.top)  || 0);
+                            const x   = Math.max(0, Math.round(parseFloat(el.style.left) || 0));
+                            const y   = Math.max(0, Math.round(parseFloat(el.style.top)  || 0));
                             const w   = Math.round(parseFloat(el.style.width)  || 100);
                             const h   = Math.round(parseFloat(el.style.height) || 100);
                             this.persistPosition(id, x, y, w, h);
