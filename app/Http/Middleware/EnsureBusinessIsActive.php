@@ -36,7 +36,7 @@ class EnsureBusinessIsActive
             return $this->forceLogout($request, 'Tu cuenta está desactivada. Contacta con el administrador.');
         }
 
-        if ($user->isStaff()) {
+        if ($user->isStaff() && $user->admin_id !== null) {
             $admin = \App\Models\User::find($user->admin_id);
 
             if ($admin === null || ! $admin->isActive()) {
