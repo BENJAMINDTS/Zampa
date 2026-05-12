@@ -368,7 +368,7 @@
                                 'rounded-full': element.shape === 'stool',
                                 'rounded-lg':   element.shape === 'bar',
                              }"
-                             @mousedown.prevent="element.shape !== 'bar' && startElementDrag($event, element)">
+                             @mousedown="element.shape !== 'bar' && ($event.preventDefault() || startElementDrag($event, element))">
 
                             <span class="text-xs font-semibold text-amber-800 dark:text-amber-300
                                          text-center px-1 leading-tight pointer-events-none"
