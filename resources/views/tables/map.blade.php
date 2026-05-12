@@ -351,7 +351,7 @@
                 <template x-for="element in elements" :key="'e'+element.id">
                     <div
                         :data-table-id="element.id"
-                        class="element-item absolute group select-none touch-none"
+                        :class="`${element.shape === 'bar' ? 'table-item' : 'element-item'} absolute group select-none touch-none`"
                         :style="`left:${element.position_x}px; top:${element.position_y}px;
                                  width:${element.width}px; height:${element.height}px;
                                  transform:rotate(${element.rotation ?? 0}deg);
@@ -368,7 +368,7 @@
                                 'rounded-full': element.shape === 'stool',
                                 'rounded-lg':   element.shape === 'bar',
                              }"
-                             @mousedown.prevent="startElementDrag($event, element)">
+                             @mousedown.prevent="element.shape !== 'bar' && startElementDrag($event, element)">
 
                             <span class="text-xs font-semibold text-amber-800 dark:text-amber-300
                                          text-center px-1 leading-tight pointer-events-none"
