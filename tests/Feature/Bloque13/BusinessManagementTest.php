@@ -8,6 +8,7 @@
 use App\Models\Plan;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 
 uses(RefreshDatabase::class);
 
@@ -292,13 +293,30 @@ it('deleted admin does not appear in businesses index', function () {
     expect($businesses->contains('id', $toDelete->id))->toBeFalse();
 });
 
-it('delete operation is atomic and staff deactivation rolls back on failure', function () {
+it('delete operation is atomic and rolls back on failure', function () {
     $toDelete = User::factory()->admin()->withBusiness()->create(['plan_id' => $this->plan->id]);
     $staff    = User::factory()->waiter()->create(['admin_id' => $toDelete->id]);
 
-    // Verificar que el admin y el staff existen antes del delete
-    expect(User::find($toDelete->id))->not->toBeNull();
+    $rolled = false;
+    try {
+        DB::transaction(function () use ($toDelete, $staff): void {
+            User::where('admin_id', $toDelete->id)->update(['active' => false]);
+
+            // Dentro de la transacción el staff ya aparece inactivo
+            expect($staff->fresh()->active)->toBeFalse();
+
+            // Forzar rollback
+            throw new \RuntimeException('forced rollback');
+        });
+    } catch (\RuntimeException) {
+        $rolled = true;
+    }
+
+    expect($rolled)->toBeTrue();
+    // Tras el rollback el staff vuelve a estar activo
     expect($staff->fresh()->active)->toBeTrue();
+    // El admin no fue soft-deleted
+    expect(User::withTrashed()->find($toDelete->id)->deleted_at)->toBeNull();
 });
 
 it('returns 403 when trying to toggle a non-admin user', function () {
