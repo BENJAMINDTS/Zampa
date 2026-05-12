@@ -1053,7 +1053,6 @@ document.addEventListener('alpine:init', () => {
         // ── Drag nativo de zona: actualiza zone.position_x/y reactivamente ───
         startZoneDrag(event, zone) {
             const canvasEl  = this.$refs.canvas;
-            const canvasRect = canvasEl.getBoundingClientRect();
             const startMX   = event.clientX;
             const startMY   = event.clientY;
             const startPx   = zone.position_x;
@@ -1062,8 +1061,8 @@ document.addEventListener('alpine:init', () => {
             document.body.style.cursor = 'grabbing';
 
             const onMove = (e) => {
-                const maxX = this.floorWidth  - zone.width;
-                const maxY = this.floorHeight - zone.height;
+                const maxX = canvasEl.offsetWidth  - zone.width;
+                const maxY = canvasEl.offsetHeight - zone.height;
                 zone.position_x = Math.max(0, Math.min(maxX, Math.round(startPx + (e.clientX - startMX))));
                 zone.position_y = Math.max(0, Math.min(maxY, Math.round(startPy + (e.clientY - startMY))));
             };
@@ -1081,16 +1080,17 @@ document.addEventListener('alpine:init', () => {
 
         // ── Drag nativo de elemento especial (barra/taburete) ────────────────
         startElementDrag(event, element) {
-            const startMX = event.clientX;
-            const startMY = event.clientY;
-            const startPx = element.position_x;
-            const startPy = element.position_y;
+            const canvasEl  = this.$refs.canvas;
+            const startMX   = event.clientX;
+            const startMY   = event.clientY;
+            const startPx   = element.position_x;
+            const startPy   = element.position_y;
 
             document.body.style.cursor = 'grabbing';
 
             const onMove = (e) => {
-                const maxX = this.floorWidth  - element.width;
-                const maxY = this.floorHeight - element.height;
+                const maxX = canvasEl.offsetWidth  - element.width;
+                const maxY = canvasEl.offsetHeight - element.height;
                 element.position_x = Math.max(0, Math.min(maxX, Math.round(startPx + (e.clientX - startMX))));
                 element.position_y = Math.max(0, Math.min(maxY, Math.round(startPy + (e.clientY - startMY))));
             };
