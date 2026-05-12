@@ -139,8 +139,8 @@ class TableController extends Controller
         abort_if($table->user_id !== Auth::id(), 403, 'Acceso denegado.');
 
         $data = $request->validate([
-            'position_x' => 'required|integer|min:0',
-            'position_y' => 'required|integer|min:0',
+            'position_x' => 'required|integer|min:-3000',
+            'position_y' => 'required|integer|min:-3000',
             'width'      => 'required|integer|min:40|max:800',
             'height'     => 'required|integer|min:40|max:800',
             'rotation'   => 'sometimes|integer|min:0|max:359',
