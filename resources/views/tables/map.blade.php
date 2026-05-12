@@ -301,7 +301,7 @@
                              x-transition:enter-start="opacity-0"
                              x-transition:enter-end="opacity-100"
                              @click.stop
-                             @click.outside="editingZoneId = null"
+                             @click.outside="if (!isRotating) editingZoneId = null"
                              class="absolute top-7 right-0 z-30
                                     bg-white dark:bg-gray-800 rounded-xl shadow-xl
                                     border border-gray-200 dark:border-gray-700
@@ -441,7 +441,7 @@
                                  x-transition:enter-start="opacity-0"
                                  x-transition:enter-end="opacity-100"
                                  @click.stop
-                                 @click.outside="editingTableId = null"
+                                 @click.outside="if (!isRotating) editingTableId = null"
                                  class="absolute top-7 right-0 z-20
                                         bg-white dark:bg-gray-800 rounded-xl shadow-xl
                                         border border-gray-200 dark:border-gray-700
@@ -570,7 +570,7 @@
                                  x-transition:enter-start="opacity-0"
                                  x-transition:enter-end="opacity-100"
                                  @click.stop
-                                 @click.outside="editingTableId = null"
+                                 @click.outside="if (!isRotating) editingTableId = null"
                                  class="absolute top-7 right-0 z-20
                                         bg-white dark:bg-gray-800 rounded-xl shadow-xl
                                         border border-gray-200 dark:border-gray-700
@@ -721,7 +721,7 @@
                                  x-transition:enter-start="opacity-0"
                                  x-transition:enter-end="opacity-100"
                                  @click.stop
-                                 @click.outside="editingTableId = null"
+                                 @click.outside="if (!isRotating) editingTableId = null"
                                  class="absolute top-7 right-0 z-20
                                         bg-white dark:bg-gray-800 rounded-xl shadow-xl
                                         border border-gray-200 dark:border-gray-700
@@ -1261,7 +1261,8 @@ document.addEventListener('alpine:init', () => {
             const onUp = async () => {
                 document.removeEventListener('mousemove', onMove);
                 document.removeEventListener('mouseup',   onUp);
-                this.isRotating            = false;
+                // Defer so the click event (fired after mouseup) sees isRotating = true
+                setTimeout(() => { this.isRotating = false; }, 0);
                 this.rotTooltip.show       = false;
                 document.body.style.cursor = '';
                 await this.persistZoneRotation(zone.id, zone.rotation ?? 0);
@@ -1874,7 +1875,8 @@ document.addEventListener('alpine:init', () => {
             const onUp = async () => {
                 document.removeEventListener('mousemove', onMove);
                 document.removeEventListener('mouseup',   onUp);
-                this.isRotating            = false;
+                // Defer so the click event (fired after mouseup) sees isRotating = true
+                setTimeout(() => { this.isRotating = false; }, 0);
                 this.rotTooltip.show       = false;
                 document.body.style.cursor = '';
                 await this.persistPosition(table.id, table.position_x, table.position_y, table.width, table.height);
