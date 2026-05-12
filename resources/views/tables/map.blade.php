@@ -1080,19 +1080,30 @@ document.addEventListener('alpine:init', () => {
 
         // ── Drag nativo de elemento especial (barra/taburete) ────────────────
         startElementDrag(event, element) {
-            const canvasEl  = this.$refs.canvas;
-            const startMX   = event.clientX;
-            const startMY   = event.clientY;
-            const startPx   = element.position_x;
-            const startPy   = element.position_y;
+            const canvasEl    = this.$refs.canvas;
+            const startMX     = event.clientX;
+            const startMY     = event.clientY;
+            const startPx     = element.position_x;
+            const startPy     = element.position_y;
+
+            // Bounding box visual rotado: los límites se calculan una sola vez al iniciar el drag
+            const θRad        = ((element.rotation ?? 0) % 360) * Math.PI / 180;
+            const cosθ        = Math.abs(Math.cos(θRad));
+            const sinθ        = Math.abs(Math.sin(θRad));
+            const hw          = element.width  / 2;
+            const hh          = element.height / 2;
+            const halfVisualW = hw * cosθ + hh * sinθ;
+            const halfVisualH = hw * sinθ + hh * cosθ;
+            const minX        = Math.max(0, Math.round(halfVisualW - hw));
+            const maxX        = Math.round(canvasEl.offsetWidth  - hw - halfVisualW);
+            const minY        = Math.max(0, Math.round(halfVisualH - hh));
+            const maxY        = Math.round(canvasEl.offsetHeight - hh - halfVisualH);
 
             document.body.style.cursor = 'grabbing';
 
             const onMove = (e) => {
-                const maxX = canvasEl.offsetWidth  - element.width;
-                const maxY = canvasEl.offsetHeight - element.height;
-                element.position_x = Math.max(0, Math.min(maxX, Math.round(startPx + (e.clientX - startMX))));
-                element.position_y = Math.max(0, Math.min(maxY, Math.round(startPy + (e.clientY - startMY))));
+                element.position_x = Math.max(minX, Math.min(maxX, Math.round(startPx + (e.clientX - startMX))));
+                element.position_y = Math.max(minY, Math.min(maxY, Math.round(startPy + (e.clientY - startMY))));
             };
 
             const onUp = async () => {
