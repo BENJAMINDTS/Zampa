@@ -266,7 +266,7 @@
 
                         {{-- Botón editar zona --}}
                         <button type="button"
-                                @click.stop="editingZoneId = editingZoneId === zone.id ? null : zone.id"
+                                @click.stop="if (!isRotating) editingZoneId = editingZoneId === zone.id ? null : zone.id"
                                 class="absolute -top-2.5 -right-9
                                        w-6 h-6 rounded-full bg-gray-600 dark:bg-gray-500 text-white
                                        flex items-center justify-center
@@ -301,6 +301,7 @@
                              x-transition:enter-start="opacity-0"
                              x-transition:enter-end="opacity-100"
                              @click.stop
+                             @click.outside="editingZoneId = null"
                              class="absolute top-7 right-0 z-30
                                     bg-white dark:bg-gray-800 rounded-xl shadow-xl
                                     border border-gray-200 dark:border-gray-700
@@ -313,7 +314,7 @@
                             <div class="flex gap-1 mb-3">
                                 <input type="text"
                                        :value="zone.name"
-                                       @keydown.enter.stop="updateZoneName(zone, $event.target.value); $event.target.blur()"
+                                       @keydown.enter.stop="updateZoneName(zone, $event.target.value); editingZoneId = null; $event.target.blur()"
                                        @blur.stop="updateZoneName(zone, $event.target.value)"
                                        @click.stop
                                        maxlength="50"
@@ -405,7 +406,7 @@
 
                             {{-- Botón editar nombre --}}
                             <button type="button"
-                                    @click.stop="editingTableId = editingTableId === bar.id ? null : bar.id"
+                                    @click.stop="if (!isRotating) editingTableId = editingTableId === bar.id ? null : bar.id"
                                     class="absolute -top-2.5 -right-9
                                            w-6 h-6 rounded-full bg-gray-600 dark:bg-gray-500 text-white
                                            flex items-center justify-center
@@ -440,6 +441,7 @@
                                  x-transition:enter-start="opacity-0"
                                  x-transition:enter-end="opacity-100"
                                  @click.stop
+                                 @click.outside="editingTableId = null"
                                  class="absolute top-7 right-0 z-20
                                         bg-white dark:bg-gray-800 rounded-xl shadow-xl
                                         border border-gray-200 dark:border-gray-700
@@ -451,7 +453,7 @@
                                 <div class="flex gap-1">
                                     <input type="text"
                                            :value="bar.name"
-                                           @keydown.enter.stop="updateName(bar, $event.target.value); $event.target.blur()"
+                                           @keydown.enter.stop="updateName(bar, $event.target.value); editingTableId = null; $event.target.blur()"
                                            @blur.stop="updateName(bar, $event.target.value)"
                                            @click.stop
                                            maxlength="50"
@@ -532,7 +534,7 @@
                             {{-- Botón editar nombre --}}
                             <button type="button"
                                     @mousedown.stop
-                                    @click.stop="editingTableId = editingTableId === stool.id ? null : stool.id"
+                                    @click.stop="if (!isRotating) editingTableId = editingTableId === stool.id ? null : stool.id"
                                     class="absolute -top-2.5 -right-9
                                            w-6 h-6 rounded-full bg-gray-600 dark:bg-gray-500 text-white
                                            flex items-center justify-center
@@ -568,6 +570,7 @@
                                  x-transition:enter-start="opacity-0"
                                  x-transition:enter-end="opacity-100"
                                  @click.stop
+                                 @click.outside="editingTableId = null"
                                  class="absolute top-7 right-0 z-20
                                         bg-white dark:bg-gray-800 rounded-xl shadow-xl
                                         border border-gray-200 dark:border-gray-700
@@ -579,7 +582,7 @@
                                 <div class="flex gap-1">
                                     <input type="text"
                                            :value="stool.name"
-                                           @keydown.enter.stop="updateName(stool, $event.target.value); $event.target.blur()"
+                                           @keydown.enter.stop="updateName(stool, $event.target.value); editingTableId = null; $event.target.blur()"
                                            @blur.stop="updateName(stool, $event.target.value)"
                                            @click.stop
                                            maxlength="50"
@@ -668,7 +671,7 @@
 
                             {{-- Botón editar forma --}}
                             <button type="button"
-                                    @click.stop="editingTableId = editingTableId === table.id ? null : table.id"
+                                    @click.stop="if (!isRotating) editingTableId = editingTableId === table.id ? null : table.id"
                                     class="absolute -top-2.5 -right-16
                                            w-6 h-6 rounded-full bg-gray-600 dark:bg-gray-500 text-white
                                            flex items-center justify-center
@@ -718,6 +721,7 @@
                                  x-transition:enter-start="opacity-0"
                                  x-transition:enter-end="opacity-100"
                                  @click.stop
+                                 @click.outside="editingTableId = null"
                                  class="absolute top-7 right-0 z-20
                                         bg-white dark:bg-gray-800 rounded-xl shadow-xl
                                         border border-gray-200 dark:border-gray-700
@@ -731,7 +735,7 @@
                                 <div class="flex gap-1 mb-3">
                                     <input type="text"
                                            :value="table.name"
-                                           @keydown.enter.stop="updateName(table, $event.target.value); $event.target.blur()"
+                                           @keydown.enter.stop="updateName(table, $event.target.value); editingTableId = null; $event.target.blur()"
                                            @blur.stop="updateName(table, $event.target.value)"
                                            @click.stop
                                            maxlength="50"
@@ -1784,8 +1788,7 @@ document.addEventListener('alpine:init', () => {
         // ── AJAX: actualizar forma de mesa existente ──────────────────────────
         async updateShape(table, shape) {
             const prev = table.shape;
-            table.shape       = shape;
-            this.editingTableId = null;
+            table.shape = shape;
 
             try {
                 const res = await fetch(`/mesas/${table.id}/forma`, {
