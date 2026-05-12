@@ -2,6 +2,7 @@
 
 /**
  * @author AyrtonAlania
+ * @author SebastianBCF
  */
 
 use App\Models\Order;
@@ -94,6 +95,42 @@ it('multiple polls return the same notification without duplication', function (
     expect(count($second))->toBe(1);
     expect(count($third))->toBe(1);
     expect($first[0]['id'])->toBe($second[0]['id'])->toBe($third[0]['id']);
+});
+
+// ─── Regresión: readyOrders renderizado server-side (fix ghost flicker) ─────────
+
+it('bar panel includes ready notifications in initial html without polling', function () {
+    $waiter = User::factory()->create(['role' => 'waiter']);
+    $table  = Table::factory()->create(['user_id' => $waiter->id]);
+
+    $order = Order::factory()->create([
+        'table_id'           => $table->id,
+        'status'             => 'ready',
+        'notification_ready' => true,
+    ]);
+
+    $response = $this->actingAs($waiter)->get(route('bar.index'));
+
+    $response->assertOk();
+    // El JSON de readyOrders debe estar embebido en el HTML inicial
+    $response->assertSee('"id":' . $order->id, false);
+    $response->assertSee('"table":"' . $table->name . '"', false);
+});
+
+it('bar panel initial html has no ready orders when notification_ready is false', function () {
+    $waiter = User::factory()->create(['role' => 'waiter']);
+    $table  = Table::factory()->create(['user_id' => $waiter->id]);
+
+    Order::factory()->create([
+        'table_id'           => $table->id,
+        'status'             => 'ready',
+        'notification_ready' => false,
+    ]);
+
+    $response = $this->actingAs($waiter)->get(route('bar.index'));
+
+    $response->assertOk();
+    $response->assertSee('readyOrders: []', false);
 });
 
 // ─── Endpoint GET /notifications/bill-requests ────────────────────────────────
