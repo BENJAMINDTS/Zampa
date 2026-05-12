@@ -351,7 +351,7 @@
                 <template x-for="element in elements" :key="'e'+element.id">
                     <div
                         :data-table-id="element.id"
-                        class="table-item absolute group select-none touch-none"
+                        class="element-item absolute group select-none touch-none"
                         :style="`left:${element.position_x}px; top:${element.position_y}px;
                                  width:${element.width}px; height:${element.height}px;
                                  transform:rotate(${element.rotation ?? 0}deg);
@@ -367,7 +367,8 @@
                              :class="{
                                 'rounded-full': element.shape === 'stool',
                                 'rounded-lg':   element.shape === 'bar',
-                             }">
+                             }"
+                             @mousedown.prevent="startElementDrag($event, element)">
 
                             <span class="text-xs font-semibold text-amber-800 dark:text-amber-300
                                          text-center px-1 leading-tight pointer-events-none"
@@ -381,6 +382,7 @@
 
                             {{-- Botón editar nombre --}}
                             <button type="button"
+                                    @mousedown.stop
                                     @click.stop="editingTableId = editingTableId === element.id ? null : element.id"
                                     class="absolute -top-2.5 -right-9
                                            w-6 h-6 rounded-full bg-gray-600 dark:bg-gray-500 text-white
@@ -397,6 +399,7 @@
 
                             {{-- Botón eliminar --}}
                             <button type="button"
+                                    @mousedown.stop
                                     @click.stop="deleteElement(element)"
                                     class="absolute -top-2.5 -right-2.5
                                            w-6 h-6 rounded-full bg-red-500 text-white
@@ -1070,6 +1073,33 @@ document.addEventListener('alpine:init', () => {
                 document.removeEventListener('mouseup',   onUp);
                 document.body.style.cursor = '';
                 await this.persistZonePosition(zone.id, zone.position_x, zone.position_y);
+            };
+
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup',   onUp);
+        },
+
+        // ── Drag nativo de elemento especial (barra/taburete) ────────────────
+        startElementDrag(event, element) {
+            const startMX = event.clientX;
+            const startMY = event.clientY;
+            const startPx = element.position_x;
+            const startPy = element.position_y;
+
+            document.body.style.cursor = 'grabbing';
+
+            const onMove = (e) => {
+                const maxX = this.floorWidth  - element.width;
+                const maxY = this.floorHeight - element.height;
+                element.position_x = Math.max(0, Math.min(maxX, Math.round(startPx + (e.clientX - startMX))));
+                element.position_y = Math.max(0, Math.min(maxY, Math.round(startPy + (e.clientY - startMY))));
+            };
+
+            const onUp = async () => {
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('mouseup',   onUp);
+                document.body.style.cursor = '';
+                await this.persistPosition(element.id, element.position_x, element.position_y, element.width, element.height);
             };
 
             document.addEventListener('mousemove', onMove);
