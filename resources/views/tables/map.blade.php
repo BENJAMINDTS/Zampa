@@ -346,10 +346,15 @@
                              tabindex="0"
                              style="cursor: url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2720%27 height=%2720%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27M21 2v6h-6%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M3 12a9 9 0 0 1 15-6.7L21 8%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M3 22v-6h6%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M21 12a9 9 0 0 1-15 6.7L3 16%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M21 2v6h-6%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M3 12a9 9 0 0 1 15-6.7L21 8%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M3 22v-6h6%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M21 12a9 9 0 0 1-15 6.7L3 16%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3C/svg%3E') 10 10, grab;"
                              :aria-label="`Rotar zona ${zone.name} (arrastra para girar)`">
-                            <div class="w-6 h-6 rounded-full bg-white dark:bg-gray-800 shadow-md
+                            <div x-data="{ hov: false }"
+                                 class="w-6 h-6 rounded-full shadow-md
                                         flex items-center justify-center
                                         transition-all duration-150 hover:scale-110"
-                                 :style="`border:2px solid ${zone.color}; color:${zone.color};`">
+                                 :style="hov
+                                     ? `border:2px solid ${zone.color}; background-color:${zone.color}; color:white;`
+                                     : `border:2px solid ${zone.color}; background-color:${zone.color}22; color:${zone.color};`"
+                                 @mouseenter.stop="hov = true"
+                                 @mouseleave.stop="hov = false">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" aria-hidden="true">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/>
                                 </svg>
