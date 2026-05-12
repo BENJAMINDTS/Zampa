@@ -141,8 +141,8 @@ class TableController extends Controller
         $data = $request->validate([
             'position_x' => 'required|integer|min:0',
             'position_y' => 'required|integer|min:0',
-            'width'      => 'required|integer|min:60|max:400',
-            'height'     => 'required|integer|min:60|max:400',
+            'width'      => 'required|integer|min:40|max:800',
+            'height'     => 'required|integer|min:40|max:800',
             'rotation'   => 'sometimes|integer|min:0|max:359',
         ]);
 

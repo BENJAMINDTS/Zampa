@@ -1490,8 +1490,8 @@ document.addEventListener('alpine:init', () => {
                 const localDX =  dx * cosθ + dy * sinθ;
                 const localDY = -dx * sinθ + dy * cosθ;
 
-                const newW = Math.min(400, Math.max(60, startW + localDX));
-                const newH = Math.min(400, Math.max(60, startH + localDY));
+                const newW = Math.min(800, Math.max(40, startW + localDX));
+                const newH = Math.min(800, Math.max(40, startH + localDY));
                 const dW   = newW - startW;
                 const dH   = newH - startH;
 
@@ -1515,12 +1515,12 @@ document.addEventListener('alpine:init', () => {
 
         // ── AJAX: persistir posición, dimensiones y rotación ─────────────────
         async persistPosition(id, x, y, w, h) {
-            const table = this.tables.find(t => t.id === id);
-            if (table) {
-                table.position_x = x;
-                table.position_y = y;
-                table.width      = w;
-                table.height     = h;
+            const item = this.tables.find(t => t.id === id) ?? this.elements.find(e => e.id === id);
+            if (item) {
+                item.position_x = x;
+                item.position_y = y;
+                item.width      = w;
+                item.height     = h;
             }
 
             try {
@@ -1536,7 +1536,7 @@ document.addEventListener('alpine:init', () => {
                         position_y: y,
                         width:      w,
                         height:     h,
-                        rotation:   table?.rotation ?? 0,
+                        rotation:   item?.rotation ?? 0,
                     }),
                 });
 
