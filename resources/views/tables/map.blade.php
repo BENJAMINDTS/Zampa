@@ -298,13 +298,14 @@
                         {{-- Panel de edición de zona --}}
                         <div x-show="editingZoneId === zone.id"
                              x-transition:enter="transition ease-out duration-150"
-                             x-transition:enter-start="opacity-0 scale-95"
-                             x-transition:enter-end="opacity-100 scale-100"
+                             x-transition:enter-start="opacity-0"
+                             x-transition:enter-end="opacity-100"
                              @click.stop
                              class="absolute top-7 right-0 z-30
                                     bg-white dark:bg-gray-800 rounded-xl shadow-xl
                                     border border-gray-200 dark:border-gray-700
                                     p-3 min-w-max"
+                             :style="`transform:rotate(-${zone.rotation ?? 0}deg); transform-origin:top right;`"
                              role="dialog"
                              :aria-label="`Editar zona ${zone.name}`">
 
@@ -436,13 +437,14 @@
                             {{-- Panel de edición de nombre --}}
                             <div x-show="editingTableId === bar.id"
                                  x-transition:enter="transition ease-out duration-150"
-                                 x-transition:enter-start="opacity-0 scale-95"
-                                 x-transition:enter-end="opacity-100 scale-100"
+                                 x-transition:enter-start="opacity-0"
+                                 x-transition:enter-end="opacity-100"
                                  @click.stop
                                  class="absolute top-7 right-0 z-20
                                         bg-white dark:bg-gray-800 rounded-xl shadow-xl
                                         border border-gray-200 dark:border-gray-700
                                         p-3 min-w-max"
+                                 :style="`transform:rotate(-${bar.rotation ?? 0}deg); transform-origin:top right;`"
                                  role="dialog"
                                  :aria-label="`Editar ${bar.name}`">
                                 <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">Nombre</p>
@@ -563,13 +565,14 @@
                             {{-- Panel de edición de nombre --}}
                             <div x-show="editingTableId === stool.id"
                                  x-transition:enter="transition ease-out duration-150"
-                                 x-transition:enter-start="opacity-0 scale-95"
-                                 x-transition:enter-end="opacity-100 scale-100"
+                                 x-transition:enter-start="opacity-0"
+                                 x-transition:enter-end="opacity-100"
                                  @click.stop
                                  class="absolute top-7 right-0 z-20
                                         bg-white dark:bg-gray-800 rounded-xl shadow-xl
                                         border border-gray-200 dark:border-gray-700
                                         p-3 min-w-max"
+                                 :style="`transform:rotate(-${stool.rotation ?? 0}deg); transform-origin:top right;`"
                                  role="dialog"
                                  :aria-label="`Editar ${stool.name}`">
                                 <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">Nombre</p>
@@ -712,13 +715,14 @@
                             {{-- Panel de edición (solo forma) --}}
                             <div x-show="editingTableId === table.id"
                                  x-transition:enter="transition ease-out duration-150"
-                                 x-transition:enter-start="opacity-0 scale-95"
-                                 x-transition:enter-end="opacity-100 scale-100"
+                                 x-transition:enter-start="opacity-0"
+                                 x-transition:enter-end="opacity-100"
                                  @click.stop
                                  class="absolute top-7 right-0 z-20
                                         bg-white dark:bg-gray-800 rounded-xl shadow-xl
                                         border border-gray-200 dark:border-gray-700
                                         p-3 min-w-max"
+                                 :style="`transform:rotate(-${table.rotation ?? 0}deg); transform-origin:top right;`"
                                  role="dialog"
                                  :aria-label="`Forma de mesa ${table.name}`">
 
