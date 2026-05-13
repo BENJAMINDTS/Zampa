@@ -34,7 +34,7 @@ class TableController extends Controller
      */
     public function index(): View
     {
-        $tables    = Table::where('user_id', Auth::id())->orderBy('name')->get();
+        $tables    = Table::where('user_id', Auth::id())->servicePoints()->orderBy('name')->get();
         $maxTables = Auth::user()->plan?->max_tables ?? 10;
 
         return view('tables.index', compact('tables', 'maxTables'));
@@ -48,8 +48,18 @@ class TableController extends Controller
     public function map(): View
     {
         $userId      = Auth::id();
-        $tables      = Table::where('user_id', $userId)->servicePoints()->orderBy('name')->get();
-        $elements    = Table::where('user_id', $userId)->where('is_service_point', false)->orderBy('name')->get();
+        $tables      = Table::where('user_id', $userId)
+                           ->servicePoints()
+                           ->whereNotIn('shape', ['bar', 'stool'])
+                           ->orderBy('name')
+                           ->get();
+        $elements    = Table::where('user_id', $userId)
+                           ->where(function ($q) {
+                               $q->where('is_service_point', false)
+                                 ->orWhereIn('shape', ['bar', 'stool']);
+                           })
+                           ->orderBy('name')
+                           ->get();
         $zones       = Zone::where('user_id', $userId)->orderBy('name')->get();
         $maxTables   = Auth::user()->plan?->max_tables ?? 10;
         $floorWidth  = Auth::user()->floor_width  ?? 1200;
@@ -98,7 +108,9 @@ class TableController extends Controller
             'zone_id'          => ['sometimes', 'nullable', Rule::exists('zones', 'id')->where('user_id', Auth::id())],
         ]);
 
-        $isServicePoint = $data['is_service_point'] ?? true;
+        $isServicePoint = in_array($data['shape'], ['bar', 'stool'])
+            ? false
+            : ($data['is_service_point'] ?? true);
 
         if ($isServicePoint) {
             $count     = Table::where('user_id', Auth::id())->servicePoints()->count();
