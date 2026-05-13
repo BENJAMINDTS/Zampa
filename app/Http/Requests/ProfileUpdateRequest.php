@@ -6,6 +6,9 @@ use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
+/**
+ * @author BenjaminDTS
+ */
 class ProfileUpdateRequest extends FormRequest
 {
     /**
@@ -25,6 +28,8 @@ class ProfileUpdateRequest extends FormRequest
                 'max:255',
                 Rule::unique(User::class)->ignore($this->user()->id),
             ],
+            'is_waiter'  => ['sometimes', 'boolean'],
+            'is_kitchen' => ['sometimes', 'boolean'],
         ];
     }
 }
