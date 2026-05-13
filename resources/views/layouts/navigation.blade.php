@@ -159,7 +159,7 @@
                     @endif
 
                     {{-- Panel de Cocina: admin y kitchen --}}
-                    @if(in_array(Auth::user()->role, ['admin', 'kitchen']))
+                    @if(Auth::user()->canAccessKitchen())
                     <span
                         x-data="kitchenBadge('{{ route('kitchen.badge') }}')"
                         x-init="init()"
@@ -178,7 +178,7 @@
                     @endif
 
                     {{-- Panel de Barra: admin y waiter --}}
-                    @if(in_array(Auth::user()->role, ['admin', 'waiter']))
+                    @if(Auth::user()->canAccessBar())
                     <span
                         x-data="barBadge('{{ route('bar.badge') }}')"
                         x-init="init()"
@@ -283,11 +283,14 @@
                     {{ __('Ingresos') }}
                 </x-responsive-nav-link>
 
+                @endif
+
+                @if(Auth::user()->canAccessKitchen() || Auth::user()->canAccessBar())
                 <h3 class="px-3 pt-3 pb-1 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500" role="presentation">{{ __('Servicio') }}</h3>
                 @endif
 
                 {{-- Panel de Cocina: admin y kitchen --}}
-                @if(in_array(Auth::user()->role, ['admin', 'kitchen']))
+                @if(Auth::user()->canAccessKitchen())
                 <span x-data="kitchenBadge('{{ route('kitchen.badge') }}')" x-init="init()" class="flex items-center">
                     <x-responsive-nav-link :href="route('kitchen.index')" :active="request()->routeIs('kitchen.*')">
                         {{ __('Cocina') }}
@@ -302,7 +305,7 @@
                 @endif
 
                 {{-- Panel de Barra: admin y waiter --}}
-                @if(in_array(Auth::user()->role, ['admin', 'waiter']))
+                @if(Auth::user()->canAccessBar())
                 <span x-data="barBadge('{{ route('bar.badge') }}')" x-init="init()" class="flex items-center">
                     <x-responsive-nav-link :href="route('bar.index')" :active="request()->routeIs('bar.*')">
                         {{ __('Barra') }}

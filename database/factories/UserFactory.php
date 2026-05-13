@@ -113,6 +113,26 @@ class UserFactory extends Factory
     }
 
     /**
+     * Estado: admin que también actúa como camarero (is_waiter=true).
+     *
+     * @return static
+     */
+    public function alsoWaiter(): static
+    {
+        return $this->state(['is_waiter' => true]);
+    }
+
+    /**
+     * Estado: admin que también actúa como cocinero (is_kitchen=true).
+     *
+     * @return static
+     */
+    public function alsoKitchen(): static
+    {
+        return $this->state(['is_kitchen' => true]);
+    }
+
+    /**
      * Estado: admin con datos de negocio rellenos (business_name, address, lat, lng).
      *
      * @return static
