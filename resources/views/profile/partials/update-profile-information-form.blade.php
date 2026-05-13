@@ -47,6 +47,65 @@
             @endif
         </div>
 
+        @if(auth()->user()->role === 'admin')
+        <fieldset class="space-y-3">
+            <legend class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                {{ __('Roles adicionales') }}
+            </legend>
+            <p class="text-xs text-gray-500 dark:text-gray-400">
+                {{ __('Activa los paneles de servicio que quieres usar tú mismo como gerente.') }}
+            </p>
+
+            <div class="flex items-start gap-3">
+                <input
+                    id="is_waiter"
+                    name="is_waiter"
+                    type="checkbox"
+                    value="1"
+                    {{ old('is_waiter', auth()->user()->is_waiter) ? 'checked' : '' }}
+                    class="mt-0.5 h-4 w-4 rounded border-gray-300 text-indigo-600
+                           focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700"
+                    aria-describedby="is_waiter_hint"
+                >
+                <div>
+                    <label for="is_waiter" class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        {{ __('Camarero') }}
+                    </label>
+                    <p id="is_waiter_hint" class="text-xs text-gray-500 dark:text-gray-400">
+                        {{ __('Activa el panel de Barra en tu navegación.') }}
+                    </p>
+                </div>
+            </div>
+            @error('is_waiter')
+                <p role="alert" class="text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+            @enderror
+
+            <div class="flex items-start gap-3">
+                <input
+                    id="is_kitchen"
+                    name="is_kitchen"
+                    type="checkbox"
+                    value="1"
+                    {{ old('is_kitchen', auth()->user()->is_kitchen) ? 'checked' : '' }}
+                    class="mt-0.5 h-4 w-4 rounded border-gray-300 text-indigo-600
+                           focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700"
+                    aria-describedby="is_kitchen_hint"
+                >
+                <div>
+                    <label for="is_kitchen" class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        {{ __('Cocinero') }}
+                    </label>
+                    <p id="is_kitchen_hint" class="text-xs text-gray-500 dark:text-gray-400">
+                        {{ __('Activa el panel de Cocina en tu navegación.') }}
+                    </p>
+                </div>
+            </div>
+            @error('is_kitchen')
+                <p role="alert" class="text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+            @enderror
+        </fieldset>
+        @endif
+
         <div class="flex items-center gap-4">
             <x-primary-button>{{ __('Save') }}</x-primary-button>
 
