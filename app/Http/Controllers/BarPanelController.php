@@ -27,9 +27,20 @@ class BarPanelController extends Controller
      */
     public function index(): View
     {
-        $orders = $this->getActiveOrders();
+        $orders   = $this->getActiveOrders();
+        $ownerId  = Auth::user()->ownerUserId();
 
-        return view('bar.index', compact('orders'));
+        $readyOrders = Order::with('table')
+            ->where('notification_ready', true)
+            ->whereHas('table', fn($q) => $q->where('user_id', $ownerId))
+            ->get()
+            ->map(fn(Order $order) => [
+                'id'    => $order->id,
+                'table' => $order->table->name,
+            ])
+            ->values();
+
+        return view('bar.index', compact('orders', 'readyOrders'));
     }
 
     /**
