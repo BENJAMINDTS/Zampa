@@ -49,7 +49,7 @@
             </div>
         </div>
 
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-3 flex-wrap">
             {{-- Toast --}}
             <div x-show="toast.show"
                  x-transition:enter="transition ease-out duration-200"
@@ -62,6 +62,79 @@
                  x-text="toast.msg"
                  role="alert"
                  aria-live="polite">
+            </div>
+
+            {{-- ── Control de tamaño del lienzo ─────────────────────────────── --}}
+            <div class="flex items-center gap-2">
+                <span class="text-xs font-medium text-gray-500 dark:text-gray-400 hidden sm:block"
+                      aria-hidden="true">Plano:</span>
+
+                {{-- Botones S / M / L / XL --}}
+                <div class="flex rounded-lg overflow-hidden border border-gray-200 dark:border-gray-600"
+                     role="group"
+                     aria-label="Tamaño del lienzo del plano">
+                    <button type="button"
+                            @click="setCanvasSize(1200, 800)"
+                            :aria-pressed="floorWidth === 1200 && floorHeight === 800"
+                            :class="floorWidth === 1200 && floorHeight === 800
+                                ? 'bg-indigo-600 text-white'
+                                : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'"
+                            class="px-3 py-1.5 text-xs font-semibold border-r border-gray-200 dark:border-gray-600
+                                   transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-400"
+                            aria-label="Lienzo pequeño: 1200 × 800 px">S</button>
+                    <button type="button"
+                            @click="setCanvasSize(1600, 1000)"
+                            :aria-pressed="floorWidth === 1600 && floorHeight === 1000"
+                            :class="floorWidth === 1600 && floorHeight === 1000
+                                ? 'bg-indigo-600 text-white'
+                                : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'"
+                            class="px-3 py-1.5 text-xs font-semibold border-r border-gray-200 dark:border-gray-600
+                                   transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-400"
+                            aria-label="Lienzo mediano: 1600 × 1000 px">M</button>
+                    <button type="button"
+                            @click="setCanvasSize(2000, 1200)"
+                            :aria-pressed="floorWidth === 2000 && floorHeight === 1200"
+                            :class="floorWidth === 2000 && floorHeight === 1200
+                                ? 'bg-indigo-600 text-white'
+                                : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'"
+                            class="px-3 py-1.5 text-xs font-semibold border-r border-gray-200 dark:border-gray-600
+                                   transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-400"
+                            aria-label="Lienzo grande: 2000 × 1200 px">L</button>
+                    <button type="button"
+                            @click="setCanvasSize(2400, 1500)"
+                            :aria-pressed="floorWidth === 2400 && floorHeight === 1500"
+                            :class="floorWidth === 2400 && floorHeight === 1500
+                                ? 'bg-indigo-600 text-white'
+                                : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'"
+                            class="px-3 py-1.5 text-xs font-semibold transition-colors
+                                   focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-400"
+                            aria-label="Lienzo extra grande: 2400 × 1500 px">XL</button>
+                </div>
+
+                {{-- Zoom slider (solo visual, sin persistencia en BD) --}}
+                <div class="hidden sm:flex items-center gap-1.5">
+                    <label for="canvas-zoom" class="sr-only">Zoom del plano</label>
+                    <input id="canvas-zoom"
+                           type="range"
+                           min="0.5"
+                           max="1"
+                           step="0.05"
+                           x-model.number="canvasZoom"
+                           class="w-20 h-1.5 accent-indigo-600 cursor-pointer"
+                           :aria-label="`Zoom del plano: ${Math.round(canvasZoom * 100)}%`">
+                    <span class="text-xs font-mono text-gray-500 dark:text-gray-400 w-9 text-right tabular-nums"
+                          x-text="Math.round(canvasZoom * 100) + '%'"></span>
+                    <button type="button"
+                            x-show="canvasZoom < 1"
+                            x-transition:enter="transition ease-out duration-150"
+                            x-transition:enter-start="opacity-0"
+                            x-transition:enter-end="opacity-100"
+                            @click="canvasZoom = 1"
+                            class="text-xs text-indigo-600 hover:text-indigo-800 dark:text-indigo-400
+                                   dark:hover:text-indigo-200 focus:outline-none focus:ring-1
+                                   focus:ring-indigo-400 rounded px-1 font-medium transition-colors"
+                            aria-label="Restablecer zoom al 100%">1:1</button>
+                </div>
             </div>
 
             <a href="{{ route('tables.index') }}"
@@ -223,10 +296,29 @@
                 x-ref="canvas"
                 class="relative bg-white dark:bg-gray-800 rounded-xl shadow-inner
                        border-2 border-dashed border-gray-200 dark:border-gray-700"
-                :style="`width:${floorWidth}px; height:${floorHeight}px; min-width:100%;`"
+                :style="`width:${floorWidth}px; height:${floorHeight}px; min-width:100%;
+                         transform:scale(${canvasZoom}); transform-origin:top left;`"
                 aria-label="Plano del restaurante"
-                @click="editingTableId = null; editingZoneId = null"
+                @click="if (canvasZoom === 1) { editingTableId = null; editingZoneId = null; }"
             >
+                {{-- Overlay de zoom: bloquea edición cuando canvasZoom < 1 --}}
+                <div x-show="canvasZoom < 1"
+                     x-transition:enter="transition ease-out duration-150"
+                     x-transition:enter-start="opacity-0"
+                     x-transition:enter-end="opacity-100"
+                     class="absolute inset-0 z-40 rounded-xl cursor-not-allowed select-none"
+                     role="status"
+                     aria-live="polite">
+                    <div class="absolute bottom-4 left-1/2 -translate-x-1/2
+                                bg-amber-50 dark:bg-amber-900/80
+                                border border-amber-300 dark:border-amber-600
+                                text-amber-800 dark:text-amber-300
+                                text-sm font-medium px-4 py-2 rounded-full shadow-md
+                                whitespace-nowrap pointer-events-none">
+                        Ajusta el zoom al 100% para editar el plano
+                    </div>
+                </div>
+
                 {{-- Cuadrícula decorativa --}}
                 <svg class="absolute inset-0 w-full h-full pointer-events-none opacity-30 dark:opacity-10"
                      xmlns="http://www.w3.org/2000/svg">
@@ -1120,6 +1212,7 @@ document.addEventListener('alpine:init', () => {
         zones:                 @json($zones),
         floorWidth:            {{ $floorWidth }},
         floorHeight:           {{ $floorHeight }},
+        canvasZoom:            1,
         isDraggingFromPalette: false,
         isDraggingZone:        false,
         editingTableId:        null,
@@ -1131,11 +1224,54 @@ document.addEventListener('alpine:init', () => {
         rotTooltip:            { show: false, x: 0, y: 0, deg: 0 },
 
         init() {
+            // El tamaño del canvas viene de BD (floorWidth/floorHeight).
+            // Solo el zoom es local (visual), keyed por usuario para evitar mezcla entre cuentas.
+            const lsZoom   = 'zampa:mapZoom:user:{{ auth()->id() }}';
+            const savedZoom = parseFloat(localStorage.getItem(lsZoom));
+            if (!isNaN(savedZoom) && savedZoom >= 0.5 && savedZoom <= 1) {
+                this.canvasZoom = savedZoom;
+            }
+            this.$watch('canvasZoom', val => localStorage.setItem(lsZoom, val));
+
             this.$nextTick(() => {
                 this.initTableInteract();
                 this.initZoneInteract();
                 this.initPaletteInteract();
             });
+        },
+
+        // ── Cambiar tamaño del lienzo y persistir en BD ───────────────────────
+        async setCanvasSize(w, h) {
+            const prev = { w: this.floorWidth, h: this.floorHeight };
+            this.floorWidth  = w;
+            this.floorHeight = h;
+
+            try {
+                const res = await fetch('{{ route("tables.canvas.update") }}', {
+                    method:  'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept':       'application/json',
+                    },
+                    body: JSON.stringify({ floor_width: w, floor_height: h }),
+                });
+
+                const json = await res.json();
+
+                if (!res.ok || !json.success) {
+                    this.floorWidth  = prev.w;
+                    this.floorHeight = prev.h;
+                    this.showToast(json.message ?? 'Error al guardar el tamaño.', true);
+                    return;
+                }
+
+                this.showToast(`Plano ${w} × ${h} px guardado.`);
+            } catch {
+                this.floorWidth  = prev.w;
+                this.floorHeight = prev.h;
+                this.showToast('Error de red al guardar el tamaño.', true);
+            }
         },
 
         // ── Toast ─────────────────────────────────────────────────────────────
@@ -1305,6 +1441,12 @@ document.addEventListener('alpine:init', () => {
                 inertia: false,
                 listeners: {
                     start: (event) => {
+                        if (this.canvasZoom < 1) {
+                            event.interaction.stop();
+                            this.showToast('Ajusta el zoom al 100% para añadir mesas.', true);
+                            return;
+                        }
+
                         if (this.tables.length >= {{ $maxTables }}) {
                             this.showToast(`Límite de {{ $maxTables }} mesas alcanzado.`, true);
                             return;
@@ -1333,8 +1475,9 @@ document.addEventListener('alpine:init', () => {
                         ghost.style.left = `${cx - dropW / 2}px`;
                         ghost.style.top  = `${cy - dropH / 2}px`;
 
-                        dropX = Math.max(0, Math.round(cx - canvasRect.left - dropW / 2));
-                        dropY = Math.max(0, Math.round(cy - canvasRect.top  - dropH / 2));
+                        // getBoundingClientRect devuelve coords visuales (post-scale), hay que dividir por zoom
+                        dropX = Math.max(0, Math.round((cx - canvasRect.left - dropW / 2) / this.canvasZoom));
+                        dropY = Math.max(0, Math.round((cy - canvasRect.top  - dropH / 2) / this.canvasZoom));
                     },
 
                     end: async (event) => {
@@ -1365,6 +1508,12 @@ document.addEventListener('alpine:init', () => {
                 inertia: false,
                 listeners: {
                     start: (event) => {
+                        if (this.canvasZoom < 1) {
+                            event.interaction.stop();
+                            this.showToast('Ajusta el zoom al 100% para añadir elementos.', true);
+                            return;
+                        }
+
                         const shape = event.target.dataset.shape;
                         const dropW = parseInt(event.target.dataset.width)  || 80;
                         const dropH = parseInt(event.target.dataset.height) || 50;
@@ -1384,8 +1533,8 @@ document.addEventListener('alpine:init', () => {
                         ghost.style.left = `${event.clientX - w / 2}px`;
                         ghost.style.top  = `${event.clientY - h / 2}px`;
                         const rect = canvasEl.getBoundingClientRect();
-                        dropX = Math.max(0, Math.round(event.clientX - rect.left - w / 2));
-                        dropY = Math.max(0, Math.round(event.clientY - rect.top  - h / 2));
+                        dropX = Math.max(0, Math.round((event.clientX - rect.left - w / 2) / this.canvasZoom));
+                        dropY = Math.max(0, Math.round((event.clientY - rect.top  - h / 2) / this.canvasZoom));
                         dropShape = event.target.dataset.shape;
                         dropW     = w;
                         dropH     = h;
@@ -1415,6 +1564,12 @@ document.addEventListener('alpine:init', () => {
                 inertia: false,
                 listeners: {
                     start: (event) => {
+                        if (this.canvasZoom < 1) {
+                            event.interaction.stop();
+                            this.showToast('Ajusta el zoom al 100% para añadir zonas.', true);
+                            return;
+                        }
+
                         const w = parseInt(event.target.dataset.width)  || 300;
                         const h = parseInt(event.target.dataset.height) || 200;
                         ghost.style.width        = `${w}px`;
@@ -1432,8 +1587,8 @@ document.addEventListener('alpine:init', () => {
                         ghost.style.left = `${event.clientX - w / 2}px`;
                         ghost.style.top  = `${event.clientY - h / 2}px`;
                         const rect = canvasEl.getBoundingClientRect();
-                        dropX = Math.max(0, Math.round(event.clientX - rect.left - w / 2));
-                        dropY = Math.max(0, Math.round(event.clientY - rect.top  - h / 2));
+                        dropX = Math.max(0, Math.round((event.clientX - rect.left - w / 2) / this.canvasZoom));
+                        dropY = Math.max(0, Math.round((event.clientY - rect.top  - h / 2) / this.canvasZoom));
                         dropW = w;
                         dropH = h;
                     },
