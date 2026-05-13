@@ -125,15 +125,14 @@
                     <span class="text-xs font-mono text-gray-500 dark:text-gray-400 w-9 text-right tabular-nums"
                           x-text="Math.round(canvasZoom * 100) + '%'"></span>
                     <button type="button"
-                            x-show="canvasZoom < 1"
-                            x-transition:enter="transition ease-out duration-150"
-                            x-transition:enter-start="opacity-0"
-                            x-transition:enter-end="opacity-100"
+                            :class="canvasZoom < 1 ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'"
                             @click="canvasZoom = 1"
                             class="text-xs text-indigo-600 hover:text-indigo-800 dark:text-indigo-400
                                    dark:hover:text-indigo-200 focus:outline-none focus:ring-1
-                                   focus:ring-indigo-400 rounded px-1 font-medium transition-colors"
-                            aria-label="Restablecer zoom al 100%">1:1</button>
+                                   focus:ring-indigo-400 rounded px-1 font-medium transition-opacity duration-150"
+                            aria-label="Restablecer zoom al 100%"
+                            :aria-hidden="canvasZoom >= 1"
+                            :tabindex="canvasZoom < 1 ? 0 : -1">1:1</button>
                 </div>
             </div>
 
