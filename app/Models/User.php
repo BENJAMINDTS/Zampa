@@ -248,4 +248,20 @@ class User extends Authenticatable
     {
         return $this->admin_id ?? $this->id;
     }
+
+    /**
+     * Devuelve el nombre de ruta de la pantalla principal según el rol del usuario.
+     * Usado para la redirección post-login y el logo del navbar.
+     *
+     * @return string
+     */
+    public function homeRoute(): string
+    {
+        return match ($this->role) {
+            'superadmin' => 'superadmin.dashboard',
+            'waiter'     => 'bar.index',
+            'kitchen'    => 'kitchen.index',
+            default      => 'dashboard',
+        };
+    }
 }
