@@ -2,6 +2,7 @@
 
 /**
  * @author AyrtonAlania
+ * @author SebastianBCF
  */
 
 use App\Models\Plan;
@@ -12,7 +13,7 @@ uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->superadmin = User::factory()->superadmin()->create();
-    $this->plan       = Plan::factory()->create();
+    $this->plan       = Plan::factory()->create(['name' => 'Plan Premium']);
     $this->admin      = User::factory()->admin()->withBusiness()->create([
         'plan_id' => $this->plan->id,
     ]);
@@ -178,4 +179,77 @@ it('map data falls back to name when business_name is null', function () {
 
     $found = $businesses->first(fn ($b) => $b['lat'] === 41.0);
     expect($found['name'])->toBe($adminNoBusinessName->name);
+});
+
+// ──────────────────────────────────────────────
+// COLORES POR PLAN
+// ──────────────────────────────────────────────
+
+it('each business entry includes a plan_color field', function () {
+    $response   = $this->actingAs($this->superadmin)->get(route('superadmin.map'));
+    $businesses = $response->viewData('businesses');
+
+    expect($businesses->first())->toHaveKey('plan_color');
+});
+
+it('active business with Plan Premium gets violet color', function () {
+    $this->plan->update(['name' => 'Plan Premium']);
+    $this->admin->update(['plan_id' => $this->plan->id]);
+
+    $response   = $this->actingAs($this->superadmin)->get(route('superadmin.map'));
+    $businesses = $response->viewData('businesses');
+
+    $found = $businesses->first(fn ($b) => $b['plan'] === 'Plan Premium');
+    expect($found['plan_color'])->toBe('#8b5cf6');
+});
+
+it('business without plan gets gray color', function () {
+    $adminNoPlan = User::factory()->admin()->withBusiness()->create(['plan_id' => null]);
+
+    $response   = $this->actingAs($this->superadmin)->get(route('superadmin.map'));
+    $businesses = $response->viewData('businesses');
+
+    $found = $businesses->first(fn ($b) => $b['plan'] === 'Sin plan');
+    expect($found['plan_color'])->toBe('#6b7280');
+});
+
+it('business with unrecognized plan name falls back to gray', function () {
+    $unknownPlan = Plan::factory()->create(['name' => 'Plan Desconocido']);
+    $this->admin->update(['plan_id' => $unknownPlan->id]);
+
+    $response   = $this->actingAs($this->superadmin)->get(route('superadmin.map'));
+    $businesses = $response->viewData('businesses');
+
+    $found = $businesses->first(fn ($b) => $b['plan'] === 'Plan Desconocido');
+    expect($found['plan_color'])->toBe('#6b7280');
+});
+
+it('unrecognized plan does not appear in plan_legend', function () {
+    $unknownPlan = Plan::factory()->create(['name' => 'Plan Desconocido']);
+    $this->admin->update(['plan_id' => $unknownPlan->id]);
+
+    $response   = $this->actingAs($this->superadmin)->get(route('superadmin.map'));
+    $planLegend = $response->viewData('planLegend');
+
+    expect($planLegend->pluck('label')->toArray())->not->toContain('Plan Desconocido');
+});
+
+it('plan_legend is passed to the view', function () {
+    $response = $this->actingAs($this->superadmin)->get(route('superadmin.map'));
+
+    $response->assertViewHas('planLegend');
+});
+
+it('plan_legend contains the seeded plan', function () {
+    $response   = $this->actingAs($this->superadmin)->get(route('superadmin.map'));
+    $planLegend = $response->viewData('planLegend');
+
+    expect($planLegend->pluck('label')->toArray())->toContain($this->plan->name);
+});
+
+it('plan_legend entries have label and color keys', function () {
+    $response   = $this->actingAs($this->superadmin)->get(route('superadmin.map'));
+    $planLegend = $response->viewData('planLegend');
+
+    expect($planLegend->first())->toHaveKeys(['label', 'color']);
 });
