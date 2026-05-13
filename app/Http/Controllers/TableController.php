@@ -79,6 +79,8 @@ class TableController extends Controller
      */
     public function mapStatuses(): JsonResponse
     {
+        abort_if(! Auth::user()->canAccessBar(), 403, 'Acceso denegado.');
+
         $ownerId  = Auth::user()->ownerUserId();
         $statuses = Table::where('user_id', $ownerId)
             ->servicePoints()
