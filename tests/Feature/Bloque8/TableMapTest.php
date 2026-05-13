@@ -272,13 +272,28 @@ it('returns 403 when updating position of another admins table', function () {
          ->assertForbidden();
 });
 
-it('fails to update position with negative coordinates', function () {
+it('accepts negative coordinates for rotated elements near canvas edge', function () {
+    $table = Table::factory()->for($this->admin)->create();
+
+    // Elementos rotados pueden requerir position_x/y negativa para que
+    // su bounding box visual quede pegado al borde del canvas.
+    $this->actingAs($this->admin)
+         ->patchJson(route('tables.updatePosition', $table), [
+             'position_x' => -150,
+             'position_y' => -150,
+             'width'      => 100,
+             'height'     => 100,
+         ])
+         ->assertOk();
+});
+
+it('fails to update position with extremely negative coordinates', function () {
     $table = Table::factory()->for($this->admin)->create();
 
     $this->actingAs($this->admin)
          ->patchJson(route('tables.updatePosition', $table), [
-             'position_x' => -10,
-             'position_y' => -20,
+             'position_x' => -3001,
+             'position_y' => -3001,
              'width'      => 100,
              'height'     => 100,
          ])

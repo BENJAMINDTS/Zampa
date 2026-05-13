@@ -8,6 +8,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use App\Models\Order;
 use App\Models\Table;
+use App\Models\Zone;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
@@ -31,6 +32,8 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property string|null $address        Dirección del negocio
  * @property float|null  $lat            Latitud del negocio
  * @property float|null  $lng            Longitud del negocio
+ * @property int         $floor_width    Ancho del canvas del plano (px)
+ * @property int         $floor_height   Alto del canvas del plano (px)
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property \Illuminate\Support\Carbon|null $deleted_at
@@ -58,6 +61,8 @@ class User extends Authenticatable
         'address',
         'lat',
         'lng',
+        'floor_width',
+        'floor_height',
     ];
 
     /**
@@ -106,6 +111,16 @@ class User extends Authenticatable
     public function tables(): HasMany
     {
         return $this->hasMany(Table::class);
+    }
+
+    /**
+     * Obtiene las Zonas definidas en el plano del restaurante.
+     *
+     * @return HasMany
+     */
+    public function zones(): HasMany
+    {
+        return $this->hasMany(Zone::class);
     }
 
     /**
