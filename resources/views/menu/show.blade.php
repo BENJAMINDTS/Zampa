@@ -1036,7 +1036,10 @@
                                 name:        c.name,
                                 price:       c.price,
                                 description: c.description,
-                                allergens:   c.allergens ?? [],
+                                allergens:   (c.allergens ?? []).map(a => ({
+                                    name:  a,
+                                    ...this.getAllergenIcon(a),
+                                })),
                                 emoji:       cats.find(cat =>
                                     cat.products.some(p => p.id === c.id)
                                 )?.destination === 'bar' ? '🍺' : '🍽️',
@@ -1058,6 +1061,40 @@
                         this.sending = false;
                         this.$nextTick(() => this.scrollBottom());
                     }
+                },
+
+                /* ── Mapeo de alérgenos UE (Reglamento 1169/2011) ── */
+                getAllergenIcon(name) {
+                    const n = name.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+                    if (/gluten|trigo|cebada|centeno|avena|espelta|kamut|harina/.test(n))
+                        return { svgId: 'gluten',      label: 'Gluten' };
+                    if (/crustaceo|gamba|langosta|langostino|cangrejo|bogavante|cigala/.test(n))
+                        return { svgId: 'crustaceans', label: 'Crustáceos' };
+                    if (/huevo|yema|clara|ovoalbumina/.test(n))
+                        return { svgId: 'egg',         label: 'Huevo' };
+                    if (/pescado|merluza|bacalao|salmon|atun|anchoa|sardina|boqueron|lenguado|dorada|lubina/.test(n))
+                        return { svgId: 'fish',        label: 'Pescado' };
+                    if (/cacahuete|mani/.test(n))
+                        return { svgId: 'peanuts',     label: 'Cacahuetes' };
+                    if (/soja|soya|tofu|edamame/.test(n))
+                        return { svgId: 'soy',         label: 'Soja' };
+                    if (/leche|lacteo|lactosa|queso|mantequilla|nata|yogur|suero|caseina/.test(n))
+                        return { svgId: 'milk',        label: 'Lácteos' };
+                    if (/nuez|nueces|almendra|avellana|pistacho|anacardo|macadamia|pacana|brasil|castana/.test(n))
+                        return { svgId: 'nuts',        label: 'Frutos secos' };
+                    if (/apio/.test(n))
+                        return { svgId: 'celery',      label: 'Apio' };
+                    if (/mostaza/.test(n))
+                        return { svgId: 'mustard',     label: 'Mostaza' };
+                    if (/sesamo|tahini|tahina/.test(n))
+                        return { svgId: 'sesame',      label: 'Sésamo' };
+                    if (/sulfit|azufre|so2|dioxido/.test(n))
+                        return { svgId: 'sulphites',   label: 'Sulfitos' };
+                    if (/altramuz|lupino|lupina/.test(n))
+                        return { svgId: 'lupin',       label: 'Altramuces' };
+                    if (/molusco|calamar|pulpo|ostra|almeja|mejillon|sepia|chipiro/.test(n))
+                        return { svgId: 'molluscs',    label: 'Moluscos' };
+                    return { svgId: null, label: name };
                 },
 
                 /* ── Estilos diferenciados para quick replies ── */
@@ -1209,6 +1246,99 @@
                 </symbol>
             </svg>
 
+            {{-- Sprite SVG: 14 alérgenos Reglamento UE 1169/2011 --}}
+            <svg aria-hidden="true" style="display:none;position:absolute;width:0;height:0;overflow:hidden;">
+                {{-- 1. Gluten (cereales con gluten) --}}
+                <symbol id="al-gluten" viewBox="0 0 24 24" fill="currentColor">
+                    <rect x="11.2" y="4" width="1.6" height="16" rx="0.8"/>
+                    <ellipse cx="12" cy="6.5" rx="2.8" ry="4"/>
+                    <ellipse cx="7" cy="11" rx="2.2" ry="3.2" transform="rotate(-30 7 11)"/>
+                    <ellipse cx="17" cy="11" rx="2.2" ry="3.2" transform="rotate(30 17 11)"/>
+                    <ellipse cx="7.5" cy="16.5" rx="2" ry="2.8" transform="rotate(-25 7.5 16.5)"/>
+                    <ellipse cx="16.5" cy="16.5" rx="2" ry="2.8" transform="rotate(25 16.5 16.5)"/>
+                </symbol>
+                {{-- 2. Crustáceos --}}
+                <symbol id="al-crustaceans" viewBox="0 0 24 24">
+                    <circle cx="18" cy="5" r="2.5" fill="currentColor"/>
+                    <path d="M18 3 L22 1.5 M18.8 2 L21.5 0" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+                    <path d="M18 5 C21 8 21 15 17 19 C14 22 9 22 6 19 C3 16 4 12 7 11 C10 10 12 12 11 15 C10.5 16.5 9.5 16.5 9 15.5"
+                          stroke="currentColor" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+                </symbol>
+                {{-- 3. Huevo --}}
+                <symbol id="al-egg" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2 C8 2 5 6 5 11 C5 16.5 8.1 22 12 22 C15.9 22 19 16.5 19 11 C19 6 16 2 12 2 Z"/>
+                </symbol>
+                {{-- 4. Pescado --}}
+                <symbol id="al-fish" viewBox="0 0 24 24" fill="currentColor">
+                    <ellipse cx="9.5" cy="12" rx="7.5" ry="5.5"/>
+                    <path d="M17 6.5 L24 4 L24 20 L17 17.5 Z"/>
+                    <circle cx="5" cy="11" r="1.4" fill="#050B1F"/>
+                </symbol>
+                {{-- 5. Cacahuetes --}}
+                <symbol id="al-peanuts" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2 C7 2 4 4.5 4 7.5 C4 10.5 6.5 12 9.5 12.3 Q9 12.8 9 13.5 Q9 14 9.5 14.2 C6.5 14.8 4 16.5 4 19 C4 21.5 7.5 23 12 23 C16.5 23 20 21.5 20 19 C20 16.5 17.5 14.8 14.5 14.2 Q15 14 15 13.5 Q15 12.8 14.5 12.3 C17.5 12 20 10.5 20 7.5 C20 4.5 17 2 12 2 Z"/>
+                </symbol>
+                {{-- 6. Soja --}}
+                <symbol id="al-soy" viewBox="0 0 24 24" fill="currentColor">
+                    <circle cx="12" cy="6.5" r="4"/>
+                    <circle cx="7" cy="15.5" r="4"/>
+                    <circle cx="17" cy="15.5" r="4"/>
+                    <path d="M12 10 L7 12 M12 10 L17 12" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                </symbol>
+                {{-- 7. Leche / Lácteos --}}
+                <symbol id="al-milk" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2 L19 13 C19 18.5 15.9 22 12 22 C8.1 22 5 18.5 5 13 Z"/>
+                </symbol>
+                {{-- 8. Frutos secos (nueces, almendras…) --}}
+                <symbol id="al-nuts" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2 C10 2 8.5 3.5 8 5 L6 8 C5 9 5 10 5 11 C5 15 8.1 20 12 20 C15.9 20 19 15 19 11 C19 10 19 9 18 8 L16 5 C15.5 3.5 14 2 12 2 Z"/>
+                    <path d="M12 20 L12 22 M10 21.5 L14 21.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                </symbol>
+                {{-- 9. Apio --}}
+                <symbol id="al-celery" viewBox="0 0 24 24" fill="currentColor">
+                    <rect x="4.5" y="11" width="3" height="10" rx="1.5"/>
+                    <rect x="10.5" y="8" width="3" height="13" rx="1.5"/>
+                    <rect x="16.5" y="11" width="3" height="10" rx="1.5"/>
+                    <path d="M6 11 C5 7 3.5 5 6 3 C8 4 8 8.5 6 11 Z"/>
+                    <path d="M12 8 C11 4 9.5 2 12 1 C14 2 14 5.5 12 8 Z"/>
+                    <path d="M18 11 C19 7 20.5 5 18 3 C16 4 16 8.5 18 11 Z"/>
+                </symbol>
+                {{-- 10. Mostaza --}}
+                <symbol id="al-mustard" viewBox="0 0 24 24" fill="currentColor">
+                    <rect x="8" y="11" width="8" height="10" rx="1.5"/>
+                    <rect x="9" y="8" width="6" height="3.5" rx="1"/>
+                    <rect x="9.5" y="5.5" width="5" height="3" rx="1.5"/>
+                    <circle cx="12" cy="4" r="1.2"/>
+                </symbol>
+                {{-- 11. Sésamo --}}
+                <symbol id="al-sesame" viewBox="0 0 24 24" fill="currentColor">
+                    <ellipse cx="12" cy="4.5" rx="2" ry="3.5"/>
+                    <ellipse cx="17.5" cy="7.5" rx="2" ry="3.5" transform="rotate(60 17.5 7.5)"/>
+                    <ellipse cx="19.5" cy="14" rx="2" ry="3.5" transform="rotate(120 19.5 14)"/>
+                    <ellipse cx="15" cy="19.5" rx="2" ry="3.5" transform="rotate(180 15 19.5)"/>
+                    <ellipse cx="9" cy="19.5" rx="2" ry="3.5" transform="rotate(240 9 19.5)"/>
+                    <ellipse cx="4.5" cy="14" rx="2" ry="3.5" transform="rotate(300 4.5 14)"/>
+                </symbol>
+                {{-- 12. Dióxido de azufre / Sulfitos --}}
+                <symbol id="al-sulphites" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M7 3 L17 3 C17 8.5 14.5 10.5 13 12 L13 17 L15 17 L15 20 L9 20 L9 17 L11 17 L11 12 C9.5 10.5 7 8.5 7 3 Z"/>
+                </symbol>
+                {{-- 13. Altramuces --}}
+                <symbol id="al-lupin" viewBox="0 0 24 24" fill="currentColor">
+                    <rect x="11.2" y="4" width="1.6" height="16" rx="0.8"/>
+                    <ellipse cx="12" cy="6" rx="3.5" ry="2.2"/>
+                    <ellipse cx="12" cy="10.5" rx="4" ry="2.5"/>
+                    <ellipse cx="12" cy="15" rx="3.5" ry="2.2"/>
+                    <ellipse cx="12" cy="18.5" rx="2.5" ry="1.8"/>
+                </symbol>
+                {{-- 14. Moluscos --}}
+                <symbol id="al-molluscs" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 22 L3 9 Q3 4 12 3 Q21 4 21 9 Z"/>
+                    <path d="M12 22 L4.5 8.5 M12 22 L7.5 4.5 M12 22 L12 3 M12 22 L16.5 4.5 M12 22 L19.5 8.5"
+                          stroke="#050B1F" stroke-width="0.9" fill="none"/>
+                </symbol>
+            </svg>
+
             {{-- Botón flotante Zampi (se oculta cuando el chat está abierto) --}}
             <button type="button"
                     @click="openChat()"
@@ -1322,12 +1452,26 @@
                                                             <div x-show="card.description"
                                                                  style="font-size:10px; color:#8FA8E8; margin-bottom:5px; line-height:1.4; flex-grow:1;"
                                                                  x-text="card.description"></div>
-                                                            {{-- Alérgenos --}}
+                                                            {{-- Alérgenos UE encima del precio --}}
                                                             <template x-if="card.allergens && card.allergens.length">
-                                                                <div style="margin-bottom:6px;">
-                                                                    <span style="font-size:9px; font-weight:700; color:#F59E0B; text-transform:uppercase; letter-spacing:0.05em;">⚠ Alérgenos</span>
-                                                                    <div style="font-size:9px; color:#FCD34D; line-height:1.4; margin-top:1px;"
-                                                                         x-text="card.allergens.join(', ')"></div>
+                                                                <div style="display:flex; flex-wrap:wrap; gap:3px; margin-bottom:7px;">
+                                                                    <template x-for="al in card.allergens" :key="al.name">
+                                                                        <div :title="al.name"
+                                                                             style="display:inline-flex; align-items:center; gap:3px; background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.35); border-radius:5px; padding:2px 6px 2px 4px; cursor:default;">
+                                                                            {{-- Icono SVG oficial UE, o fallback ⚠ si no hay mapeo --}}
+                                                                            <template x-if="al.svgId">
+                                                                                <svg :aria-label="al.label" width="13" height="13"
+                                                                                     style="flex-shrink:0; color:#FCD34D; overflow:visible;">
+                                                                                    <use :href="'#al-' + al.svgId"/>
+                                                                                </svg>
+                                                                            </template>
+                                                                            <template x-if="!al.svgId">
+                                                                                <span style="font-size:11px; line-height:1; color:#FCD34D;">⚠</span>
+                                                                            </template>
+                                                                            <span x-text="al.label"
+                                                                                  style="font-size:8px; color:#FCD34D; font-weight:700; font-family:'Space Grotesk',sans-serif; letter-spacing:0.02em;"></span>
+                                                                        </div>
+                                                                    </template>
                                                                 </div>
                                                             </template>
                                                             {{-- Precio + botón --}}
