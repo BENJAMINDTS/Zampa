@@ -1036,6 +1036,7 @@
                                 name:        c.name,
                                 price:       c.price,
                                 description: c.description,
+                                image:       c.image ?? null,
                                 allergens:   (c.allergens ?? []).map(a => ({
                                     name:  a,
                                     ...this.getAllergenIcon(a),
@@ -1442,9 +1443,17 @@
                                                         <div style="background:#0E1A38; border:1px solid rgba(46,80,176,0.45); border-radius:16px; padding:10px; min-width:150px; max-width:160px; flex-shrink:0; box-shadow:0 4px 20px rgba(15,31,88,0.4); transition:transform 200ms ease; display:flex; flex-direction:column;"
                                                              onmouseenter="this.style.transform='translateY(-2px)'"
                                                              onmouseleave="this.style.transform='translateY(0)'">
-                                                            {{-- Icono --}}
-                                                            <div style="height:52px; border-radius:10px; background:linear-gradient(135deg,#162648,#0A1430); display:flex; align-items:center; justify-content:center; font-size:26px; margin-bottom:8px; flex-shrink:0;"
-                                                                 x-text="card.emoji"></div>
+                                                            {{-- Foto del plato o icono de categoría --}}
+                                                            <template x-if="card.image">
+                                                                <img :src="card.image"
+                                                                     :alt="card.name"
+                                                                     style="width:100%; height:72px; object-fit:cover; border-radius:10px; margin-bottom:8px; flex-shrink:0; display:block;"
+                                                                     loading="lazy"/>
+                                                            </template>
+                                                            <template x-if="!card.image">
+                                                                <div style="height:52px; border-radius:10px; background:linear-gradient(135deg,#162648,#0A1430); display:flex; align-items:center; justify-content:center; font-size:26px; margin-bottom:8px; flex-shrink:0;"
+                                                                     x-text="card.emoji"></div>
+                                                            </template>
                                                             {{-- Nombre --}}
                                                             <div style="font-size:12px; font-weight:700; color:#fff; margin-bottom:3px; font-family:'Space Grotesk',sans-serif; line-height:1.3;"
                                                                  x-text="card.name"></div>
