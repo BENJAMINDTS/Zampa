@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * @author SebastianBCF
+ */
+
 use App\Models\Conversation;
 use App\Models\Order;
 use App\Models\OrderItem;
@@ -20,13 +24,21 @@ it('redirects unauthenticated user away from kitchen panel', function () {
         ->assertRedirect(route('login'));
 });
 
-it('shows kitchen panel to admin user', function () {
-    $admin = User::factory()->create(['role' => 'admin']);
+it('shows kitchen panel to admin with kitchen role', function () {
+    $admin = User::factory()->admin()->alsoKitchen()->create();
 
     $this->actingAs($admin)
         ->get(route('kitchen.index'))
         ->assertOk()
         ->assertViewIs('kitchen.index');
+});
+
+it('returns 403 for admin without kitchen role', function () {
+    $admin = User::factory()->admin()->create(['is_kitchen' => false]);
+
+    $this->actingAs($admin)
+        ->get(route('kitchen.index'))
+        ->assertForbidden();
 });
 
 it('returns 403 for waiter role user', function () {
@@ -163,4 +175,25 @@ it('conversation closes when order status changes to closed', function () {
     $order->update(['status' => 'closed']);
 
     expect($conversation->fresh()->status)->toBe('closed');
+});
+
+// ─── Aislamiento estricto por rol ────────────────────────────────────────────
+
+it('returns 403 for waiter role trying to access kitchen panel', function () {
+    $admin  = User::factory()->admin()->create();
+    $waiter = User::factory()->waiter()->staffOf($admin)->create();
+
+    $this->actingAs($waiter)
+        ->get(route('kitchen.index'))
+        ->assertForbidden();
+});
+
+it('allows kitchen role to access kitchen panel', function () {
+    $admin   = User::factory()->admin()->create();
+    $kitchen = User::factory()->kitchen()->staffOf($admin)->create();
+
+    $this->actingAs($kitchen)
+        ->get(route('kitchen.index'))
+        ->assertOk()
+        ->assertViewIs('kitchen.index');
 });
