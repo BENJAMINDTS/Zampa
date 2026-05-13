@@ -28,6 +28,8 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property string $name        Nombre completo del usuario
  * @property string $email       Correo electrónico (login)
  * @property string $role          Rol: 'admin', 'waiter', 'kitchen', 'superadmin'
+ * @property bool   $is_waiter     Admin actuando también como camarero
+ * @property bool   $is_kitchen    Admin actuando también como cocinero
  * @property string|null $business_name  Nombre del negocio (solo admins/gerentes)
  * @property string|null $address        Dirección del negocio
  * @property float|null  $lat            Latitud del negocio
@@ -56,6 +58,8 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'is_waiter',
+        'is_kitchen',
         'admin_id',
         'business_name',
         'address',
@@ -84,8 +88,10 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-            'active' => 'boolean',
+            'password'          => 'hashed',
+            'active'            => 'boolean',
+            'is_waiter'         => 'boolean',
+            'is_kitchen'        => 'boolean',
         ];
     }
 
@@ -225,6 +231,50 @@ class User extends Authenticatable
     public function isStaff(): bool
     {
         return in_array($this->role, ['waiter', 'kitchen'], true);
+    }
+
+    /**
+     * Indica si el usuario puede actuar como camarero.
+     * Cubre el rol nativo 'waiter' y el admin con la opción activada.
+     *
+     * @return bool
+     */
+    public function isWaiter(): bool
+    {
+        return $this->role === 'waiter'
+            || ($this->role === 'admin' && (bool) $this->is_waiter);
+    }
+
+    /**
+     * Indica si el usuario puede actuar como cocinero.
+     * Cubre el rol nativo 'kitchen' y el admin con la opción activada.
+     *
+     * @return bool
+     */
+    public function isKitchen(): bool
+    {
+        return $this->role === 'kitchen'
+            || ($this->role === 'admin' && (bool) $this->is_kitchen);
+    }
+
+    /**
+     * Única fuente de verdad para el acceso al panel de Barra.
+     *
+     * @return bool
+     */
+    public function canAccessBar(): bool
+    {
+        return $this->isWaiter();
+    }
+
+    /**
+     * Única fuente de verdad para el acceso al panel de Cocina.
+     *
+     * @return bool
+     */
+    public function canAccessKitchen(): bool
+    {
+        return $this->isKitchen();
     }
 
     /**
