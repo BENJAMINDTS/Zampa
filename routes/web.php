@@ -59,8 +59,7 @@ Route::middleware(['auth', 'business.active'])->group(function () {
         Route::post('/staff', [StaffController::class, 'store'])->name('staff.store');
         Route::delete('/staff/{staff}', [StaffController::class, 'destroy'])->name('staff.destroy');
 
-        // Mapa visual de mesas (Bloques 8.1 y 8.3) — solo admin
-        Route::get('/mesas/mapa', [TableController::class, 'map'])->name('tables.map');
+        // Mapa visual de mesas (Bloques 8.1 y 8.3) — solo admin puede editar
         Route::post('/mesas', [TableController::class, 'store'])->name('tables.store');
         Route::patch('/mesas/mapa/canvas', [TableController::class, 'updateCanvas'])->name('tables.canvas.update');
         Route::patch('/mesas/{table}/posicion', [TableController::class, 'updatePosition'])->name('tables.updatePosition');
@@ -72,6 +71,12 @@ Route::middleware(['auth', 'business.active'])->group(function () {
         Route::post('/zonas', [ZoneController::class, 'store'])->name('zones.store');
         Route::patch('/zonas/{zone}', [ZoneController::class, 'update'])->name('zones.update');
         Route::delete('/zonas/{zone}', [ZoneController::class, 'destroy'])->name('zones.destroy');
+    });
+
+    // Mapa visual — lectura para admin y camarero, edición solo admin
+    Route::middleware('role:admin,waiter')->group(function () {
+        Route::get('/mesas/mapa', [TableController::class, 'map'])->name('tables.map');
+        Route::get('/mesas/mapa/estados', [TableController::class, 'mapStatuses'])->name('tables.map.statuses');
     });
 
     // Gestión de mesas y códigos QR
