@@ -7,9 +7,78 @@
     <title>Carta — {{ $table->user->name }}</title>
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700&display=swap" rel="stylesheet" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <meta name="stripe-key" content="{{ $stripePublicKey }}">
     <script src="https://js.stripe.com/v3/" defer></script>
+    <style>
+        /* ── Zampi Chatbot Animations ────────────────────────────── */
+        @keyframes zampiSlideUp {
+            from { opacity: 0; transform: translateY(12px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes zampiFloat {
+            0%, 100% { transform: translateY(0); }
+            50%      { transform: translateY(-5px); }
+        }
+        @keyframes zampiPulse {
+            0%, 100% { opacity: 1; }
+            50%      { opacity: 0.4; }
+        }
+        @keyframes zampiTyping {
+            0%, 80%, 100% { opacity: 1; }
+            40%           { opacity: 0.2; }
+        }
+
+        .zampi-float    { animation: zampiFloat 3s ease-in-out infinite; }
+        .zampi-pulse    { animation: zampiPulse 2s ease-in-out infinite; }
+        .zampi-msg-appear { animation: zampiSlideUp 0.3s ease; }
+        .zampi-typing-1 { animation: zampiTyping 1.2s ease-in-out 0.0s infinite; }
+        .zampi-typing-2 { animation: zampiTyping 1.2s ease-in-out 0.2s infinite; }
+        .zampi-typing-3 { animation: zampiTyping 1.2s ease-in-out 0.4s infinite; }
+
+        .zampi-bubble-user {
+            background: linear-gradient(135deg, #2E50B0, #1A3380);
+            color: #fff;
+            border-radius: 18px 18px 4px 18px;
+            box-shadow: 0 4px 16px rgba(15,31,88,0.55);
+            max-width: 78%;
+            padding: 10px 14px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 14px;
+            line-height: 1.5;
+            word-break: break-word;
+        }
+        .zampi-bubble-bot {
+            background: #0E1A38;
+            border: 1px solid rgba(46,80,176,0.35);
+            color: #C8D8FF;
+            border-radius: 18px 18px 18px 4px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+            max-width: 78%;
+            padding: 10px 14px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 14px;
+            line-height: 1.5;
+            word-break: break-word;
+        }
+        .zampi-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #1A3380, #3070E8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+        .zampi-scrollbar::-webkit-scrollbar       { width: 4px; }
+        .zampi-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .zampi-scrollbar::-webkit-scrollbar-thumb { background: rgba(46,80,176,0.5); border-radius: 4px; }
+        .zampi-chat-input::placeholder            { color: rgba(84,120,208,0.7); }
+    </style>
 
     @php
         // Datos de productos para Alpine. Se calculan aquí para evitar que
@@ -661,19 +730,95 @@
             </div>
         </header>
 
-        {{-- ── FAB Chat IA ─────────────────────────────────────────── --}}
+        {{-- ── FAB Chat IA (Zampi Design System) ─────────────────── --}}
         <div x-data="chatWidget()">
+
+            {{-- Mascot SVG symbol — referenced via <use> throughout the widget --}}
+            <svg aria-hidden="true" style="display:none;position:absolute;width:0;height:0;overflow:hidden;">
+                <symbol id="zampi-mascot" viewBox="0 0 120 110">
+                    <defs>
+                        <radialGradient id="zm-bTk" cx="38%" cy="28%" r="62%">
+                            <stop offset="0%" stop-color="#FBDF6A"/>
+                            <stop offset="45%" stop-color="#E8980C"/>
+                            <stop offset="100%" stop-color="#A05500"/>
+                        </radialGradient>
+                        <radialGradient id="zm-bBk" cx="38%" cy="22%" r="65%">
+                            <stop offset="0%" stop-color="#F5C830"/>
+                            <stop offset="55%" stop-color="#CC7008"/>
+                            <stop offset="100%" stop-color="#8B4000"/>
+                        </radialGradient>
+                        <linearGradient id="zm-chk" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stop-color="#FFD740"/>
+                            <stop offset="100%" stop-color="#F59000"/>
+                        </linearGradient>
+                        <linearGradient id="zm-mtk" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stop-color="#7B3010"/>
+                            <stop offset="100%" stop-color="#4A1800"/>
+                        </linearGradient>
+                        <linearGradient id="zm-ltk" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stop-color="#5CC830"/>
+                            <stop offset="100%" stop-color="#348010"/>
+                        </linearGradient>
+                        <radialGradient id="zm-sck" cx="50%" cy="38%" r="55%">
+                            <stop offset="0%" stop-color="#0C0620"/>
+                            <stop offset="100%" stop-color="#04000E"/>
+                        </radialGradient>
+                        <filter id="zm-shk"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#3A1800" flood-opacity="0.45"/></filter>
+                        <filter id="zm-gPk"><feGaussianBlur stdDeviation="3.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+                        <filter id="zm-gCk"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+                    </defs>
+                    <ellipse cx="60" cy="107" rx="40" ry="4" fill="#2A0800" opacity="0.25"/>
+                    <line x1="60" y1="2" x2="60" y2="22" stroke="#7A5010" stroke-width="1.5" stroke-linecap="round"/>
+                    <path d="M60 3 L78 9 L60 16 Z" fill="#D80E1A"/>
+                    <ellipse cx="60" cy="28" rx="48" ry="22" fill="url(#zm-bTk)" filter="url(#zm-shk)"/>
+                    <ellipse cx="44" cy="20" rx="16" ry="8" fill="white" opacity="0.25" transform="rotate(-10,44,20)"/>
+                    <ellipse cx="42" cy="16" rx="4.5" ry="1.8" fill="#FFF0A0" opacity="0.9" transform="rotate(-18,42,16)"/>
+                    <ellipse cx="60" cy="12" rx="4.5" ry="1.8" fill="#FFF0A0" opacity="0.9"/>
+                    <ellipse cx="78" cy="17" rx="4.5" ry="1.8" fill="#FFF0A0" opacity="0.9" transform="rotate(18,78,17)"/>
+                    <ellipse cx="32" cy="26" rx="4" ry="1.6" fill="#FFF0A0" opacity="0.85" transform="rotate(-22,32,26)"/>
+                    <ellipse cx="88" cy="27" rx="4" ry="1.6" fill="#FFF0A0" opacity="0.85" transform="rotate(22,88,27)"/>
+                    <ellipse cx="60" cy="48" rx="48" ry="6" fill="#B06010"/>
+                    <path d="M12 51 Q28 46 42 53 Q54 59 60 52 Q66 45 78 53 Q92 60 108 51 L108 59 Q92 66 78 60 Q66 54 60 60 Q54 66 42 60 Q28 53 12 59 Z" fill="url(#zm-chk)"/>
+                    <path d="M16 55 C11 60 11 68 16 71 L19 71 C15 66 16 55 16 55 Z" fill="#FBBF24"/>
+                    <path d="M104 55 C109 60 109 68 104 71 L101 71 C105 66 104 55 104 55 Z" fill="#FBBF24"/>
+                    <path d="M12 59 Q22 55 34 62 Q46 68 60 61 Q74 54 86 62 Q98 68 108 59 L108 65 Q98 73 86 66 Q74 60 60 66 Q46 72 34 66 Q22 60 12 65 Z" fill="url(#zm-ltk)"/>
+                    <ellipse cx="60" cy="70" rx="48" ry="9" fill="url(#zm-mtk)" filter="url(#zm-shk)"/>
+                    <ellipse cx="60" cy="84" rx="48" ry="14" fill="url(#zm-bBk)" filter="url(#zm-shk)"/>
+                    <ellipse cx="60" cy="95" rx="43" ry="8" fill="#8B4000"/>
+                    <ellipse cx="60" cy="101" rx="36" ry="5" fill="#6A3000"/>
+                    <ellipse cx="60" cy="66" rx="34" ry="28" fill="#6010B0" opacity="0.45" filter="url(#zm-gPk)"/>
+                    <ellipse cx="60" cy="66" rx="32" ry="26" fill="#40087A" stroke="#CC60F8" stroke-width="3"/>
+                    <ellipse cx="60" cy="66" rx="29" ry="23" fill="#2C0660" stroke="#7828B8" stroke-width="1.2"/>
+                    <ellipse cx="60" cy="66" rx="27" ry="21" fill="url(#zm-sck)"/>
+                    <rect x="34" y="54" width="18" height="20" rx="7" fill="#22D3EE" opacity="0.25" filter="url(#zm-gCk)"/>
+                    <rect x="35" y="55" width="16" height="18" rx="6" fill="#030E1A"/>
+                    <rect x="36" y="56" width="14" height="16" rx="5" fill="#22D3EE"/>
+                    <ellipse cx="39" cy="58.5" rx="3.5" ry="2" fill="white" opacity="0.65"/>
+                    <rect x="35" y="55" width="16" height="18" rx="6" fill="none" stroke="#A5F3FC" stroke-width="0.8" opacity="0.8"/>
+                    <rect x="68" y="54" width="18" height="20" rx="7" fill="#22D3EE" opacity="0.25" filter="url(#zm-gCk)"/>
+                    <rect x="69" y="55" width="16" height="18" rx="6" fill="#030E1A"/>
+                    <rect x="70" y="56" width="14" height="16" rx="5" fill="#22D3EE"/>
+                    <ellipse cx="73" cy="58.5" rx="3.5" ry="2" fill="white" opacity="0.65"/>
+                    <rect x="69" y="55" width="16" height="18" rx="6" fill="none" stroke="#A5F3FC" stroke-width="0.8" opacity="0.8"/>
+                    <path d="M51 79 Q60 86 69 79" fill="none" stroke="#22D3EE" stroke-width="2" stroke-linecap="round"/>
+                </symbol>
+            </svg>
+
+            {{-- Botón flotante Zampi --}}
             <button type="button"
                     @click="openChat()"
-                    aria-label="Abrir asistente virtual"
-                    class="fixed bottom-20 right-4 z-40 flex items-center gap-2 px-4 py-2.5 rounded-full
-                           bg-indigo-600 hover:bg-indigo-700 text-white font-semibold shadow-xl
-                           transition-colors focus:outline-none focus:ring-4 focus:ring-indigo-400">
-                <span aria-hidden="true" class="text-lg leading-none">💬</span>
-                <span class="text-sm">Pregúntame</span>
+                    aria-label="Abrir asistente Zampi"
+                    class="fixed bottom-20 right-4 z-40 flex items-center gap-2 px-4 py-2.5 rounded-full font-semibold focus:outline-none focus:ring-4 transition-transform duration-200"
+                    style="background:linear-gradient(135deg,#2E50B0,#1A3380); color:#fff; box-shadow:0 0 20px rgba(46,80,176,0.65),0 4px 16px rgba(15,31,88,0.55); focus-ring-color:rgba(96,152,248,0.6);"
+                    onmouseenter="this.style.transform='scale(1.05)'; this.style.boxShadow='0 0 30px rgba(46,80,176,0.9),0 4px 20px rgba(15,31,88,0.65)';"
+                    onmouseleave="this.style.transform='scale(1)'; this.style.boxShadow='0 0 20px rgba(46,80,176,0.65),0 4px 16px rgba(15,31,88,0.55)';">
+                <div class="zampi-float flex-shrink-0">
+                    <svg width="26" height="24" aria-hidden="true"><use href="#zampi-mascot"/></svg>
+                </div>
+                <span style="font-family:'Nunito',sans-serif; font-weight:800; font-size:14px;">Zampi</span>
             </button>
 
-            {{-- Drawer del chat --}}
+            {{-- Overlay --}}
             <div x-show="open"
                  x-transition:enter="transition ease-out duration-300"
                  x-transition:enter-start="opacity-0"
@@ -681,11 +826,13 @@
                  x-transition:leave="transition ease-in duration-200"
                  x-transition:leave-start="opacity-100"
                  x-transition:leave-end="opacity-0"
-                 class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
+                 class="fixed inset-0 z-50"
+                 style="background:rgba(1,4,14,0.8); backdrop-filter:blur(8px);"
                  @click.self="closeChat()"
                  @keydown.escape.window="closeChat()"
-                 aria-modal="true" role="dialog" aria-label="Asistente virtual">
+                 aria-modal="true" role="dialog" aria-label="Asistente virtual Zampi">
 
+                {{-- Drawer --}}
                 <div x-show="open"
                      x-transition:enter="transition ease-out duration-300"
                      x-transition:enter-start="translate-y-full"
@@ -693,23 +840,39 @@
                      x-transition:leave="transition ease-in duration-200"
                      x-transition:leave-start="translate-y-0"
                      x-transition:leave-end="translate-y-full"
-                     class="absolute bottom-0 left-0 right-0 h-[80dvh] flex flex-col
-                            bg-white dark:bg-gray-900 rounded-t-2xl shadow-2xl overflow-hidden">
+                     class="absolute bottom-0 left-0 right-0 h-[80dvh] flex flex-col rounded-t-2xl overflow-hidden"
+                     style="background:radial-gradient(ellipse at 50% 0%,#0E1A38 0%,#050B1F 60%,#01040E 100%); border-top:1px solid rgba(46,80,176,0.4); box-shadow:0 -8px 40px rgba(15,31,88,0.65);">
+
+                    {{-- Handle --}}
+                    <div class="flex-shrink-0 flex justify-center pt-3 pb-1">
+                        <div class="w-10 h-1 rounded-full" style="background:rgba(46,80,176,0.5);"></div>
+                    </div>
 
                     {{-- Cabecera --}}
-                    <div class="flex-shrink-0 px-4 pt-3 pb-3 border-b border-gray-200 dark:border-gray-700">
-                        <div class="w-10 h-1 rounded-full bg-gray-300 dark:bg-gray-600 mx-auto mb-3"></div>
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-2">
-                                <span aria-hidden="true" class="text-xl">💬</span>
-                                <h2 class="text-lg font-bold text-gray-900 dark:text-white">Asistente virtual</h2>
+                    <div class="flex-shrink-0 px-4 pt-2 pb-3 flex items-center justify-between"
+                         style="background:rgba(10,20,48,0.9); backdrop-filter:blur(16px); border-bottom:1px solid rgba(46,80,176,0.4);">
+                        <div class="flex items-center gap-2.5">
+                            <div class="zampi-float flex-shrink-0 flex items-center justify-center" style="width:38px; height:35px;">
+                                <svg width="38" height="35" aria-hidden="true"><use href="#zampi-mascot"/></svg>
+                            </div>
+                            <div>
+                                <h2 style="font-family:'Nunito',sans-serif; font-weight:900; font-size:16px; color:#fff; line-height:1.2; margin:0;">Zampi</h2>
+                                <p style="font-size:11px; color:#8FA8E8; letter-spacing:0.03em; margin:0;">{{ $table->name }} · {{ $table->user->name }}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="flex items-center gap-1.5">
+                                <div class="zampi-pulse" style="width:7px; height:7px; border-radius:50%; background:#22C55E; box-shadow:0 0 6px #22C55E;"></div>
+                                <span style="font-size:11px; color:#22C55E; font-weight:600; font-family:'Space Grotesk',sans-serif;">En línea</span>
                             </div>
                             <button type="button"
                                     @click="closeChat()"
-                                    aria-label="Cerrar asistente"
-                                    class="p-1.5 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100
-                                           dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400">
-                                <svg aria-hidden="true" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    aria-label="Cerrar asistente Zampi"
+                                    class="p-1.5 rounded-full focus:outline-none focus:ring-2 transition-all duration-150"
+                                    style="color:#8FA8E8; border:1px solid rgba(46,80,176,0.4);"
+                                    onmouseenter="this.style.background='rgba(46,80,176,0.25)'; this.style.color='#fff';"
+                                    onmouseleave="this.style.background='transparent'; this.style.color='#8FA8E8';">
+                                <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
                                 </svg>
                             </button>
@@ -720,15 +883,20 @@
                     <div x-ref="chatLog"
                          role="log"
                          aria-live="polite"
-                         aria-label="Conversación con el asistente"
-                         class="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+                         aria-label="Conversación con Zampi"
+                         class="flex-1 overflow-y-auto px-4 py-4 space-y-3 zampi-scrollbar">
 
                         <template x-for="(msg, idx) in messages" :key="idx">
-                            <div :class="msg.role === 'user' ? 'flex justify-end' : 'flex justify-start'">
-                                <div :class="msg.role === 'user'
-                                        ? 'bg-indigo-600 text-white rounded-2xl rounded-br-sm'
-                                        : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-2xl rounded-bl-sm'"
-                                     class="max-w-[80%] px-4 py-2.5 text-sm leading-relaxed"
+                            <div class="zampi-msg-appear"
+                                 :class="msg.role === 'user' ? 'flex justify-end' : 'flex justify-start items-end gap-2'">
+
+                                <template x-if="msg.role !== 'user'">
+                                    <div class="zampi-avatar">
+                                        <svg width="24" height="22" aria-hidden="true"><use href="#zampi-mascot"/></svg>
+                                    </div>
+                                </template>
+
+                                <div :class="msg.role === 'user' ? 'zampi-bubble-user' : 'zampi-bubble-bot'"
                                      x-text="msg.content">
                                 </div>
                             </div>
@@ -736,54 +904,61 @@
 
                         {{-- Indicador de escritura --}}
                         <template x-if="sending">
-                            <div class="flex justify-start" aria-label="El asistente está escribiendo">
-                                <div class="bg-gray-100 dark:bg-gray-800 rounded-2xl rounded-bl-sm px-4 py-3 flex items-center gap-1">
-                                    <span class="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style="animation-delay:-0.3s"></span>
-                                    <span class="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style="animation-delay:-0.15s"></span>
-                                    <span class="w-2 h-2 rounded-full bg-gray-400 animate-bounce"></span>
+                            <div class="flex justify-start items-end gap-2" aria-label="Zampi está escribiendo">
+                                <div class="zampi-avatar">
+                                    <svg width="24" height="22" aria-hidden="true"><use href="#zampi-mascot"/></svg>
+                                </div>
+                                <div style="background:#0E1A38; border:1px solid rgba(46,80,176,0.35); border-radius:18px 18px 18px 4px; padding:12px 16px; display:flex; gap:5px; align-items:center;">
+                                    <div class="zampi-typing-1" style="width:7px; height:7px; border-radius:50%; background:#5478D0;"></div>
+                                    <div class="zampi-typing-2" style="width:7px; height:7px; border-radius:50%; background:#5478D0;"></div>
+                                    <div class="zampi-typing-3" style="width:7px; height:7px; border-radius:50%; background:#5478D0;"></div>
                                 </div>
                             </div>
                         </template>
 
                         {{-- Error --}}
                         <template x-if="error">
-                            <p class="text-center text-sm text-red-500 dark:text-red-400 py-1"
-                               role="alert"
-                               x-text="error"></p>
+                            <div class="flex justify-center" role="alert">
+                                <div style="background:rgba(208,14,26,0.15); border:1px solid rgba(208,14,26,0.4); color:#F04040; font-size:12px; padding:5px 14px; border-radius:9999px; font-family:'Space Grotesk',sans-serif;"
+                                     x-text="error"></div>
+                            </div>
                         </template>
 
                         {{-- Conversación cerrada --}}
                         <template x-if="closed">
-                            <p class="text-center text-xs text-gray-400 dark:text-gray-500 py-2 italic">
-                                Conversación finalizada. Confirma tu pedido o inicia una nueva.
-                            </p>
+                            <div class="flex justify-center">
+                                <div style="background:rgba(46,80,176,0.15); border:1px solid rgba(46,80,176,0.25); color:#8FA8E8; font-size:11px; padding:5px 14px; border-radius:9999px; font-family:'Space Grotesk',sans-serif;">
+                                    Conversación finalizada. Inicia una nueva para seguir pidiendo.
+                                </div>
+                            </div>
                         </template>
                     </div>
 
                     {{-- Área de input --}}
-                    <div class="flex-shrink-0 px-4 py-3 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
-                        <div class="flex items-end gap-2">
-                            <label for="chat-input" class="sr-only">Escribe tu mensaje</label>
+                    <div class="flex-shrink-0 px-3 py-3"
+                         style="background:rgba(5,11,31,0.95); backdrop-filter:blur(16px); border-top:1px solid rgba(46,80,176,0.3);">
+                        <div class="flex items-center gap-2"
+                             style="background:rgba(14,26,56,0.7); border:1px solid rgba(96,152,248,0.3); border-radius:9999px; padding:6px 6px 6px 16px;">
+                            <label for="chat-input" class="sr-only">Escribe tu mensaje a Zampi</label>
                             <textarea id="chat-input"
                                       x-ref="chatInput"
                                       x-model="input"
                                       @keydown.enter.prevent="sendMessage()"
                                       :disabled="sending || closed"
                                       rows="1"
-                                      placeholder="Escribe tu mensaje..."
-                                      class="flex-1 resize-none max-h-20 rounded-xl border border-gray-300 dark:border-gray-600
-                                             bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100
-                                             px-3 py-2 text-sm leading-snug placeholder:text-gray-400 dark:placeholder:text-gray-500
-                                             focus:outline-none focus:ring-2 focus:ring-indigo-500
-                                             disabled:opacity-50 disabled:cursor-not-allowed transition-colors"></textarea>
+                                      placeholder="Escribí tu pedido..."
+                                      class="zampi-chat-input flex-1 resize-none max-h-20 bg-transparent border-none outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                                      style="color:#C8D8FF; font-family:'Space Grotesk',sans-serif; font-size:14px; line-height:1.4;"></textarea>
                             <button type="button"
                                     @click="sendMessage()"
                                     :disabled="!input.trim() || sending || closed"
-                                    aria-label="Enviar mensaje"
-                                    class="flex-shrink-0 p-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700
-                                           disabled:opacity-40 disabled:cursor-not-allowed text-white
-                                           transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
-                                <svg aria-hidden="true" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    aria-label="Enviar mensaje a Zampi"
+                                    class="flex-shrink-0 flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none"
+                                    style="width:38px; height:38px; border-radius:50%; border:none; cursor:pointer; background:linear-gradient(135deg,#2E50B0,#1A3380); color:#fff; box-shadow:0 0 14px rgba(46,80,176,0.65); transition:transform 150ms cubic-bezier(0.34,1.56,0.64,1);"
+                                    onmousedown="this.style.transform='scale(0.92)'"
+                                    onmouseup="this.style.transform='scale(1)'"
+                                    onmouseleave="this.style.transform='scale(1)'">
+                                <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
                                 </svg>
                             </button>
