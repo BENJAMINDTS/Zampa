@@ -80,46 +80,108 @@ class ChatService
         return [
             'error'   => false,
             'message' => $assistantReply,
+            'cards'   => $this->extractMentionedProducts($conversation, $assistantReply),
             'closed'  => false,
         ];
     }
 
     /**
+     * Detecta qué productos del menú menciona el texto de la IA y los devuelve
+     * como tarjetas estructuradas para el frontend.
+     *
+     * @param  Conversation  $conversation
+     * @param  string        $text
+     * @return array
+     */
+    private function extractMentionedProducts(Conversation $conversation, string $text): array
+    {
+        $lower = mb_strtolower($text);
+
+        return Product::where('user_id', $conversation->table->user->id)
+            ->where('is_active', true)
+            ->with('ingredients')
+            ->get()
+            ->filter(fn (Product $p) => str_contains($lower, mb_strtolower($p->name)))
+            ->map(fn (Product $p) => [
+                'id'          => $p->id,
+                'name'        => $p->name,
+                'price'       => (float) $p->price,
+                'description' => $p->description ?? '',
+                'allergens'   => $p->ingredients
+                    ->where('is_allergen', true)
+                    ->pluck('name')
+                    ->values(),
+            ])
+            ->values()
+            ->toArray();
+    }
+
+    /**
      * Construye el array de mensajes que se envía a la API.
      *
-     * Incluye un system prompt dinámico con el menú real del restaurante
-     * y los últimos 10 mensajes de la conversación como historial.
+     * Incluye un system prompt dinámico con el menú real del restaurante,
+     * la receta (ingredientes + alérgenos) de cada plato, y el historial
+     * de la conversación. La IA puede LEER recetas pero nunca modificarlas.
      *
      * @param  Conversation  $conversation
      * @return array
      */
     private function buildContext(Conversation $conversation): array
     {
-        $restaurantName = $conversation->table->user->name;
+        $user           = $conversation->table->user;
+        $restaurantName = $user->name;
 
-        $products = Product::where('user_id', $conversation->table->user_id)
+        $menuLines = Product::where('user_id', $user->id)
             ->where('is_active', true)
             ->with('ingredients')
             ->get()
-            ->map(fn($p) => $p->name . ' (' . number_format($p->price, 2) . '€)')
-            ->implode(', ');
+            ->map(function (Product $p): string {
+                $ingredients = $p->ingredients->map(fn($i) => $i->name)->join(', ');
+                $allergens   = $p->ingredients
+                    ->where('is_allergen', true)
+                    ->map(fn($i) => $i->name)
+                    ->join(', ');
 
-        $allergens = Product::where('user_id', $conversation->table->user_id)
-            ->where('is_active', true)
-            ->with(['ingredients' => fn($q) => $q->where('is_allergen', true)])
-            ->get()
-            ->flatMap(fn($p) => $p->ingredients->pluck('name'))
-            ->unique()
-            ->implode(', ');
+                $line = "- {$p->name} (" . number_format($p->price, 2) . '€)';
+
+                if ($ingredients !== '') {
+                    $line .= ": {$ingredients}";
+                }
+                if ($allergens !== '') {
+                    $line .= " [ALÉRGENOS: {$allergens}]";
+                }
+
+                return $line;
+            })
+            ->join("\n");
 
         $systemPrompt = [
             'role'    => 'system',
-            'content' => "Eres el asistente virtual del restaurante \"{$restaurantName}\". "
-                       . "Solo puedes recomendar platos del siguiente menú: {$products}. "
-                       . "Alérgenos presentes en la carta: {$allergens}. "
-                       . "No inventes platos, precios ni ingredientes que no estén en la lista. "
-                       . "Si no sabes algo, indica amablemente que consulte al camarero. "
-                       . "Responde siempre en español y de forma concisa.",
+            'content' => "Eres Zampi, el asistente virtual del restaurante \"{$restaurantName}\". "
+                       . "Tu tono es siempre cálido, amable y cercano, como si fueras un camarero de confianza. "
+                       . "Respondes en español de España, de forma concisa y natural.\n\n"
+                       . "MENÚ DISPONIBLE (nombre, precio, ingredientes y alérgenos):\n"
+                       . $menuLines . "\n\n"
+                       . "NORMAS GENERALES:\n"
+                       . "- NUNCA sugieras modificar recetas, precios ni ingredientes.\n"
+                       . "- No inventes platos, precios ni ingredientes que no aparezcan en la lista.\n"
+                       . "- Si tienes dudas sobre un caso muy específico, invita amablemente al cliente a consultarlo con el personal.\n\n"
+                       . "NORMAS DE FORMATO:\n"
+                       . "- Cuando recomiendes o menciones varios platos, usa este formato exacto:\n"
+                       . "  1. Una frase breve de introducción cálida.\n"
+                       . "  2. Cada plato en su propia línea, precedido de un guion: «— Nombre del plato: breve descripción o motivo por el que lo recomiendas (máx. 10 palabras)».\n"
+                       . "  3. Una frase corta de cierre invitando a preguntar o pedir.\n"
+                       . "- Si solo mencionas un plato, escríbelo en texto natural sin guion.\n"
+                       . "- NO incluyas precios en el texto: el sistema los mostrará en tarjetas visuales automáticamente.\n"
+                       . "- NO uses asteriscos, markdown ni formato HTML.\n\n"
+                       . "NORMAS SOBRE ALÉRGENOS (muy importante):\n"
+                       . "- Cuando un cliente mencione una alergia o intolerancia, responde con empatía y tranquilidad antes de dar la información.\n"
+                       . "- Indica claramente qué platos SÍ contienen ese alérgeno y cuáles NO, usando un lenguaje positivo y seguro.\n"
+                       . "- Si un plato contiene un alérgeno, comunícalo con tacto: por ejemplo «Te cuento que este plato lleva [alérgeno], así que mejor lo evitamos».\n"
+                       . "- Sugiere siempre alternativas seguras del menú cuando existan, mencionando sus nombres para que aparezcan como tarjetas.\n"
+                       . "- Si ningún plato es seguro para la alergia indicada, díselo con amabilidad y recomienda consultar con el personal.\n"
+                       . "- Nunca minimices la importancia de una alergia alimentaria.\n"
+                       . "- Usa frases como: «No te preocupes, te ayudo a encontrar algo seguro», «Vamos a ver qué opciones tienes», «Con mucho gusto te indico los ingredientes».",
         ];
 
         $history = $conversation->messages()
