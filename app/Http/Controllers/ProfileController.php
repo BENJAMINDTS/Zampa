@@ -40,7 +40,17 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        $data = $request->validated();
+
+        // Las flags multirrol solo aplican al gerente; se ignoran para staff.
+        if ($request->user()->role === 'admin') {
+            $data['is_waiter']  = $request->boolean('is_waiter');
+            $data['is_kitchen'] = $request->boolean('is_kitchen');
+        } else {
+            unset($data['is_waiter'], $data['is_kitchen']);
+        }
+
+        $request->user()->fill($data);
 
         if ($request->user()->isDirty('email')) {
             $request->user()->email_verified_at = null;
