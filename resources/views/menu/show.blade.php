@@ -56,7 +56,7 @@
             color: #C8D8FF;
             border-radius: 18px 18px 18px 4px;
             box-shadow: 0 2px 12px rgba(0,0,0,0.3);
-            max-width: 78%;
+            max-width: 75%;
             padding: 10px 14px;
             font-family: 'Space Grotesk', sans-serif;
             font-size: 14px;
@@ -74,10 +74,110 @@
             flex-shrink: 0;
             overflow: hidden;
         }
+        .zampi-product-card {
+            background: #0E1A38;
+            border: 1px solid rgba(46,80,176,0.45);
+            border-radius: 16px;
+            padding: 10px;
+            min-width: 140px;
+            max-width: 160px;
+            flex-shrink: 0;
+            box-shadow: 0 4px 20px rgba(15,31,88,0.4);
+            cursor: pointer;
+            transition: transform 200ms ease;
+        }
+        .zampi-card-img {
+            height: 56px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #162648, #0A1430);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 6px;
+            font-size: 28px;
+        }
+        .zampi-add-btn {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #2E50B0, #1A3380);
+            border: none;
+            color: #fff;
+            font-size: 18px;
+            line-height: 1;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 8px rgba(46,80,176,0.6);
+            transition: transform 150ms cubic-bezier(0.34, 1.56, 0.64, 1);
+            flex-shrink: 0;
+        }
+        .zampi-add-btn:hover  { transform: scale(1.1); }
+        .zampi-add-btn:active { transform: scale(0.92); }
+        .zampi-qr-btn {
+            background: rgba(46,80,176,0.22);
+            color: #8FA8E8;
+            border: 1px solid rgba(46,80,176,0.5);
+            border-radius: 9999px;
+            padding: 5px 12px;
+            font-size: 12px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 150ms ease;
+            white-space: nowrap;
+        }
+        .zampi-qr-btn:hover  { background: #1A3380; color: #fff; }
+        .zampi-order-summary {
+            background: rgba(14,26,56,0.9);
+            border: 1px solid rgba(46,80,176,0.45);
+            border-radius: 16px;
+            padding: 12px;
+            margin-top: 8px;
+            backdrop-filter: blur(12px);
+        }
+        .zampi-send-btn {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            background: linear-gradient(135deg, #2E50B0, #1A3380);
+            color: #fff;
+            font-size: 20px;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 14px rgba(46,80,176,0.65);
+            flex-shrink: 0;
+            transition: transform 150ms cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .zampi-send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
         .zampi-scrollbar::-webkit-scrollbar       { width: 4px; }
         .zampi-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .zampi-scrollbar::-webkit-scrollbar-thumb { background: rgba(46,80,176,0.5); border-radius: 4px; }
         .zampi-chat-input::placeholder            { color: rgba(84,120,208,0.7); }
+
+        /* ── Zampi Chat — Layout ────────────────────────────────────── */
+
+        /* El overlay cubre siempre toda la pantalla, sin importar el tamaño */
+        .zampi-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+            background: rgba(1,4,14,0.92);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+        .zampi-panel {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
     </style>
 
     @php
@@ -593,36 +693,65 @@
                 },
             });
 
-            // ── Widget de chat IA ────────────────────────────────────────
+            // ── Widget de chat IA (Zampi Design System) ──────────────────
             Alpine.data('chatWidget', () => ({
                 open:           false,
                 conversationId: null,
                 messages:       [],
                 input:          '',
                 sending:        false,
+                isTyping:       false,
                 closed:         false,
                 error:          null,
+                menuData:       null,
+                chatCart:       [],
+                msgSeq:         0,
 
-                get tableHash() {
-                    return Alpine.store('cart').tableHash;
+                get tableHash() { return Alpine.store('cart').tableHash; },
+                get cartCount()  { return this.chatCart.reduce((s, i) => s + i.qty, 0); },
+                get cartTotal()  { return this.chatCart.reduce((s, i) => s + i.price * i.qty, 0); },
+                get cartTotalStr() {
+                    return '$' + this.cartTotal.toFixed(2).replace('.', ',');
                 },
 
+                /* ── Apertura / cierre ── */
                 async openChat() {
                     this.open = true;
-                    if (!this.conversationId) {
-                        await this.startConversation();
-                    }
                     this.$nextTick(() => {
                         this.$refs.chatInput?.focus();
                         this.scrollBottom();
                     });
+                    if (!this.menuData) await this.loadMenu();
+                    if (!this.conversationId) await this.initConversation();
                 },
 
-                closeChat() {
-                    this.open = false;
+                closeChat() { this.open = false; },
+
+                /* ── Carga del menú desde la API ── */
+                async loadMenu() {
+                    try {
+                        const res = await fetch('/api/v1/menu/' + this.tableHash, {
+                            headers: { 'Accept': 'application/json' },
+                        });
+                        if (res.ok) {
+                            const data = await res.json();
+                            if (data.success) this.menuData = data.data;
+                        }
+                    } catch { /* falla silenciosamente */ }
                 },
 
-                async startConversation() {
+                /* ── Inicio de conversación ── */
+                async initConversation() {
+                    const cats = this.menuData?.categories ?? [];
+                    const qrs  = cats.map(c => c.name);
+
+                    this.pushMsg({ type: 'system',
+                        text: (this.menuData?.table ?? 'Mesa') + ' · ' + (this.menuData?.restaurant ?? '') });
+                    this.pushMsg({ type: 'bot',
+                        text: '¡Hola! Soy Zampi, tu asistente de pedidos 🍔 ¿Qué te apetece hoy?',
+                        quickReplies: qrs.length ? [...qrs, 'Ver mi pedido'] : ['Ver mi pedido'] });
+
+                    /* Inicia conversación IA en segundo plano */
                     try {
                         const res = await fetch('/api/v1/chat/' + this.tableHash + '/start', {
                             method:  'POST',
@@ -633,27 +762,258 @@
                             },
                         });
                         const data = await res.json();
-                        if (res.ok && data.success) {
-                            this.conversationId = data.data.conversation_id;
-                            this.messages.push({
-                                role:    'assistant',
-                                content: '¡Hola! Soy el asistente virtual de este restaurante. ¿En qué puedo ayudarte con la carta?',
-                            });
-                        }
-                    } catch {
-                        this.error = 'No se pudo iniciar el chat. Inténtalo de nuevo.';
+                        if (res.ok && data.success) this.conversationId = data.data.conversation_id;
+                    } catch { /* silent */ }
+                },
+
+                /* ── Mensajes ── */
+                pushMsg(msg) {
+                    this.msgSeq++;
+                    this.messages.push({ _id: this.msgSeq, ...msg });
+                    this.$nextTick(() => this.scrollBottom());
+                },
+
+                async botDelay(text, extra = {}, ms = 880) {
+                    this.isTyping = true;
+                    await new Promise(r => setTimeout(r, ms + Math.random() * 350));
+                    this.isTyping = false;
+                    this.pushMsg({ type: 'bot', text, ...extra });
+                },
+
+                /* ── Quick replies ── */
+                handleQuickReply(label) {
+                    if (this.isTyping || this.sending) return;
+                    this.pushMsg({ type: 'user', text: label, time: 'Ahora' });
+
+                    const cats    = this.menuData?.categories ?? [];
+                    const matched = cats.find(c => c.name === label);
+
+                    if (matched) {
+                        this.showCategoryCards(matched);
+                    } else if (label === 'Ver mi pedido') {
+                        this.showCartSummary();
+                    } else if (label === 'Confirmar pedido') {
+                        this.confirmOrder();
+                    } else if (label === 'Seguir eligiendo') {
+                        const qrs = cats.map(c => c.name);
+                        this.botDelay('¿Qué más te gustaría pedir?',
+                            { quickReplies: [...qrs, 'Ver mi pedido'] });
+                    } else if (label === '📋 Nuevo pedido') {
+                        this.chatCart = [];
+                        const qrs = cats.map(c => c.name);
+                        this.botDelay('¡Claro! ¿Qué te gustaría pedir?',
+                            { quickReplies: [...qrs, 'Ver mi pedido'] });
+                    } else {
+                        this.sendToAI(label);
                     }
                 },
 
+                /* ── Tarjetas de categoría ── */
+                showCategoryCards(category) {
+                    const emoji = { kitchen: '🍽️', bar: '🍺' }[category.destination] ?? '🍽️';
+                    const cards = category.products.map(p => ({
+                        id:    p.id,
+                        name:  p.name,
+                        desc:  p.description || '',
+                        price: p.price,
+                        emoji,
+                    }));
+                    this.botDelay(
+                        'Aquí tienes nuestra selección de ' + category.name + ' 😋',
+                        { cards, quickReplies: ['Ver mi pedido', 'Confirmar pedido'] }
+                    );
+                },
+
+                /* ── Carrito del chat ── */
+                addToCart(card) {
+                    const existing = this.chatCart.find(i => i.id === card.id);
+                    if (existing) { existing.qty++; }
+                    else { this.chatCart.push({ id: card.id, name: card.name, price: card.price, qty: 1 }); }
+
+                    const cats = this.menuData?.categories ?? [];
+                    const qrs  = cats.map(c => c.name);
+                    this.pushMsg({
+                        type: 'bot',
+                        text: '✅ ' + card.name + ' añadido. ¿Algo más?',
+                        quickReplies: [...qrs, 'Ver mi pedido', 'Confirmar pedido'],
+                    });
+                },
+
+                showCartSummary() {
+                    if (!this.chatCart.length) {
+                        const qrs = (this.menuData?.categories ?? []).map(c => c.name);
+                        this.botDelay('Tu pedido está vacío. ¡Elige algo primero!', { quickReplies: qrs });
+                        return;
+                    }
+                    const items = this.chatCart.map(i => ({
+                        name:  i.name,
+                        qty:   i.qty,
+                        price: '$' + (i.price * i.qty).toFixed(2),
+                    }));
+                    this.botDelay('¡Aquí está tu pedido! ¿Confirmamos?', {
+                        orderSummary: { items, total: this.cartTotalStr },
+                        quickReplies: ['Confirmar pedido', 'Seguir eligiendo'],
+                    });
+                },
+
+                /* ── Confirmación del pedido ── */
+                async confirmOrder() {
+                    if (!this.chatCart.length) {
+                        this.botDelay('No hay nada en tu pedido. ¡Elige algo primero!');
+                        return;
+                    }
+                    this.sending  = true;
+                    this.isTyping = true;
+                    this.error    = null;
+
+                    try {
+                        const res = await fetch('/api/v1/orders', {
+                            method:  'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept':       'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
+                            },
+                            body: JSON.stringify({
+                                table_hash: this.tableHash,
+                                items: this.chatCart.map(i => ({
+                                    product_id:    i.id,
+                                    quantity:      i.qty,
+                                    modifications: [],
+                                })),
+                            }),
+                        });
+                        const data = await res.json();
+                        this.isTyping = false;
+
+                        if (res.ok && data.success) {
+                            this.chatCart = [];
+                            this.pushMsg({ type: 'system',
+                                text: '✅ Pedido #' + data.order_id + ' confirmado — en preparación' });
+                            this.pushMsg({ type: 'bot',
+                                text: '¡Tu pedido está en camino! En unos minutos te lo llevamos a la mesa 🚀',
+                                quickReplies: ['📋 Nuevo pedido'] });
+                        } else {
+                            this.isTyping = false;
+                            this.error = data.message ?? 'Error al confirmar el pedido.';
+                        }
+                    } catch {
+                        this.isTyping = false;
+                        this.error = 'Error de conexión. Inténtalo de nuevo.';
+                    } finally {
+                        this.sending = false;
+                        this.$nextTick(() => this.scrollBottom());
+                    }
+                },
+
+                /* ── Envío de texto libre ── */
                 async sendMessage() {
                     const text = this.input.trim();
-                    if (!text || this.sending || this.closed || !this.conversationId) return;
-
+                    if (!text || this.sending || this.isTyping) return;
                     this.input = '';
-                    this.messages.push({ role: 'user', content: text });
-                    this.sending = true;
-                    this.error   = null;
-                    this.$nextTick(() => this.scrollBottom());
+                    this.pushMsg({ type: 'user', text, time: 'Ahora' });
+
+                    /* Detectar keywords locales primero */
+                    const lower = text.toLowerCase();
+                    const cats  = this.menuData?.categories ?? [];
+                    const matched = cats.find(c => c.name.toLowerCase() === lower);
+                    if (matched)                                   { this.showCategoryCards(matched); return; }
+                    if (lower.includes('mi pedido') ||
+                        lower.includes('ver pedido') ||
+                        lower.includes('carrito'))                 { this.showCartSummary(); return; }
+                    if (lower.includes('confirmar') &&
+                        lower.includes('pedido'))                  { this.confirmOrder(); return; }
+
+                    /* Detectar producto por nombre con intención de pedido */
+                    if (this.tryAddByName(lower)) return;
+
+                    await this.sendToAI(text);
+                },
+
+                /* ── Añadir producto por nombre escrito en el chat ── */
+                tryAddByName(lower) {
+                    if (!this.menuData) return false;
+
+                    /* 1. Bloquear contextos que NO son pedidos */
+                    const blockPatterns = [
+                        /\b(modifica|cambia|actualiza|edita|borra|elimina|quita)\b/,
+                        /\b(precio|coste|cuesta|cu[aá]nto|vale|valor)\b/,
+                        /[¿?]/,
+                        /\b(qu[eé]|cu[aá]l|c[oó]mo|cu[aá]ndo|d[oó]nde|cu[aá]ntos)\b/,
+                        /\b(lleva|tiene|contiene|incluye|hay)\b/,
+                        /\b(alergi[ao]|al[eé]rgeno|intolerancia|gluten|lactosa)\b/,
+                        /\b(ingrediente|receta|composici[oó]n|preparaci[oó]n)\b/,
+                        /\b(informaci[oó]n|info|saber|conocer|explicar|describir|d[eé]cuéntame)\b/,
+                        /\bno\s+(quiero|me|le|pido|necesito)\b/,
+                        /\b(s[oó]lo|solo|sin)\s+\w/,
+                    ];
+                    if (blockPatterns.some(p => p.test(lower))) return false;
+
+                    /* 2. Intención de pedido explícita (word-boundary) */
+                    const intentPatterns = [
+                        /\b(quiero|quisiera|deseo)\b/,
+                        /\b(dame|deme|tr[aá]eme|trae)\b/,
+                        /\b(ponme|pon|ponednos)\b/,
+                        /\b(agrega|agr[eé]game|a[ñn]ade|a[ñn][aá]deme)\b/,
+                        /\b(pido|pedimos|pedir)\b/,
+                        /\b(necesito|necesitamos)\b/,
+                        /\bme\s+(pones|traes|das|puedes\s+traer)\b/,
+                    ];
+                    /* Pedido implícito: mensaje corto que empieza por cantidad + nombre */
+                    const quantityOnlyIntent = lower.trim().length < 45
+                        && /^(un[ao]?|dos|tres|cuatro|cinco|[1-5])\s+\w/.test(lower.trim());
+                    if (!intentPatterns.some(p => p.test(lower)) && !quantityOnlyIntent) return false;
+
+                    /* 3. Buscar producto con word-boundary cuando sea posible */
+                    const allProducts = this.menuData.categories.flatMap(c =>
+                        c.products.map(p => ({ id: p.id, name: p.name, price: p.price,
+                            emoji: c.destination === 'bar' ? '🍺' : '🍽️' }))
+                    );
+                    const found = allProducts.find(p => {
+                        const name = p.name.toLowerCase();
+                        const esc  = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                        return new RegExp(`\\b${esc}\\b`).test(lower) || lower === name;
+                    });
+                    if (!found) return false;
+
+                    /* 4. Parsear cantidad con word-boundary */
+                    const numWords = { uno: 1, una: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5 };
+                    let qty = 1;
+                    const digitMatch = lower.match(/\b([1-5])\b/);
+                    if (digitMatch) {
+                        qty = parseInt(digitMatch[1]);
+                    } else {
+                        for (const [word, num] of Object.entries(numWords)) {
+                            if (new RegExp(`\\b${word}\\b`).test(lower)) { qty = num; break; }
+                        }
+                    }
+
+                    /* 5. Añadir al carrito */
+                    const existing = this.chatCart.find(i => i.id === found.id);
+                    if (existing) { existing.qty += qty; }
+                    else { this.chatCart.push({ id: found.id, name: found.name, price: found.price, qty }); }
+
+                    /* 6. Respuesta inmediata del bot */
+                    const cats = this.menuData.categories;
+                    this.pushMsg({
+                        type: 'bot',
+                        text: '✅ ' + (qty > 1 ? qty + '× ' : '') + found.name + ' añadido al pedido. ¿Algo más?',
+                        quickReplies: [...cats.map(c => c.name), 'Ver mi pedido', 'Confirmar pedido'],
+                    });
+                    return true;
+                },
+
+                /* ── Llamada a la IA ── */
+                async sendToAI(text) {
+                    if (!this.conversationId || this.closed) {
+                        const cats = this.menuData?.categories ?? [];
+                        this.botDelay('Por favor elige una categoría para empezar 😊',
+                            { quickReplies: [...cats.map(c => c.name), 'Ver mi pedido'] });
+                        return;
+                    }
+                    this.sending  = true;
+                    this.isTyping = true;
+                    this.error    = null;
 
                     try {
                         const res = await fetch('/api/v1/chat/' + this.conversationId + '/message', {
@@ -666,20 +1026,60 @@
                             body: JSON.stringify({ message: text }),
                         });
                         const data = await res.json();
+                        this.isTyping = false;
+
                         if (res.ok && data.success) {
-                            this.messages.push({ role: 'assistant', content: data.data.reply });
-                            if (data.data.closed) {
-                                this.closed = true;
-                            }
+                            const cats  = this.menuData?.categories ?? [];
+                            const qrs   = cats.map(c => c.name);
+                            const cards = (data.data.cards ?? []).map(c => ({
+                                id:          c.id,
+                                name:        c.name,
+                                price:       c.price,
+                                description: c.description,
+                                allergens:   c.allergens ?? [],
+                                emoji:       cats.find(cat =>
+                                    cat.products.some(p => p.id === c.id)
+                                )?.destination === 'bar' ? '🍺' : '🍽️',
+                            }));
+                            this.pushMsg({
+                                type:         'bot',
+                                text:         data.data.reply,
+                                cards:        cards.length ? cards : undefined,
+                                quickReplies: [...qrs, 'Confirmar pedido'],
+                            });
+                            if (data.data.closed) this.closed = true;
                         } else {
                             this.error = data.message ?? 'Error al enviar el mensaje.';
                         }
                     } catch {
+                        this.isTyping = false;
                         this.error = 'Error de conexión. Inténtalo de nuevo.';
                     } finally {
                         this.sending = false;
                         this.$nextTick(() => this.scrollBottom());
                     }
+                },
+
+                /* ── Estilos diferenciados para quick replies ── */
+                getQrStyle(qr) {
+                    const base = 'border-radius:9999px; padding:5px 12px; font-size:12px; font-family:\'Space Grotesk\',sans-serif; font-weight:600; cursor:pointer; transition:all 150ms ease; border:1px solid; ';
+                    if (qr === 'Confirmar pedido')
+                        return base + 'background:rgba(34,197,94,0.18); color:#22C55E; border-color:rgba(34,197,94,0.5);';
+                    if (qr === 'Ver mi pedido')
+                        return base + 'background:rgba(34,211,238,0.15); color:#22D3EE; border-color:rgba(34,211,238,0.45);';
+                    return base + 'background:rgba(46,80,176,0.22); color:#8FA8E8; border-color:rgba(46,80,176,0.5);';
+                },
+
+                onQrEnter(el, qr) {
+                    if (qr === 'Confirmar pedido') { el.style.background = '#16A34A'; el.style.color = '#fff'; }
+                    else if (qr === 'Ver mi pedido') { el.style.background = '#0891B2'; el.style.color = '#fff'; }
+                    else { el.style.background = '#1A3380'; el.style.color = '#fff'; }
+                },
+
+                onQrLeave(el, qr) {
+                    if (qr === 'Confirmar pedido') { el.style.background = 'rgba(34,197,94,0.18)'; el.style.color = '#22C55E'; }
+                    else if (qr === 'Ver mi pedido') { el.style.background = 'rgba(34,211,238,0.15)'; el.style.color = '#22D3EE'; }
+                    else { el.style.background = 'rgba(46,80,176,0.22)'; el.style.color = '#8FA8E8'; }
                 },
 
                 scrollBottom() {
@@ -733,44 +1133,45 @@
         {{-- ── FAB Chat IA (Zampi Design System) ─────────────────── --}}
         <div x-data="chatWidget()">
 
-            {{-- Mascot SVG symbol — referenced via <use> throughout the widget --}}
+            {{-- Mascot SVG symbol (Official Zampi Design System — zm- prefixed IDs) --}}
             <svg aria-hidden="true" style="display:none;position:absolute;width:0;height:0;overflow:hidden;">
                 <symbol id="zampi-mascot" viewBox="0 0 120 110">
                     <defs>
-                        <radialGradient id="zm-bTk" cx="38%" cy="28%" r="62%">
+                        <radialGradient id="zm-bT" cx="38%" cy="28%" r="62%">
                             <stop offset="0%" stop-color="#FBDF6A"/>
                             <stop offset="45%" stop-color="#E8980C"/>
                             <stop offset="100%" stop-color="#A05500"/>
                         </radialGradient>
-                        <radialGradient id="zm-bBk" cx="38%" cy="22%" r="65%">
+                        <radialGradient id="zm-bB" cx="38%" cy="22%" r="65%">
                             <stop offset="0%" stop-color="#F5C830"/>
                             <stop offset="55%" stop-color="#CC7008"/>
                             <stop offset="100%" stop-color="#8B4000"/>
                         </radialGradient>
-                        <linearGradient id="zm-chk" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <linearGradient id="zm-ch" x1="0%" y1="0%" x2="0%" y2="100%">
                             <stop offset="0%" stop-color="#FFD740"/>
                             <stop offset="100%" stop-color="#F59000"/>
                         </linearGradient>
-                        <linearGradient id="zm-mtk" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <linearGradient id="zm-mt" x1="0%" y1="0%" x2="0%" y2="100%">
                             <stop offset="0%" stop-color="#7B3010"/>
                             <stop offset="100%" stop-color="#4A1800"/>
                         </linearGradient>
-                        <linearGradient id="zm-ltk" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <linearGradient id="zm-lt" x1="0%" y1="0%" x2="0%" y2="100%">
                             <stop offset="0%" stop-color="#5CC830"/>
                             <stop offset="100%" stop-color="#348010"/>
                         </linearGradient>
-                        <radialGradient id="zm-sck" cx="50%" cy="38%" r="55%">
+                        <radialGradient id="zm-sc" cx="50%" cy="38%" r="55%">
                             <stop offset="0%" stop-color="#0C0620"/>
                             <stop offset="100%" stop-color="#04000E"/>
                         </radialGradient>
-                        <filter id="zm-shk"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#3A1800" flood-opacity="0.45"/></filter>
-                        <filter id="zm-gPk"><feGaussianBlur stdDeviation="3.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-                        <filter id="zm-gCk"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+                        <filter id="zm-sh"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#3A1800" flood-opacity="0.45"/></filter>
+                        <filter id="zm-gP"><feGaussianBlur stdDeviation="3.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+                        <filter id="zm-gC"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
                     </defs>
                     <ellipse cx="60" cy="107" rx="40" ry="4" fill="#2A0800" opacity="0.25"/>
                     <line x1="60" y1="2" x2="60" y2="22" stroke="#7A5010" stroke-width="1.5" stroke-linecap="round"/>
                     <path d="M60 3 L78 9 L60 16 Z" fill="#D80E1A"/>
-                    <ellipse cx="60" cy="28" rx="48" ry="22" fill="url(#zm-bTk)" filter="url(#zm-shk)"/>
+                    <ellipse cx="68" cy="8" rx="4" ry="1.8" fill="white" opacity="0.25" transform="rotate(-10,68,8)"/>
+                    <ellipse cx="60" cy="28" rx="48" ry="22" fill="url(#zm-bT)" filter="url(#zm-sh)"/>
                     <ellipse cx="44" cy="20" rx="16" ry="8" fill="white" opacity="0.25" transform="rotate(-10,44,20)"/>
                     <ellipse cx="42" cy="16" rx="4.5" ry="1.8" fill="#FFF0A0" opacity="0.9" transform="rotate(-18,42,16)"/>
                     <ellipse cx="60" cy="12" rx="4.5" ry="1.8" fill="#FFF0A0" opacity="0.9"/>
@@ -778,47 +1179,62 @@
                     <ellipse cx="32" cy="26" rx="4" ry="1.6" fill="#FFF0A0" opacity="0.85" transform="rotate(-22,32,26)"/>
                     <ellipse cx="88" cy="27" rx="4" ry="1.6" fill="#FFF0A0" opacity="0.85" transform="rotate(22,88,27)"/>
                     <ellipse cx="60" cy="48" rx="48" ry="6" fill="#B06010"/>
-                    <path d="M12 51 Q28 46 42 53 Q54 59 60 52 Q66 45 78 53 Q92 60 108 51 L108 59 Q92 66 78 60 Q66 54 60 60 Q54 66 42 60 Q28 53 12 59 Z" fill="url(#zm-chk)"/>
+                    <path d="M12 51 Q28 46 42 53 Q54 59 60 52 Q66 45 78 53 Q92 60 108 51 L108 59 Q92 66 78 60 Q66 54 60 60 Q54 66 42 60 Q28 53 12 59 Z" fill="url(#zm-ch)"/>
                     <path d="M16 55 C11 60 11 68 16 71 L19 71 C15 66 16 55 16 55 Z" fill="#FBBF24"/>
+                    <ellipse cx="16.5" cy="71.5" rx="3" ry="2" fill="#F59000"/>
                     <path d="M104 55 C109 60 109 68 104 71 L101 71 C105 66 104 55 104 55 Z" fill="#FBBF24"/>
-                    <path d="M12 59 Q22 55 34 62 Q46 68 60 61 Q74 54 86 62 Q98 68 108 59 L108 65 Q98 73 86 66 Q74 60 60 66 Q46 72 34 66 Q22 60 12 65 Z" fill="url(#zm-ltk)"/>
-                    <ellipse cx="60" cy="70" rx="48" ry="9" fill="url(#zm-mtk)" filter="url(#zm-shk)"/>
-                    <ellipse cx="60" cy="84" rx="48" ry="14" fill="url(#zm-bBk)" filter="url(#zm-shk)"/>
+                    <ellipse cx="103.5" cy="71.5" rx="3" ry="2" fill="#F59000"/>
+                    <path d="M12 59 Q22 55 34 62 Q46 68 60 61 Q74 54 86 62 Q98 68 108 59 L108 65 Q98 73 86 66 Q74 60 60 66 Q46 72 34 66 Q22 60 12 65 Z" fill="url(#zm-lt)"/>
+                    <ellipse cx="60" cy="70" rx="48" ry="9" fill="url(#zm-mt)" filter="url(#zm-sh)"/>
+                    <ellipse cx="60" cy="84" rx="48" ry="14" fill="url(#zm-bB)" filter="url(#zm-sh)"/>
                     <ellipse cx="60" cy="95" rx="43" ry="8" fill="#8B4000"/>
                     <ellipse cx="60" cy="101" rx="36" ry="5" fill="#6A3000"/>
-                    <ellipse cx="60" cy="66" rx="34" ry="28" fill="#6010B0" opacity="0.45" filter="url(#zm-gPk)"/>
+                    <ellipse cx="46" cy="80" rx="16" ry="5" fill="white" opacity="0.15"/>
+                    <ellipse cx="60" cy="66" rx="34" ry="28" fill="#6010B0" opacity="0.45" filter="url(#zm-gP)"/>
                     <ellipse cx="60" cy="66" rx="32" ry="26" fill="#40087A" stroke="#CC60F8" stroke-width="3"/>
                     <ellipse cx="60" cy="66" rx="29" ry="23" fill="#2C0660" stroke="#7828B8" stroke-width="1.2"/>
-                    <ellipse cx="60" cy="66" rx="27" ry="21" fill="url(#zm-sck)"/>
-                    <rect x="34" y="54" width="18" height="20" rx="7" fill="#22D3EE" opacity="0.25" filter="url(#zm-gCk)"/>
+                    <ellipse cx="60" cy="66" rx="27" ry="21" fill="url(#zm-sc)"/>
+                    <rect x="34" y="54" width="18" height="20" rx="7" fill="#22D3EE" opacity="0.25" filter="url(#zm-gC)"/>
                     <rect x="35" y="55" width="16" height="18" rx="6" fill="#030E1A"/>
                     <rect x="36" y="56" width="14" height="16" rx="5" fill="#22D3EE"/>
                     <ellipse cx="39" cy="58.5" rx="3.5" ry="2" fill="white" opacity="0.65"/>
                     <rect x="35" y="55" width="16" height="18" rx="6" fill="none" stroke="#A5F3FC" stroke-width="0.8" opacity="0.8"/>
-                    <rect x="68" y="54" width="18" height="20" rx="7" fill="#22D3EE" opacity="0.25" filter="url(#zm-gCk)"/>
+                    <rect x="68" y="54" width="18" height="20" rx="7" fill="#22D3EE" opacity="0.25" filter="url(#zm-gC)"/>
                     <rect x="69" y="55" width="16" height="18" rx="6" fill="#030E1A"/>
                     <rect x="70" y="56" width="14" height="16" rx="5" fill="#22D3EE"/>
                     <ellipse cx="73" cy="58.5" rx="3.5" ry="2" fill="white" opacity="0.65"/>
                     <rect x="69" y="55" width="16" height="18" rx="6" fill="none" stroke="#A5F3FC" stroke-width="0.8" opacity="0.8"/>
+                    <path d="M51 79 Q60 86 69 79" fill="none" stroke="#22D3EE" stroke-width="4" stroke-linecap="round" opacity="0.2"/>
                     <path d="M51 79 Q60 86 69 79" fill="none" stroke="#22D3EE" stroke-width="2" stroke-linecap="round"/>
                 </symbol>
             </svg>
 
-            {{-- Botón flotante Zampi --}}
+            {{-- Botón flotante Zampi (se oculta cuando el chat está abierto) --}}
             <button type="button"
                     @click="openChat()"
                     aria-label="Abrir asistente Zampi"
-                    class="fixed bottom-20 right-4 z-40 flex items-center gap-2 px-4 py-2.5 rounded-full font-semibold focus:outline-none focus:ring-4 transition-transform duration-200"
-                    style="background:linear-gradient(135deg,#2E50B0,#1A3380); color:#fff; box-shadow:0 0 20px rgba(46,80,176,0.65),0 4px 16px rgba(15,31,88,0.55); focus-ring-color:rgba(96,152,248,0.6);"
+                    x-show="!open"
+                    x-transition:enter="transition ease-out duration-200"
+                    x-transition:enter-start="opacity-0"
+                    x-transition:enter-end="opacity-100"
+                    x-transition:leave="transition ease-in duration-150"
+                    x-transition:leave-start="opacity-100"
+                    x-transition:leave-end="opacity-0"
+                    class="fixed bottom-20 right-4 z-40 flex items-center gap-2 px-4 py-2.5 rounded-full font-semibold focus:outline-none focus:ring-4"
+                    style="background:linear-gradient(135deg,#2E50B0,#1A3380); color:#fff; box-shadow:0 0 20px rgba(46,80,176,0.65),0 4px 16px rgba(15,31,88,0.55); transition:transform 200ms ease, box-shadow 200ms ease;"
                     onmouseenter="this.style.transform='scale(1.05)'; this.style.boxShadow='0 0 30px rgba(46,80,176,0.9),0 4px 20px rgba(15,31,88,0.65)';"
                     onmouseleave="this.style.transform='scale(1)'; this.style.boxShadow='0 0 20px rgba(46,80,176,0.65),0 4px 16px rgba(15,31,88,0.55)';">
                 <div class="zampi-float flex-shrink-0">
                     <svg width="26" height="24" aria-hidden="true"><use href="#zampi-mascot"/></svg>
                 </div>
                 <span style="font-family:'Nunito',sans-serif; font-weight:800; font-size:14px;">Zampi</span>
+                <template x-if="cartCount > 0">
+                    <span x-text="cartCount"
+                          style="position:absolute; top:-8px; right:-8px; min-width:20px; height:20px; border-radius:9999px; background:#FBBF24; color:#050B1F; font-size:11px; font-weight:900; display:flex; align-items:center; justify-content:center; padding:0 4px; font-family:'Nunito',sans-serif; box-shadow:0 0 8px rgba(251,191,36,0.6); pointer-events:none;"></span>
+                </template>
             </button>
 
-            {{-- Overlay --}}
+            {{-- Overlay + Panel (layout responsive vía .zampi-overlay / .zampi-panel) --}}
             <div x-show="open"
                  x-transition:enter="transition ease-out duration-300"
                  x-transition:enter-start="opacity-0"
@@ -826,53 +1242,35 @@
                  x-transition:leave="transition ease-in duration-200"
                  x-transition:leave-start="opacity-100"
                  x-transition:leave-end="opacity-0"
-                 class="fixed inset-0 z-50"
-                 style="background:rgba(1,4,14,0.8); backdrop-filter:blur(8px);"
-                 @click.self="closeChat()"
+                 class="zampi-overlay"
                  @keydown.escape.window="closeChat()"
                  aria-modal="true" role="dialog" aria-label="Asistente virtual Zampi">
 
-                {{-- Drawer --}}
-                <div x-show="open"
-                     x-transition:enter="transition ease-out duration-300"
-                     x-transition:enter-start="translate-y-full"
-                     x-transition:enter-end="translate-y-0"
-                     x-transition:leave="transition ease-in duration-200"
-                     x-transition:leave-start="translate-y-0"
-                     x-transition:leave-end="translate-y-full"
-                     class="absolute bottom-0 left-0 right-0 h-[80dvh] flex flex-col rounded-t-2xl overflow-hidden"
-                     style="background:radial-gradient(ellipse at 50% 0%,#0E1A38 0%,#050B1F 60%,#01040E 100%); border-top:1px solid rgba(46,80,176,0.4); box-shadow:0 -8px 40px rgba(15,31,88,0.65);">
-
-                    {{-- Handle --}}
-                    <div class="flex-shrink-0 flex justify-center pt-3 pb-1">
-                        <div class="w-10 h-1 rounded-full" style="background:rgba(46,80,176,0.5);"></div>
-                    </div>
+                {{-- Panel: full-screen en móvil / modal en tablet / flotante en desktop --}}
+                <div class="zampi-panel zampi-scrollbar"
+                     style="background:radial-gradient(ellipse at 50% 20%,#0E1A38 0%,#050B1F 60%,#01040E 100%);">
 
                     {{-- Cabecera --}}
-                    <div class="flex-shrink-0 px-4 pt-2 pb-3 flex items-center justify-between"
-                         style="background:rgba(10,20,48,0.9); backdrop-filter:blur(16px); border-bottom:1px solid rgba(46,80,176,0.4);">
-                        <div class="flex items-center gap-2.5">
-                            <div class="zampi-float flex-shrink-0 flex items-center justify-center" style="width:38px; height:35px;">
-                                <svg width="38" height="35" aria-hidden="true"><use href="#zampi-mascot"/></svg>
-                            </div>
-                            <div>
-                                <h2 style="font-family:'Nunito',sans-serif; font-weight:900; font-size:16px; color:#fff; line-height:1.2; margin:0;">Zampi</h2>
-                                <p style="font-size:11px; color:#8FA8E8; letter-spacing:0.03em; margin:0;">{{ $table->name }} · {{ $table->user->name }}</p>
-                            </div>
+                    <div style="flex-shrink:0; padding:12px 16px; background:rgba(10,20,48,0.9); backdrop-filter:blur(16px); border-bottom:1px solid rgba(46,80,176,0.4); display:flex; align-items:center; gap:10px;">
+                        <div class="zampi-float" style="flex-shrink:0;">
+                            <svg width="38" height="35" aria-hidden="true"><use href="#zampi-mascot"/></svg>
                         </div>
-                        <div class="flex items-center gap-3">
-                            <div class="flex items-center gap-1.5">
+                        <div style="flex:1;">
+                            <h2 style="font-family:'Nunito',sans-serif; font-weight:900; font-size:16px; color:#fff; line-height:1.2; margin:0;">Zampi</h2>
+                            <p style="font-size:11px; color:#8FA8E8; letter-spacing:0.03em; margin:0;">{{ $table->name }} · {{ $table->user->name }}</p>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:12px;">
+                            <div style="display:flex; align-items:center; gap:5px;">
                                 <div class="zampi-pulse" style="width:7px; height:7px; border-radius:50%; background:#22C55E; box-shadow:0 0 6px #22C55E;"></div>
                                 <span style="font-size:11px; color:#22C55E; font-weight:600; font-family:'Space Grotesk',sans-serif;">En línea</span>
                             </div>
                             <button type="button"
                                     @click="closeChat()"
                                     aria-label="Cerrar asistente Zampi"
-                                    class="p-1.5 rounded-full focus:outline-none focus:ring-2 transition-all duration-150"
-                                    style="color:#8FA8E8; border:1px solid rgba(46,80,176,0.4);"
+                                    style="padding:6px; border-radius:50%; border:1px solid rgba(46,80,176,0.4); background:transparent; color:#8FA8E8; cursor:pointer; transition:all 150ms ease; display:flex; align-items:center; justify-content:center;"
                                     onmouseenter="this.style.background='rgba(46,80,176,0.25)'; this.style.color='#fff';"
                                     onmouseleave="this.style.background='transparent'; this.style.color='#8FA8E8';">
-                                <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <svg aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
                                 </svg>
                             </button>
@@ -884,28 +1282,123 @@
                          role="log"
                          aria-live="polite"
                          aria-label="Conversación con Zampi"
-                         class="flex-1 overflow-y-auto px-4 py-4 space-y-3 zampi-scrollbar">
+                         class="zampi-scrollbar"
+                         style="flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:12px;">
 
-                        <template x-for="(msg, idx) in messages" :key="idx">
-                            <div class="zampi-msg-appear"
-                                 :class="msg.role === 'user' ? 'flex justify-end' : 'flex justify-start items-end gap-2'">
+                        <template x-for="msg in messages" :key="msg._id">
+                            <div class="zampi-msg-appear">
 
-                                <template x-if="msg.role !== 'user'">
-                                    <div class="zampi-avatar">
-                                        <svg width="24" height="22" aria-hidden="true"><use href="#zampi-mascot"/></svg>
+                                {{-- Sistema --}}
+                                <template x-if="msg.type === 'system'">
+                                    <div style="display:flex; justify-content:center;">
+                                        <div style="background:rgba(46,80,176,0.22); border:1px solid rgba(46,80,176,0.3); color:#8FA8E8; font-size:11px; padding:5px 14px; border-radius:9999px; backdrop-filter:blur(8px); font-family:'Space Grotesk',sans-serif;"
+                                             x-text="msg.text"></div>
                                     </div>
                                 </template>
 
-                                <div :class="msg.role === 'user' ? 'zampi-bubble-user' : 'zampi-bubble-bot'"
-                                     x-text="msg.content">
-                                </div>
+                                {{-- Bot --}}
+                                <template x-if="msg.type === 'bot'">
+                                    <div style="display:flex; gap:8px; align-items:flex-end;">
+                                        <div class="zampi-avatar" style="flex-shrink:0;">
+                                            <svg width="24" height="22" aria-hidden="true"><use href="#zampi-mascot"/></svg>
+                                        </div>
+                                        <div style="max-width:75%; min-width:0;">
+                                            <div style="background:#0E1A38; border:1px solid rgba(46,80,176,0.35); color:#C8D8FF; font-size:14px; line-height:1.6; padding:10px 14px; border-radius:18px 18px 18px 4px; box-shadow:0 2px 12px rgba(0,0,0,0.3); font-family:'Space Grotesk',sans-serif; white-space:pre-line;"
+                                                 x-text="msg.text"></div>
+                                            {{-- Tarjetas de producto --}}
+                                            <template x-if="msg.cards && msg.cards.length">
+                                                <div style="display:flex; gap:8px; margin-top:8px; overflow-x:auto; padding-bottom:4px;">
+                                                    <template x-for="card in msg.cards" :key="card.id">
+                                                        <div style="background:#0E1A38; border:1px solid rgba(46,80,176,0.45); border-radius:16px; padding:10px; min-width:150px; max-width:160px; flex-shrink:0; box-shadow:0 4px 20px rgba(15,31,88,0.4); transition:transform 200ms ease; display:flex; flex-direction:column;"
+                                                             onmouseenter="this.style.transform='translateY(-2px)'"
+                                                             onmouseleave="this.style.transform='translateY(0)'">
+                                                            {{-- Icono --}}
+                                                            <div style="height:52px; border-radius:10px; background:linear-gradient(135deg,#162648,#0A1430); display:flex; align-items:center; justify-content:center; font-size:26px; margin-bottom:8px; flex-shrink:0;"
+                                                                 x-text="card.emoji"></div>
+                                                            {{-- Nombre --}}
+                                                            <div style="font-size:12px; font-weight:700; color:#fff; margin-bottom:3px; font-family:'Space Grotesk',sans-serif; line-height:1.3;"
+                                                                 x-text="card.name"></div>
+                                                            {{-- Descripción --}}
+                                                            <div x-show="card.description"
+                                                                 style="font-size:10px; color:#8FA8E8; margin-bottom:5px; line-height:1.4; flex-grow:1;"
+                                                                 x-text="card.description"></div>
+                                                            {{-- Alérgenos --}}
+                                                            <template x-if="card.allergens && card.allergens.length">
+                                                                <div style="margin-bottom:6px;">
+                                                                    <span style="font-size:9px; font-weight:700; color:#F59E0B; text-transform:uppercase; letter-spacing:0.05em;">⚠ Alérgenos</span>
+                                                                    <div style="font-size:9px; color:#FCD34D; line-height:1.4; margin-top:1px;"
+                                                                         x-text="card.allergens.join(', ')"></div>
+                                                                </div>
+                                                            </template>
+                                                            {{-- Precio + botón --}}
+                                                            <div style="display:flex; align-items:center; justify-content:space-between; margin-top:auto;">
+                                                                <span style="font-size:13px; font-weight:700; color:#FBBF24; font-family:'Nunito',sans-serif;"
+                                                                      x-text="Number(card.price).toFixed(2).replace('.',',') + ' €'"></span>
+                                                                <button type="button"
+                                                                        @click.stop="addToCart(card)"
+                                                                        :aria-label="'Añadir ' + card.name + ' al pedido'"
+                                                                        style="width:26px; height:26px; border-radius:50%; background:linear-gradient(135deg,#2E50B0,#1A3380); border:none; color:#fff; font-size:17px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 0 8px rgba(46,80,176,0.6); flex-shrink:0;">+</button>
+                                                            </div>
+                                                        </div>
+                                                    </template>
+                                                </div>
+                                            </template>
+                                            {{-- Quick replies --}}
+                                            <template x-if="msg.quickReplies && msg.quickReplies.length">
+                                                <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:8px;">
+                                                    <template x-for="(qr, qrIdx) in msg.quickReplies" :key="qrIdx">
+                                                        <button type="button"
+                                                                @click="handleQuickReply(qr)"
+                                                                :style="getQrStyle(qr)"
+                                                                @mouseenter="onQrEnter($el, qr)"
+                                                                @mouseleave="onQrLeave($el, qr)"
+                                                                x-text="qr"></button>
+                                                    </template>
+                                                </div>
+                                            </template>
+                                            {{-- Resumen del pedido --}}
+                                            <template x-if="msg.orderSummary">
+                                                <div style="background:rgba(14,26,56,0.9); border:1px solid rgba(46,80,176,0.45); border-radius:16px; padding:12px; margin-top:8px; backdrop-filter:blur(12px);">
+                                                    <div style="font-size:13px; font-weight:800; font-family:'Nunito',sans-serif; color:#fff; margin-bottom:8px;">🛒 Tu pedido</div>
+                                                    <template x-for="(item, iIdx) in msg.orderSummary.items" :key="iIdx">
+                                                        <div style="display:flex; justify-content:space-between; align-items:center; padding:5px 0; border-bottom:1px solid rgba(255,255,255,0.06);">
+                                                            <span style="font-size:12px; color:#C8D8FF;" x-text="item.name"></span>
+                                                            <div style="display:flex; gap:8px; align-items:center;">
+                                                                <span style="font-size:11px; color:#8FA8E8;" x-text="'×' + item.qty"></span>
+                                                                <span style="font-size:12px; font-weight:600; color:#FBBF24;" x-text="item.price"></span>
+                                                            </div>
+                                                        </div>
+                                                    </template>
+                                                    <div style="display:flex; justify-content:space-between; margin-top:8px; padding-top:8px; border-top:1px solid rgba(46,80,176,0.4);">
+                                                        <span style="font-size:13px; font-weight:700; color:#fff;">Total</span>
+                                                        <span style="font-size:16px; font-weight:900; color:#FBBF24; font-family:'Nunito',sans-serif;"
+                                                              x-text="msg.orderSummary.total"></span>
+                                                    </div>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </template>
+
+                                {{-- Usuario --}}
+                                <template x-if="msg.type === 'user'">
+                                    <div style="display:flex; justify-content:flex-end;">
+                                        <div style="max-width:78%;">
+                                            <div style="background:linear-gradient(135deg,#2E50B0,#1A3380); color:#fff; font-size:14px; line-height:1.5; padding:10px 14px; border-radius:18px 18px 4px 18px; box-shadow:0 4px 16px rgba(15,31,88,0.55); font-family:'Space Grotesk',sans-serif;"
+                                                 x-text="msg.text"></div>
+                                            <div style="font-size:10px; color:#3A5090; text-align:right; margin-top:3px; padding-right:4px;"
+                                                 x-text="(msg.time || '') + ' ✓✓'"></div>
+                                        </div>
+                                    </div>
+                                </template>
+
                             </div>
                         </template>
 
                         {{-- Indicador de escritura --}}
-                        <template x-if="sending">
-                            <div class="flex justify-start items-end gap-2" aria-label="Zampi está escribiendo">
-                                <div class="zampi-avatar">
+                        <template x-if="isTyping">
+                            <div style="display:flex; gap:8px; align-items:flex-end;" aria-label="Zampi está escribiendo">
+                                <div class="zampi-avatar" style="flex-shrink:0;">
                                     <svg width="24" height="22" aria-hidden="true"><use href="#zampi-mascot"/></svg>
                                 </div>
                                 <div style="background:#0E1A38; border:1px solid rgba(46,80,176,0.35); border-radius:18px 18px 18px 4px; padding:12px 16px; display:flex; gap:5px; align-items:center;">
@@ -918,7 +1411,7 @@
 
                         {{-- Error --}}
                         <template x-if="error">
-                            <div class="flex justify-center" role="alert">
+                            <div style="display:flex; justify-content:center;" role="alert">
                                 <div style="background:rgba(208,14,26,0.15); border:1px solid rgba(208,14,26,0.4); color:#F04040; font-size:12px; padding:5px 14px; border-radius:9999px; font-family:'Space Grotesk',sans-serif;"
                                      x-text="error"></div>
                             </div>
@@ -926,42 +1419,35 @@
 
                         {{-- Conversación cerrada --}}
                         <template x-if="closed">
-                            <div class="flex justify-center">
+                            <div style="display:flex; justify-content:center;">
                                 <div style="background:rgba(46,80,176,0.15); border:1px solid rgba(46,80,176,0.25); color:#8FA8E8; font-size:11px; padding:5px 14px; border-radius:9999px; font-family:'Space Grotesk',sans-serif;">
                                     Conversación finalizada. Inicia una nueva para seguir pidiendo.
                                 </div>
                             </div>
                         </template>
+
                     </div>
 
                     {{-- Área de input --}}
-                    <div class="flex-shrink-0 px-3 py-3"
-                         style="background:rgba(5,11,31,0.95); backdrop-filter:blur(16px); border-top:1px solid rgba(46,80,176,0.3);">
-                        <div class="flex items-center gap-2"
-                             style="background:rgba(14,26,56,0.7); border:1px solid rgba(96,152,248,0.3); border-radius:9999px; padding:6px 6px 6px 16px;">
-                            <label for="chat-input" class="sr-only">Escribe tu mensaje a Zampi</label>
-                            <textarea id="chat-input"
-                                      x-ref="chatInput"
-                                      x-model="input"
-                                      @keydown.enter.prevent="sendMessage()"
-                                      :disabled="sending || closed"
-                                      rows="1"
-                                      placeholder="Escribí tu pedido..."
-                                      class="zampi-chat-input flex-1 resize-none max-h-20 bg-transparent border-none outline-none disabled:opacity-50 disabled:cursor-not-allowed"
-                                      style="color:#C8D8FF; font-family:'Space Grotesk',sans-serif; font-size:14px; line-height:1.4;"></textarea>
+                    <div style="flex-shrink:0; padding:10px 12px; background:rgba(5,11,31,0.95); backdrop-filter:blur(16px); border-top:1px solid rgba(46,80,176,0.3);">
+                        <div style="display:flex; gap:8px; align-items:center; background:rgba(14,26,56,0.7); border:1px solid rgba(96,152,248,0.3); border-radius:9999px; padding:8px 8px 8px 16px;">
+                            <label for="zampi-chat-input" class="sr-only">Escribe tu mensaje a Zampi</label>
+                            <input id="zampi-chat-input"
+                                   type="text"
+                                   x-ref="chatInput"
+                                   x-model="input"
+                                   @keydown.enter="sendMessage()"
+                                   :disabled="sending || closed"
+                                   placeholder="Escribe tu pedido..."
+                                   style="flex:1; background:none; border:none; outline:none; font-family:'Space Grotesk',sans-serif; font-size:14px; color:#C8D8FF; min-width:0;">
                             <button type="button"
                                     @click="sendMessage()"
                                     :disabled="!input.trim() || sending || closed"
                                     aria-label="Enviar mensaje a Zampi"
-                                    class="flex-shrink-0 flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none"
-                                    style="width:38px; height:38px; border-radius:50%; border:none; cursor:pointer; background:linear-gradient(135deg,#2E50B0,#1A3380); color:#fff; box-shadow:0 0 14px rgba(46,80,176,0.65); transition:transform 150ms cubic-bezier(0.34,1.56,0.64,1);"
+                                    style="width:38px; height:38px; border-radius:50%; border:none; cursor:pointer; background:linear-gradient(135deg,#2E50B0,#1A3380); color:#fff; font-size:18px; display:flex; align-items:center; justify-content:center; box-shadow:0 0 14px rgba(46,80,176,0.65); flex-shrink:0; transition:transform 150ms cubic-bezier(0.34,1.56,0.64,1);"
                                     onmousedown="this.style.transform='scale(0.92)'"
                                     onmouseup="this.style.transform='scale(1)'"
-                                    onmouseleave="this.style.transform='scale(1)'">
-                                <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
-                                </svg>
-                            </button>
+                                    onmouseleave="this.style.transform='scale(1)'">↑</button>
                         </div>
                     </div>
 
