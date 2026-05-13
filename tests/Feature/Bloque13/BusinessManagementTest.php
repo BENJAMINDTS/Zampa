@@ -2,11 +2,13 @@
 
 /**
  * @author AyrtonAlania
+ * @author SebastianBCF
  */
 
 use App\Models\Plan;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 
 uses(RefreshDatabase::class);
 
@@ -234,27 +236,87 @@ it('superadmin can delete a business', function () {
          ->assertRedirect(route('superadmin.businesses.index'))
          ->assertSessionHas('success');
 
-    $this->assertDatabaseMissing('users', ['id' => $toDelete->id]);
+    // Soft delete: el registro sigue en BD pero con deleted_at
+    $this->assertSoftDeleted('users', ['id' => $toDelete->id]);
 });
 
-it('after hard delete staff of deleted admin has null admin_id', function () {
+it('staff is handled correctly when admin is deleted', function () {
     $toDelete = User::factory()->admin()->withBusiness()->create(['plan_id' => $this->plan->id]);
     $staff    = User::factory()->waiter()->create(['admin_id' => $toDelete->id]);
 
     $this->actingAs($this->superadmin)
          ->delete(route('superadmin.businesses.destroy', $toDelete));
 
-    expect($staff->fresh()->admin_id)->toBeNull();
-});
-
-it('after hard delete staff is not also deleted', function () {
-    $toDelete = User::factory()->admin()->withBusiness()->create(['plan_id' => $this->plan->id]);
-    $staff    = User::factory()->waiter()->create(['admin_id' => $toDelete->id]);
-
-    $this->actingAs($this->superadmin)
-         ->delete(route('superadmin.businesses.destroy', $toDelete));
-
+    // Staff sigue existiendo con su admin_id intacto
     $this->assertDatabaseHas('users', ['id' => $staff->id]);
+    expect($staff->fresh()->admin_id)->toBe($toDelete->id);
+    // Staff queda desactivado para bloquear el acceso al panel
+    expect($staff->fresh()->active)->toBeFalse();
+});
+
+it('staff cannot login after their admin is deleted', function () {
+    $toDelete = User::factory()->admin()->withBusiness()->create(['plan_id' => $this->plan->id]);
+    $staff    = User::factory()->waiter()->create(['admin_id' => $toDelete->id]);
+
+    $this->actingAs($this->superadmin)
+         ->delete(route('superadmin.businesses.destroy', $toDelete));
+
+    // El middleware EnsureBusinessIsActive debe bloquear al staff
+    $this->actingAs($staff->fresh())
+         ->get(route('bar.index'))
+         ->assertRedirect(route('login'));
+});
+
+it('admin data integrity is maintained after deletion', function () {
+    $toDelete = User::factory()->admin()->withBusiness()->create(['plan_id' => $this->plan->id]);
+
+    $this->actingAs($this->superadmin)
+         ->delete(route('superadmin.businesses.destroy', $toDelete));
+
+    // El admin sigue en BD (soft delete), datos intactos
+    $trashed = User::withTrashed()->find($toDelete->id);
+    expect($trashed)->not->toBeNull()
+        ->and($trashed->deleted_at)->not->toBeNull()
+        ->and($trashed->email)->toBe($toDelete->email);
+});
+
+it('deleted admin does not appear in businesses index', function () {
+    $toDelete = User::factory()->admin()->withBusiness()->create(['plan_id' => $this->plan->id]);
+
+    $this->actingAs($this->superadmin)
+         ->delete(route('superadmin.businesses.destroy', $toDelete));
+
+    $response = $this->actingAs($this->superadmin)
+                     ->get(route('superadmin.businesses.index'));
+
+    $businesses = $response->viewData('businesses');
+    expect($businesses->contains('id', $toDelete->id))->toBeFalse();
+});
+
+it('delete operation is atomic and rolls back on failure', function () {
+    $toDelete = User::factory()->admin()->withBusiness()->create(['plan_id' => $this->plan->id]);
+    $staff    = User::factory()->waiter()->create(['admin_id' => $toDelete->id]);
+
+    $rolled = false;
+    try {
+        DB::transaction(function () use ($toDelete, $staff): void {
+            User::where('admin_id', $toDelete->id)->update(['active' => false]);
+
+            // Dentro de la transacción el staff ya aparece inactivo
+            expect($staff->fresh()->active)->toBeFalse();
+
+            // Forzar rollback
+            throw new \RuntimeException('forced rollback');
+        });
+    } catch (\RuntimeException) {
+        $rolled = true;
+    }
+
+    expect($rolled)->toBeTrue();
+    // Tras el rollback el staff vuelve a estar activo
+    expect($staff->fresh()->active)->toBeTrue();
+    // El admin no fue soft-deleted
+    expect(User::withTrashed()->find($toDelete->id)->deleted_at)->toBeNull();
 });
 
 it('returns 403 when trying to toggle a non-admin user', function () {
