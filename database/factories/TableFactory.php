@@ -17,16 +17,18 @@ class TableFactory extends Factory
     public function definition(): array
     {
         return [
-            'user_id'     => User::factory(),
-            'name'        => 'Mesa ' . fake()->unique()->numberBetween(1, 50),
-            'unique_hash' => Str::uuid()->toString(),
-            'status'      => 'free',
-            'position_x'  => 0,
-            'position_y'  => 0,
-            'width'       => 100,
-            'height'      => 100,
-            'shape'       => 'square',
-            'rotation'    => 0,
+            'user_id'          => User::factory(),
+            'zone_id'          => null,
+            'name'             => 'Mesa ' . fake()->unique()->numberBetween(1, 50),
+            'unique_hash'      => Str::uuid()->toString(),
+            'status'           => 'free',
+            'position_x'       => 0,
+            'position_y'       => 0,
+            'width'            => 100,
+            'height'           => 100,
+            'shape'            => 'square',
+            'rotation'         => 0,
+            'is_service_point' => true,
         ];
     }
 }

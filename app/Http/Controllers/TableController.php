@@ -3,12 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\Table;
+use App\Models\Zone;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
@@ -32,23 +34,59 @@ class TableController extends Controller
      */
     public function index(): View
     {
-        $tables    = Table::where('user_id', Auth::id())->orderBy('name')->get();
+        $tables    = Table::where('user_id', Auth::id())->servicePoints()->orderBy('name')->get();
         $maxTables = Auth::user()->plan?->max_tables ?? 10;
 
         return view('tables.index', compact('tables', 'maxTables'));
     }
 
     /**
-     * Muestra el mapa visual interactivo con drag & drop para gestionar mesas.
+     * Muestra el mapa visual interactivo con drag & drop para gestionar mesas y zonas.
      *
      * @return View
      */
     public function map(): View
     {
-        $tables    = Table::where('user_id', Auth::id())->orderBy('name')->get();
-        $maxTables = Auth::user()->plan?->max_tables ?? 10;
+        $userId      = Auth::id();
+        $tables      = Table::where('user_id', $userId)
+                           ->servicePoints()
+                           ->whereNotIn('shape', ['bar', 'stool'])
+                           ->orderBy('name')
+                           ->get();
+        $elements    = Table::where('user_id', $userId)
+                           ->where(function ($q) {
+                               $q->where('is_service_point', false)
+                                 ->orWhereIn('shape', ['bar', 'stool']);
+                           })
+                           ->orderBy('name')
+                           ->get();
+        $zones       = Zone::where('user_id', $userId)->orderBy('name')->get();
+        $maxTables   = Auth::user()->plan?->max_tables ?? 10;
+        $floorWidth  = Auth::user()->floor_width  ?? 1200;
+        $floorHeight = Auth::user()->floor_height ?? 800;
 
-        return view('tables.map', compact('tables', 'maxTables'));
+        return view('tables.map', compact('tables', 'elements', 'zones', 'maxTables', 'floorWidth', 'floorHeight'));
+    }
+
+    /**
+     * Guarda las dimensiones personalizadas del canvas del plano.
+     *
+     * @param  Request  $request
+     * @return JsonResponse
+     */
+    public function updateCanvas(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'floor_width'  => 'required|integer|min:800|max:3000',
+            'floor_height' => 'required|integer|min:600|max:2000',
+        ]);
+
+        Auth::user()->update($data);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Dimensiones del plano guardadas.',
+        ]);
     }
 
     /**
@@ -60,29 +98,38 @@ class TableController extends Controller
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'name'       => 'required|string|max:50',
-            'shape'      => 'required|in:square,round,rectangle',
-            'position_x' => 'required|integer|min:0',
-            'position_y' => 'required|integer|min:0',
-            'width'      => 'required|integer|min:60|max:400',
-            'height'     => 'required|integer|min:60|max:400',
+            'name'             => 'required|string|max:50',
+            'shape'            => 'required|in:square,round,rectangle,bar,stool',
+            'position_x'       => 'required|integer|min:0',
+            'position_y'       => 'required|integer|min:0',
+            'width'            => 'required|integer|min:40|max:800',
+            'height'           => 'required|integer|min:40|max:400',
+            'is_service_point' => 'sometimes|boolean',
+            'zone_id'          => ['sometimes', 'nullable', Rule::exists('zones', 'id')->where('user_id', Auth::id())],
         ]);
 
-        $count     = Table::where('user_id', Auth::id())->count();
-        $maxTables = Auth::user()->plan?->max_tables ?? 10;
+        $isServicePoint = in_array($data['shape'], ['bar', 'stool'])
+            ? false
+            : ($data['is_service_point'] ?? true);
 
-        if ($count >= $maxTables) {
-            return response()->json([
-                'success' => false,
-                'message' => "Has alcanzado el límite de {$maxTables} mesas de tu plan.",
-            ], 422);
+        if ($isServicePoint) {
+            $count     = Table::where('user_id', Auth::id())->servicePoints()->count();
+            $maxTables = Auth::user()->plan?->max_tables ?? 10;
+
+            if ($count >= $maxTables) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Has alcanzado el límite de {$maxTables} mesas de tu plan.",
+                ], 422);
+            }
         }
 
         $table = Table::create([
             ...$data,
-            'user_id'     => Auth::id(),
-            'unique_hash' => Str::uuid()->toString(),
-            'status'      => 'free',
+            'user_id'          => Auth::id(),
+            'unique_hash'      => Str::uuid()->toString(),
+            'status'           => 'free',
+            'is_service_point' => $isServicePoint,
         ]);
 
         return response()->json([
@@ -104,10 +151,10 @@ class TableController extends Controller
         abort_if($table->user_id !== Auth::id(), 403, 'Acceso denegado.');
 
         $data = $request->validate([
-            'position_x' => 'required|integer|min:0',
-            'position_y' => 'required|integer|min:0',
-            'width'      => 'required|integer|min:60|max:400',
-            'height'     => 'required|integer|min:60|max:400',
+            'position_x' => 'required|integer|min:-3000',
+            'position_y' => 'required|integer|min:-3000',
+            'width'      => 'required|integer|min:40|max:800',
+            'height'     => 'required|integer|min:40|max:800',
             'rotation'   => 'sometimes|integer|min:0|max:359',
         ]);
 
@@ -156,7 +203,7 @@ class TableController extends Controller
         abort_if($table->user_id !== Auth::id(), 403, 'Acceso denegado.');
 
         $data = $request->validate([
-            'shape' => 'required|in:square,round,rectangle',
+            'shape' => 'required|in:square,round,rectangle,bar,stool',
         ]);
 
         $table->update($data);
@@ -165,6 +212,8 @@ class TableController extends Controller
             'square'    => 'cuadrada',
             'round'     => 'redonda',
             'rectangle' => 'rectangular',
+            'bar'       => 'barra',
+            'stool'     => 'taburete',
         };
 
         return response()->json([

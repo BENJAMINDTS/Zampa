@@ -29,7 +29,7 @@ class MenuController extends Controller
      */
     public function show(string $hash): View
     {
-        $table  = Table::where('unique_hash', $hash)->firstOrFail();
+        $table  = Table::where('unique_hash', $hash)->where('is_service_point', true)->firstOrFail();
         $config = $table->user->tapaConfig;
 
         if ($config) {
