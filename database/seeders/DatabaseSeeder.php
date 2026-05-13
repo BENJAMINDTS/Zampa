@@ -79,6 +79,8 @@ class DatabaseSeeder extends Seeder
                 'address'       => 'Calle Mayor 1, Madrid',
                 'lat'           => 40.4168,
                 'lng'           => -3.7038,
+                'is_waiter'     => true,
+                'is_kitchen'    => true,
             ]
         );
 
