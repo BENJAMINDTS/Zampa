@@ -1031,20 +1031,22 @@
                         if (res.ok && data.success) {
                             const cats  = this.menuData?.categories ?? [];
                             const qrs   = cats.map(c => c.name);
-                            const cards = (data.data.cards ?? []).map(c => ({
-                                id:          c.id,
-                                name:        c.name,
-                                price:       c.price,
-                                description: c.description,
-                                image:       c.image ?? null,
-                                allergens:   (c.allergens ?? []).map(a => ({
-                                    name:  a,
-                                    ...this.getAllergenIcon(a),
-                                })),
-                                emoji:       cats.find(cat =>
-                                    cat.products.some(p => p.id === c.id)
-                                )?.destination === 'bar' ? '🍺' : '🍽️',
-                            }));
+                            const cards = (data.data.cards ?? []).map(c => {
+                                const matchedCat = cats.find(cat => cat.products.some(p => p.id === c.id));
+                                return {
+                                    id:          c.id,
+                                    name:        c.name,
+                                    price:       c.price,
+                                    description: c.description,
+                                    image:       c.image ?? null,
+                                    allergens:   (c.allergens ?? []).map(a => ({
+                                        name: a,
+                                        ...this.getAllergenIcon(a),
+                                    })),
+                                    foodIcon: this.getFoodIcon(matchedCat?.name ?? '', c.name),
+                                    emoji:    matchedCat?.destination === 'bar' ? '🍺' : '🍽️',
+                                };
+                            });
                             this.pushMsg({
                                 type:         'bot',
                                 text:         data.data.reply,
@@ -1062,6 +1064,32 @@
                         this.sending = false;
                         this.$nextTick(() => this.scrollBottom());
                     }
+                },
+
+                /* ── Icono por tipo de alimento (categoría del producto) ── */
+                getFoodIcon(categoryName, productName) {
+                    const norm = s => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+                    const s = norm(categoryName) + ' ' + norm(productName);
+                    if (/pizza/.test(s))                                                               return { svgId: 'pizza',     label: 'Pizza' };
+                    if (/burger|hamburgues/.test(s))                                                   return { svgId: 'burger',    label: 'Hamburguesa' };
+                    if (/pasta|espaguet|fettuccin|lasana|canelones|macarron|carbonara|bolonesa/.test(s)) return { svgId: 'pasta',   label: 'Pasta' };
+                    if (/paella|arroz|risotto/.test(s))                                                return { svgId: 'rice',      label: 'Arroz' };
+                    if (/ensalada|salad/.test(s))                                                      return { svgId: 'salad',     label: 'Ensalada' };
+                    if (/sopa|crema|caldo|gazpacho|vichyssoise|consomme/.test(s))                      return { svgId: 'soup',      label: 'Sopa' };
+                    if (/tapa|tapas|pincho|montadito|ración|racion/.test(s))                           return { svgId: 'tapas',     label: 'Tapas' };
+                    if (/entrante|aperitivo|starter/.test(s))                                          return { svgId: 'starter',   label: 'Entrante' };
+                    if (/postre|dulce|helado|tarta|bizcocho|mousse|flan|brownie|crepe|tiramisu/.test(s)) return { svgId: 'dessert', label: 'Postre' };
+                    if (/cerveza|beer|cana|birra|copa de|caña/.test(s))                                return { svgId: 'beer',      label: 'Cerveza' };
+                    if (/vino|wine|cava|champan|prosecco|sangria/.test(s))                             return { svgId: 'wine',      label: 'Vino' };
+                    if (/coctel|cocktail|mojito|margarita|daiquiri|gin|combinado|destilado/.test(s))   return { svgId: 'cocktail',  label: 'Cóctel' };
+                    if (/bebida|refresco|agua|zumo|juice|batido|smoothie|cola|limonad|infusion|cafe/.test(s)) return { svgId: 'drink', label: 'Bebida' };
+                    if (/sushi|maki|nigiri|temaki|onigiri|japon/.test(s))                              return { svgId: 'sushi',     label: 'Sushi' };
+                    if (/bocadillo|sandwich|bocata|baguet|wrap|sub/.test(s))                           return { svgId: 'sandwich',  label: 'Bocadillo' };
+                    if (/carne|ternera|vaca|cerdo|pollo|pavo|cordero|parrilla|grill|asado|filete|costill|entrecot|chulet/.test(s)) return { svgId: 'meat', label: 'Carne' };
+                    if (/pescado|merluza|bacalao|salmon|atun|dorada|lubina|lenguado|rodaballo/.test(s)) return { svgId: 'fish-dish', label: 'Pescado' };
+                    if (/marisco|gamba|langosta|pulpo|calamar|sepia|almeja|mejillo|ostra|bogavante|chipiro/.test(s)) return { svgId: 'seafood', label: 'Marisco' };
+                    if (/vegano|vegetarian|vegan|veggie/.test(s))                                      return { svgId: 'vegan',     label: 'Vegano' };
+                    return null;
                 },
 
                 /* ── Mapeo de alérgenos UE (Reglamento 1169/2011) ── */
@@ -1340,6 +1368,120 @@
                 </symbol>
             </svg>
 
+            {{-- Sprite SVG: categorías de tipo de alimento --}}
+            <svg aria-hidden="true" style="display:none;position:absolute;width:0;height:0;overflow:hidden;">
+                <symbol id="fc-pizza" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 3 L21 20 L3 20 Z"/>
+                    <ellipse cx="12" cy="20" rx="9" ry="2" opacity="0.5"/>
+                    <circle cx="12" cy="15" r="1.8" opacity="0.45"/>
+                    <circle cx="9"  cy="11" r="1.3" opacity="0.45"/>
+                    <circle cx="15" cy="11" r="1.3" opacity="0.45"/>
+                </symbol>
+                <symbol id="fc-burger" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M4 9 Q12 5 20 9 L20 11 L4 11 Z"/>
+                    <rect x="3" y="12" width="18" height="3"   rx="1.5"/>
+                    <rect x="3" y="16" width="18" height="4.5" rx="2.5"/>
+                </symbol>
+                <symbol id="fc-pasta" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M3 14 Q3 22 12 22 Q21 22 21 14 Z"/>
+                    <rect x="2" y="12" width="20" height="2.5" rx="1.25"/>
+                    <rect x="11" y="3" width="1.8" height="9" rx="0.9"/>
+                    <rect x="8.2" y="3" width="1.4" height="5.5" rx="0.7"/>
+                    <rect x="14.4" y="3" width="1.4" height="5.5" rx="0.7"/>
+                    <path d="M9.6 8.5 Q12 10.5 14.4 8.5" fill="none" stroke="currentColor" stroke-width="1.3"/>
+                </symbol>
+                <symbol id="fc-salad" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M3 14 Q3 21 12 21 Q21 21 21 14 Z"/>
+                    <rect x="2" y="12" width="20" height="2.5" rx="1.25"/>
+                    <path d="M8 12 C6 7 10 4 12 8 C14 4 18 7 16 12"/>
+                    <path d="M10.5 12 C11.5 9.5 12.5 9.5 13.5 12" opacity="0.6"/>
+                </symbol>
+                <symbol id="fc-soup" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M3 14 Q3 22 12 22 Q21 22 21 14 Z"/>
+                    <rect x="2" y="12" width="20" height="2.5" rx="1.25"/>
+                    <path d="M8  10 C9  7 8  5 9  3" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+                    <path d="M12  9 C13 6 12 4 13 2" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+                    <path d="M16 10 C17 7 16 5 17 3" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+                </symbol>
+                <symbol id="fc-starter" viewBox="0 0 24 24" fill="currentColor">
+                    <ellipse cx="12" cy="20" rx="10" ry="2.5"/>
+                    <path d="M2 20 Q2 9 12 9 Q22 9 22 20"/>
+                    <circle cx="12" cy="9" r="2.2"/>
+                </symbol>
+                <symbol id="fc-tapas" viewBox="0 0 24 24" fill="currentColor">
+                    <ellipse cx="12" cy="21" rx="10" ry="2.5"/>
+                    <circle cx="8"  cy="14" r="3.5"/>
+                    <circle cx="12" cy="12" r="3.5" opacity="0.8"/>
+                    <circle cx="16" cy="14" r="3.5" opacity="0.6"/>
+                    <rect x="11.3" y="6" width="1.4" height="7" rx="0.7"/>
+                </symbol>
+                <symbol id="fc-dessert" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M6 12 Q12 5 18 12 Z"/>
+                    <path d="M5 12 L7 21 L17 21 L19 12 Z"/>
+                    <rect x="5" y="15.5" width="14" height="1.2" rx="0.6" opacity="0.35"/>
+                    <rect x="5" y="18"   width="14" height="1.2" rx="0.6" opacity="0.35"/>
+                    <circle cx="12" cy="7" r="2.5" opacity="0.7"/>
+                </symbol>
+                <symbol id="fc-drink" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M7 4 L6 21 L18 21 L17 4 Z"/>
+                    <rect x="14" y="2" width="2.2" height="13" rx="1.1" opacity="0.55"/>
+                </symbol>
+                <symbol id="fc-beer" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M5 9 L5 22 Q5 23 7 23 L16 23 Q18 23 18 22 L18 9 Z"/>
+                    <path d="M18 11 Q23 11 23 15 Q23 19 18 19" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"/>
+                    <path d="M5 9 Q7 5 9 9 Q11 5 13 9 Q15 5 17 9 Q18 7 18 9"/>
+                </symbol>
+                <symbol id="fc-wine" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M7 3 L17 3 C17 9.5 14 12 13 13.5 L13 18 L15 18 L15 21 L9 21 L9 18 L11 18 L11 13.5 C10 12 7 9.5 7 3 Z"/>
+                </symbol>
+                <symbol id="fc-cocktail" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M3 3 L21 3 L12 15 Z"/>
+                    <rect x="11" y="15" width="2"  height="5"/>
+                    <rect x="8"  y="20" width="8"  height="2.5" rx="1.25"/>
+                    <circle cx="17" cy="4" r="1.8" opacity="0.65"/>
+                </symbol>
+                <symbol id="fc-meat" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M4 15 C3 10 6 6 10 6 C10 4 12 3 14 5 C17 4 21 7 21 12 C21 17 18 21 12 21 C7 21 5 19 4 15 Z"/>
+                    <path d="M10 6 Q7 10 8 15" fill="none" stroke="currentColor" stroke-width="1" opacity="0.3"/>
+                </symbol>
+                <symbol id="fc-fish-dish" viewBox="0 0 26 22" fill="currentColor">
+                    <ellipse cx="10" cy="11" rx="8" ry="5.5"/>
+                    <path d="M18 6 L26 3 L26 19 L18 16 Z"/>
+                    <circle cx="4.5" cy="10" r="1.6" opacity="0.3"/>
+                </symbol>
+                <symbol id="fc-seafood" viewBox="0 0 24 24">
+                    <circle cx="18" cy="5" r="2.5" fill="currentColor"/>
+                    <path d="M18 3 L22 1.5 M18.8 2 L21.5 0" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+                    <path d="M18 5 C21 8 21 15 17 19 C14 22 9 22 6 19 C3 16 4 12 7 11 C10 10 12 12 11 15 C10.5 16.5 9.5 16.5 9 15.5"
+                          stroke="currentColor" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+                </symbol>
+                <symbol id="fc-sandwich" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M3 8 Q12 4 21 8 L21 11 L3 11 Z"/>
+                    <rect x="3" y="11"   width="18" height="2.5" rx="0.5" opacity="0.7"/>
+                    <rect x="3" y="13.5" width="18" height="2"   rx="0.5" opacity="0.5"/>
+                    <rect x="3" y="16"   width="18" height="4.5" rx="2.5"/>
+                </symbol>
+                <symbol id="fc-sushi" viewBox="0 0 24 24" fill="currentColor">
+                    <circle cx="12" cy="12" r="9"/>
+                    <circle cx="12" cy="12" r="5.5" opacity="0.45"/>
+                    <circle cx="12" cy="12" r="2.5"/>
+                </symbol>
+                <symbol id="fc-rice" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M3 13 Q3 21 12 21 Q21 21 21 13 Z"/>
+                    <rect x="2" y="11" width="20" height="2.5" rx="1.25"/>
+                    <circle cx="9"  cy="9"  r="1.3" opacity="0.8"/>
+                    <circle cx="13" cy="8"  r="1.3" opacity="0.8"/>
+                    <circle cx="11" cy="6"  r="1.3" opacity="0.8"/>
+                    <circle cx="16" cy="10" r="1.1" opacity="0.6"/>
+                    <circle cx="7"  cy="7"  r="1.1" opacity="0.6"/>
+                </symbol>
+                <symbol id="fc-vegan" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 22 C12 22 4 15 4 9 C4 4 8 2 12 2 C16 2 20 4 20 9 C20 15 12 22 12 22 Z"/>
+                    <path d="M12 22 L12 9" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3"/>
+                    <path d="M12 14 L8 10 M12 18 L16 14" fill="none" stroke="currentColor" stroke-width="1" opacity="0.25"/>
+                </symbol>
+            </svg>
+
             {{-- Botón flotante Zampi (se oculta cuando el chat está abierto) --}}
             <button type="button"
                     @click="openChat()"
@@ -1451,8 +1593,18 @@
                                                                      loading="lazy"/>
                                                             </template>
                                                             <template x-if="!card.image">
-                                                                <div style="height:52px; border-radius:10px; background:linear-gradient(135deg,#162648,#0A1430); display:flex; align-items:center; justify-content:center; font-size:26px; margin-bottom:8px; flex-shrink:0;"
-                                                                     x-text="card.emoji"></div>
+                                                                <div style="height:56px; border-radius:10px; background:linear-gradient(135deg,#162648,#0A1430); display:flex; align-items:center; justify-content:center; margin-bottom:8px; flex-shrink:0;">
+                                                                    <template x-if="card.foodIcon">
+                                                                        <svg width="34" height="34" viewBox="0 0 24 24"
+                                                                             aria-hidden="true"
+                                                                             style="color:rgba(139,168,232,0.6); overflow:visible;">
+                                                                            <use :href="'#fc-' + card.foodIcon.svgId"/>
+                                                                        </svg>
+                                                                    </template>
+                                                                    <template x-if="!card.foodIcon">
+                                                                        <span x-text="card.emoji" style="font-size:26px;"></span>
+                                                                    </template>
+                                                                </div>
                                                             </template>
                                                             {{-- Nombre --}}
                                                             <div style="font-size:12px; font-weight:700; color:#fff; margin-bottom:3px; font-family:'Space Grotesk',sans-serif; line-height:1.3;"
