@@ -107,6 +107,7 @@ class ChatService
                 'name'        => $p->name,
                 'price'       => (float) $p->price,
                 'description' => $p->description ?? '',
+                'image'       => $p->image ? asset('storage/' . $p->image) : null,
                 'allergens'   => $p->ingredients
                     ->where('is_allergen', true)
                     ->pluck('name')
