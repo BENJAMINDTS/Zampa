@@ -1,5 +1,11 @@
 {{-- @author SebastianBCF --}}
 <nav x-data="{ open: false }" class="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700">
+    @php
+        $cartaActive   = request()->routeIs('categories.*', 'ingredients.*', 'products.*');
+        $localActive   = request()->routeIs('tables.*', 'zones.*', 'staff.*');
+        $negocioActive = request()->routeIs('tapas.*', 'manager.*');
+    @endphp
+
     <!-- Primary Navigation Menu -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
@@ -13,48 +19,146 @@
 
                 <!-- Navigation Links -->
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    {{-- Dashboard: visible solo para gerente (admin) --}}
                     @if(Auth::user()->role === 'admin')
+                    {{-- Dashboard: acceso directo de alta frecuencia --}}
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                         {{ __('Dashboard') }}
                     </x-nav-link>
+
+                    {{-- Carta: Categorías, Ingredientes, Productos --}}
+                    <div class="relative flex items-stretch"
+                         x-data="{ open: false }"
+                         @click.outside="open = false"
+                         @close.stop="open = false">
+                        <button
+                            @click="open = !open"
+                            :aria-expanded="open.toString()"
+                            aria-haspopup="menu"
+                            aria-label="{{ __('Menú Carta') }}"
+                            class="{{ $cartaActive
+                                ? 'inline-flex items-center px-1 pt-1 border-b-2 border-indigo-400 dark:border-indigo-600 text-sm font-medium leading-5 text-gray-900 dark:text-gray-100 focus:outline-none focus:border-indigo-700 transition duration-150 ease-in-out'
+                                : 'inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium leading-5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-700 focus:outline-none focus:text-gray-700 dark:focus:text-gray-300 focus:border-gray-300 dark:focus:border-gray-700 transition duration-150 ease-in-out' }}"
+                        >
+                            {{ __('Carta') }}
+                            <svg class="ms-1 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
+                        <div
+                            x-show="open"
+                            x-transition:enter="transition ease-out duration-200"
+                            x-transition:enter-start="opacity-0 scale-95"
+                            x-transition:enter-end="opacity-100 scale-100"
+                            x-transition:leave="transition ease-in duration-75"
+                            x-transition:leave-start="opacity-100 scale-100"
+                            x-transition:leave-end="opacity-0 scale-95"
+                            @click="open = false"
+                            class="absolute z-50 top-full mt-2 w-48 rounded-md shadow-lg ltr:origin-top-left rtl:origin-top-right start-0"
+                            style="display: none;"
+                            role="menu"
+                        >
+                            <div class="rounded-md ring-1 ring-black ring-opacity-5 py-1 bg-white dark:bg-gray-700">
+                                <x-dropdown-link role="menuitem" :href="route('categories.index')" :active="request()->routeIs('categories.*')">
+                                    {{ __('Categorías') }}
+                                </x-dropdown-link>
+                                <x-dropdown-link role="menuitem" :href="route('ingredients.index')" :active="request()->routeIs('ingredients.*')">
+                                    {{ __('Ingredientes') }}
+                                </x-dropdown-link>
+                                <x-dropdown-link role="menuitem" :href="route('products.index')" :active="request()->routeIs('products.*')">
+                                    {{ __('Productos') }}
+                                </x-dropdown-link>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Local: Mapa de mesas, Mi equipo --}}
+                    <div class="relative flex items-stretch"
+                         x-data="{ open: false }"
+                         @click.outside="open = false"
+                         @close.stop="open = false">
+                        <button
+                            @click="open = !open"
+                            :aria-expanded="open.toString()"
+                            aria-haspopup="menu"
+                            aria-label="{{ __('Menú Local') }}"
+                            class="{{ $localActive
+                                ? 'inline-flex items-center px-1 pt-1 border-b-2 border-indigo-400 dark:border-indigo-600 text-sm font-medium leading-5 text-gray-900 dark:text-gray-100 focus:outline-none focus:border-indigo-700 transition duration-150 ease-in-out'
+                                : 'inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium leading-5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-700 focus:outline-none focus:text-gray-700 dark:focus:text-gray-300 focus:border-gray-300 dark:focus:border-gray-700 transition duration-150 ease-in-out' }}"
+                        >
+                            {{ __('Local') }}
+                            <svg class="ms-1 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
+                        <div
+                            x-show="open"
+                            x-transition:enter="transition ease-out duration-200"
+                            x-transition:enter-start="opacity-0 scale-95"
+                            x-transition:enter-end="opacity-100 scale-100"
+                            x-transition:leave="transition ease-in duration-75"
+                            x-transition:leave-start="opacity-100 scale-100"
+                            x-transition:leave-end="opacity-0 scale-95"
+                            @click="open = false"
+                            class="absolute z-50 top-full mt-2 w-48 rounded-md shadow-lg ltr:origin-top-left rtl:origin-top-right start-0"
+                            style="display: none;"
+                            role="menu"
+                        >
+                            <div class="rounded-md ring-1 ring-black ring-opacity-5 py-1 bg-white dark:bg-gray-700">
+                                <x-dropdown-link role="menuitem" :href="route('tables.map')" :active="request()->routeIs('tables.*', 'zones.*')">
+                                    {{ __('Mapa de mesas') }}
+                                </x-dropdown-link>
+                                <x-dropdown-link role="menuitem" :href="route('staff.index')" :active="request()->routeIs('staff.*')">
+                                    {{ __('Mi equipo') }}
+                                </x-dropdown-link>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Negocio: Tapas, Ingresos --}}
+                    <div class="relative flex items-stretch"
+                         x-data="{ open: false }"
+                         @click.outside="open = false"
+                         @close.stop="open = false">
+                        <button
+                            @click="open = !open"
+                            :aria-expanded="open.toString()"
+                            aria-haspopup="menu"
+                            aria-label="{{ __('Menú Negocio') }}"
+                            class="{{ $negocioActive
+                                ? 'inline-flex items-center px-1 pt-1 border-b-2 border-indigo-400 dark:border-indigo-600 text-sm font-medium leading-5 text-gray-900 dark:text-gray-100 focus:outline-none focus:border-indigo-700 transition duration-150 ease-in-out'
+                                : 'inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium leading-5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-700 focus:outline-none focus:text-gray-700 dark:focus:text-gray-300 focus:border-gray-300 dark:focus:border-gray-700 transition duration-150 ease-in-out' }}"
+                        >
+                            {{ __('Negocio') }}
+                            <svg class="ms-1 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
+                        <div
+                            x-show="open"
+                            x-transition:enter="transition ease-out duration-200"
+                            x-transition:enter-start="opacity-0 scale-95"
+                            x-transition:enter-end="opacity-100 scale-100"
+                            x-transition:leave="transition ease-in duration-75"
+                            x-transition:leave-start="opacity-100 scale-100"
+                            x-transition:leave-end="opacity-0 scale-95"
+                            @click="open = false"
+                            class="absolute z-50 top-full mt-2 w-48 rounded-md shadow-lg ltr:origin-top-left rtl:origin-top-right start-0"
+                            style="display: none;"
+                            role="menu"
+                        >
+                            <div class="rounded-md ring-1 ring-black ring-opacity-5 py-1 bg-white dark:bg-gray-700">
+                                <x-dropdown-link role="menuitem" :href="route('tapas.edit')" :active="request()->routeIs('tapas.*')">
+                                    {{ __('Tapas') }}
+                                </x-dropdown-link>
+                                <x-dropdown-link role="menuitem" :href="route('manager.income')" :active="request()->routeIs('manager.*')">
+                                    {{ __('Ingresos') }}
+                                </x-dropdown-link>
+                            </div>
+                        </div>
+                    </div>
                     @endif
-                    {{-- Usamos categories.* para que se quede marcado si estás en index o en create --}}
-                    <x-nav-link :href="route('categories.index')" :active="request()->routeIs('categories.*')">
-                        {{ __('Categorías') }}
-                    </x-nav-link>
-                    {{-- Usamos ingredients.* para que se quede marcado si estás en index o en create --}}
-                    <x-nav-link :href="route('ingredients.index')" :active="request()->routeIs('ingredients.*')">
-                        {{ __('Ingredientes') }}
-                    </x-nav-link>
-                    
-                    {{-- NUEVO: Enlace a Productos --}}
-                    <x-nav-link :href="route('products.index')" :active="request()->routeIs('products.*')">
-                        {{ __('Productos') }}
-                    </x-nav-link>
-                    {{-- Enlace a Mesas y QR --}}
-                    <x-nav-link :href="route('tables.index')" :active="request()->routeIs('tables.*')">
-                        {{ __('Mesas QR') }}
-                    </x-nav-link>
-                    {{-- Configuración de tapas: visible solo para admin --}}
-                    @if(Auth::user()->role === 'admin')
-                    <x-nav-link :href="route('tapas.edit')" :active="request()->routeIs('tapas.*')">
-                        {{ __('Tapas') }}
-                    </x-nav-link>
-                    @endif
-                    {{-- Desglose de ingresos: visible solo para admin --}}
-                    @if(Auth::user()->role === 'admin')
-                    <x-nav-link :href="route('manager.income')" :active="request()->routeIs('manager.*')">
-                        {{ __('Ingresos') }}
-                    </x-nav-link>
-                    @endif
-                    {{-- Gestión de personal: visible solo para admin --}}
-                    @if(Auth::user()->isAdmin())
-                    <x-nav-link :href="route('staff.index')" :active="request()->routeIs('staff.*')">
-                        {{ __('Mi equipo') }}
-                    </x-nav-link>
-                    @endif
-                    {{-- Panel de Cocina: visible solo para admin y kitchen --}}
+
+                    {{-- Panel de Cocina: admin y kitchen --}}
                     @if(in_array(Auth::user()->role, ['admin', 'kitchen']))
                     <span
                         x-data="kitchenBadge('{{ route('kitchen.badge') }}')"
@@ -72,7 +176,8 @@
                         ></span>
                     </span>
                     @endif
-                    {{-- Panel de Barra: visible solo para admin y waiter --}}
+
+                    {{-- Panel de Barra: admin y waiter --}}
                     @if(in_array(Auth::user()->role, ['admin', 'waiter']))
                     <span
                         x-data="barBadge('{{ route('bar.badge') }}')"
@@ -146,47 +251,42 @@
         <!-- Responsive Navigation Menu -->
         <div id="responsive-nav-menu" :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
             <div class="pt-2 pb-3 space-y-1">
-                {{-- Dashboard: visible solo para gerente (admin) --}}
                 @if(Auth::user()->role === 'admin')
                 <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                     {{ __('Dashboard') }}
                 </x-responsive-nav-link>
-                @endif
-                {{-- NUEVO: Enlace a Categorías (Versión Móvil) --}}
+
+                <h3 class="px-3 pt-3 pb-1 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500" role="presentation">{{ __('Carta') }}</h3>
                 <x-responsive-nav-link :href="route('categories.index')" :active="request()->routeIs('categories.*')">
                     {{ __('Categorías') }}
                 </x-responsive-nav-link>
-                {{-- NUEVO: Enlace a Ingredientes (Versión Móvil) --}}
                 <x-responsive-nav-link :href="route('ingredients.index')" :active="request()->routeIs('ingredients.*')">
                     {{ __('Ingredientes') }}
                 </x-responsive-nav-link>
-                {{-- NUEVO: Enlace a Productos (Versión Móvil) --}}
                 <x-responsive-nav-link :href="route('products.index')" :active="request()->routeIs('products.*')">
                     {{ __('Productos') }}
                 </x-responsive-nav-link>
-                {{-- Enlace a Mesas y QR (Versión Móvil) --}}
-                <x-responsive-nav-link :href="route('tables.index')" :active="request()->routeIs('tables.*')">
-                    {{ __('Mesas QR') }}
+
+                <h3 class="px-3 pt-3 pb-1 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500" role="presentation">{{ __('Local') }}</h3>
+                <x-responsive-nav-link :href="route('tables.map')" :active="request()->routeIs('tables.*', 'zones.*')">
+                    {{ __('Mapa de mesas') }}
                 </x-responsive-nav-link>
-                {{-- Configuración de tapas (Versión Móvil) --}}
-                @if(Auth::user()->role === 'admin')
-                <x-responsive-nav-link :href="route('tapas.edit')" :active="request()->routeIs('tapas.*')">
-                    {{ __('Tapas') }}
-                </x-responsive-nav-link>
-                @endif
-                {{-- Desglose de ingresos (Versión Móvil) --}}
-                @if(Auth::user()->role === 'admin')
-                <x-responsive-nav-link :href="route('manager.income')" :active="request()->routeIs('manager.*')">
-                    {{ __('Ingresos') }}
-                </x-responsive-nav-link>
-                @endif
-                {{-- Gestión de personal (Versión Móvil) --}}
-                @if(Auth::user()->isAdmin())
                 <x-responsive-nav-link :href="route('staff.index')" :active="request()->routeIs('staff.*')">
                     {{ __('Mi equipo') }}
                 </x-responsive-nav-link>
+
+                <h3 class="px-3 pt-3 pb-1 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500" role="presentation">{{ __('Negocio') }}</h3>
+                <x-responsive-nav-link :href="route('tapas.edit')" :active="request()->routeIs('tapas.*')">
+                    {{ __('Tapas') }}
+                </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('manager.income')" :active="request()->routeIs('manager.*')">
+                    {{ __('Ingresos') }}
+                </x-responsive-nav-link>
+
+                <h3 class="px-3 pt-3 pb-1 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500" role="presentation">{{ __('Servicio') }}</h3>
                 @endif
-                {{-- Panel de Cocina (Versión Móvil) --}}
+
+                {{-- Panel de Cocina: admin y kitchen --}}
                 @if(in_array(Auth::user()->role, ['admin', 'kitchen']))
                 <span x-data="kitchenBadge('{{ route('kitchen.badge') }}')" x-init="init()" class="flex items-center">
                     <x-responsive-nav-link :href="route('kitchen.index')" :active="request()->routeIs('kitchen.*')">
@@ -200,7 +300,8 @@
                     </x-responsive-nav-link>
                 </span>
                 @endif
-                {{-- Panel de Barra (Versión Móvil) --}}
+
+                {{-- Panel de Barra: admin y waiter --}}
                 @if(in_array(Auth::user()->role, ['admin', 'waiter']))
                 <span x-data="barBadge('{{ route('bar.badge') }}')" x-init="init()" class="flex items-center">
                     <x-responsive-nav-link :href="route('bar.index')" :active="request()->routeIs('bar.*')">
