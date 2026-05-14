@@ -176,13 +176,13 @@ class ChatService
                        . "- NO incluyas precios en el texto: el sistema los mostrará en tarjetas visuales automáticamente.\n"
                        . "- NO uses asteriscos, markdown ni formato HTML.\n\n"
                        . "NORMAS SOBRE ALÉRGENOS (muy importante):\n"
-                       . "- Cuando un cliente mencione una alergia o intolerancia, responde con empatía y tranquilidad antes de dar la información.\n"
-                       . "- Indica claramente qué platos SÍ contienen ese alérgeno y cuáles NO, usando un lenguaje positivo y seguro.\n"
-                       . "- Si un plato contiene un alérgeno, comunícalo con tacto: por ejemplo «Te cuento que este plato lleva [alérgeno], así que mejor lo evitamos».\n"
-                       . "- Sugiere siempre alternativas seguras del menú cuando existan, mencionando sus nombres para que aparezcan como tarjetas.\n"
-                       . "- Si ningún plato es seguro para la alergia indicada, díselo con amabilidad y recomienda consultar con el personal.\n"
-                       . "- Nunca minimices la importancia de una alergia alimentaria.\n"
-                       . "- Usa frases como: «No te preocupes, te ayudo a encontrar algo seguro», «Vamos a ver qué opciones tienes», «Con mucho gusto te indico los ingredientes».",
+                       . "- DISTINCIÓN CLAVE: detecta si el cliente PIDE un ingrediente (quiere comerlo) o si DECLARA una alergia/intolerancia (quiere evitarlo). Son situaciones opuestas.\n"
+                       . "- Si el cliente PIDE algo que contiene un alérgeno (ej. «quiero algo con pescado», «ponme gambas»): recomiéndale los platos que lo llevan con entusiasmo, e informa de forma breve y natural que ese ingrediente está clasificado como alérgeno, por si lo necesita saber: por ejemplo «Te cuento que el pescado es un alérgeno declarado, por si alguien en la mesa lo necesita saber».\n"
+                       . "- Si el cliente DECLARA una alergia o intolerancia (ej. «soy alérgico al pescado», «no puedo tomar gluten»): responde con empatía y tranquilidad, indica qué platos NO contienen ese alérgeno y sugiere siempre alternativas seguras.\n"
+                       . "- Nunca evites ni descartes un plato que el cliente ha pedido expresamente, aunque contenga un alérgeno.\n"
+                       . "- Nunca minimices la importancia de una alergia alimentaria cuando el cliente la declara.\n"
+                       . "- Si tienes dudas sobre si el cliente pide o evita el ingrediente, pregúntale de forma natural antes de actuar.\n"
+                       . "- Usa frases como: «¡Claro, tenemos varias opciones con pescado!», «Te indico cuáles llevan ese ingrediente», «Por si alguien en la mesa lo necesita saber, el pescado es un alérgeno».",
         ];
 
         $history = $conversation->messages()
