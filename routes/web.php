@@ -59,8 +59,7 @@ Route::middleware(['auth', 'business.active'])->group(function () {
         Route::post('/staff', [StaffController::class, 'store'])->name('staff.store');
         Route::delete('/staff/{staff}', [StaffController::class, 'destroy'])->name('staff.destroy');
 
-        // Mapa visual de mesas (Bloques 8.1 y 8.3) — solo admin
-        Route::get('/mesas/mapa', [TableController::class, 'map'])->name('tables.map');
+        // Mapa visual de mesas (Bloques 8.1 y 8.3) — solo admin puede editar
         Route::post('/mesas', [TableController::class, 'store'])->name('tables.store');
         Route::patch('/mesas/mapa/canvas', [TableController::class, 'updateCanvas'])->name('tables.canvas.update');
         Route::patch('/mesas/{table}/posicion', [TableController::class, 'updatePosition'])->name('tables.updatePosition');
@@ -74,14 +73,20 @@ Route::middleware(['auth', 'business.active'])->group(function () {
         Route::delete('/zonas/{zone}', [ZoneController::class, 'destroy'])->name('zones.destroy');
     });
 
+    // Mapa visual — lectura para admin y camarero, edición solo admin
+    Route::middleware('role:admin,waiter')->group(function () {
+        Route::get('/mesas/mapa', [TableController::class, 'map'])->name('tables.map');
+        Route::get('/mesas/mapa/estados', [TableController::class, 'mapStatuses'])->name('tables.map.statuses');
+    });
+
     // Gestión de mesas y códigos QR
     Route::get('/mesas', [TableController::class, 'index'])->name('tables.index');
     Route::get('/mesas/{table}/qr', [TableController::class, 'showQr'])->name('tables.qr.show');
     Route::get('/mesas/{table}/qr/descargar', [TableController::class, 'downloadQr'])->name('tables.qr.download');
     Route::post('/mesas/{table}/qr/regenerar', [TableController::class, 'regenerateHash'])->name('tables.qr.regenerate');
 
-    // Panel de cocina — accesible para roles admin y kitchen
-    Route::middleware('role:admin,kitchen')->group(function () {
+    // Panel de cocina — requiere canAccessKitchen() (rol nativo 'kitchen' o admin con is_kitchen=true)
+    Route::middleware('can.kitchen')->group(function () {
         Route::get('/cocina', [KitchenController::class, 'index'])->name('kitchen.index');
         Route::get('/cocina/badge', [KitchenController::class, 'badgeCount'])->name('kitchen.badge');
         Route::get('/cocina/pendientes', [KitchenController::class, 'pendingOrders'])->name('kitchen.pending');
@@ -89,8 +94,8 @@ Route::middleware(['auth', 'business.active'])->group(function () {
         Route::post('/cocina/orders/{order}/servido', [KitchenController::class, 'markOrderServed'])->name('kitchen.order.served');
     });
 
-    // Panel de barra y notificaciones al camarero — accesible para roles admin y waiter
-    Route::middleware('role:admin,waiter')->group(function () {
+    // Panel de barra y notificaciones al camarero — requiere canAccessBar() (rol nativo 'waiter' o admin con is_waiter=true)
+    Route::middleware('can.bar')->group(function () {
         Route::get('/bar', [BarPanelController::class, 'index'])->name('bar.index');
         Route::get('/bar/badge', [BarPanelController::class, 'badgeCount'])->name('bar.badge');
         Route::get('/bar/pendientes', [BarPanelController::class, 'pendingItems'])->name('bar.pending');

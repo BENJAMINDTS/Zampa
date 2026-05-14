@@ -27,22 +27,22 @@ it('admin with kitchen role can access kitchen panel', function () {
         ->assertOk();
 });
 
-// ─── Middleware no bloquea al admin sin flags (acceso directo permitido) ─────
+// ─── Admin sin flags recibe 403 en ambos paneles ─────────────────────────────
 
-it('admin without waiter flag can still access bar panel directly', function () {
+it('admin without waiter flag cannot access bar panel', function () {
     $admin = User::factory()->admin()->create(['is_waiter' => false]);
 
     $this->actingAs($admin)
         ->get(route('bar.index'))
-        ->assertOk();
+        ->assertForbidden();
 });
 
-it('admin without kitchen flag can still access kitchen panel directly', function () {
+it('admin without kitchen flag cannot access kitchen panel', function () {
     $admin = User::factory()->admin()->create(['is_kitchen' => false]);
 
     $this->actingAs($admin)
         ->get(route('kitchen.index'))
-        ->assertOk();
+        ->assertForbidden();
 });
 
 // ─── Visibilidad en navegación según flags ───────────────────────────────────

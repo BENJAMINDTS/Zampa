@@ -2,6 +2,7 @@
 
 /**
  * @author AyrtonAlania
+ * @author SebastianBCF
  */
 
 use App\Models\Order;
@@ -34,13 +35,21 @@ it('shows bar panel to waiter role', function () {
         ->assertViewIs('bar.index');
 });
 
-it('shows bar panel to admin role', function () {
-    $admin = User::factory()->create(['role' => 'admin']);
+it('shows bar panel to admin with waiter role', function () {
+    $admin = User::factory()->admin()->alsoWaiter()->create();
 
     $this->actingAs($admin)
         ->get(route('bar.index'))
         ->assertOk()
         ->assertViewIs('bar.index');
+});
+
+it('returns 403 for admin without waiter role', function () {
+    $admin = User::factory()->admin()->create(['is_waiter' => false]);
+
+    $this->actingAs($admin)
+        ->get(route('bar.index'))
+        ->assertForbidden();
 });
 
 it('returns 403 for kitchen role on bar panel', function () {
@@ -325,4 +334,34 @@ it('returns 403 when dismissing notification from another restaurant', function 
         ->assertForbidden();
 
     expect($otherOrder->fresh()->notification_ready)->toBeTrue();
+});
+
+// ─── Aislamiento estricto por rol ────────────────────────────────────────────
+
+it('returns 403 for kitchen role trying to access bar panel', function () {
+    $admin   = User::factory()->admin()->create();
+    $kitchen = User::factory()->kitchen()->staffOf($admin)->create();
+
+    $this->actingAs($kitchen)
+        ->get(route('bar.index'))
+        ->assertForbidden();
+});
+
+it('allows admin with waiter role to access bar panel', function () {
+    $admin = User::factory()->admin()->alsoWaiter()->create();
+
+    $this->actingAs($admin)
+        ->get(route('bar.index'))
+        ->assertOk()
+        ->assertViewIs('bar.index');
+});
+
+it('allows waiter role to access bar panel', function () {
+    $admin  = User::factory()->admin()->create();
+    $waiter = User::factory()->waiter()->staffOf($admin)->create();
+
+    $this->actingAs($waiter)
+        ->get(route('bar.index'))
+        ->assertOk()
+        ->assertViewIs('bar.index');
 });

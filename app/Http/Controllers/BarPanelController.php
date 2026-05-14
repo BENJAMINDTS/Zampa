@@ -27,6 +27,8 @@ class BarPanelController extends Controller
      */
     public function index(): View
     {
+        abort_if(! Auth::user()->canAccessBar(), 403, 'Acceso denegado.');
+
         $orders   = $this->getActiveOrders();
         $ownerId  = Auth::user()->ownerUserId();
 
@@ -50,6 +52,8 @@ class BarPanelController extends Controller
      */
     public function badgeCount(): JsonResponse
     {
+        abort_if(! Auth::user()->canAccessBar(), 403, 'Acceso denegado.');
+
         $ownerId = Auth::user()->ownerUserId();
         $count   = Order::whereHas('table', fn($q) => $q->where('user_id', $ownerId))
             ->whereHas('items', fn($q) => $q->where('destination', 'bar')->where('status', 'queued'))
@@ -66,6 +70,8 @@ class BarPanelController extends Controller
      */
     public function pendingItems(): JsonResponse
     {
+        abort_if(! Auth::user()->canAccessBar(), 403, 'Acceso denegado.');
+
         $orders = $this->getActiveOrders()
             ->map(fn(Order $order) => [
                 'id'         => $order->id,
@@ -104,6 +110,8 @@ class BarPanelController extends Controller
      */
     public function updateItem(OrderItem $item): JsonResponse
     {
+        abort_if(! Auth::user()->canAccessBar(), 403, 'Acceso denegado.');
+
         $order = $item->order()->with('table')->first();
 
         abort_if($order->table->user_id !== Auth::user()->ownerUserId(), 403, 'Acceso denegado.');
