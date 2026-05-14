@@ -24,6 +24,7 @@ Route::post('/v1/payment/{hash}/confirm', [CardPaymentController::class, 'confir
     ->name('api.payment.confirm');
 
 // Chatbot IA — rutas públicas (sin autenticación, contexto por table_hash)
+Route::get('/v1/menu/{tableHash}',             [ChatController::class, 'menu'])->middleware('throttle:60,1')->name('api.chat.menu');
 Route::post('/v1/chat/{tableHash}/start',      [ChatController::class, 'start'])->name('api.chat.start');
 Route::post('/v1/chat/{conversation}/message', [ChatController::class, 'send'])->middleware('throttle:60,1')->name('api.chat.send');
 Route::delete('/v1/chat/{conversation}',       [ChatController::class, 'close'])->name('api.chat.close');
