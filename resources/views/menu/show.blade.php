@@ -853,33 +853,44 @@
                 },
 
                 /* ── Carrito del chat ── */
+                /* ── Gestión del carrito del chat ── */
+                cartQty(id) {
+                    return this.chatCart.find(i => i.id === id)?.qty ?? 0;
+                },
+
                 addToCart(card) {
                     const existing = this.chatCart.find(i => i.id === card.id);
                     if (existing) { existing.qty++; }
                     else { this.chatCart.push({ id: card.id, name: card.name, price: card.price, qty: 1 }); }
+                },
 
-                    const cats = this.menuData?.categories ?? [];
-                    const qrs  = cats.map(c => this.getCategoryEmoji(c.name) + ' ' + c.name);
-                    this.pushMsg({
-                        type: 'bot',
-                        text: '✅ ' + card.name + ' añadido. ¿Algo más?',
-                        quickReplies: [...qrs, 'Ver mi pedido', 'Confirmar pedido'],
-                    });
+                decreaseQty(card) {
+                    const existing = this.chatCart.find(i => i.id === card.id);
+                    if (!existing) return;
+                    if (existing.qty <= 1) this.chatCart = this.chatCart.filter(i => i.id !== card.id);
+                    else existing.qty--;
+                },
+
+                removeCartItem(id) {
+                    const item = this.chatCart.find(i => i.id === id);
+                    this.chatCart = this.chatCart.filter(i => i.id !== id);
+                    if (item) {
+                        const qrs = (this.menuData?.categories ?? []).map(c => this.getCategoryEmoji(c.name) + ' ' + c.name);
+                        this.pushMsg({ type: 'bot',
+                            text: '🗑️ ' + item.name + ' eliminado del pedido.',
+                            quickReplies: this.chatCart.length ? ['Ver mi pedido', 'Confirmar pedido', ...qrs] : qrs,
+                        });
+                    }
                 },
 
                 showCartSummary() {
                     if (!this.chatCart.length) {
                         const qrs = (this.menuData?.categories ?? []).map(c => this.getCategoryEmoji(c.name) + ' ' + c.name);
-                        this.botDelay('Tu pedido está vacío. ¡Elige algo primero!', { quickReplies: qrs });
+                        this.botDelay('Tu pedido está vacío. ¡Elige algo primero! 😊', { quickReplies: qrs });
                         return;
                     }
-                    const items = this.chatCart.map(i => ({
-                        name:  i.name,
-                        qty:   i.qty,
-                        price: '$' + (i.price * i.qty).toFixed(2),
-                    }));
-                    this.botDelay('¡Aquí está tu pedido! ¿Confirmamos?', {
-                        orderSummary: { items, total: this.cartTotalStr },
+                    this.botDelay('¡Aquí está tu pedido! ¿Confirmamos? 🛒', {
+                        cartLive: true,
                         quickReplies: ['Confirmar pedido', 'Seguir eligiendo'],
                     });
                 },
@@ -952,10 +963,36 @@
                     if (lower.includes('confirmar') &&
                         lower.includes('pedido'))                  { this.confirmOrder(); return; }
 
+                    /* Detectar intención de eliminar producto del pedido */
+                    if (this.tryRemoveByName(lower, text)) return;
+
                     /* Detectar producto por nombre con intención de pedido */
                     if (this.tryAddByName(lower)) return;
 
                     await this.sendToAI(text);
+                },
+
+                /* ── Eliminar producto del pedido por texto ── */
+                tryRemoveByName(lower, originalText) {
+                    if (!this.chatCart.length) return false;
+                    const norm = s => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+                    const removePatterns = [/\b(quita|quitar|elimina|eliminar|borra|borrar|saca|sacar|cancela|cancelar|no quiero|sin )\b/];
+                    if (!removePatterns.some(p => p.test(norm(lower)))) return false;
+
+                    const nl = norm(lower);
+                    for (const item of this.chatCart) {
+                        const words = norm(item.name).split(/\s+/).filter(w => w.length > 3);
+                        if (words.some(w => nl.includes(w))) {
+                            this.chatCart = this.chatCart.filter(i => i.id !== item.id);
+                            const qrs = (this.menuData?.categories ?? []).map(c => this.getCategoryEmoji(c.name) + ' ' + c.name);
+                            this.pushMsg({ type: 'bot',
+                                text: '🗑️ ' + item.name + ' eliminado del pedido. ¿Seguimos? 😊',
+                                quickReplies: this.chatCart.length ? ['Ver mi pedido', 'Confirmar pedido', ...qrs] : qrs,
+                            });
+                            return true;
+                        }
+                    }
+                    return false;
                 },
 
                 /* ── Añadir producto por nombre escrito en el chat ── */
@@ -1691,14 +1728,32 @@
                                                                     </template>
                                                                 </div>
                                                             </template>
-                                                            {{-- Precio + botón --}}
+                                                            {{-- Precio + controles cantidad --}}
                                                             <div style="display:flex; align-items:center; justify-content:space-between; margin-top:auto;">
                                                                 <span style="font-size:13px; font-weight:700; color:#FBBF24; font-family:'Nunito',sans-serif;"
                                                                       x-text="Number(card.price).toFixed(2).replace('.',',') + ' €'"></span>
-                                                                <button type="button"
-                                                                        @click.stop="addToCart(card)"
-                                                                        :aria-label="'Añadir ' + card.name + ' al pedido'"
-                                                                        style="width:26px; height:26px; border-radius:50%; background:linear-gradient(135deg,#2E50B0,#1A3380); border:none; color:#fff; font-size:17px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 0 8px rgba(46,80,176,0.6); flex-shrink:0;">+</button>
+                                                                {{-- Sin cantidad: solo botón + --}}
+                                                                <template x-if="cartQty(card.id) === 0">
+                                                                    <button type="button"
+                                                                            @click.stop="addToCart(card)"
+                                                                            :aria-label="'Añadir ' + card.name + ' al pedido'"
+                                                                            style="width:26px; height:26px; border-radius:50%; background:linear-gradient(135deg,#2E50B0,#1A3380); border:none; color:#fff; font-size:17px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 0 8px rgba(46,80,176,0.6); flex-shrink:0;">+</button>
+                                                                </template>
+                                                                {{-- Con cantidad: controles [-] [n] [+] --}}
+                                                                <template x-if="cartQty(card.id) > 0">
+                                                                    <div style="display:flex; align-items:center; gap:5px;">
+                                                                        <button type="button"
+                                                                                @click.stop="decreaseQty(card)"
+                                                                                :aria-label="'Quitar uno de ' + card.name"
+                                                                                style="width:24px; height:24px; border-radius:50%; background:rgba(46,80,176,0.35); border:1px solid rgba(46,80,176,0.6); color:#fff; font-size:16px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0;">−</button>
+                                                                        <span x-text="cartQty(card.id)"
+                                                                              style="font-size:13px; font-weight:800; color:#fff; font-family:'Nunito',sans-serif; min-width:14px; text-align:center;"></span>
+                                                                        <button type="button"
+                                                                                @click.stop="addToCart(card)"
+                                                                                :aria-label="'Añadir otro de ' + card.name"
+                                                                                style="width:24px; height:24px; border-radius:50%; background:linear-gradient(135deg,#2E50B0,#1A3380); border:none; color:#fff; font-size:17px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 0 8px rgba(46,80,176,0.6); flex-shrink:0;">+</button>
+                                                                    </div>
+                                                                </template>
                                                             </div>
                                                         </div>
                                                     </template>
@@ -1717,24 +1772,45 @@
                                                     </template>
                                                 </div>
                                             </template>
-                                            {{-- Resumen del pedido --}}
-                                            <template x-if="msg.orderSummary">
+                                            {{-- Resumen del pedido en vivo (reactivo a chatCart) --}}
+                                            <template x-if="msg.cartLive">
                                                 <div style="background:rgba(14,26,56,0.9); border:1px solid rgba(46,80,176,0.45); border-radius:16px; padding:12px; margin-top:8px; backdrop-filter:blur(12px);">
                                                     <div style="font-size:13px; font-weight:800; font-family:'Nunito',sans-serif; color:#fff; margin-bottom:8px;">🛒 Tu pedido</div>
-                                                    <template x-for="(item, iIdx) in msg.orderSummary.items" :key="iIdx">
-                                                        <div style="display:flex; justify-content:space-between; align-items:center; padding:5px 0; border-bottom:1px solid rgba(255,255,255,0.06);">
-                                                            <span style="font-size:12px; color:#C8D8FF;" x-text="item.name"></span>
-                                                            <div style="display:flex; gap:8px; align-items:center;">
-                                                                <span style="font-size:11px; color:#8FA8E8;" x-text="'×' + item.qty"></span>
-                                                                <span style="font-size:12px; font-weight:600; color:#FBBF24;" x-text="item.price"></span>
+                                                    <template x-if="chatCart.length === 0">
+                                                        <p style="font-size:12px; color:#8FA8E8; text-align:center; padding:8px 0;">El pedido está vacío.</p>
+                                                    </template>
+                                                    <template x-for="item in chatCart" :key="item.id">
+                                                        <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.06);">
+                                                            <span style="font-size:12px; color:#C8D8FF; flex:1;" x-text="item.name"></span>
+                                                            <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
+                                                                {{-- Controles cantidad --}}
+                                                                <button type="button"
+                                                                        @click.stop="decreaseQty(item)"
+                                                                        :aria-label="'Quitar uno de ' + item.name"
+                                                                        style="width:22px; height:22px; border-radius:50%; background:rgba(46,80,176,0.35); border:1px solid rgba(46,80,176,0.6); color:#fff; font-size:15px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center;">−</button>
+                                                                <span x-text="item.qty"
+                                                                      style="font-size:12px; font-weight:800; color:#fff; min-width:14px; text-align:center; font-family:'Nunito',sans-serif;"></span>
+                                                                <button type="button"
+                                                                        @click.stop="addToCart(item)"
+                                                                        :aria-label="'Añadir otro de ' + item.name"
+                                                                        style="width:22px; height:22px; border-radius:50%; background:linear-gradient(135deg,#2E50B0,#1A3380); border:none; color:#fff; font-size:15px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center;">+</button>
+                                                                {{-- Precio y eliminar --}}
+                                                                <span style="font-size:11px; font-weight:600; color:#FBBF24; min-width:48px; text-align:right; font-family:'Nunito',sans-serif;"
+                                                                      x-text="Number(item.price * item.qty).toFixed(2).replace('.',',') + ' €'"></span>
+                                                                <button type="button"
+                                                                        @click.stop="removeCartItem(item.id)"
+                                                                        :aria-label="'Eliminar ' + item.name + ' del pedido'"
+                                                                        style="width:20px; height:20px; border-radius:50%; background:rgba(220,38,38,0.2); border:1px solid rgba(220,38,38,0.4); color:#F87171; font-size:11px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0;">✕</button>
                                                             </div>
                                                         </div>
                                                     </template>
-                                                    <div style="display:flex; justify-content:space-between; margin-top:8px; padding-top:8px; border-top:1px solid rgba(46,80,176,0.4);">
-                                                        <span style="font-size:13px; font-weight:700; color:#fff;">Total</span>
-                                                        <span style="font-size:16px; font-weight:900; color:#FBBF24; font-family:'Nunito',sans-serif;"
-                                                              x-text="msg.orderSummary.total"></span>
-                                                    </div>
+                                                    <template x-if="chatCart.length > 0">
+                                                        <div style="display:flex; justify-content:space-between; margin-top:8px; padding-top:8px; border-top:1px solid rgba(46,80,176,0.4);">
+                                                            <span style="font-size:13px; font-weight:700; color:#fff;">Total</span>
+                                                            <span style="font-size:16px; font-weight:900; color:#FBBF24; font-family:'Nunito',sans-serif;"
+                                                                  x-text="Number(cartTotal).toFixed(2).replace('.',',') + ' €'"></span>
+                                                        </div>
+                                                    </template>
                                                 </div>
                                             </template>
                                         </div>
