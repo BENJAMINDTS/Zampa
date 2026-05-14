@@ -38,6 +38,31 @@
         .zampi-typing-2 { animation: zampiTyping 1.2s ease-in-out 0.2s infinite; }
         .zampi-typing-3 { animation: zampiTyping 1.2s ease-in-out 0.4s infinite; }
 
+        /* Notificaciones del cart bar — animación directa via :class */
+        @keyframes zampiNotifIn {
+            0%   { opacity: 0; transform: translateY(14px) scale(0.70); }
+            65%  { opacity: 1; transform: translateY(-3px)  scale(1.06); }
+            100% { opacity: 1; transform: translateY(0)     scale(1);    }
+        }
+        @keyframes zampiNotifOut {
+            0%   { opacity: 1; transform: translateY(0)    scale(1);   }
+            100% { opacity: 0; transform: translateY(8px)  scale(0.8); }
+        }
+        .zampi-notif-pill     { display:flex; align-items:center; gap:5px; background:#991b1b;
+                                border:1px solid #ef4444; border-radius:9999px;
+                                padding:4px 10px; flex-shrink:0; }
+        .zampi-notif-pill-in  { animation: zampiNotifIn  0.40s cubic-bezier(0.34,1.56,0.64,1) both; }
+        .zampi-notif-pill-out { animation: zampiNotifOut 0.22s ease-in both; }
+        @media (max-width: 640px) {
+            .zampi-cartbar-row { padding-top: 20px !important; padding-bottom: 20px !important; }
+            .zampi-hidden-mobile { display: none !important; }
+            .zampi-notif-bar-active { flex: 1 !important; min-width: 0; overflow: visible; }
+            .zampi-notif-bar .zampi-notif-pill:not(:last-child) { display: none !important; }
+            .zampi-notif-bar-active .zampi-notif-pill { width: 100%; min-width: 0; display: flex; align-items: center; gap: 5px; overflow: hidden; }
+            .zampi-notif-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+            .zampi-notif-suffix { flex-shrink: 0; white-space: nowrap; }
+        }
+
         .zampi-bubble-user {
             background: linear-gradient(135deg, #2E50B0, #1A3380);
             color: #fff;
@@ -307,27 +332,37 @@
                     this.showTapaModal = false;
                 },
 
-                inc(idx) { this.items[idx].quantity++; },
+                inc(productId) {
+                    const item = this.items.find(i => i.productId === productId);
+                    if (item) item.quantity++;
+                },
 
-                dec(idx) {
+                dec(productId) {
+                    const idx = this.items.findIndex(i => i.productId === productId);
+                    if (idx === -1) return;
                     this.items[idx].quantity--;
                     if (this.items[idx].quantity <= 0) this.items.splice(idx, 1);
                 },
 
-                toggleRemove(idx, ing) {
-                    const i = this.items[idx].mods.findIndex(m => m.ingredientId === ing.id && m.action === 'remove');
-                    if (i === -1) this.items[idx].mods.push({ ingredientId: ing.id, name: ing.name, action: 'remove', amountCharged: 0 });
-                    else          this.items[idx].mods.splice(i, 1);
+                toggleRemove(productId, ing) {
+                    const item = this.items.find(i => i.productId === productId);
+                    if (!item) return;
+                    const i = item.mods.findIndex(m => m.ingredientId === ing.id && m.action === 'remove');
+                    if (i === -1) item.mods.push({ ingredientId: ing.id, name: ing.name, action: 'remove', amountCharged: 0 });
+                    else          item.mods.splice(i, 1);
                 },
 
-                toggleExtra(idx, ing) {
-                    const i = this.items[idx].mods.findIndex(m => m.ingredientId === ing.id && m.action === 'add');
-                    if (i === -1) this.items[idx].mods.push({ ingredientId: ing.id, name: ing.name, action: 'add', amountCharged: ing.price });
-                    else          this.items[idx].mods.splice(i, 1);
+                toggleExtra(productId, ing) {
+                    const item = this.items.find(i => i.productId === productId);
+                    if (!item) return;
+                    const i = item.mods.findIndex(m => m.ingredientId === ing.id && m.action === 'add');
+                    if (i === -1) item.mods.push({ ingredientId: ing.id, name: ing.name, action: 'add', amountCharged: ing.price });
+                    else          item.mods.splice(i, 1);
                 },
 
-                hasMod(idx, ingId, action) {
-                    return this.items[idx].mods.some(m => m.ingredientId === ingId && m.action === action);
+                hasMod(productId, ingId, action) {
+                    const item = this.items.find(i => i.productId === productId);
+                    return item ? item.mods.some(m => m.ingredientId === ingId && m.action === action) : false;
                 },
 
                 lineTotal(item) {
@@ -709,18 +744,29 @@
                 closed:         false,
                 error:          null,
                 menuData:       null,
-                chatCart:       [],
                 msgSeq:         0,
                 _now:           Date.now(),
                 _ticker:        null,
+                cartNotifs:     [],
+                cartNotifSeq:   0,
+
+                /* Vista unificada del carrito — lee del store global */
+                get chatCart() {
+                    return Alpine.store('cart').items.map(i => ({
+                        id:    i.productId,
+                        name:  i.name,
+                        price: i.price,
+                        qty:   i.quantity,
+                    }));
+                },
 
                 init() {
                     this._ticker = setInterval(() => { this._now = Date.now(); }, 30000);
 
                     // Scroll al fondo cada vez que la barra del carrito aparece o desaparece
                     let _prevCartVisible = false;
-                    this.$watch('chatCart', (cart) => {
-                        const visible = cart.length > 0;
+                    this.$watch(() => Alpine.store('cart').count, (count) => {
+                        const visible = count > 0;
                         if (visible !== _prevCartVisible) {
                             _prevCartVisible = visible;
                             this.scrollBottom();
@@ -740,8 +786,8 @@
                 },
 
                 get tableHash() { return Alpine.store('cart').tableHash; },
-                get cartCount()  { return this.chatCart.reduce((s, i) => s + i.qty, 0); },
-                get cartTotal()  { return this.chatCart.reduce((s, i) => s + i.price * i.qty, 0); },
+                get cartCount()  { return Alpine.store('cart').count; },
+                get cartTotal()  { return Alpine.store('cart').total; },
                 get cartTotalStr() {
                     return '$' + this.cartTotal.toFixed(2).replace('.', ',');
                 },
@@ -831,13 +877,13 @@
                     } else if (label === 'Ver mi pedido') {
                         this.showCartSummary();
                     } else if (label === 'Confirmar pedido') {
-                        this.confirmOrder();
+                        Alpine.store('cart').open = true;
                     } else if (label === 'Seguir eligiendo') {
                         const qrs = cats.map(c => this.getCategoryEmoji(c.name) + ' ' + c.name);
                         this.botDelay('¿Qué más te gustaría pedir?',
                             { quickReplies: [...qrs, 'Ver mi pedido'] });
                     } else if (label === '📋 Nuevo pedido') {
-                        this.chatCart = [];
+                        Alpine.store('cart').items = [];
                         const qrs = cats.map(c => this.getCategoryEmoji(c.name) + ' ' + c.name);
                         this.botDelay('¡Claro! ¿Qué te gustaría pedir?',
                             { quickReplies: [...qrs, 'Ver mi pedido'] });
@@ -865,30 +911,50 @@
                 /* ── Carrito del chat ── */
                 /* ── Gestión del carrito del chat ── */
                 cartQty(id) {
-                    return this.chatCart.find(i => i.id === id)?.qty ?? 0;
+                    return Alpine.store('cart').items.find(i => i.productId === id)?.quantity ?? 0;
                 },
 
                 addToCart(card) {
-                    const existing = this.chatCart.find(i => i.id === card.id);
-                    if (existing) { existing.qty++; }
-                    else { this.chatCart.push({ id: card.id, name: card.name, price: card.price, qty: 1 }); }
+                    const id = card.id ?? card.productId;
+                    let destination = 'kitchen';
+                    const cat = (this.menuData?.categories ?? []).find(c => c.products.some(p => p.id === id));
+                    if (cat) destination = cat.destination;
+                    Alpine.store('cart').add({ id, name: card.name, price: card.price, destination, removable: [], extras: [] });
                 },
 
                 decreaseQty(card) {
-                    const existing = this.chatCart.find(i => i.id === card.id);
-                    if (!existing) return;
-                    if (existing.qty <= 1) this.chatCart = this.chatCart.filter(i => i.id !== card.id);
-                    else existing.qty--;
+                    const id = card.id ?? card.productId;
+                    Alpine.store('cart').dec(id);
+                },
+
+                decreaseQtyMin1(item) {
+                    const existing = Alpine.store('cart').items.find(i => i.productId === item.id);
+                    if (!existing || existing.quantity <= 1) return;
+                    existing.quantity--;
+                },
+
+                showCartNotif(name) {
+                    const id = ++this.cartNotifSeq;
+                    if (this.cartNotifs.length >= 3) this.cartNotifs.shift();
+                    this.cartNotifs.push({ id, name, leaving: false });
+                    setTimeout(() => {
+                        const notif = this.cartNotifs.find(n => n.id === id);
+                        if (notif) notif.leaving = true;
+                        setTimeout(() => {
+                            this.cartNotifs = this.cartNotifs.filter(n => n.id !== id);
+                        }, 250);
+                    }, 2500);
                 },
 
                 removeCartItem(id) {
-                    const item = this.chatCart.find(i => i.id === id);
-                    this.chatCart = this.chatCart.filter(i => i.id !== id);
+                    const item = Alpine.store('cart').items.find(i => i.productId === id);
+                    Alpine.store('cart').items = Alpine.store('cart').items.filter(i => i.productId !== id);
                     if (item) {
+                        this.showCartNotif(item.name);
                         const qrs = (this.menuData?.categories ?? []).map(c => this.getCategoryEmoji(c.name) + ' ' + c.name);
                         this.pushMsg({ type: 'bot',
                             text: '🗑️ ' + item.name + ' eliminado del pedido.',
-                            quickReplies: this.chatCart.length ? ['Ver mi pedido', 'Confirmar pedido', ...qrs] : qrs,
+                            quickReplies: Alpine.store('cart').items.length ? ['Ver mi pedido', 'Confirmar pedido', ...qrs] : qrs,
                         });
                     }
                 },
@@ -936,7 +1002,8 @@
                         this.isTyping = false;
 
                         if (res.ok && data.success) {
-                            this.chatCart = [];
+                            Alpine.store('cart').items = [];
+                            Alpine.store('bill').active = true;
                             this.pushMsg({ type: 'system',
                                 text: '✅ Pedido #' + data.order_id + ' confirmado — en preparación' });
                             this.pushMsg({ type: 'bot',
@@ -993,7 +1060,7 @@
                     for (const item of this.chatCart) {
                         const words = norm(item.name).split(/\s+/).filter(w => w.length > 3);
                         if (words.some(w => nl.includes(w))) {
-                            this.chatCart = this.chatCart.filter(i => i.id !== item.id);
+                            Alpine.store('cart').items = Alpine.store('cart').items.filter(i => i.productId !== item.id);
                             const qrs = (this.menuData?.categories ?? []).map(c => this.getCategoryEmoji(c.name) + ' ' + c.name);
                             this.pushMsg({ type: 'bot',
                                 text: '🗑️ ' + item.name + ' eliminado del pedido. ¿Seguimos? 😊',
@@ -1042,6 +1109,7 @@
                     /* 3. Buscar producto con word-boundary cuando sea posible */
                     const allProducts = this.menuData.categories.flatMap(c =>
                         c.products.map(p => ({ id: p.id, name: p.name, price: p.price,
+                            destination: c.destination,
                             emoji: this.getCategoryEmoji(c.name) }))
                     );
                     const found = allProducts.find(p => {
@@ -1063,10 +1131,15 @@
                         }
                     }
 
-                    /* 5. Añadir al carrito */
-                    const existing = this.chatCart.find(i => i.id === found.id);
-                    if (existing) { existing.qty += qty; }
-                    else { this.chatCart.push({ id: found.id, name: found.name, price: found.price, qty }); }
+                    /* 5. Añadir al carrito unificado */
+                    const existingStore = Alpine.store('cart').items.find(i => i.productId === found.id);
+                    if (existingStore) {
+                        existingStore.quantity += qty;
+                    } else {
+                        for (let _i = 0; _i < qty; _i++) {
+                            Alpine.store('cart').add({ id: found.id, name: found.name, price: found.price, destination: found.destination || 'kitchen', removable: [], extras: [] });
+                        }
+                    }
 
                     /* 6. Respuesta inmediata del bot */
                     const cats = this.menuData.categories;
@@ -1749,7 +1822,11 @@
                                                                     <button type="button"
                                                                             @click.stop="addToCart(card)"
                                                                             :aria-label="'Añadir ' + card.name + ' al pedido'"
-                                                                            style="width:26px; height:26px; border-radius:50%; background:linear-gradient(135deg,#2E50B0,#1A3380); border:none; color:#fff; font-size:17px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 0 8px rgba(46,80,176,0.6); flex-shrink:0;">+</button>
+                                                                            style="width:26px; height:26px; border-radius:50%; background:linear-gradient(135deg,#2E50B0,#1A3380); border:2px solid transparent; color:#fff; font-size:17px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 0 8px rgba(46,80,176,0.6); flex-shrink:0; transition:all 150ms ease;"
+                                                                            onmouseenter="this.style.background='#3D6AE0'; this.style.boxShadow='0 0 12px rgba(34,197,94,0.7)'; this.style.borderColor='#22C55E'; this.style.transform='scale(1.15)';"
+                                                                            onmouseleave="this.style.background='linear-gradient(135deg,#2E50B0,#1A3380)'; this.style.boxShadow='0 0 8px rgba(46,80,176,0.6)'; this.style.borderColor='transparent'; this.style.transform='scale(1)';"
+                                                                            onmousedown="this.style.borderColor='#16A34A'; this.style.transform='scale(0.9)';"
+                                                                            onmouseup="this.style.borderColor='#22C55E'; this.style.transform='scale(1.15)';">+</button>
                                                                 </template>
                                                                 {{-- Con cantidad: controles [-] [n] [+] --}}
                                                                 <template x-if="cartQty(card.id) > 0">
@@ -1757,13 +1834,21 @@
                                                                         <button type="button"
                                                                                 @click.stop="decreaseQty(card)"
                                                                                 :aria-label="'Quitar uno de ' + card.name"
-                                                                                style="width:24px; height:24px; border-radius:50%; background:rgba(46,80,176,0.35); border:1px solid rgba(46,80,176,0.6); color:#fff; font-size:16px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0;">−</button>
+                                                                                style="width:24px; height:24px; border-radius:50%; background:rgba(46,80,176,0.35); border:2px solid transparent; color:#fff; font-size:16px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all 150ms ease;"
+                                                                                onmouseenter="this.style.background='#2E50B0'; this.style.borderColor='#EF4444'; this.style.boxShadow='0 0 10px rgba(239,68,68,0.6)'; this.style.transform='scale(1.15)';"
+                                                                                onmouseleave="this.style.background='rgba(46,80,176,0.35)'; this.style.borderColor='transparent'; this.style.boxShadow='none'; this.style.transform='scale(1)';"
+                                                                                onmousedown="this.style.borderColor='#B91C1C'; this.style.boxShadow='0 0 14px rgba(185,28,28,0.8)'; this.style.transform='scale(0.9)';"
+                                                                                onmouseup="this.style.borderColor='#EF4444'; this.style.boxShadow='0 0 10px rgba(239,68,68,0.6)'; this.style.transform='scale(1.15)';">−</button>
                                                                         <span x-text="cartQty(card.id)"
                                                                               style="font-size:13px; font-weight:800; color:#fff; font-family:'Nunito',sans-serif; min-width:14px; text-align:center;"></span>
                                                                         <button type="button"
                                                                                 @click.stop="addToCart(card)"
                                                                                 :aria-label="'Añadir otro de ' + card.name"
-                                                                                style="width:24px; height:24px; border-radius:50%; background:linear-gradient(135deg,#2E50B0,#1A3380); border:none; color:#fff; font-size:17px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 0 8px rgba(46,80,176,0.6); flex-shrink:0;">+</button>
+                                                                                style="width:24px; height:24px; border-radius:50%; background:linear-gradient(135deg,#2E50B0,#1A3380); border:2px solid transparent; color:#fff; font-size:17px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 0 8px rgba(46,80,176,0.6); flex-shrink:0; transition:all 150ms ease;"
+                                                                                onmouseenter="this.style.background='#3D6AE0'; this.style.boxShadow='0 0 12px rgba(34,197,94,0.7)'; this.style.borderColor='#22C55E'; this.style.transform='scale(1.15)';"
+                                                                                onmouseleave="this.style.background='linear-gradient(135deg,#2E50B0,#1A3380)'; this.style.boxShadow='0 0 8px rgba(46,80,176,0.6)'; this.style.borderColor='transparent'; this.style.transform='scale(1)';"
+                                                                                onmousedown="this.style.borderColor='#16A34A'; this.style.transform='scale(0.9)';"
+                                                                                onmouseup="this.style.borderColor='#22C55E'; this.style.transform='scale(1.15)';">+</button>
                                                                     </div>
                                                                 </template>
                                                             </div>
@@ -1791,14 +1876,14 @@
                                                     </template>
                                                 </div>
                                             </template>
-                                            {{-- Resumen del pedido en vivo (reactivo a chatCart) --}}
+                                            {{-- Resumen del pedido en vivo (reactivo al store) --}}
                                             <template x-if="msg.cartLive">
                                                 <div style="background:rgba(14,26,56,0.9); border:1px solid rgba(46,80,176,0.45); border-radius:16px; padding:12px; margin-top:8px; backdrop-filter:blur(12px);">
                                                     <div style="font-size:13px; font-weight:800; font-family:'Nunito',sans-serif; color:#fff; margin-bottom:8px;">🛒 Tu pedido</div>
-                                                    <template x-if="chatCart.length === 0">
+                                                    <template x-if="$store.cart.items.length === 0">
                                                         <p style="font-size:12px; color:#8FA8E8; text-align:center; padding:8px 0;">El pedido está vacío.</p>
                                                     </template>
-                                                    <template x-for="item in chatCart" :key="item.id">
+                                                    <template x-for="item in $store.cart.items" :key="item.productId">
                                                         <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.06);">
                                                             <span style="font-size:12px; color:#C8D8FF; flex:1;" x-text="item.name"></span>
                                                             <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
@@ -1806,28 +1891,40 @@
                                                                 <button type="button"
                                                                         @click.stop="decreaseQty(item)"
                                                                         :aria-label="'Quitar uno de ' + item.name"
-                                                                        style="width:22px; height:22px; border-radius:50%; background:rgba(46,80,176,0.35); border:1px solid rgba(46,80,176,0.6); color:#fff; font-size:15px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center;">−</button>
-                                                                <span x-text="item.qty"
+                                                                        style="width:22px; height:22px; border-radius:50%; background:rgba(46,80,176,0.35); border:2px solid transparent; color:#fff; font-size:15px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 150ms ease;"
+                                                                        onmouseenter="this.style.background='#2E50B0'; this.style.borderColor='#EF4444'; this.style.boxShadow='0 0 10px rgba(239,68,68,0.6)'; this.style.transform='scale(1.15)';"
+                                                                        onmouseleave="this.style.background='rgba(46,80,176,0.35)'; this.style.borderColor='transparent'; this.style.boxShadow='none'; this.style.transform='scale(1)';"
+                                                                        onmousedown="this.style.borderColor='#B91C1C'; this.style.boxShadow='0 0 14px rgba(185,28,28,0.8)'; this.style.transform='scale(0.9)';"
+                                                                        onmouseup="this.style.borderColor='#EF4444'; this.style.boxShadow='0 0 10px rgba(239,68,68,0.6)'; this.style.transform='scale(1.15)';">−</button>
+                                                                <span x-text="item.quantity"
                                                                       style="font-size:12px; font-weight:800; color:#fff; min-width:14px; text-align:center; font-family:'Nunito',sans-serif;"></span>
                                                                 <button type="button"
                                                                         @click.stop="addToCart(item)"
                                                                         :aria-label="'Añadir otro de ' + item.name"
-                                                                        style="width:22px; height:22px; border-radius:50%; background:linear-gradient(135deg,#2E50B0,#1A3380); border:none; color:#fff; font-size:15px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center;">+</button>
+                                                                        style="width:22px; height:22px; border-radius:50%; background:linear-gradient(135deg,#2E50B0,#1A3380); border:2px solid transparent; color:#fff; font-size:15px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 150ms ease;"
+                                                                        onmouseenter="this.style.background='#3D6AE0'; this.style.boxShadow='0 0 12px rgba(34,197,94,0.7)'; this.style.borderColor='#22C55E'; this.style.transform='scale(1.15)';"
+                                                                        onmouseleave="this.style.background='linear-gradient(135deg,#2E50B0,#1A3380)'; this.style.boxShadow='none'; this.style.borderColor='transparent'; this.style.transform='scale(1)';"
+                                                                        onmousedown="this.style.borderColor='#16A34A'; this.style.transform='scale(0.9)';"
+                                                                        onmouseup="this.style.borderColor='#22C55E'; this.style.transform='scale(1.15)';">+</button>
                                                                 {{-- Precio y eliminar --}}
                                                                 <span style="font-size:11px; font-weight:600; color:#FBBF24; min-width:48px; text-align:right; font-family:'Nunito',sans-serif;"
-                                                                      x-text="Number(item.price * item.qty).toFixed(2).replace('.',',') + ' €'"></span>
+                                                                      x-text="Number(item.price * item.quantity).toFixed(2).replace('.',',') + ' €'"></span>
                                                                 <button type="button"
-                                                                        @click.stop="removeCartItem(item.id)"
+                                                                        @click.stop="removeCartItem(item.productId)"
                                                                         :aria-label="'Eliminar ' + item.name + ' del pedido'"
-                                                                        style="width:20px; height:20px; border-radius:50%; background:rgba(220,38,38,0.2); border:1px solid rgba(220,38,38,0.4); color:#F87171; font-size:11px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0;">✕</button>
+                                                                        style="width:20px; height:20px; border-radius:50%; background:rgba(220,38,38,0.2); border:1px solid rgba(220,38,38,0.4); color:#F87171; font-size:11px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all 150ms ease;"
+                                                                        onmouseenter="this.style.background='#DC2626'; this.style.borderColor='#EF4444'; this.style.color='#fff'; this.style.transform='scale(1.15)';"
+                                                                        onmouseleave="this.style.background='rgba(220,38,38,0.2)'; this.style.borderColor='rgba(220,38,38,0.4)'; this.style.color='#F87171'; this.style.transform='scale(1)';"
+                                                                        onmousedown="this.style.transform='scale(0.9)';"
+                                                                        onmouseup="this.style.transform='scale(1.15)';">✕</button>
                                                             </div>
                                                         </div>
                                                     </template>
-                                                    <template x-if="chatCart.length > 0">
+                                                    <template x-if="$store.cart.items.length > 0">
                                                         <div style="display:flex; justify-content:space-between; margin-top:8px; padding-top:8px; border-top:1px solid rgba(46,80,176,0.4);">
                                                             <span style="font-size:13px; font-weight:700; color:#fff;">Total</span>
                                                             <span style="font-size:16px; font-weight:900; color:#FBBF24; font-family:'Nunito',sans-serif;"
-                                                                  x-text="Number(cartTotal).toFixed(2).replace('.',',') + ' €'"></span>
+                                                                  x-text="Number($store.cart.total).toFixed(2).replace('.',',') + ' €'"></span>
                                                         </div>
                                                     </template>
                                                 </div>
@@ -1895,44 +1992,53 @@
                          x-transition:leave="transition ease-in duration-150"
                          x-transition:leave-start="opacity-100 translate-y-0"
                          x-transition:leave-end="opacity-0 translate-y-2"
-                         style="flex-shrink:0; padding:10px 14px; background:linear-gradient(135deg,#0f3d2a,#0a2e1f); border-top:2px solid #22c55e; display:flex; align-items:center; justify-content:space-between; gap:8px; box-shadow:0 -4px 20px rgba(34,197,94,0.2);">
+                         style="flex-shrink:0; width:100%;">
+                        <div style="width:100%; box-sizing:border-box; background:linear-gradient(135deg,#0f3d2a,#0a2e1f); border-top:2px solid #22c55e; box-shadow:0 -4px 20px rgba(34,197,94,0.2);">
+                        {{-- Fila principal --}}
+                        <div class="zampi-cartbar-row" style="padding:14px 16px; display:flex; align-items:center; gap:12px; overflow:visible;">
                         {{-- Resumen del carrito --}}
-                        <div style="display:flex; align-items:center; gap:8px; min-width:0;">
+                        <div class="zampi-cart-left" style="display:flex; align-items:center; gap:10px; flex:1; min-width:0;">
                             <div style="position:relative; flex-shrink:0;">
-                                <svg aria-hidden="true" width="22" height="22" fill="none" stroke="#4ade80" stroke-width="2" viewBox="0 0 24 24">
+                                <svg aria-hidden="true" width="26" height="26" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
                                 </svg>
                                 <span x-text="cartCount"
-                                      style="position:absolute; top:-6px; right:-6px; min-width:16px; height:16px; border-radius:9999px; background:#22c55e; color:#fff; font-size:9px; font-weight:900; display:flex; align-items:center; justify-content:center; padding:0 3px; font-family:'Nunito',sans-serif;"></span>
+                                      style="position:absolute; top:-6px; right:-6px; min-width:17px; height:17px; border-radius:9999px; background:#EF4444; color:#fff; font-size:10px; font-weight:900; display:flex; align-items:center; justify-content:center; padding:0 3px; font-family:'Nunito',sans-serif;"></span>
                             </div>
-                            <span style="font-size:12px; color:#86efac; font-family:'Space Grotesk',sans-serif; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:600;"
-                                  x-text="cartCount + (cartCount === 1 ? ' plato' : ' platos')"></span>
-                            <span style="font-size:14px; font-weight:900; color:#4ade80; font-family:'Nunito',sans-serif; flex-shrink:0;"
+                            <span :class="cartNotifs.length > 0 ? 'zampi-hidden-mobile' : ''"
+                                  style="font-size:13px; color:#fff; font-family:'Space Grotesk',sans-serif; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:600;"
+                                  x-text="cartCount + (cartCount === 1 ? ' artículo' : ' artículos')"></span>
+                            <span :class="cartNotifs.length > 0 ? 'zampi-hidden-mobile' : ''"
+                                  style="font-size:15px; font-weight:900; color:#FBBF24; font-family:'Nunito',sans-serif; flex-shrink:0;"
                                   x-text="Number(cartTotal).toFixed(2).replace('.',',') + ' €'"></span>
+                            {{-- Notificaciones de eliminación acumulables (máx 3) --}}
+                            <div class="zampi-notif-bar" :class="cartNotifs.length > 0 ? 'zampi-notif-bar-active' : ''"
+                                 style="display:flex; gap:5px; flex-shrink:0; flex-wrap:nowrap;" role="status" aria-live="polite">
+                                <template x-for="notif in cartNotifs" :key="notif.id">
+                                    <div :class="notif.leaving ? 'zampi-notif-pill zampi-notif-pill-out' : 'zampi-notif-pill zampi-notif-pill-in'">
+                                        <span style="font-size:12px;" aria-hidden="true">🗑️</span>
+                                        <span class="zampi-notif-name" style="font-size:11px; font-weight:600; color:#fff; font-family:'Space Grotesk',sans-serif; white-space:nowrap;" x-text="notif.name"></span>
+                                        <span class="zampi-notif-suffix" style="font-size:11px; font-weight:600; color:#fff; font-family:'Space Grotesk',sans-serif; white-space:nowrap;"> eliminado</span>
+                                    </div>
+                                </template>
+                            </div>
                         </div>
-                        {{-- Botones de acción --}}
-                        <div style="display:flex; gap:6px; flex-shrink:0;">
+                        {{-- Botón único: abre el panel de pedido del menú digital --}}
+                        <div style="display:flex; gap:8px; flex-shrink:0;">
                             <button type="button"
-                                    @click="showCartSummary()"
-                                    aria-label="Ver resumen del pedido"
-                                    style="display:inline-flex; align-items:center; gap:4px; padding:5px 12px; border-radius:9999px; background:rgba(46,80,176,0.22); border:1px solid rgba(46,80,176,0.5); color:#8FA8E8; font-size:12px; font-weight:600; font-family:'Space Grotesk',sans-serif; cursor:pointer; white-space:nowrap; transition:all 150ms ease;"
-                                    onmouseenter="this.style.background='#1A3380'; this.style.color='#fff';"
-                                    onmouseleave="this.style.background='rgba(46,80,176,0.22)'; this.style.color='#8FA8E8';">
-                                <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                                Ver pedido
-                            </button>
-                            <button type="button"
-                                    @click="confirmOrder()"
-                                    :disabled="sending"
-                                    aria-label="Confirmar pedido"
-                                    style="display:inline-flex; align-items:center; gap:4px; padding:5px 12px; border-radius:9999px; background:rgba(46,80,176,0.22); border:1px solid rgba(46,80,176,0.5); color:#8FA8E8; font-size:12px; font-weight:600; font-family:'Space Grotesk',sans-serif; cursor:pointer; white-space:nowrap; transition:all 150ms ease;"
-                                    onmouseenter="this.style.background='#1A3380'; this.style.color='#fff';"
-                                    onmouseleave="this.style.background='rgba(46,80,176,0.22)'; this.style.color='#8FA8E8';"
-                                    :style="sending ? 'opacity:0.6;cursor:not-allowed;' : ''">
-                                <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-                                Confirmar pedido
+                                    @click="$store.cart.open = true"
+                                    aria-label="Ver y confirmar pedido"
+                                    style="padding:0; border-radius:9999px; background:#16A34A; border:none; color:#fff; font-size:13px; font-weight:700; font-family:'Space Grotesk',sans-serif; cursor:pointer; white-space:nowrap; transition:background 150ms ease; box-shadow:0 4px 14px rgba(22,163,74,0.45);"
+                                    onmouseenter="this.style.background='#15803D';"
+                                    onmouseleave="this.style.background='#16A34A';">
+                                <span style="display:flex; flex-direction:row; align-items:center; gap:6px; padding:8px 18px; line-height:1;">
+                                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                                    <span>Ver pedido</span>
+                                </span>
                             </button>
                         </div>
+                        </div>{{-- /Fila principal --}}
+                        </div>{{-- /Cart bar inner --}}
                     </div>
 
                     {{-- Área de input --}}
@@ -2304,7 +2410,7 @@
 
         {{-- ── FAB Carrito ─────────────────────────────────────────── --}}
         <div class="fixed bottom-6 right-4 z-50"
-             x-show="$store.cart.count > 0"
+             x-show="$store.cart.count > 0 && !$store.chat.open"
              x-transition:enter="transition ease-out duration-200"
              x-transition:enter-start="opacity-0 scale-75"
              x-transition:enter-end="opacity-100 scale-100"
@@ -2371,7 +2477,7 @@
 
                 {{-- Lista de items --}}
                 <div class="flex-1 overflow-y-auto px-4 py-3 space-y-4">
-                    <template x-for="(item, idx) in $store.cart.items" :key="idx">
+                    <template x-for="item in $store.cart.items" :key="item.productId">
                         <div class="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 space-y-3">
 
                             {{-- Fila producto --}}
@@ -2383,7 +2489,7 @@
 
                                 {{-- Cantidad --}}
                                 <div class="flex items-center gap-2 flex-shrink-0">
-                                    <button type="button" @click="$store.cart.dec(idx)"
+                                    <button type="button" @click="$store.cart.dec(item.productId)"
                                             class="w-7 h-7 rounded-full border-2 border-gray-300 dark:border-gray-600
                                                    flex items-center justify-center text-gray-600 dark:text-gray-300
                                                    hover:border-red-400 hover:text-red-500 transition-colors
@@ -2393,7 +2499,7 @@
                                         </svg>
                                     </button>
                                     <span class="w-5 text-center font-bold text-gray-900 dark:text-white text-sm" x-text="item.quantity"></span>
-                                    <button type="button" @click="$store.cart.inc(idx)"
+                                    <button type="button" @click="$store.cart.inc(item.productId)"
                                             class="w-7 h-7 rounded-full border-2 border-gray-300 dark:border-gray-600
                                                    flex items-center justify-center text-gray-600 dark:text-gray-300
                                                    hover:border-green-500 hover:text-green-600 transition-colors
@@ -2419,8 +2525,8 @@
                                             <div class="flex flex-wrap gap-1.5">
                                                 <template x-for="ing in item.removable" :key="ing.id">
                                                     <button type="button"
-                                                            @click="$store.cart.toggleRemove(idx, ing)"
-                                                            :class="$store.cart.hasMod(idx, ing.id, 'remove')
+                                                            @click="$store.cart.toggleRemove(item.productId, ing)"
+                                                            :class="$store.cart.hasMod(item.productId, ing.id, 'remove')
                                                                 ? 'bg-red-100 dark:bg-red-900/40 border-red-400 text-red-700 dark:text-red-300'
                                                                 : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300'"
                                                             class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border text-xs font-medium transition-colors
@@ -2438,8 +2544,8 @@
                                             <div class="flex flex-wrap gap-1.5">
                                                 <template x-for="ing in item.extras" :key="ing.id">
                                                     <button type="button"
-                                                            @click="$store.cart.toggleExtra(idx, ing)"
-                                                            :class="$store.cart.hasMod(idx, ing.id, 'add')
+                                                            @click="$store.cart.toggleExtra(item.productId, ing)"
+                                                            :class="$store.cart.hasMod(item.productId, ing.id, 'add')
                                                                 ? 'bg-green-100 dark:bg-green-900/40 border-green-500 text-green-700 dark:text-green-300'
                                                                 : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300'"
                                                             class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border text-xs font-medium transition-colors
