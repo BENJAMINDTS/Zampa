@@ -17,6 +17,7 @@ use Illuminate\View\View;
  *
  * @author AyrtonAlania
  * @author BenjaminDTS
+ * @author SebastianBCF
  */
 class KitchenController extends Controller
 {
@@ -27,6 +28,8 @@ class KitchenController extends Controller
      */
     public function index(): View
     {
+        abort_if(! Auth::user()->canAccessKitchen(), 403, 'Acceso denegado.');
+
         $orders = $this->getActiveOrders();
 
         return view('kitchen.index', compact('orders'));
@@ -39,6 +42,8 @@ class KitchenController extends Controller
      */
     public function badgeCount(): JsonResponse
     {
+        abort_if(! Auth::user()->canAccessKitchen(), 403, 'Acceso denegado.');
+
         $ownerId = Auth::user()->ownerUserId();
         $count   = Order::whereHas('table', fn($q) => $q->where('user_id', $ownerId))
             ->whereHas('items', fn($q) => $q->where('destination', 'kitchen')->where('status', 'queued'))
@@ -55,6 +60,8 @@ class KitchenController extends Controller
      */
     public function pendingOrders(): JsonResponse
     {
+        abort_if(! Auth::user()->canAccessKitchen(), 403, 'Acceso denegado.');
+
         $orders = $this->getActiveOrders()
             ->map(fn(Order $order) => [
                 'id'         => $order->id,
@@ -96,6 +103,8 @@ class KitchenController extends Controller
      */
     public function markItemReady(OrderItem $item): JsonResponse
     {
+        abort_if(! Auth::user()->canAccessKitchen(), 403, 'Acceso denegado.');
+
         $order = $item->order()->with('table')->first();
 
         abort_if($order->table->user_id !== Auth::user()->ownerUserId(), 403, 'Acceso denegado.');
@@ -131,6 +140,8 @@ class KitchenController extends Controller
      */
     public function markOrderServed(Order $order): JsonResponse
     {
+        abort_if(! Auth::user()->canAccessKitchen(), 403, 'Acceso denegado.');
+
         abort_if($order->table->user_id !== Auth::user()->ownerUserId(), 403, 'Acceso denegado.');
         abort_if($order->status !== 'ready', 422, 'El pedido no está listo para servir.');
 

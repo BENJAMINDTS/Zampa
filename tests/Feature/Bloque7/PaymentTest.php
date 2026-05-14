@@ -94,7 +94,7 @@ it('bill request does not find a closed order', function () {
 // ─── Pago en efectivo (PaymentController) ────────────────────────────────────
 
 it('cash payment closes the order with payment_method cash', function () {
-    $admin = User::factory()->create(['role' => 'admin']);
+    $admin = User::factory()->admin()->alsoWaiter()->create();
     $table = Table::factory()->create(['user_id' => $admin->id]);
     $order = Order::factory()->create(['table_id' => $table->id, 'status' => 'pending']);
 
@@ -113,8 +113,8 @@ it('cash payment closes the order with payment_method cash', function () {
 });
 
 it('cash payment returns 403 when order belongs to another user', function () {
-    $admin      = User::factory()->create(['role' => 'admin']);
-    $otherAdmin = User::factory()->create(['role' => 'admin']);
+    $admin      = User::factory()->admin()->alsoWaiter()->create();
+    $otherAdmin = User::factory()->admin()->create();
     $table      = Table::factory()->create(['user_id' => $otherAdmin->id]);
     $order      = Order::factory()->create(['table_id' => $table->id, 'status' => 'pending']);
 
@@ -124,7 +124,7 @@ it('cash payment returns 403 when order belongs to another user', function () {
 });
 
 it('cash payment returns 422 when order is already closed', function () {
-    $admin = User::factory()->create(['role' => 'admin']);
+    $admin = User::factory()->admin()->alsoWaiter()->create();
     $table = Table::factory()->create(['user_id' => $admin->id]);
     $order = Order::factory()->create(['table_id' => $table->id, 'status' => 'closed']);
 
@@ -383,7 +383,7 @@ it('closing a card payment closes active conversations on the table', function (
 });
 
 it('closing a cash payment closes active conversations on the table', function () {
-    $admin        = User::factory()->create(['role' => 'admin']);
+    $admin        = User::factory()->admin()->alsoWaiter()->create();
     $table        = Table::factory()->create(['user_id' => $admin->id]);
     $order        = Order::factory()->create(['table_id' => $table->id, 'status' => 'pending']);
     $conversation = Conversation::factory()->create(['table_id' => $table->id, 'status' => 'active']);

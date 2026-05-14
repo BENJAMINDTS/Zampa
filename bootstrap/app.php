@@ -17,6 +17,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'role'            => \App\Http\Middleware\EnsureRole::class,
             'role.superadmin' => \App\Http\Middleware\EnsureSuperAdmin::class,
             'business.active' => \App\Http\Middleware\EnsureBusinessIsActive::class,
+            'can.kitchen'     => \App\Http\Middleware\EnsureCanAccessKitchen::class,
+            'can.bar'         => \App\Http\Middleware\EnsureCanAccessBar::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

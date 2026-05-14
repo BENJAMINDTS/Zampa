@@ -2,6 +2,7 @@
  | Bloques 8.1, 8.3 y 8.4 — Mapa visual del local con zonas, elementos especiales y mesas.
  | interact.js para arrastrar/redimensionar mesas, elementos especiales y zonas.
  | @author AyrtonAlania
+ | @author SebastianBCF
 --}}
 <x-app-layout>
 <div
@@ -20,6 +21,13 @@
 
         <div class="flex items-center gap-3">
             <h1 class="text-lg font-bold text-gray-900 dark:text-white">Plano del restaurante</h1>
+
+            {{-- Badge modo solo lectura --}}
+            <span x-show="readonly"
+                  class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold
+                         bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
+                Solo lectura
+            </span>
 
             {{-- Contador con colores y barra de progreso --}}
             <div class="flex flex-col gap-1">
@@ -64,8 +72,8 @@
                  aria-live="polite">
             </div>
 
-            {{-- ── Control de tamaño del lienzo ─────────────────────────────── --}}
-            <div class="flex items-center gap-2">
+            {{-- ── Control de tamaño del lienzo — solo admin ──────────────── --}}
+            <div x-show="!readonly" class="flex items-center gap-2">
                 <span class="text-xs font-medium text-gray-500 dark:text-gray-400 hidden sm:block"
                       aria-hidden="true">Plano:</span>
 
@@ -153,8 +161,9 @@
     ══════════════════════════════════════════════════════ --}}
     <div class="flex flex-1 overflow-hidden">
 
-        {{-- ── PALETA LATERAL ───────────────────────────────── --}}
-        <aside class="flex-shrink-0 w-44 bg-white dark:bg-gray-800
+        {{-- ── PALETA LATERAL — solo visible para admin ─────── --}}
+        <aside x-show="!readonly"
+               class="flex-shrink-0 w-44 bg-white dark:bg-gray-800
                       border-r border-gray-200 dark:border-gray-700
                       flex flex-col p-3 gap-4 overflow-y-auto">
 
@@ -748,14 +757,39 @@
                                   x-text="table.name">
                             </span>
 
-                            {{-- Badge estado --}}
+                            {{-- Badge estado: libre/ocupada --}}
                             <span class="absolute top-1 left-1 w-2 h-2 rounded-full"
                                   :class="table.status === 'occupied' ? 'bg-red-500' : 'bg-green-400'"
                                   :title="table.status === 'occupied' ? 'Ocupada' : 'Libre'">
                             </span>
 
-                            {{-- Botón editar forma --}}
+                            {{-- Badge solicitud de cuenta en efectivo --}}
+                            <span x-show="table.bill_requested && table.requested_payment_method === 'cash'"
+                                  class="absolute bottom-1 right-1
+                                         flex items-center justify-center
+                                         w-5 h-5 rounded-full
+                                         bg-amber-500 text-white text-xs font-bold
+                                         shadow-md animate-pulse"
+                                  title="Solicita cuenta en efectivo"
+                                  aria-label="Mesa solicita cuenta en efectivo">
+                                €
+                            </span>
+
+                            {{-- Badge solicitud de cuenta con tarjeta --}}
+                            <span x-show="table.bill_requested && table.requested_payment_method === 'card'"
+                                  class="absolute bottom-1 right-1
+                                         flex items-center justify-center
+                                         w-5 h-5 rounded-full
+                                         bg-emerald-500 text-white text-xs font-bold
+                                         shadow-md animate-pulse"
+                                  title="Solicita cuenta con tarjeta"
+                                  aria-label="Mesa solicita cuenta con tarjeta">
+                                ♦
+                            </span>
+
+                            {{-- Botón editar forma — solo admin --}}
                             <button type="button"
+                                    x-show="!readonly"
                                     @click.stop="editingTableId = editingTableId === table.id ? null : table.id"
                                     class="absolute -top-2.5 -right-16
                                            w-6 h-6 rounded-full bg-gray-600 dark:bg-gray-500 text-white
@@ -785,8 +819,9 @@
                                 </svg>
                             </button>
 
-                            {{-- Botón eliminar --}}
+                            {{-- Botón eliminar — solo admin --}}
                             <button type="button"
+                                    x-show="!readonly"
                                     @click.stop="deleteTable(table)"
                                     class="absolute -top-2.5 -right-2.5
                                            w-6 h-6 rounded-full bg-red-500 text-white
@@ -861,8 +896,8 @@
                             </div>
                         </div>
 
-                        {{-- Handle de rotación — arrastra para girar la mesa --}}
-                        <div class="rotation-handle absolute -top-9 left-1/2 -translate-x-1/2
+                        {{-- Handle de rotación — solo admin --}}
+                        <div x-show="!readonly" class="rotation-handle absolute -top-9 left-1/2 -translate-x-1/2
                                     flex flex-col items-center gap-0
                                     opacity-0 group-hover:opacity-100 transition-opacity z-10"
                              @mousedown.stop.prevent="startRotation($event, table)"
@@ -886,8 +921,9 @@
                             <div class="w-px h-3 bg-indigo-400"></div>
                         </div>
 
-                        {{-- Handle de redimensionado (esquina inferior derecha) --}}
-                        <div class="resize-handle absolute bottom-0 right-0
+                        {{-- Handle de redimensionado — solo admin --}}
+                        <div x-show="!readonly"
+                             class="resize-handle absolute bottom-0 right-0
                                     w-4 h-4 cursor-se-resize opacity-0 group-hover:opacity-100
                                     transition-opacity"
                              @mousedown.stop.prevent="startResize($event, table)"
@@ -1211,6 +1247,7 @@ document.addEventListener('alpine:init', () => {
         zones:                 @json($zones),
         floorWidth:            {{ $floorWidth }},
         floorHeight:           {{ $floorHeight }},
+        readonly:              {{ $readonly ? 'true' : 'false' }},
         canvasZoom:            1,
         isDraggingFromPalette: false,
         isDraggingZone:        false,
@@ -1233,10 +1270,34 @@ document.addEventListener('alpine:init', () => {
             this.$watch('canvasZoom', val => localStorage.setItem(lsZoom, val));
 
             this.$nextTick(() => {
-                this.initTableInteract();
-                this.initZoneInteract();
-                this.initPaletteInteract();
+                if (!this.readonly) {
+                    this.initTableInteract();
+                    this.initZoneInteract();
+                    this.initPaletteInteract();
+                }
             });
+
+            // Polling de estados: actualiza ocupación y solicitudes de cuenta cada 5 s.
+            this.pollStatuses();
+            setInterval(() => this.pollStatuses(), 5000);
+        },
+
+        async pollStatuses() {
+            try {
+                const res  = await fetch('{{ route("tables.map.statuses") }}', {
+                    headers: { Accept: 'application/json' },
+                });
+                if (!res.ok) return;
+                const data = await res.json();
+                data.forEach(s => {
+                    const t = this.tables.find(t => t.id === s.id);
+                    if (t) {
+                        t.status                   = s.status;
+                        t.bill_requested           = s.bill_requested;
+                        t.requested_payment_method = s.requested_payment_method;
+                    }
+                });
+            } catch {}
         },
 
         // ── Cambiar tamaño del lienzo y persistir en BD ───────────────────────
