@@ -1231,19 +1231,21 @@
                 getQrStyle(qr) {
                     const base = 'border-radius:9999px; padding:5px 12px; font-size:12px; font-family:\'Space Grotesk\',sans-serif; font-weight:600; cursor:pointer; transition:all 150ms ease; border:1px solid; ';
                     if (qr === 'Confirmar pedido')
-                        return base + 'background:linear-gradient(135deg,rgba(46,80,176,0.35),rgba(26,51,128,0.35)); color:#C8D8FF; border-color:rgba(46,80,176,0.7);';
+                        return base + 'background:rgba(34,197,94,0.18); color:#22C55E; border-color:rgba(34,197,94,0.5);';
                     if (qr === 'Ver mi pedido')
-                        return base + 'background:rgba(46,80,176,0.22); color:#8FA8E8; border-color:rgba(46,80,176,0.5);';
+                        return base + 'background:rgba(34,211,238,0.15); color:#22D3EE; border-color:rgba(34,211,238,0.45);';
                     return base + 'background:rgba(46,80,176,0.22); color:#8FA8E8; border-color:rgba(46,80,176,0.5);';
                 },
 
                 onQrEnter(el, qr) {
-                    if (qr === 'Confirmar pedido') { el.style.background = 'linear-gradient(135deg,#2E50B0,#1A3380)'; el.style.color = '#fff'; el.style.boxShadow = '0 0 10px rgba(46,80,176,0.5)'; }
+                    if (qr === 'Confirmar pedido') { el.style.background = '#16A34A'; el.style.color = '#fff'; }
+                    else if (qr === 'Ver mi pedido') { el.style.background = '#0891B2'; el.style.color = '#fff'; }
                     else { el.style.background = '#1A3380'; el.style.color = '#fff'; }
                 },
 
                 onQrLeave(el, qr) {
-                    if (qr === 'Confirmar pedido') { el.style.background = 'linear-gradient(135deg,rgba(46,80,176,0.35),rgba(26,51,128,0.35))'; el.style.color = '#C8D8FF'; el.style.boxShadow = 'none'; }
+                    if (qr === 'Confirmar pedido') { el.style.background = 'rgba(34,197,94,0.18)'; el.style.color = '#22C55E'; }
+                    else if (qr === 'Ver mi pedido') { el.style.background = 'rgba(34,211,238,0.15)'; el.style.color = '#22D3EE'; }
                     else { el.style.background = 'rgba(46,80,176,0.22)'; el.style.color = '#8FA8E8'; }
                 },
 
@@ -1775,17 +1777,10 @@
                                                     <template x-for="(qr, qrIdx) in msg.quickReplies" :key="qrIdx">
                                                         <button type="button"
                                                                 @click="handleQuickReply(qr)"
-                                                                :style="getQrStyle(qr) + 'display:inline-flex;align-items:center;gap:4px;'"
+                                                                :style="getQrStyle(qr)"
                                                                 @mouseenter="onQrEnter($el, qr)"
-                                                                @mouseleave="onQrLeave($el, qr)">
-                                                                <template x-if="qr === 'Ver mi pedido'">
-                                                                    <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                                                                </template>
-                                                                <template x-if="qr === 'Confirmar pedido'">
-                                                                    <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-                                                                </template>
-                                                                <span x-text="qr"></span>
-                                                            </button>
+                                                                @mouseleave="onQrLeave($el, qr)"
+                                                                x-text="qr"></button>
                                                     </template>
                                                 </div>
                                             </template>
@@ -1893,19 +1888,19 @@
                          x-transition:leave="transition ease-in duration-150"
                          x-transition:leave-start="opacity-100 translate-y-0"
                          x-transition:leave-end="opacity-0 translate-y-2"
-                         style="flex-shrink:0; padding:10px 14px; background:rgba(10,20,48,0.97); border-top:1px solid rgba(46,80,176,0.5); display:flex; align-items:center; justify-content:space-between; gap:8px; box-shadow:0 -4px 20px rgba(15,31,88,0.4); backdrop-filter:blur(16px);">
+                         style="flex-shrink:0; padding:10px 14px; background:linear-gradient(135deg,#0f3d2a,#0a2e1f); border-top:2px solid #22c55e; display:flex; align-items:center; justify-content:space-between; gap:8px; box-shadow:0 -4px 20px rgba(34,197,94,0.2);">
                         {{-- Resumen del carrito --}}
                         <div style="display:flex; align-items:center; gap:8px; min-width:0;">
                             <div style="position:relative; flex-shrink:0;">
-                                <svg aria-hidden="true" width="22" height="22" fill="none" stroke="#8FA8E8" stroke-width="2" viewBox="0 0 24 24">
+                                <svg aria-hidden="true" width="22" height="22" fill="none" stroke="#4ade80" stroke-width="2" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
                                 </svg>
                                 <span x-text="cartCount"
-                                      style="position:absolute; top:-6px; right:-6px; min-width:16px; height:16px; border-radius:9999px; background:#FBBF24; color:#050B1F; font-size:9px; font-weight:900; display:flex; align-items:center; justify-content:center; padding:0 3px; font-family:'Nunito',sans-serif;"></span>
+                                      style="position:absolute; top:-6px; right:-6px; min-width:16px; height:16px; border-radius:9999px; background:#22c55e; color:#fff; font-size:9px; font-weight:900; display:flex; align-items:center; justify-content:center; padding:0 3px; font-family:'Nunito',sans-serif;"></span>
                             </div>
-                            <span style="font-size:12px; color:#8FA8E8; font-family:'Space Grotesk',sans-serif; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:500;"
+                            <span style="font-size:12px; color:#86efac; font-family:'Space Grotesk',sans-serif; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:600;"
                                   x-text="cartCount + (cartCount === 1 ? ' plato' : ' platos')"></span>
-                            <span style="font-size:14px; font-weight:900; color:#FBBF24; font-family:'Nunito',sans-serif; flex-shrink:0;"
+                            <span style="font-size:14px; font-weight:900; color:#4ade80; font-family:'Nunito',sans-serif; flex-shrink:0;"
                                   x-text="Number(cartTotal).toFixed(2).replace('.',',') + ' €'"></span>
                         </div>
                         {{-- Botones de acción --}}
@@ -1913,20 +1908,18 @@
                             <button type="button"
                                     @click="showCartSummary()"
                                     aria-label="Ver resumen del pedido"
-                                    style="display:flex; align-items:center; gap:5px; padding:6px 10px; border-radius:9999px; background:rgba(46,80,176,0.22); border:1px solid rgba(46,80,176,0.5); color:#8FA8E8; font-size:11px; font-weight:600; font-family:'Space Grotesk',sans-serif; cursor:pointer; white-space:nowrap; transition:all 150ms ease;"
-                                    onmouseenter="this.style.background='#1A3380'; this.style.color='#fff';"
-                                    onmouseleave="this.style.background='rgba(46,80,176,0.22)'; this.style.color='#8FA8E8';">
-                                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                                Ver pedido
+                                    style="padding:6px 10px; border-radius:9999px; background:rgba(34,197,94,0.15); border:1px solid rgba(34,197,94,0.4); color:#86efac; font-size:11px; font-weight:600; font-family:'Space Grotesk',sans-serif; cursor:pointer; white-space:nowrap; transition:all 150ms ease;"
+                                    onmouseenter="this.style.background='rgba(34,197,94,0.3)'; this.style.color='#fff';"
+                                    onmouseleave="this.style.background='rgba(34,197,94,0.15)'; this.style.color='#86efac';">
+                                🛒 Ver pedido
                             </button>
                             <button type="button"
                                     @click="confirmOrder()"
                                     :disabled="sending"
                                     aria-label="Confirmar pedido"
-                                    style="display:flex; align-items:center; gap:5px; padding:6px 12px; border-radius:9999px; background:linear-gradient(135deg,#2E50B0,#1A3380); border:none; color:#fff; font-size:11px; font-weight:700; font-family:'Space Grotesk',sans-serif; cursor:pointer; white-space:nowrap; box-shadow:0 0 12px rgba(46,80,176,0.6); transition:opacity 150ms ease;"
+                                    style="padding:6px 14px; border-radius:9999px; background:linear-gradient(135deg,#16a34a,#15803d); border:none; color:#fff; font-size:11px; font-weight:700; font-family:'Space Grotesk',sans-serif; cursor:pointer; white-space:nowrap; box-shadow:0 0 14px rgba(34,197,94,0.45); transition:opacity 150ms ease;"
                                     :style="sending ? 'opacity:0.6;cursor:not-allowed;' : ''">
-                                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-                                Confirmar pedido
+                                ✓ Confirmar pedido
                             </button>
                         </div>
                     </div>
