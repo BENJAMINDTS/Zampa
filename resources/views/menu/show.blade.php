@@ -479,6 +479,9 @@
                 },
             }));
 
+            // ── Estado global del chat ───────────────────────────────────
+            Alpine.store('chat', { open: false });
+
             // ── Solicitud de cuenta ──────────────────────────────────────
             Alpine.store('bill', {
                 active:      @json($hasActiveOrder),
@@ -719,6 +722,7 @@
                 /* ── Apertura / cierre ── */
                 async openChat() {
                     this.open = true;
+                    Alpine.store('chat').open = true;
                     document.body.style.overflow = 'hidden';
                     this.$nextTick(() => {
                         this.$refs.chatInput?.focus();
@@ -730,6 +734,7 @@
 
                 closeChat() {
                     this.open = false;
+                    Alpine.store('chat').open = false;
                     document.body.style.overflow = '';
                 },
 
@@ -1770,7 +1775,7 @@
 
         {{-- ── FAB Solicitar cuenta ────────────────────────────────── --}}
         <div class="fixed bottom-6 left-4 z-50"
-             x-show="$store.bill.active"
+             x-show="$store.bill.active && !$store.chat.open"
              x-transition:enter="transition ease-out duration-200"
              x-transition:enter-start="opacity-0 scale-75"
              x-transition:enter-end="opacity-100 scale-100"
