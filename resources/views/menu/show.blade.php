@@ -716,6 +716,16 @@
 
                 init() {
                     this._ticker = setInterval(() => { this._now = Date.now(); }, 30000);
+
+                    // Scroll al fondo cada vez que la barra del carrito aparece o desaparece
+                    let _prevCartVisible = false;
+                    this.$watch('chatCart', (cart) => {
+                        const visible = cart.length > 0;
+                        if (visible !== _prevCartVisible) {
+                            _prevCartVisible = visible;
+                            this.scrollBottom();
+                        }
+                    });
                 },
                 destroy() {
                     clearInterval(this._ticker);
