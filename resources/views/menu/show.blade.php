@@ -1584,7 +1584,7 @@
                         </div>
                         <div style="flex:1;">
                             <h2 style="font-family:'Nunito',sans-serif; font-weight:900; font-size:16px; color:#fff; line-height:1.2; margin:0;">Zampi</h2>
-                            <p style="font-size:11px; color:#8FA8E8; letter-spacing:0.03em; margin:0;">{{ $table->name }} · {{ $table->user->name }}</p>
+                            <p style="font-size:11px; color:#8FA8E8; letter-spacing:0.03em; margin:0;">{{ $table->name }} · {{ $table->user->business_name ?: $table->user->name }}</p>
                         </div>
                         <div style="display:flex; align-items:center; gap:12px;">
                             <div style="display:flex; align-items:center; gap:5px;">

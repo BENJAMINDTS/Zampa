@@ -137,7 +137,7 @@ class ChatController extends Controller
         return response()->json([
             'success' => true,
             'data'    => [
-                'restaurant' => $table->user->name,
+                'restaurant' => $table->user->business_name ?: $table->user->name,
                 'table'      => $table->name,
                 'categories' => $categories,
             ],
