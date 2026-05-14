@@ -754,7 +754,7 @@
                 /* ── Inicio de conversación ── */
                 async initConversation() {
                     const cats = this.menuData?.categories ?? [];
-                    const qrs  = cats.map(c => c.name);
+                    const qrs  = cats.map(c => this.getCategoryEmoji(c.name) + ' ' + c.name);
 
                     this.pushMsg({ type: 'system',
                         text: (this.menuData?.table ?? 'Mesa') + ' · ' + (this.menuData?.restaurant ?? '') });
@@ -797,7 +797,7 @@
                     this.pushMsg({ type: 'user', text: label, time: 'Ahora' });
 
                     const cats    = this.menuData?.categories ?? [];
-                    const matched = cats.find(c => c.name === label);
+                    const matched = cats.find(c => label === this.getCategoryEmoji(c.name) + ' ' + c.name || c.name === label);
 
                     if (matched) {
                         this.showCategoryCards(matched);
@@ -806,12 +806,12 @@
                     } else if (label === 'Confirmar pedido') {
                         this.confirmOrder();
                     } else if (label === 'Seguir eligiendo') {
-                        const qrs = cats.map(c => c.name);
+                        const qrs = cats.map(c => this.getCategoryEmoji(c.name) + ' ' + c.name);
                         this.botDelay('¿Qué más te gustaría pedir?',
                             { quickReplies: [...qrs, 'Ver mi pedido'] });
                     } else if (label === '📋 Nuevo pedido') {
                         this.chatCart = [];
-                        const qrs = cats.map(c => c.name);
+                        const qrs = cats.map(c => this.getCategoryEmoji(c.name) + ' ' + c.name);
                         this.botDelay('¡Claro! ¿Qué te gustaría pedir?',
                             { quickReplies: [...qrs, 'Ver mi pedido'] });
                     } else {
@@ -821,7 +821,7 @@
 
                 /* ── Tarjetas de categoría ── */
                 showCategoryCards(category) {
-                    const emoji = { kitchen: '🍽️', bar: '🍺' }[category.destination] ?? '🍽️';
+                    const emoji = this.getCategoryEmoji(category.name);
                     const cards = category.products.map(p => ({
                         id:    p.id,
                         name:  p.name,
@@ -842,7 +842,7 @@
                     else { this.chatCart.push({ id: card.id, name: card.name, price: card.price, qty: 1 }); }
 
                     const cats = this.menuData?.categories ?? [];
-                    const qrs  = cats.map(c => c.name);
+                    const qrs  = cats.map(c => this.getCategoryEmoji(c.name) + ' ' + c.name);
                     this.pushMsg({
                         type: 'bot',
                         text: '✅ ' + card.name + ' añadido. ¿Algo más?',
@@ -852,7 +852,7 @@
 
                 showCartSummary() {
                     if (!this.chatCart.length) {
-                        const qrs = (this.menuData?.categories ?? []).map(c => c.name);
+                        const qrs = (this.menuData?.categories ?? []).map(c => this.getCategoryEmoji(c.name) + ' ' + c.name);
                         this.botDelay('Tu pedido está vacío. ¡Elige algo primero!', { quickReplies: qrs });
                         return;
                     }
@@ -978,7 +978,7 @@
                     /* 3. Buscar producto con word-boundary cuando sea posible */
                     const allProducts = this.menuData.categories.flatMap(c =>
                         c.products.map(p => ({ id: p.id, name: p.name, price: p.price,
-                            emoji: c.destination === 'bar' ? '🍺' : '🍽️' }))
+                            emoji: this.getCategoryEmoji(c.name) }))
                     );
                     const found = allProducts.find(p => {
                         const name = p.name.toLowerCase();
@@ -1009,7 +1009,7 @@
                     this.pushMsg({
                         type: 'bot',
                         text: '✅ ' + (qty > 1 ? qty + '× ' : '') + found.name + ' añadido al pedido. ¿Algo más?',
-                        quickReplies: [...cats.map(c => c.name), 'Ver mi pedido', 'Confirmar pedido'],
+                        quickReplies: [...cats.map(c => this.getCategoryEmoji(c.name) + ' ' + c.name), 'Ver mi pedido', 'Confirmar pedido'],
                     });
                     return true;
                 },
@@ -1019,7 +1019,7 @@
                     if (!this.conversationId || this.closed) {
                         const cats = this.menuData?.categories ?? [];
                         this.botDelay('Por favor elige una categoría para empezar 😊',
-                            { quickReplies: [...cats.map(c => c.name), 'Ver mi pedido'] });
+                            { quickReplies: [...cats.map(c => this.getCategoryEmoji(c.name) + ' ' + c.name), 'Ver mi pedido'] });
                         return;
                     }
                     this.sending  = true;
@@ -1041,7 +1041,7 @@
 
                         if (res.ok && data.success) {
                             const cats  = this.menuData?.categories ?? [];
-                            const qrs   = cats.map(c => c.name);
+                            const qrs   = cats.map(c => this.getCategoryEmoji(c.name) + ' ' + c.name);
                             const cards = (data.data.cards ?? []).map(c => {
                                 const matchedCat = cats.find(cat => cat.products.some(p => p.id === c.id));
                                 return {
@@ -1055,7 +1055,7 @@
                                         ...this.getAllergenIcon(a),
                                     })),
                                     foodIcon: this.getFoodIcon(matchedCat?.name ?? '', c.name),
-                                    emoji:    matchedCat?.destination === 'bar' ? '🍺' : '🍽️',
+                                    emoji:    this.getCategoryEmoji(matchedCat?.name ?? ''),
                                 };
                             });
                             this.pushMsg({
@@ -1075,6 +1075,32 @@
                         this.sending = false;
                         this.$nextTick(() => this.scrollBottom());
                     }
+                },
+
+                /* ── Emoji representativo por nombre de categoría ── */
+                getCategoryEmoji(name) {
+                    const s = (name || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+                    if (/pizza/.test(s))                                          return '🍕';
+                    if (/burger|hamburgues/.test(s))                              return '🍔';
+                    if (/pasta|espaguet|fettuccin|lasana|canelones|carbonara/.test(s)) return '🍝';
+                    if (/paella|arroz|risotto/.test(s))                           return '🍚';
+                    if (/ensalada|salad/.test(s))                                 return '🥗';
+                    if (/sopa|crema|caldo|gazpacho/.test(s))                      return '🥣';
+                    if (/postre|dulce|helado|tarta|bizcocho|mousse|flan|brownie/.test(s)) return '🍰';
+                    if (/cerveza|beer|cana|birra|caña/.test(s))                   return '🍺';
+                    if (/vino|wine|cava|champan|prosecco|sangria/.test(s))        return '🍷';
+                    if (/coctel|cocktail|mojito|margarita|daiquiri|gin/.test(s))  return '🍹';
+                    if (/bebida|refresco|agua|zumo|juice|batido|cola|limonad|cafe/.test(s)) return '🥤';
+                    if (/sushi|maki|nigiri|temaki/.test(s))                       return '🍣';
+                    if (/bocadillo|sandwich|bocata|baguet|wrap/.test(s))          return '🥪';
+                    if (/tapa|tapas|pincho|montadito|racion/.test(s))             return '🍢';
+                    if (/entrante|aperitivo|starter/.test(s))                     return '🫔';
+                    if (/carne|ternera|pollo|pavo|cordero|parrilla|filete|chulet/.test(s)) return '🥩';
+                    if (/pescado|merluza|bacalao|salmon|atun|dorada|lubina/.test(s)) return '🐟';
+                    if (/marisco|gamba|langosta|pulpo|calamar|mejillo/.test(s))   return '🦞';
+                    if (/vegano|vegetarian|vegan|veggie/.test(s))                 return '🥦';
+                    if (/combo|menu del dia|menu|oferta/.test(s))                 return '🎯';
+                    return '🍽️';
                 },
 
                 /* ── Icono por tipo de alimento (categoría del producto) ── */
