@@ -130,7 +130,7 @@ class ChatService
     private function buildContext(Conversation $conversation): array
     {
         $user           = $conversation->table->user;
-        $restaurantName = $user->name;
+        $restaurantName = $user->business_name ?: $user->name;
 
         $menuLines = Product::where('user_id', $user->id)
             ->where('is_active', true)
@@ -190,7 +190,16 @@ class ChatService
                        . "- Nunca evites ni descartes un plato que el cliente ha pedido expresamente, aunque contenga un alérgeno.\n"
                        . "- Nunca minimices la importancia de una alergia alimentaria cuando el cliente la declara.\n"
                        . "- Si tienes dudas sobre si el cliente pide o evita el ingrediente, pregúntale de forma natural antes de actuar.\n"
-                       . "- Usa frases como: «¡Claro, tenemos varias opciones con pescado!», «Te indico cuáles llevan ese ingrediente», «Por si alguien en la mesa lo necesita saber, el pescado es un alérgeno».",
+                       . "- Usa frases como: «¡Claro, tenemos varias opciones con pescado!», «Te indico cuáles llevan ese ingrediente», «Por si alguien en la mesa lo necesita saber, el pescado es un alérgeno».\n\n"
+                       . "BÚSQUEDA ESTRICTA DE PLATOS Y RECOMENDACIÓN DE SIMILARES (crítico):\n"
+                       . "- Cuando el cliente pida un plato concreto, sigue este orden de búsqueda SIEMPRE:\n"
+                       . "  1. Busca coincidencia exacta o parcial por nombre en el menú.\n"
+                       . "  2. Si no hay coincidencia por nombre, busca platos que compartan ingredientes clave con lo pedido.\n"
+                       . "  3. Si tampoco hay coincidencia por ingredientes, busca platos de la misma categoría o tipo de comida (ej. si pide pizza y no hay, busca otras masas o platos italianos).\n"
+                       . "  4. Si tras los tres pasos anteriores no encuentras nada relacionado, busca platos populares o bien valorados del menú que puedan satisfacer el mismo tipo de apetito (salado, contundente, ligero, dulce, etc.).\n"
+                       . "- NUNCA respondas simplemente que el plato no está disponible sin ofrecer alternativas. Siempre recomienda al menos 2 platos similares del menú con una explicación breve de por qué se parecen o podrían gustarle.\n"
+                       . "- Si el plato pedido no existe en el menú, díselo con naturalidad y de inmediato preséntale las alternativas más cercanas: ej. «No tenemos [plato], pero si te gusta [característica], te van a encantar estos 😋».\n"
+                       . "- Usa el menú completo que tienes arriba como única fuente de verdad. No inventes platos ni ingredientes que no aparezcan en él.",
         ];
 
         $history = $conversation->messages()
