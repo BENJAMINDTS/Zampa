@@ -711,6 +711,23 @@
                 menuData:       null,
                 chatCart:       [],
                 msgSeq:         0,
+                _now:           Date.now(),
+                _ticker:        null,
+
+                init() {
+                    this._ticker = setInterval(() => { this._now = Date.now(); }, 30000);
+                },
+                destroy() {
+                    clearInterval(this._ticker);
+                },
+
+                formatTime(ts) {
+                    if (!ts) return '';
+                    const diff = this._now - ts;
+                    if (diff < 60000) return 'Ahora';
+                    const d = new Date(ts);
+                    return d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0');
+                },
 
                 get tableHash() { return Alpine.store('cart').tableHash; },
                 get cartCount()  { return this.chatCart.reduce((s, i) => s + i.qty, 0); },
@@ -794,7 +811,7 @@
                 /* ── Quick replies ── */
                 handleQuickReply(label) {
                     if (this.isTyping || this.sending) return;
-                    this.pushMsg({ type: 'user', text: label, time: 'Ahora' });
+                    this.pushMsg({ type: 'user', text: label, time: Date.now() });
 
                     const cats    = this.menuData?.categories ?? [];
                     const matched = cats.find(c => label === this.getCategoryEmoji(c.name) + ' ' + c.name || c.name === label);
@@ -922,7 +939,7 @@
                     const text = this.input.trim();
                     if (!text || this.sending || this.isTyping) return;
                     this.input = '';
-                    this.pushMsg({ type: 'user', text, time: 'Ahora' });
+                    this.pushMsg({ type: 'user', text, time: Date.now() });
 
                     /* Detectar keywords locales primero */
                     const lower = text.toLowerCase();
@@ -1731,7 +1748,7 @@
                                             <div style="background:linear-gradient(135deg,#2E50B0,#1A3380); color:#fff; font-size:14px; line-height:1.5; padding:10px 14px; border-radius:18px 18px 4px 18px; box-shadow:0 4px 16px rgba(15,31,88,0.55); font-family:'Space Grotesk',sans-serif;"
                                                  x-text="msg.text"></div>
                                             <div style="font-size:10px; color:#3A5090; text-align:right; margin-top:3px; padding-right:4px;"
-                                                 x-text="(msg.time || '') + ' ✓✓'"></div>
+                                                 x-text="formatTime(msg.time) + ' ✓✓'"></div>
                                         </div>
                                     </div>
                                 </template>
