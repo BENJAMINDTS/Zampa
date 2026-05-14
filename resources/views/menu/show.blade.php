@@ -1865,6 +1865,50 @@
 
                     </div>
 
+                    {{-- Barra de carrito flotante --}}
+                    <div x-show="chatCart.length > 0"
+                         x-transition:enter="transition ease-out duration-200"
+                         x-transition:enter-start="opacity-0 translate-y-2"
+                         x-transition:enter-end="opacity-100 translate-y-0"
+                         x-transition:leave="transition ease-in duration-150"
+                         x-transition:leave-start="opacity-100 translate-y-0"
+                         x-transition:leave-end="opacity-0 translate-y-2"
+                         style="flex-shrink:0; padding:8px 12px; background:rgba(10,20,48,0.97); border-top:1px solid rgba(46,80,176,0.5); display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                        {{-- Resumen del carrito --}}
+                        <div style="display:flex; align-items:center; gap:8px; min-width:0;">
+                            <div style="position:relative; flex-shrink:0;">
+                                <svg aria-hidden="true" width="22" height="22" fill="none" stroke="#8FA8E8" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
+                                </svg>
+                                <span x-text="cartCount"
+                                      style="position:absolute; top:-6px; right:-6px; min-width:16px; height:16px; border-radius:9999px; background:#FBBF24; color:#050B1F; font-size:9px; font-weight:900; display:flex; align-items:center; justify-content:center; padding:0 3px; font-family:'Nunito',sans-serif;"></span>
+                            </div>
+                            <span style="font-size:12px; color:#8FA8E8; font-family:'Space Grotesk',sans-serif; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"
+                                  x-text="cartCount + (cartCount === 1 ? ' plato' : ' platos')"></span>
+                            <span style="font-size:13px; font-weight:800; color:#FBBF24; font-family:'Nunito',sans-serif; flex-shrink:0;"
+                                  x-text="Number(cartTotal).toFixed(2).replace('.',',') + ' €'"></span>
+                        </div>
+                        {{-- Botones de acción --}}
+                        <div style="display:flex; gap:6px; flex-shrink:0;">
+                            <button type="button"
+                                    @click="showCartSummary()"
+                                    aria-label="Ver resumen del pedido"
+                                    style="padding:6px 10px; border-radius:9999px; background:rgba(46,80,176,0.25); border:1px solid rgba(46,80,176,0.5); color:#8FA8E8; font-size:11px; font-weight:600; font-family:'Space Grotesk',sans-serif; cursor:pointer; white-space:nowrap; transition:all 150ms ease;"
+                                    onmouseenter="this.style.background='rgba(46,80,176,0.45)'; this.style.color='#fff';"
+                                    onmouseleave="this.style.background='rgba(46,80,176,0.25)'; this.style.color='#8FA8E8';">
+                                🛒 Ver pedido
+                            </button>
+                            <button type="button"
+                                    @click="confirmOrder()"
+                                    :disabled="sending"
+                                    aria-label="Confirmar pedido"
+                                    style="padding:6px 12px; border-radius:9999px; background:linear-gradient(135deg,#2E50B0,#1A3380); border:none; color:#fff; font-size:11px; font-weight:700; font-family:'Space Grotesk',sans-serif; cursor:pointer; white-space:nowrap; box-shadow:0 0 10px rgba(46,80,176,0.5); transition:opacity 150ms ease;"
+                                    :style="sending ? 'opacity:0.6;cursor:not-allowed;' : ''">
+                                ✓ Pedir
+                            </button>
+                        </div>
+                    </div>
+
                     {{-- Área de input --}}
                     <div style="flex-shrink:0; padding:10px 12px; background:rgba(5,11,31,0.95); backdrop-filter:blur(16px); border-top:1px solid rgba(46,80,176,0.3);">
                         <div style="display:flex; gap:8px; align-items:center; background:rgba(14,26,56,0.7); border:1px solid rgba(96,152,248,0.3); border-radius:9999px; padding:8px 8px 8px 16px;">
