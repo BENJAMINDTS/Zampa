@@ -1915,18 +1915,22 @@
                             <button type="button"
                                     @click="showCartSummary()"
                                     aria-label="Ver resumen del pedido"
-                                    style="padding:6px 10px; border-radius:9999px; background:rgba(34,197,94,0.15); border:1px solid rgba(34,197,94,0.4); color:#86efac; font-size:11px; font-weight:600; font-family:'Space Grotesk',sans-serif; cursor:pointer; white-space:nowrap; transition:all 150ms ease;"
-                                    onmouseenter="this.style.background='rgba(34,197,94,0.3)'; this.style.color='#fff';"
-                                    onmouseleave="this.style.background='rgba(34,197,94,0.15)'; this.style.color='#86efac';">
-                                🛒 Ver pedido
+                                    style="display:inline-flex; align-items:center; gap:4px; padding:5px 12px; border-radius:9999px; background:rgba(46,80,176,0.22); border:1px solid rgba(46,80,176,0.5); color:#8FA8E8; font-size:12px; font-weight:600; font-family:'Space Grotesk',sans-serif; cursor:pointer; white-space:nowrap; transition:all 150ms ease;"
+                                    onmouseenter="this.style.background='#1A3380'; this.style.color='#fff';"
+                                    onmouseleave="this.style.background='rgba(46,80,176,0.22)'; this.style.color='#8FA8E8';">
+                                <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                                Ver pedido
                             </button>
                             <button type="button"
                                     @click="confirmOrder()"
                                     :disabled="sending"
                                     aria-label="Confirmar pedido"
-                                    style="padding:6px 14px; border-radius:9999px; background:linear-gradient(135deg,#16a34a,#15803d); border:none; color:#fff; font-size:11px; font-weight:700; font-family:'Space Grotesk',sans-serif; cursor:pointer; white-space:nowrap; box-shadow:0 0 14px rgba(34,197,94,0.45); transition:opacity 150ms ease;"
+                                    style="display:inline-flex; align-items:center; gap:4px; padding:5px 12px; border-radius:9999px; background:rgba(46,80,176,0.22); border:1px solid rgba(46,80,176,0.5); color:#8FA8E8; font-size:12px; font-weight:600; font-family:'Space Grotesk',sans-serif; cursor:pointer; white-space:nowrap; transition:all 150ms ease;"
+                                    onmouseenter="this.style.background='#1A3380'; this.style.color='#fff';"
+                                    onmouseleave="this.style.background='rgba(46,80,176,0.22)'; this.style.color='#8FA8E8';"
                                     :style="sending ? 'opacity:0.6;cursor:not-allowed;' : ''">
-                                ✓ Confirmar pedido
+                                <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                                Confirmar pedido
                             </button>
                         </div>
                     </div>
