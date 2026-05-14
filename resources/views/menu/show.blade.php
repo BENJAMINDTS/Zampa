@@ -1240,9 +1240,11 @@
                 },
 
                 scrollBottom() {
-                    if (this.$refs.chatLog) {
-                        this.$refs.chatLog.scrollTop = this.$refs.chatLog.scrollHeight;
-                    }
+                    this.$nextTick(() => {
+                        requestAnimationFrame(() => {
+                            this.$refs.chatEnd?.scrollIntoView({ block: 'end' });
+                        });
+                    });
                 },
             }));
         });
@@ -1862,6 +1864,9 @@
                                 </div>
                             </div>
                         </template>
+
+                        {{-- Centinela de scroll -- siempre al final del log --}}
+                        <div x-ref="chatEnd" style="height:1px; flex-shrink:0;" aria-hidden="true"></div>
 
                     </div>
 
