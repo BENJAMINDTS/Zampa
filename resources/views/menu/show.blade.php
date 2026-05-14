@@ -719,6 +719,7 @@
                 /* ── Apertura / cierre ── */
                 async openChat() {
                     this.open = true;
+                    document.body.style.overflow = 'hidden';
                     this.$nextTick(() => {
                         this.$refs.chatInput?.focus();
                         this.scrollBottom();
@@ -727,7 +728,10 @@
                     if (!this.conversationId) await this.initConversation();
                 },
 
-                closeChat() { this.open = false; },
+                closeChat() {
+                    this.open = false;
+                    document.body.style.overflow = '';
+                },
 
                 /* ── Carga del menú desde la API ── */
                 async loadMenu() {
@@ -1557,6 +1561,8 @@
                          role="log"
                          aria-live="polite"
                          aria-label="Conversación con Zampi"
+                         @wheel.stop
+                         @touchmove.stop
                          class="zampi-scrollbar"
                          style="flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:12px;">
 
