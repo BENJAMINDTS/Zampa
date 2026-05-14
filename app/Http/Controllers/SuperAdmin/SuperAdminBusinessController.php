@@ -7,6 +7,8 @@ use App\Models\Plan;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
 
@@ -17,6 +19,7 @@ use Illuminate\View\View;
  * negocios y eliminarlos. Solo accesible para el rol superadmin.
  *
  * @author BenjaminDTS
+ * @author SebastianBCF
  */
 class SuperAdminBusinessController extends Controller
 {
@@ -104,10 +107,12 @@ class SuperAdminBusinessController extends Controller
     }
 
     /**
-     * Elimina un negocio y todo su personal de la plataforma.
+     * Elimina lógicamente un negocio (soft delete) y desactiva su staff.
      *
-     * El staff asociado (admin_id FK con nullOnDelete) tendrá admin_id = null
-     * automáticamente por la restricción de FK.
+     * El admin queda marcado con deleted_at. Su staff se desactiva (active = false)
+     * para que el middleware EnsureBusinessIsActive les bloquee el acceso.
+     * Los datos históricos (mesas, pedidos, menú) se conservan en la BD.
+     * La operación es atómica: si algo falla se hace rollback completo.
      *
      * @param  User  $business
      * @return RedirectResponse
@@ -117,7 +122,11 @@ class SuperAdminBusinessController extends Controller
         abort_if($business->role !== 'admin', 403, 'Acceso denegado.');
 
         $nombre = $business->business_name ?? $business->name;
-        $business->delete();
+
+        DB::transaction(function () use ($business): void {
+            User::where('admin_id', $business->id)->update(['active' => false]);
+            $business->delete();
+        });
 
         return redirect()->route('superadmin.businesses.index')
             ->with('success', "Negocio «{$nombre}» eliminado correctamente.");

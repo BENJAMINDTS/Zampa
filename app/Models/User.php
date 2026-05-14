@@ -3,10 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use App\Models\Order;
 use App\Models\Table;
+use App\Models\Zone;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
@@ -26,17 +28,23 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property string $name        Nombre completo del usuario
  * @property string $email       Correo electrónico (login)
  * @property string $role          Rol: 'admin', 'waiter', 'kitchen', 'superadmin'
+ * @property bool   $is_waiter     Admin actuando también como camarero
+ * @property bool   $is_kitchen    Admin actuando también como cocinero
  * @property string|null $business_name  Nombre del negocio (solo admins/gerentes)
  * @property string|null $address        Dirección del negocio
  * @property float|null  $lat            Latitud del negocio
  * @property float|null  $lng            Longitud del negocio
+ * @property int         $floor_width    Ancho del canvas del plano (px)
+ * @property int         $floor_height   Alto del canvas del plano (px)
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property \Illuminate\Support\Carbon|null $deleted_at
  * @author BenjaminDTS
+ * @author SebastianBCF
  */
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, SoftDeletes;
 
     /**
      * Los atributos que se pueden asignar masivamente.
@@ -50,11 +58,15 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'is_waiter',
+        'is_kitchen',
         'admin_id',
         'business_name',
         'address',
         'lat',
         'lng',
+        'floor_width',
+        'floor_height',
     ];
 
     /**
@@ -76,8 +88,10 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-            'active' => 'boolean',
+            'password'          => 'hashed',
+            'active'            => 'boolean',
+            'is_waiter'         => 'boolean',
+            'is_kitchen'        => 'boolean',
         ];
     }
 
@@ -103,6 +117,16 @@ class User extends Authenticatable
     public function tables(): HasMany
     {
         return $this->hasMany(Table::class);
+    }
+
+    /**
+     * Obtiene las Zonas definidas en el plano del restaurante.
+     *
+     * @return HasMany
+     */
+    public function zones(): HasMany
+    {
+        return $this->hasMany(Zone::class);
     }
 
     /**
@@ -210,6 +234,50 @@ class User extends Authenticatable
     }
 
     /**
+     * Indica si el usuario puede actuar como camarero.
+     * Cubre el rol nativo 'waiter' y el admin con la opción activada.
+     *
+     * @return bool
+     */
+    public function isWaiter(): bool
+    {
+        return $this->role === 'waiter'
+            || ($this->role === 'admin' && (bool) $this->is_waiter);
+    }
+
+    /**
+     * Indica si el usuario puede actuar como cocinero.
+     * Cubre el rol nativo 'kitchen' y el admin con la opción activada.
+     *
+     * @return bool
+     */
+    public function isKitchen(): bool
+    {
+        return $this->role === 'kitchen'
+            || ($this->role === 'admin' && (bool) $this->is_kitchen);
+    }
+
+    /**
+     * Única fuente de verdad para el acceso al panel de Barra.
+     *
+     * @return bool
+     */
+    public function canAccessBar(): bool
+    {
+        return $this->isWaiter();
+    }
+
+    /**
+     * Única fuente de verdad para el acceso al panel de Cocina.
+     *
+     * @return bool
+     */
+    public function canAccessKitchen(): bool
+    {
+        return $this->isKitchen();
+    }
+
+    /**
      * Indica si el negocio/usuario está activo en la plataforma.
      *
      * @return bool
@@ -229,5 +297,21 @@ class User extends Authenticatable
     public function ownerUserId(): int
     {
         return $this->admin_id ?? $this->id;
+    }
+
+    /**
+     * Devuelve el nombre de ruta de la pantalla principal según el rol del usuario.
+     * Usado para la redirección post-login y el logo del navbar.
+     *
+     * @return string
+     */
+    public function homeRoute(): string
+    {
+        return match ($this->role) {
+            'superadmin' => 'superadmin.dashboard',
+            'waiter'     => 'bar.index',
+            'kitchen'    => 'kitchen.index',
+            default      => 'dashboard',
+        };
     }
 }

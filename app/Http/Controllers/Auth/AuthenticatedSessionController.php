@@ -9,10 +9,15 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
+/**
+ * @author SebastianBCF
+ */
 class AuthenticatedSessionController extends Controller
 {
     /**
      * Display the login view.
+     *
+     * @return View
      */
     public function create(): View
     {
@@ -21,6 +26,12 @@ class AuthenticatedSessionController extends Controller
 
     /**
      * Handle an incoming authentication request.
+     *
+     * Redirige a la pantalla principal de cada rol:
+     * admin → /dashboard, waiter → /bar, kitchen → /cocina, superadmin → panel SA.
+     *
+     * @param  LoginRequest  $request
+     * @return RedirectResponse
      */
     public function store(LoginRequest $request): RedirectResponse
     {
@@ -28,11 +39,7 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        if (Auth::user()->isSuperAdmin()) {
-            return redirect()->intended(route('superadmin.dashboard'));
-        }
-
-        return redirect()->intended(route('dashboard', absolute: false));
+        return redirect()->intended(route(Auth::user()->homeRoute(), absolute: false));
     }
 
     /**

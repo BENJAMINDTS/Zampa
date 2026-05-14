@@ -29,13 +29,19 @@ class MenuController extends Controller
      */
     public function show(string $hash): View
     {
-        $table  = Table::where('unique_hash', $hash)->firstOrFail();
+        $table  = Table::where('unique_hash', $hash)->where('is_service_point', true)->firstOrFail();
         $config = $table->user->tapaConfig;
 
-        $kitchenOpen = ! ($config && $config->tapas_enabled) || $config->isKitchenOpen();
+        if ($config) {
+            $config->load('schedules');
+        }
+
+        $kitchenOpen     = ! ($config && $config->tapas_enabled) || $config->isKitchenOpen();
+        $nextOpeningTime = ($config && ! $kitchenOpen) ? $config->nextOpeningTime() : null;
 
         $categories = Category::where('user_id', $table->user_id)
             ->when(! $kitchenOpen, fn ($q) => $q->where('destination', 'bar'))
+            ->when($config && $config->tapas_enabled, fn ($q) => $q->where('name', '!=', 'Tapas'))
             ->with([
                 'products' => function ($query) {
                     $query->where('is_active', true)
@@ -112,7 +118,7 @@ class MenuController extends Controller
 
         return view('menu.show', compact(
             'table', 'categories', 'allergens',
-            'tapaConfig', 'barItemsCount', 'kitchenOpen',
+            'tapaConfig', 'barItemsCount', 'kitchenOpen', 'nextOpeningTime',
             'tapaVariantsUsed', 'tapaProducts', 'shouldSuggest',
             'hasActiveOrder', 'activeOrderTotal', 'billRequested', 'stripePublicKey'
         ));

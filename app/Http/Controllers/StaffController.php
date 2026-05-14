@@ -80,7 +80,7 @@ class StaffController extends Controller
     {
         abort_if($staff->admin_id !== Auth::id(), 403, 'No puedes eliminar personal de otro restaurante.');
 
-        $staff->delete();
+        $staff->forceDelete();
 
         return redirect()
             ->route('staff.index')

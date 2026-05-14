@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
@@ -12,19 +13,19 @@ use Illuminate\Support\Carbon;
  *
  * Configuración del sistema de tapas de un restaurante (relación 1:1 con User).
  * Permite al gerente activar tapas, definir si son gratuitas o de pago,
- * el precio unitario, el número máximo de variantes distintas por pedido,
- * la tapa extra de pago y el horario de apertura de cocina.
+ * la modalidad de precio (fijo global o por producto), el número máximo de
+ * variantes distintas por pedido, la tapa extra de pago y los tramos horarios
+ * de apertura de cocina.
  *
  * @package App\Models
  * @property int        $user_id
  * @property bool       $tapas_enabled       Si el sistema de tapas está activo
  * @property bool       $tapas_free          true = gratuitas, false = de pago
+ * @property string     $price_mode          'fixed' = precio global | 'per_product' = precio individual
  * @property int        $max_tapa_variants   Máximo de variantes distintas por mesa
- * @property float|null $tapa_price          Precio por tapa (solo si tapas_free = false)
+ * @property float|null $tapa_price          Precio fijo global (solo si price_mode = fixed y tapas_free = false)
  * @property bool       $extra_tapa_enabled  Si se permite pedir una tapa extra de pago
  * @property float|null $extra_tapa_price    Precio de la tapa extra (obligatorio si extra_tapa_enabled)
- * @property string|null $kitchen_opens_at   Hora de apertura de cocina (HH:MM:SS, null = siempre abierta)
- * @property string|null $kitchen_closes_at  Hora de cierre de cocina (HH:MM:SS, null = siempre abierta)
  *
  * @author BenjaminDTS
  */
@@ -39,12 +40,11 @@ class TapaConfig extends Model
         'user_id',
         'tapas_enabled',
         'tapas_free',
+        'price_mode',
         'max_tapa_variants',
         'tapa_price',
         'extra_tapa_enabled',
         'extra_tapa_price',
-        'kitchen_opens_at',
-        'kitchen_closes_at',
     ];
 
     /**
@@ -53,6 +53,7 @@ class TapaConfig extends Model
     protected $casts = [
         'tapas_enabled'      => 'boolean',
         'tapas_free'         => 'boolean',
+        'price_mode'         => 'string',
         'max_tapa_variants'  => 'integer',
         'tapa_price'         => 'decimal:2',
         'extra_tapa_enabled' => 'boolean',
@@ -70,28 +71,72 @@ class TapaConfig extends Model
     }
 
     /**
+     * Tramos horarios de apertura de cocina configurados por el gerente.
+     *
+     * @return HasMany
+     */
+    public function schedules(): HasMany
+    {
+        return $this->hasMany(KitchenSchedule::class)->orderBy('opens_at');
+    }
+
+    /**
      * Determina si la cocina está abierta en este momento.
-     * Si kitchen_opens_at o kitchen_closes_at son null, se considera siempre abierta.
+     * Sin tramos configurados se considera siempre abierta.
      * Soporta rangos que cruzan medianoche (ej: 22:00 – 02:00).
      *
      * @return bool
      */
     public function isKitchenOpen(): bool
     {
-        if ($this->kitchen_opens_at === null || $this->kitchen_closes_at === null) {
+        $schedules = $this->schedules;
+
+        if ($schedules->isEmpty()) {
             return true;
         }
 
-        $now    = Carbon::now()->format('H:i:s');
-        $opens  = $this->kitchen_opens_at;
-        $closes = $this->kitchen_closes_at;
+        $now = Carbon::now()->format('H:i:s');
 
-        if ($opens <= $closes) {
-            return $now >= $opens && $now <= $closes;
+        foreach ($schedules as $schedule) {
+            $opens  = $schedule->opens_at;
+            $closes = $schedule->closes_at;
+
+            if ($opens <= $closes) {
+                if ($now >= $opens && $now <= $closes) {
+                    return true;
+                }
+            } else {
+                // Tramo que cruza medianoche (ej: 22:00 – 02:00)
+                if ($now >= $opens || $now <= $closes) {
+                    return true;
+                }
+            }
         }
 
-        // Rango que cruza medianoche (ej: 22:00 – 02:00)
-        return $now >= $opens || $now <= $closes;
+        return false;
+    }
+
+    /**
+     * Devuelve la hora de apertura del próximo tramo (HH:MM) para mostrarlo
+     * en el aviso de cocina cerrada. Null si no hay tramos configurados.
+     *
+     * @return string|null
+     */
+    public function nextOpeningTime(): ?string
+    {
+        $schedules = $this->schedules;
+
+        if ($schedules->isEmpty()) {
+            return null;
+        }
+
+        $now  = Carbon::now()->format('H:i:s');
+        $next = $schedules->first(fn ($s) => $s->opens_at > $now);
+
+        // Si no hay tramo posterior hoy, el primero de mañana
+        $schedule = $next ?? $schedules->first();
+
+        return substr($schedule->opens_at, 0, 5);
     }
 
     /**
@@ -116,5 +161,44 @@ class TapaConfig extends Model
         }
 
         return $tapaVariantsUsed < $this->max_tapa_variants;
+    }
+
+    /**
+     * Devuelve el precio que el cliente debe pagar por una tapa según la modalidad activa.
+     *
+     * Si tapas son gratuitas     → 0.0
+     * Si price_mode = 'fixed'    → precio fijo global (tapa_price)
+     * Si price_mode = per_product → precio individual del producto
+     *
+     * La tapa extra tiene siempre su propio precio (extra_tapa_price), independiente de esta lógica.
+     *
+     * @param  Product  $product
+     * @return float
+     */
+    public function getPriceForProduct(Product $product): float
+    {
+        if ($this->tapas_free) {
+            return 0.0;
+        }
+
+        if ($this->price_mode === 'fixed') {
+            return (float) ($this->tapa_price ?? 0);
+        }
+
+        return (float) $product->price;
+    }
+
+    /**
+     * Determina si un producto pertenece a la categoría "Tapas" de este restaurante.
+     * Usado para aplicar el precio de tapa en lugar del precio normal del producto.
+     *
+     * @param  Product  $product  Debe tener la relación 'category' cargada
+     * @return bool
+     */
+    public function isTapaProduct(Product $product): bool
+    {
+        return $product->category_id !== null
+            && $product->category?->name === 'Tapas'
+            && $product->category?->user_id === $this->user_id;
     }
 }

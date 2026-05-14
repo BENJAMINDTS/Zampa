@@ -18,13 +18,23 @@
 
             <div class="bg-white dark:bg-gray-800 shadow sm:rounded-lg p-6 sm:p-8">
 
+                @php
+                    $schedulesForAlpine = $tapaConfig->schedules->map(function ($s) {
+                        return ['opens_at' => substr($s->opens_at, 0, 5), 'closes_at' => substr($s->closes_at, 0, 5)];
+                    })->values();
+                @endphp
+
                 <form
                     method="POST"
                     action="{{ route('tapas.update') }}"
                     x-data="{
                         tapas_enabled:      {{ $tapaConfig->tapas_enabled ? 'true' : 'false' }},
                         tapas_free:         {{ $tapaConfig->tapas_free ? 'true' : 'false' }},
-                        extra_tapa_enabled: {{ $tapaConfig->extra_tapa_enabled ? 'true' : 'false' }}
+                        price_mode:         '{{ old('price_mode', $tapaConfig->price_mode ?? 'fixed') }}',
+                        extra_tapa_enabled: {{ $tapaConfig->extra_tapa_enabled ? 'true' : 'false' }},
+                        schedules: {{ json_encode($schedulesForAlpine, JSON_HEX_QUOT) }},
+                        addSchedule()    { this.schedules.push({ opens_at: '', closes_at: '' }); },
+                        removeSchedule(i){ this.schedules.splice(i, 1); }
                     }"
                 >
                     @csrf
@@ -86,10 +96,62 @@
                             <input type="hidden" name="tapas_free" :value="tapas_free ? '1' : '0'">
                         </div>
 
-                        {{-- Precio por tapa (solo si de pago) --}}
+                        {{-- Modalidad de precio (solo si de pago) --}}
                         <div x-show="!tapas_free" x-transition>
+                            <fieldset>
+                                <legend class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    {{ __('Modalidad de precio') }}
+                                    <span aria-hidden="true" class="text-red-500 ml-0.5">*</span>
+                                </legend>
+                                <p id="price-mode-desc" class="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                                    {{ __('Elige cómo se calcula el precio que ve el cliente para cada tapa.') }}
+                                </p>
+                                <div class="space-y-3" aria-describedby="price-mode-desc">
+                                    <label class="flex items-start gap-3 cursor-pointer">
+                                        <input
+                                            type="radio"
+                                            name="price_mode"
+                                            value="fixed"
+                                            x-model="price_mode"
+                                            class="mt-0.5 h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                        >
+                                        <span>
+                                            <span class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                {{ __('Precio fijo para todas las tapas') }}
+                                            </span>
+                                            <span class="block text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                                {{ __('Configuras un único precio que aplica a todas las tapas del menú.') }}
+                                            </span>
+                                        </span>
+                                    </label>
+                                    <label class="flex items-start gap-3 cursor-pointer">
+                                        <input
+                                            type="radio"
+                                            name="price_mode"
+                                            value="per_product"
+                                            x-model="price_mode"
+                                            class="mt-0.5 h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                        >
+                                        <span>
+                                            <span class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                {{ __('Precio individual por producto') }}
+                                            </span>
+                                            <span class="block text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                                {{ __('Cada tapa usa el precio configurado en su ficha de producto.') }}
+                                            </span>
+                                        </span>
+                                    </label>
+                                </div>
+                                @error('price_mode')
+                                    <p id="error-price_mode" role="alert" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                @enderror
+                            </fieldset>
+                        </div>
+
+                        {{-- Precio fijo global (solo si de pago y modalidad fija) --}}
+                        <div x-show="!tapas_free && price_mode === 'fixed'" x-transition>
                             <label for="tapa_price" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                {{ __('Precio por tapa (€)') }}
+                                {{ __('Precio fijo por tapa (€)') }}
                                 <span aria-hidden="true" class="text-red-500 ml-0.5">*</span>
                             </label>
                             <input
@@ -108,6 +170,13 @@
                             @error('tapa_price')
                                 <p id="error-tapa_price" role="alert" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                             @enderror
+                        </div>
+
+                        {{-- Aviso precio por producto --}}
+                        <div x-show="!tapas_free && price_mode === 'per_product'" x-transition>
+                            <p class="text-sm text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-900/20 rounded-md px-3 py-2">
+                                {{ __('El precio de cada tapa se configura en la ficha del producto dentro de la categoría "Tapas".') }}
+                            </p>
                         </div>
 
                         {{-- ── SECCIÓN 2: Tapa extra ────────────────────── --}}
@@ -186,53 +255,85 @@
                             @enderror
                         </div>
 
-                        {{-- ── SECCIÓN 4: Horario de cocina ─────────────── --}}
+                        {{-- ── SECCIÓN 4: Horario de cocina (tramos) ────── --}}
                         <div class="border-t border-gray-200 dark:border-gray-700 pt-6">
                             <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                 {{ __('Horario de cocina') }}
                             </h3>
                             <p class="text-xs text-gray-500 dark:text-gray-400 mb-4">
-                                {{ __('Si tu cocina cierra en determinados momentos (por ejemplo, solo sirves bebidas a media tarde), configura aquí su horario. Fuera del horario, los productos de cocina no aparecen en la carta. Deja los campos vacíos si la cocina siempre está disponible.') }}
+                                {{ __('Añade los tramos en los que la cocina está abierta (ej: mediodía 13:00–16:00 y noche 20:00–23:30). Fuera de estos tramos la carta solo muestra bebidas. Sin tramos configurados la cocina se considera siempre disponible.') }}
                             </p>
 
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div>
-                                    <label for="kitchen_opens_at" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                        {{ __('Abre a las') }}
-                                    </label>
-                                    <input
-                                        type="time"
-                                        id="kitchen_opens_at"
-                                        name="kitchen_opens_at"
-                                        value="{{ old('kitchen_opens_at', $tapaConfig->kitchen_opens_at ? substr($tapaConfig->kitchen_opens_at, 0, 5) : '') }}"
-                                        aria-describedby="error-kitchen_opens_at"
-                                        class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                                    >
-                                    @error('kitchen_opens_at')
-                                        <p id="error-kitchen_opens_at" role="alert" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                    @enderror
-                                </div>
+                            {{-- Errores de validación de tramos --}}
+                            @error('schedules')
+                                <p role="alert" class="mb-3 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                            @enderror
+                            @error('schedules.*.opens_at')
+                                <p role="alert" class="mb-3 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                            @enderror
+                            @error('schedules.*.closes_at')
+                                <p role="alert" class="mb-3 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                            @enderror
 
-                                <div>
-                                    <label for="kitchen_closes_at" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                        {{ __('Cierra a las') }}
-                                    </label>
-                                    <input
-                                        type="time"
-                                        id="kitchen_closes_at"
-                                        name="kitchen_closes_at"
-                                        value="{{ old('kitchen_closes_at', $tapaConfig->kitchen_closes_at ? substr($tapaConfig->kitchen_closes_at, 0, 5) : '') }}"
-                                        aria-describedby="error-kitchen_closes_at"
-                                        class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                                    >
-                                    @error('kitchen_closes_at')
-                                        <p id="error-kitchen_closes_at" role="alert" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                    @enderror
-                                </div>
+                            {{-- Lista dinámica de tramos --}}
+                            <div class="space-y-3 mb-4" role="list" aria-label="Tramos horarios de cocina">
+                                <template x-for="(slot, i) in schedules" :key="i">
+                                    <div class="flex items-end gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600"
+                                         role="listitem">
+                                        <div class="flex-1">
+                                            <label :for="'opens_at_' + i"
+                                                   class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                                                {{ __('Abre') }}
+                                            </label>
+                                            <input type="time"
+                                                   :id="'opens_at_' + i"
+                                                   :name="'schedules[' + i + '][opens_at]'"
+                                                   x-model="slot.opens_at"
+                                                   aria-required="true"
+                                                   class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                        </div>
+                                        <div class="flex-1">
+                                            <label :for="'closes_at_' + i"
+                                                   class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                                                {{ __('Cierra') }}
+                                            </label>
+                                            <input type="time"
+                                                   :id="'closes_at_' + i"
+                                                   :name="'schedules[' + i + '][closes_at]'"
+                                                   x-model="slot.closes_at"
+                                                   aria-required="true"
+                                                   class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                        </div>
+                                        <button type="button"
+                                                @click="removeSchedule(i)"
+                                                :aria-label="'Eliminar tramo ' + (i + 1)"
+                                                class="mb-0.5 flex-shrink-0 p-1.5 rounded-md text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20
+                                                       focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors">
+                                            <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </template>
                             </div>
 
-                            <p class="text-xs text-amber-600 dark:text-amber-400 mt-2">
-                                {{ __('Si dejas ambos campos vacíos, la cocina se considera siempre disponible.') }}
+                            <button type="button"
+                                    @click="addSchedule()"
+                                    :disabled="schedules.length >= 10"
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium
+                                           border border-indigo-300 dark:border-indigo-600 text-indigo-700 dark:text-indigo-300
+                                           hover:bg-indigo-50 dark:hover:bg-indigo-900/20
+                                           focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors
+                                           disabled:opacity-40 disabled:cursor-not-allowed">
+                                <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+                                </svg>
+                                {{ __('Añadir tramo') }}
+                            </button>
+
+                            <p x-show="schedules.length === 0"
+                               class="text-xs text-amber-600 dark:text-amber-400 mt-2">
+                                {{ __('Sin tramos: la cocina se considera siempre disponible.') }}
                             </p>
                         </div>
 

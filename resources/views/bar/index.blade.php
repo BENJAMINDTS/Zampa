@@ -1,4 +1,5 @@
 {{-- @author SebastianBCF --}}
+{{-- @author AyrtonAlania --}}
 <x-app-layout>
 
   {{-- Solicitudes de cuenta: polling cada 15 segundos --}}
@@ -198,6 +199,7 @@
             const res  = await fetch('{{ route('notifications.bill.requests') }}', {
               headers: { 'X-Requested-With': 'XMLHttpRequest' }
             });
+            if (!res.ok) return;
             const data = await res.json();
             const payingIds = {};
             this.billOrders.forEach(o => { if (o.paying) payingIds[o.id] = true; });
@@ -209,14 +211,20 @@
 
         async dismiss(id) {
           const url = '{{ route('notifications.bill.dismiss', ['order' => '__ID__']) }}'.replace('__ID__', id);
-          await fetch(url, {
-            method:  'PATCH',
-            headers: {
-              'X-CSRF-TOKEN':     document.querySelector('meta[name="csrf-token"]').content,
-              'X-Requested-With': 'XMLHttpRequest',
-            },
-          });
-          this.billOrders = this.billOrders.filter(o => o.id !== id);
+          try {
+            const res = await fetch(url, {
+              method:  'PATCH',
+              headers: {
+                'X-CSRF-TOKEN':     document.querySelector('meta[name="csrf-token"]').content,
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept':           'application/json',
+              },
+            });
+            if (!res.ok) return;
+            this.billOrders = this.billOrders.filter(o => o.id !== id);
+          } catch {
+            // red caída: mantener el ítem para que el siguiente poll refleje la BD
+          }
         },
 
         async cashPayment(order) {
@@ -244,7 +252,7 @@
   <script>
     function notificationPolling() {
       return {
-        readyOrders: [],
+        readyOrders: @json($readyOrders),
 
         init() {
           this.poll();
@@ -256,6 +264,7 @@
             const res  = await fetch('{{ route('notifications.ready') }}', {
               headers: { 'X-Requested-With': 'XMLHttpRequest' }
             });
+            if (!res.ok) return;
             const data = await res.json();
             this.readyOrders = data.orders;
           } catch {
@@ -265,14 +274,20 @@
 
         async dismiss(id) {
           const url = '{{ route('notifications.dismiss', ['order' => '__ID__']) }}'.replace('__ID__', id);
-          await fetch(url, {
-            method:  'PATCH',
-            headers: {
-              'X-CSRF-TOKEN':     document.querySelector('meta[name="csrf-token"]').content,
-              'X-Requested-With': 'XMLHttpRequest',
-            },
-          });
-          this.readyOrders = this.readyOrders.filter(o => o.id !== id);
+          try {
+            const res = await fetch(url, {
+              method:  'PATCH',
+              headers: {
+                'X-CSRF-TOKEN':     document.querySelector('meta[name="csrf-token"]').content,
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept':           'application/json',
+              },
+            });
+            if (!res.ok) return;
+            this.readyOrders = this.readyOrders.filter(o => o.id !== id);
+          } catch {
+            // red caída: mantener el ítem para que el siguiente poll refleje la BD
+          }
         },
       };
     }

@@ -205,10 +205,12 @@
             ]);
         })->values();
 
+        // El precio de cada tapa se resuelve en backend (getPriceForProduct) para que
+        // Alpine no tenga que replicar la lógica de modalidad de precio.
         $tapaProductsForAlpine = $tapaProducts->map(fn ($p) => [
             'id'    => $p->id,
             'name'  => $p->name,
-            'price' => (float) $p->price,
+            'price' => $tapaConfig ? (float) $tapaConfig->getPriceForProduct($p) : (float) $p->price,
         ])->values();
 
         $tapaConfigForAlpine = [
@@ -292,11 +294,11 @@
                 },
 
                 addTapa(tapaProduct) {
-                    const price = this.tapaConfig.free ? 0 : this.tapaConfig.tapaPrice;
+                    // tapaProduct.price ya viene resuelto por getPriceForProduct() en el backend
                     this.add({
                         id:          tapaProduct.id,
                         name:        tapaProduct.name,
-                        price:       price,
+                        price:       tapaProduct.price,
                         destination: 'kitchen',
                         removable:   [],
                         extras:      [],
@@ -2495,9 +2497,9 @@
                     </p>
                     <p class="text-xs text-blue-700 dark:text-blue-400 mt-0.5">
                         {{ __('Ahora solo se sirven bebidas.') }}
-                        @if($tapaConfig?->kitchen_opens_at)
+                        @if($nextOpeningTime)
                             {{ __('La cocina abre a las') }}
-                            <span class="font-semibold">{{ substr($tapaConfig->kitchen_opens_at, 0, 5) }}</span>.
+                            <span class="font-semibold">{{ $nextOpeningTime }}</span>.
                         @endif
                     </p>
                 </div>

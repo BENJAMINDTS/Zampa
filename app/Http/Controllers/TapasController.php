@@ -7,14 +7,16 @@ use App\Models\TapaConfig;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 /**
  * Class TapasController
  *
  * Permite al gerente configurar el sistema de tapas del restaurante:
- * activar/desactivar, modo gratuito/de pago, precio, variantes máximas,
- * tapa extra de pago y horario de apertura de cocina.
+ * activar/desactivar, modo gratuito/de pago, modalidad de precio
+ * (fijo global o por producto), precio, variantes máximas,
+ * tapa extra de pago y tramos horarios de apertura de cocina.
  *
  * @author BenjaminDTS
  */
@@ -33,42 +35,65 @@ class TapasController extends Controller
             [
                 'tapas_enabled'      => false,
                 'tapas_free'         => true,
+                'price_mode'         => 'fixed',
                 'max_tapa_variants'  => 3,
                 'tapa_price'         => null,
                 'extra_tapa_enabled' => false,
                 'extra_tapa_price'   => null,
-                'kitchen_opens_at'   => null,
-                'kitchen_closes_at'  => null,
             ]
         );
+
+        $tapaConfig->load('schedules');
 
         return view('tapas.edit', compact('tapaConfig'));
     }
 
     /**
      * Guarda la configuración de tapas del restaurante.
+     *
+     * Reglas de precio:
+     *  - Si tapas_free = true: precio y modalidad ignorados, tapa_price = null.
+     *  - Si tapas_free = false y price_mode = 'fixed': tapa_price obligatorio.
+     *  - Si tapas_free = false y price_mode = 'per_product': tapa_price = null.
+     *
      * Al activar tapas crea automáticamente la categoría 'Tapas' con destination=kitchen.
+     * Reemplaza los tramos horarios de cocina por los enviados en el formulario.
      *
      * @param  Request $request
      * @return RedirectResponse
      */
     public function update(Request $request): RedirectResponse
     {
+        $tapasFree  = $request->boolean('tapas_free');
+        $priceMode  = $request->input('price_mode', 'fixed');
+
         $request->validate([
-            'tapas_enabled'      => ['sometimes', 'boolean'],
-            'tapas_free'         => ['sometimes', 'boolean'],
-            'max_tapa_variants'  => ['required', 'integer', 'min:1', 'max:20'],
-            'tapa_price'         => ['required_if:tapas_free,0', 'nullable', 'numeric', 'min:0', 'max:999.99'],
-            'extra_tapa_enabled' => ['sometimes', 'boolean'],
-            'extra_tapa_price'   => ['required_if:extra_tapa_enabled,1', 'nullable', 'numeric', 'min:0', 'max:999.99'],
-            'kitchen_opens_at'   => ['nullable', 'date_format:H:i', 'required_with:kitchen_closes_at'],
-            'kitchen_closes_at'  => ['nullable', 'date_format:H:i', 'required_with:kitchen_opens_at'],
+            'tapas_enabled'            => ['sometimes', 'boolean'],
+            'tapas_free'               => ['sometimes', 'boolean'],
+            'price_mode'               => ['nullable', 'in:fixed,per_product'],
+            'max_tapa_variants'        => ['required', 'integer', 'min:1', 'max:20'],
+            'tapa_price'               => [
+                Rule::requiredIf(fn () => ! $tapasFree && $priceMode === 'fixed'),
+                'nullable', 'numeric', 'min:0', 'max:999.99',
+            ],
+            'extra_tapa_enabled'       => ['sometimes', 'boolean'],
+            'extra_tapa_price'         => ['required_if:extra_tapa_enabled,1', 'nullable', 'numeric', 'min:0', 'max:999.99'],
+            'schedules'                => ['nullable', 'array', 'max:10'],
+            'schedules.*.opens_at'     => ['required', 'date_format:H:i'],
+            'schedules.*.closes_at'    => ['required', 'date_format:H:i'],
         ]);
 
-        $userId        = Auth::id();
-        $tapasEnabled  = $request->boolean('tapas_enabled');
-        $tapas_free    = $request->boolean('tapas_free');
-        $extraEnabled  = $request->boolean('extra_tapa_enabled');
+        $userId       = Auth::id();
+        $tapasEnabled = $request->boolean('tapas_enabled');
+        $extraEnabled = $request->boolean('extra_tapa_enabled');
+
+        // Normalizar modalidad: si tapas son gratuitas el precio_mode es irrelevante
+        $resolvedMode = $tapasFree ? 'fixed' : $priceMode;
+
+        // tapa_price solo aplica en modalidad fija y tapas de pago
+        $resolvedPrice = ($tapasFree || $resolvedMode === 'per_product')
+            ? null
+            : ($request->input('tapa_price') ?? null);
 
         if ($tapasEnabled) {
             Category::firstOrCreate(
@@ -77,19 +102,27 @@ class TapasController extends Controller
             );
         }
 
-        TapaConfig::updateOrCreate(
+        $config = TapaConfig::updateOrCreate(
             ['user_id' => $userId],
             [
                 'tapas_enabled'      => $tapasEnabled,
-                'tapas_free'         => $tapas_free,
+                'tapas_free'         => $tapasFree,
+                'price_mode'         => $resolvedMode,
                 'max_tapa_variants'  => $request->integer('max_tapa_variants'),
-                'tapa_price'         => $tapas_free ? null : ($request->input('tapa_price') ?? null),
+                'tapa_price'         => $resolvedPrice,
                 'extra_tapa_enabled' => $extraEnabled,
                 'extra_tapa_price'   => $extraEnabled ? ($request->input('extra_tapa_price') ?? null) : null,
-                'kitchen_opens_at'   => $request->input('kitchen_opens_at') ?: null,
-                'kitchen_closes_at'  => $request->input('kitchen_closes_at') ?: null,
             ]
         );
+
+        $config->schedules()->delete();
+
+        foreach ($request->input('schedules', []) as $slot) {
+            $config->schedules()->create([
+                'opens_at'  => $slot['opens_at'],
+                'closes_at' => $slot['closes_at'],
+            ]);
+        }
 
         return redirect()->route('tapas.edit')
                          ->with('success', 'Configuración de tapas guardada correctamente.');

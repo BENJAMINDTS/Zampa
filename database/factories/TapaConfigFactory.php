@@ -21,12 +21,11 @@ class TapaConfigFactory extends Factory
             'user_id'            => User::factory(),
             'tapas_enabled'      => false,
             'tapas_free'         => true,
+            'price_mode'         => 'fixed',
             'max_tapa_variants'  => 3,
             'tapa_price'         => null,
             'extra_tapa_enabled' => false,
             'extra_tapa_price'   => null,
-            'kitchen_opens_at'   => null,
-            'kitchen_closes_at'  => null,
         ];
     }
 }
