@@ -19,7 +19,7 @@ return new class extends Migration
             $table->foreignId('product_id')->constrained()->onDelete('cascade');
             $table->timestamps();
 
-            $table->unique(['daily_menu_section_id', 'product_id']);
+            $table->unique(['daily_menu_section_id', 'product_id'], 'dmsec_products_unique');
         });
     }
 
