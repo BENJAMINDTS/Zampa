@@ -35,6 +35,7 @@ class DailyMenuController extends Controller
         $ownerId = Auth::user()->ownerUserId();
 
         $menus = DailyMenu::where('user_id', $ownerId)
+            ->withCount('sections')
             ->orderByRaw("CASE WHEN specific_date IS NOT NULL THEN 0 ELSE 1 END")
             ->orderBy('specific_date')
             ->orderByRaw("FIELD(day_of_week, 'monday','tuesday','wednesday','thursday','friday','saturday','sunday')")
@@ -44,22 +45,25 @@ class DailyMenuController extends Controller
         $today    = now()->startOfDay();
         $nextWeek = now()->addDays(7)->endOfDay();
 
+        // Pre-cargar menús semanales y excepciones en 2 queries para evitar N+1
+        $weeklyMenus = DailyMenu::where('user_id', $ownerId)
+            ->where('is_active', true)
+            ->whereIn('day_of_week', $weekDays)
+            ->get()
+            ->keyBy('day_of_week');
+
+        $upcomingExceptions = DailyMenu::where('user_id', $ownerId)
+            ->where('is_active', true)
+            ->whereNotNull('specific_date')
+            ->whereBetween('specific_date', [$today, $nextWeek])
+            ->get()
+            ->keyBy(fn ($m) => strtolower($m->specific_date->englishDayOfWeek));
+
         $weekSummary = [];
         foreach ($weekDays as $day) {
-            $menu = DailyMenu::where('user_id', $ownerId)
-                ->where('day_of_week', $day)
-                ->where('is_active', true)
-                ->first();
-
-            $exception = DailyMenu::where('user_id', $ownerId)
-                ->whereNotNull('specific_date')
-                ->whereBetween('specific_date', [$today, $nextWeek])
-                ->where('is_active', true)
-                ->first();
-
             $weekSummary[$day] = [
-                'menu'      => $menu,
-                'exception' => $exception,
+                'menu'      => $weeklyMenus->get($day),
+                'exception' => $upcomingExceptions->get($day),
             ];
         }
 
@@ -347,7 +351,7 @@ class DailyMenuController extends Controller
     {
         abort_if($dailyMenu->user_id !== Auth::user()->ownerUserId(), 403, 'Acceso denegado.');
 
-        $request->validate([
+        $validated = $request->validate([
             'rounds'                          => 'required|array|min:1|max:4',
             'rounds.*.round_number'           => 'required|integer|min:1|max:4',
             'rounds.*.default_delay_minutes'  => 'required|integer|min:0',
@@ -356,9 +360,9 @@ class DailyMenuController extends Controller
             'rounds.*.section_types.*'        => 'in:first_course,second_course,dessert,coffee,drink,bread',
         ]);
 
-        DB::transaction(function () use ($request, $dailyMenu) {
+        DB::transaction(function () use ($validated, $dailyMenu) {
             $dailyMenu->timingRules()->delete();
-            foreach ($request->rounds as $round) {
+            foreach ($validated['rounds'] as $round) {
                 $dailyMenu->timingRules()->create($round);
             }
         });
