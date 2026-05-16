@@ -128,7 +128,7 @@
                       {{ number_format($menu->price, 2) }} €
                     </td>
                     <td class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 hidden md:table-cell">
-                      {{ $menu->sections_count ?? '—' }}
+                      {{ $menu->sections_count }}
                     </td>
                     <td class="px-4 py-3">
                       @if($menu->is_active)
