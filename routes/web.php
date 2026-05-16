@@ -79,6 +79,10 @@ Route::middleware(['auth', 'business.active'])->group(function () {
              ->parameters(['daily-menus' => 'dailyMenu']);
         Route::get('/daily-menus/{dailyMenu}/sections', [DailyMenuController::class, 'sections'])
              ->name('daily-menus.sections');
+        Route::post('/daily-menus/{dailyMenu}/sections', [DailyMenuController::class, 'storeSection'])
+             ->name('daily-menus.sections.store');
+        Route::delete('/daily-menus/{dailyMenu}/sections/{section}', [DailyMenuController::class, 'destroySection'])
+             ->name('daily-menus.sections.destroy');
         Route::post('/daily-menus/{dailyMenu}/sections/{section}/products/sync', [DailyMenuController::class, 'syncProducts'])
              ->name('daily-menus.sync-products');
         Route::post('/daily-menus/{dailyMenu}/timing', [DailyMenuController::class, 'storeTiming'])
