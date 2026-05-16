@@ -19,12 +19,17 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $destination   'kitchen' o 'bar', copiado de la categoría del producto
  *
  * @author BenjaminDTS
+ * @author Ayrtonalania
  */
 class OrderItem extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['order_id', 'product_id', 'quantity', 'price', 'status', 'destination'];
+    protected $fillable = ['order_id', 'product_id', 'quantity', 'price', 'status', 'destination', 'is_daily_menu'];
+
+    protected $casts = [
+        'is_daily_menu' => 'boolean',
+    ];
 
     /**
      * El pedido general al que pertenece esta línea.
