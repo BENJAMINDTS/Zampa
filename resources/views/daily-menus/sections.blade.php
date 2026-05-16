@@ -59,9 +59,8 @@
                   {{ $sectionLabels[$type] }}
                 </h4>
                 @if(!$section)
-                  <form action="{{ route('daily-menus.sections', $dailyMenu) }}" method="POST">
+                  <form action="{{ route('daily-menus.sections.store', $dailyMenu) }}" method="POST">
                     @csrf
-                    <input type="hidden" name="_action" value="create_section">
                     <input type="hidden" name="section_type" value="{{ $type }}">
                     <button type="submit"
                             aria-label="Añadir sección {{ $sectionLabels[$type] }}"
@@ -73,8 +72,20 @@
               </div>
 
               @if($section)
+                {{-- Botón eliminar sección --}}
+                <form action="{{ route('daily-menus.sections.destroy', [$dailyMenu, $section]) }}" method="POST"
+                      onsubmit="return confirm('¿Eliminar la sección {{ addslashes($sectionLabels[$type]) }}? Se perderán los productos asignados.')">
+                  @csrf
+                  @method('DELETE')
+                  <button type="submit"
+                          aria-label="Eliminar sección {{ $sectionLabels[$type] }}"
+                          class="text-sm bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 py-1 px-3 rounded dark:bg-red-900/20 dark:text-red-400 dark:border-red-700">
+                    Eliminar sección
+                  </button>
+                </form>
+
                 {{-- Configuración de la sección existente --}}
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4 mt-4">
                   <div class="flex items-center gap-2">
                     <input type="checkbox" id="is_required_{{ $section->id }}"
                            class="h-4 w-4 text-orange-500 border-gray-300 rounded"
