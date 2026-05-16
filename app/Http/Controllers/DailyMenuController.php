@@ -245,6 +245,60 @@ class DailyMenuController extends Controller
     }
 
     /**
+     * Crea una nueva sección para el menú del día.
+     *
+     * @param  Request   $request
+     * @param  DailyMenu $dailyMenu
+     * @return RedirectResponse
+     */
+    public function storeSection(Request $request, DailyMenu $dailyMenu): RedirectResponse
+    {
+        abort_if($dailyMenu->user_id !== Auth::user()->ownerUserId(), 403, 'Acceso denegado.');
+
+        $validated = $request->validate([
+            'section_type' => 'required|in:first_course,second_course,dessert,coffee,drink,bread',
+        ]);
+
+        $alreadyExists = $dailyMenu->sections()->where('type', $validated['section_type'])->exists();
+        if ($alreadyExists) {
+            return back()->with('error', 'Esa sección ya existe en este menú.');
+        }
+
+        $displayOrder = $dailyMenu->sections()->count() + 1;
+
+        $dailyMenu->sections()->create([
+            'type'          => $validated['section_type'],
+            'is_required'   => false,
+            'is_free'       => false,
+            'max_quantity'  => 1,
+            'display_order' => $displayOrder,
+        ]);
+
+        return redirect()
+            ->route('daily-menus.sections', $dailyMenu)
+            ->with('success', 'Sección añadida correctamente.');
+    }
+
+    /**
+     * Elimina una sección del menú del día.
+     *
+     * @param  DailyMenu        $dailyMenu
+     * @param  DailyMenuSection $section
+     * @return RedirectResponse
+     */
+    public function destroySection(DailyMenu $dailyMenu, DailyMenuSection $section): RedirectResponse
+    {
+        abort_if($dailyMenu->user_id !== Auth::user()->ownerUserId(), 403, 'Acceso denegado.');
+        abort_if($section->daily_menu_id !== $dailyMenu->id, 403, 'Acceso denegado.');
+
+        $section->delete();
+
+        return redirect()
+            ->route('daily-menus.sections', $dailyMenu)
+            ->with('success', 'Sección eliminada correctamente.');
+    }
+
+    /**
      * Sincroniza los productos asignados a una sección del menú.
      *
      * @param  Request          $request
