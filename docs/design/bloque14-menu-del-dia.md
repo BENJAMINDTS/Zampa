@@ -167,8 +167,8 @@ Alpine.store('cart')._barItemsCount = 0
 Alpine.store('cart')._variantsUsed  = 0
 Alpine.store('cart').sent           = false
 Alpine.store('cart').error          = null
-stepper.reset()
-stepper.open = true
+this.showExclusivityWarning = false
+this.open = true
 ```
 
 ### 2.5 Confirmación y estado post-envío
@@ -329,7 +329,14 @@ con los horarios. La card en el `<main>` pasa a estado "Pedido enviado ✓" (no 
     aria-modal="true"
     aria-labelledby="stepper-title"
     @keydown.escape.window="$dispatch('close')"
-    x-trap="open"
+    @keydown.tab.window="
+        if (!open || !$el.contains(document.activeElement)) return;
+        $event.preventDefault();
+        const focusable = [...$el.querySelectorAll('button:not([disabled]),[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex=-1])')];
+        if (!focusable.length) return;
+        const idx = focusable.indexOf(document.activeElement);
+        focusable[$event.shiftKey ? (idx - 1 + focusable.length) % focusable.length : (idx + 1) % focusable.length].focus();
+    "
     class="fixed inset-0 z-50 flex flex-col
            bg-[#050B1F]/95 backdrop-blur-sm
            sm:items-center sm:justify-center"
@@ -606,8 +613,15 @@ con los horarios. La card en el `<main>` pasa a estado "Pedido enviado ✓" (no 
     aria-modal="true"
     aria-labelledby="exclusivity-title"
     aria-describedby="exclusivity-desc"
-    x-trap="showExclusivityWarning"
     @keydown.escape.window="showExclusivityWarning = false"
+    @keydown.tab.window="
+        if (!showExclusivityWarning || !$el.contains(document.activeElement)) return;
+        $event.preventDefault();
+        const focusable = [...$el.querySelectorAll('button:not([disabled]),[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex=-1])')];
+        if (!focusable.length) return;
+        const idx = focusable.indexOf(document.activeElement);
+        focusable[$event.shiftKey ? (idx - 1 + focusable.length) % focusable.length : (idx + 1) % focusable.length].focus();
+    "
     class="fixed inset-0 z-[60] flex items-end sm:items-center
            justify-center p-4"
     x-transition:enter="transition ease-out duration-200"
@@ -753,5 +767,9 @@ Antes de iniciar la implementación del Bloque 14.5, el equipo debe aprobar:
    a cocina. Si se aprueba, se necesita un campo `note` en `daily_menu_orders` (verificar si
    ya existe en el modelo `Order` y puede reutilizarse).
 
-5. **x-trap de Alpine:** El focus trap usa `x-trap` de Alpine. Verificar que la versión de
-   Alpine.js instalada en el proyecto incluye el plugin `@alpinejs/focus` o añadirlo.
+5. **Focus trap:** Los componentes 3.2 y 3.5 implementan el focus trap mediante
+   `@keydown.tab.window` sin dependencias adicionales. Si el equipo prefiere el plugin
+   oficial, instalar con `npm install @alpinejs/focus` y registrarlo antes de
+   `Alpine.start()` — `import Focus from '@alpinejs/focus'; Alpine.plugin(Focus);` — y
+   sustituir los handlers por `x-trap="open"` (stepper) y
+   `x-trap="showExclusivityWarning"` (dialog de exclusividad).
