@@ -1212,6 +1212,13 @@ document.addEventListener('alpine:init', () => {
                 }
             });
 
+            // Oculta el tooltip de grados si el cursor sale del handle sin disparar mouseleave
+            document.addEventListener('mousemove', (e) => {
+                if (!this.isRotating && !e.target.closest('.rotation-handle')) {
+                    this.rotTooltip.show = false;
+                }
+            });
+
             // Polling de estados: actualiza ocupación y solicitudes de cuenta cada 5 s.
             this.pollStatuses();
             setInterval(() => this.pollStatuses(), 5000);
