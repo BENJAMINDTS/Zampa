@@ -440,9 +440,6 @@
                                     flex flex-col items-center gap-0
                                     opacity-0 group-hover:opacity-100 transition-opacity z-10"
                              @mousedown.stop.prevent="startZoneRotation($event, zone)"
-                             @mouseenter.stop="rotTooltip = { show: true, x: $event.clientX, y: $event.clientY, deg: zone.rotation ?? 0 }"
-                             @mousemove.stop="rotTooltip.x = $event.clientX; rotTooltip.y = $event.clientY; rotTooltip.deg = zone.rotation ?? 0"
-                             @mouseleave.stop="if (!isRotating) rotTooltip.show = false"
                              role="button"
                              tabindex="0"
                              style="cursor: url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2720%27 height=%2720%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27M21 2v6h-6%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M3 12a9 9 0 0 1 15-6.7L21 8%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M3 22v-6h6%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M21 12a9 9 0 0 1-15 6.7L3 16%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M21 2v6h-6%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M3 12a9 9 0 0 1 15-6.7L21 8%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M3 22v-6h6%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M21 12a9 9 0 0 1-15 6.7L3 16%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3C/svg%3E') 10 10, grab;"
@@ -524,9 +521,6 @@
                                     flex flex-col items-center gap-0
                                     opacity-0 group-hover:opacity-100 transition-opacity z-10"
                              @mousedown.stop.prevent="startRotation($event, bar)"
-                             @mouseenter.stop="rotTooltip = { show: true, x: $event.clientX, y: $event.clientY, deg: bar.rotation ?? 0 }"
-                             @mousemove.stop="rotTooltip.x = $event.clientX; rotTooltip.y = $event.clientY; rotTooltip.deg = bar.rotation ?? 0"
-                             @mouseleave.stop="if (!isRotating) rotTooltip.show = false"
                              role="button"
                              tabindex="0"
                              style="cursor: url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2720%27 height=%2720%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27M21 2v6h-6%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M3 12a9 9 0 0 1 15-6.7L21 8%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M3 22v-6h6%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M21 12a9 9 0 0 1-15 6.7L3 16%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M21 2v6h-6%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M3 12a9 9 0 0 1 15-6.7L21 8%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M3 22v-6h6%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M21 12a9 9 0 0 1-15 6.7L3 16%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3C/svg%3E') 10 10, grab;"
@@ -607,9 +601,6 @@
                                     flex flex-col items-center gap-0
                                     opacity-0 group-hover:opacity-100 transition-opacity z-10"
                              @mousedown.stop.prevent="startRotation($event, stool)"
-                             @mouseenter.stop="rotTooltip = { show: true, x: $event.clientX, y: $event.clientY, deg: stool.rotation ?? 0 }"
-                             @mousemove.stop="rotTooltip.x = $event.clientX; rotTooltip.y = $event.clientY; rotTooltip.deg = stool.rotation ?? 0"
-                             @mouseleave.stop="if (!isRotating) rotTooltip.show = false"
                              role="button"
                              tabindex="0"
                              style="cursor: url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2720%27 height=%2720%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27M21 2v6h-6%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M3 12a9 9 0 0 1 15-6.7L21 8%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M3 22v-6h6%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M21 12a9 9 0 0 1-15 6.7L3 16%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M21 2v6h-6%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M3 12a9 9 0 0 1 15-6.7L21 8%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M3 22v-6h6%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M21 12a9 9 0 0 1-15 6.7L3 16%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3C/svg%3E') 10 10, grab;"
@@ -832,9 +823,6 @@
                                     flex flex-col items-center gap-0
                                     opacity-0 group-hover:opacity-100 transition-opacity z-10"
                              @mousedown.stop.prevent="startRotation($event, table)"
-                             @mouseenter.stop="rotTooltip = { show: true, x: $event.clientX, y: $event.clientY, deg: table.rotation ?? 0 }"
-                             @mousemove.stop="rotTooltip.x = $event.clientX; rotTooltip.y = $event.clientY; rotTooltip.deg = table.rotation ?? 0"
-                             @mouseleave.stop="if (!isRotating) rotTooltip.show = false"
                              role="button"
                              tabindex="0"
                              style="cursor: url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2720%27 height=%2720%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27M21 2v6h-6%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M3 12a9 9 0 0 1 15-6.7L21 8%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M3 22v-6h6%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M21 12a9 9 0 0 1-15 6.7L3 16%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M21 2v6h-6%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M3 12a9 9 0 0 1 15-6.7L21 8%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M3 22v-6h6%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M21 12a9 9 0 0 1-15 6.7L3 16%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3C/svg%3E') 10 10, grab;"
@@ -1218,19 +1206,38 @@ document.addEventListener('alpine:init', () => {
                     this.initTableInteract();
                     this.initZoneInteract();
                     this.initPaletteInteract();
+                    this.clampAllToCanvas();
                 }
             });
 
-            // Oculta el tooltip de grados si el cursor sale del handle sin disparar mouseleave
-            document.addEventListener('mousemove', (e) => {
-                if (!this.isRotating && !e.target.closest('.rotation-handle')) {
-                    this.rotTooltip.show = false;
-                }
-            });
 
             // Polling de estados: actualiza ocupación y solicitudes de cuenta cada 5 s.
             this.pollStatuses();
             setInterval(() => this.pollStatuses(), 5000);
+        },
+
+        // Recupera estructuras y zonas que hayan quedado fuera del canvas y persiste la corrección.
+        async clampAllToCanvas() {
+            for (const item of [...this.tables, ...this.elements]) {
+                const maxX = Math.max(0, this.floorWidth  - item.width);
+                const maxY = Math.max(0, this.floorHeight - item.height);
+                const cx   = Math.max(0, Math.min(maxX, item.position_x));
+                const cy   = Math.max(0, Math.min(maxY, item.position_y));
+                if (cx !== item.position_x || cy !== item.position_y) {
+                    await this.persistPosition(item.id, cx, cy, item.width, item.height);
+                }
+            }
+            for (const zone of this.zones) {
+                const maxX = Math.max(0, this.floorWidth  - zone.width);
+                const maxY = Math.max(0, this.floorHeight - zone.height);
+                const cx   = Math.max(0, Math.min(maxX, zone.position_x));
+                const cy   = Math.max(0, Math.min(maxY, zone.position_y));
+                if (cx !== zone.position_x || cy !== zone.position_y) {
+                    zone.position_x = cx;
+                    zone.position_y = cy;
+                    await this.persistZonePosition(zone.id, cx, cy);
+                }
+            }
         },
 
         async pollStatuses() {
@@ -1292,6 +1299,83 @@ document.addEventListener('alpine:init', () => {
             this.toast._timer = setTimeout(() => { this.toast.show = false; }, 3000);
         },
 
+        // Devuelve el AABB axis-aligned de un elemento ya rotado.
+        // Para 90°: un rect 200×100 devuelve 100×200. Para 0°: igual que el original.
+        effectiveBBox(item) {
+            const hw  = item.width  / 2;
+            const hh  = item.height / 2;
+            const cx  = item.position_x + hw;
+            const cy  = item.position_y + hh;
+            const rot = item.rotation ?? 0;
+
+            if (rot === 0) {
+                return { x: item.position_x, y: item.position_y, w: item.width, h: item.height };
+            }
+
+            const rad   = rot * Math.PI / 180;
+            const cos   = Math.abs(Math.cos(rad));
+            const sin   = Math.abs(Math.sin(rad));
+            const halfW = hw * cos + hh * sin;
+            const halfH = hw * sin + hh * cos;
+
+            return { x: cx - halfW, y: cy - halfH, w: halfW * 2, h: halfH * 2 };
+        },
+
+        // ── Colisión: shape-aware + rotación ──────────────────────────────────
+        overlaps(a, b) {
+            const aRound = a.shape === 'round' || a.shape === 'stool';
+            const bRound = b.shape === 'round' || b.shape === 'stool';
+
+            if (aRound || bRound) {
+                const circle = aRound ? a : b;
+                const other  = aRound ? b : a;
+                const cx = circle.position_x + circle.width  / 2;
+                const cy = circle.position_y + circle.height / 2;
+                const cr = circle.width / 2;
+
+                if (aRound && bRound) {
+                    // círculo vs círculo
+                    const ox  = other.position_x + other.width  / 2;
+                    const oy  = other.position_y + other.height / 2;
+                    const or2 = other.width / 2;
+                    const dx  = cx - ox, dy = cy - oy;
+                    return (dx * dx + dy * dy) < (cr + or2) * (cr + or2);
+                }
+
+                // círculo vs rectángulo rotado
+                const bbox     = this.effectiveBBox(other);
+                const closestX = Math.max(bbox.x, Math.min(cx, bbox.x + bbox.w));
+                const closestY = Math.max(bbox.y, Math.min(cy, bbox.y + bbox.h));
+                const dx = cx - closestX, dy = cy - closestY;
+                return (dx * dx + dy * dy) < cr * cr;
+            }
+
+            // AABB rotado: rect vs rect
+            const bboxA = this.effectiveBBox(a);
+            const bboxB = this.effectiveBBox(b);
+            return !(
+                bboxA.x + bboxA.w <= bboxB.x ||
+                bboxB.x + bboxB.w <= bboxA.x ||
+                bboxA.y + bboxA.h <= bboxB.y ||
+                bboxB.y + bboxB.h <= bboxA.y
+            );
+        },
+
+        // Devuelve true si el item colisiona con elementos prohibidos.
+        // Mesas ↔ mesas: prohibido. Mesas ↔ especiales: prohibido.
+        // Especiales ↔ especiales: prohibido. Zonas: siempre permitidas.
+        hasCollision(item) {
+            const isSpecial = ['bar', 'stool'].includes(item.shape);
+            const selfId    = item.id ?? null;
+
+            if (isSpecial) {
+                return this.tables.some(t => this.overlaps(item, t)) ||
+                       this.elements.some(e => e.id !== selfId && this.overlaps(item, e));
+            }
+            return this.tables.some(t => t.id !== selfId && this.overlaps(item, t)) ||
+                   this.elements.some(e => this.overlaps(item, e));
+        },
+
         // ── Interactividad de mesas existentes ────────────────────────────────
         initTableInteract() {
             interact('.table-item').unset();
@@ -1301,34 +1385,72 @@ document.addEventListener('alpine:init', () => {
                     ignoreFrom:  '.rotation-handle, .resize-handle',
                     inertia:    false,
                     autoScroll: true,
-                    modifiers: [
-                        interact.modifiers.restrictRect({
-                            restriction: this.$refs.canvas,
-                            endOnly:     false,
-                        }),
-                    ],
                     listeners: {
-                        move: (event) => {
+                        start: (event) => {
                             const el   = event.target;
-                            const x    = (parseFloat(el.style.left) || 0) + event.dx;
-                            const y    = (parseFloat(el.style.top)  || 0) + event.dy;
-                            el.style.left = `${x}px`;
-                            el.style.top  = `${y}px`;
-                            // Sync Alpine data during drag so `:style` re-renders never overwrite interact.js
                             const id   = parseInt(el.dataset.tableId);
                             const item = this.tables.find(t => t.id === id) ?? this.elements.find(e => e.id === id);
-                            if (item) {
-                                item.position_x = Math.round(x);
-                                item.position_y = Math.round(y);
+                            // Marca si el elemento arranca ya en colisión (permite desatascarlo)
+                            el._startedColliding = item ? this.hasCollision(item) : false;
+                        },
+                        move: (event) => {
+                            const el   = event.target;
+                            const id   = parseInt(el.dataset.tableId);
+                            const item = this.tables.find(t => t.id === id) ?? this.elements.find(e => e.id === id);
+
+                            const curX = parseFloat(el.style.left) || 0;
+                            const curY = parseFloat(el.style.top)  || 0;
+
+                            // Clamp al canvas (reemplaza restrictRect)
+                            const maxX  = Math.max(0, this.floorWidth  - (item?.width  ?? 100));
+                            const maxY  = Math.max(0, this.floorHeight - (item?.height ?? 100));
+                            const propX = Math.max(0, Math.min(maxX, Math.round(curX + event.dx)));
+                            const propY = Math.max(0, Math.min(maxY, Math.round(curY + event.dy)));
+
+                            if (!item) {
+                                el.style.left = `${propX}px`;
+                                el.style.top  = `${propY}px`;
+                                return;
                             }
+
+                            // Si arrancó en colisión, movimiento libre hasta que salga — luego restringe
+                            if (el._startedColliding) {
+                                item.position_x = propX;
+                                item.position_y = propY;
+                                el.style.left   = `${propX}px`;
+                                el.style.top    = `${propY}px`;
+                                if (!this.hasCollision(item)) el._startedColliding = false;
+                                return;
+                            }
+
+                            // Axis-split: intenta mover en X e Y juntos, luego por separado
+                            const testXY = { ...item, position_x: propX, position_y: propY };
+                            const testX  = { ...item, position_x: propX, position_y: item.position_y };
+                            const testY  = { ...item, position_x: item.position_x, position_y: propY };
+
+                            let newX = item.position_x;
+                            let newY = item.position_y;
+
+                            if (!this.hasCollision(testXY)) {
+                                newX = propX; newY = propY;
+                            } else if (!this.hasCollision(testX)) {
+                                newX = propX;
+                            } else if (!this.hasCollision(testY)) {
+                                newY = propY;
+                            }
+
+                            item.position_x = newX;
+                            item.position_y = newY;
+                            el.style.left   = `${newX}px`;
+                            el.style.top    = `${newY}px`;
                         },
                         end: (event) => {
-                            const el  = event.target;
-                            const id  = parseInt(el.dataset.tableId);
-                            const x   = Math.round(parseFloat(el.style.left) || 0);
-                            const y   = Math.round(parseFloat(el.style.top)  || 0);
-                            const w   = Math.round(parseFloat(el.style.width)  || 100);
-                            const h   = Math.round(parseFloat(el.style.height) || 100);
+                            const el = event.target;
+                            const id = parseInt(el.dataset.tableId);
+                            const x  = Math.round(parseFloat(el.style.left) || 0);
+                            const y  = Math.round(parseFloat(el.style.top)  || 0);
+                            const w  = Math.round(parseFloat(el.style.width)  || 100);
+                            const h  = Math.round(parseFloat(el.style.height) || 100);
                             this.persistPosition(id, x, y, w, h);
                         },
                     },
@@ -1361,8 +1483,10 @@ document.addEventListener('alpine:init', () => {
             document.body.style.cursor = 'grabbing';
 
             const onMove = (e) => {
-                zone.position_x = Math.max(0, Math.round(startPx + (e.clientX - startMX)));
-                zone.position_y = Math.max(0, Math.round(startPy + (e.clientY - startMY)));
+                const maxX = Math.max(0, this.floorWidth  - zone.width);
+                const maxY = Math.max(0, this.floorHeight - zone.height);
+                zone.position_x = Math.max(0, Math.min(maxX, Math.round(startPx + (e.clientX - startMX))));
+                zone.position_y = Math.max(0, Math.min(maxY, Math.round(startPy + (e.clientY - startMY))));
             };
 
             const onUp = async () => {
@@ -1419,12 +1543,36 @@ document.addEventListener('alpine:init', () => {
 
             document.body.style.cursor = 'grabbing';
 
+            // Si el elemento ya está en colisión al iniciar, permitir movimiento libre hasta salir
+            let startedColliding = this.hasCollision(element);
+
             const onMove = (e) => {
-                const canvas = this.$refs.canvas;
-                const maxX = Math.max(0, canvas.offsetWidth  - element.width);
-                const maxY = Math.max(0, canvas.offsetHeight - element.height);
-                element.position_x = Math.max(0, Math.min(maxX, Math.round(startPx + (e.clientX - startMX))));
-                element.position_y = Math.max(0, Math.min(maxY, Math.round(startPy + (e.clientY - startMY))));
+                const maxX = Math.max(0, this.floorWidth  - element.width);
+                const maxY = Math.max(0, this.floorHeight - element.height);
+
+                const propX = Math.max(0, Math.min(maxX, Math.round(startPx + (e.clientX - startMX))));
+                const propY = Math.max(0, Math.min(maxY, Math.round(startPy + (e.clientY - startMY))));
+
+                if (startedColliding) {
+                    element.position_x = propX;
+                    element.position_y = propY;
+                    if (!this.hasCollision(element)) startedColliding = false;
+                    return;
+                }
+
+                // Axis-split: intenta mover ambos ejes, luego cada uno por separado
+                const testXY = { ...element, position_x: propX, position_y: propY };
+                const testX  = { ...element, position_x: propX, position_y: element.position_y };
+                const testY  = { ...element, position_x: element.position_x, position_y: propY };
+
+                if (!this.hasCollision(testXY)) {
+                    element.position_x = propX;
+                    element.position_y = propY;
+                } else if (!this.hasCollision(testX)) {
+                    element.position_x = propX;
+                } else if (!this.hasCollision(testY)) {
+                    element.position_y = propY;
+                }
             };
 
             const onUp = async () => {
@@ -1509,6 +1657,12 @@ document.addEventListener('alpine:init', () => {
 
                         if (!overCanvas) return;
 
+                        const candidate = { position_x: dropX, position_y: dropY, width: dropW, height: dropH, shape: dropShape, id: null };
+                        if (this.hasCollision(candidate)) {
+                            this.showToast('No se puede colocar aquí: colisiona con otra mesa o elemento.', true);
+                            return;
+                        }
+
                         const name = await Alpine.store('tableModal').prompt('table');
                         if (name === null) return;
 
@@ -1567,6 +1721,12 @@ document.addEventListener('alpine:init', () => {
                         const over = event.clientX >= rect.left && event.clientX <= rect.right &&
                                      event.clientY >= rect.top  && event.clientY <= rect.bottom;
                         if (!over) return;
+
+                        const candidate = { position_x: dropX, position_y: dropY, width: dropW, height: dropH, shape: dropShape, id: null };
+                        if (this.hasCollision(candidate)) {
+                            this.showToast('No se puede colocar aquí: colisiona con otra mesa o elemento.', true);
+                            return;
+                        }
 
                         const name = dropShape === 'bar' ? 'Barra' : 'Taburete';
                         await this.createSpecialElement(name, dropShape, dropX, dropY, dropW, dropH);
@@ -1807,8 +1967,10 @@ document.addEventListener('alpine:init', () => {
             document.body.style.cursor = 'se-resize';
 
             const onMove = (e) => {
-                zone.width  = Math.min(2000, Math.max(80,  startW + (e.clientX - startMX)));
-                zone.height = Math.min(1500, Math.max(60,  startH + (e.clientY - startMY)));
+                const maxW  = Math.max(80, this.floorWidth  - zone.position_x);
+                const maxH  = Math.max(60, this.floorHeight - zone.position_y);
+                zone.width  = Math.min(maxW, Math.max(80, startW + (e.clientX - startMX)));
+                zone.height = Math.min(maxH, Math.max(60, startH + (e.clientY - startMY)));
             };
 
             const onUp = async () => {
@@ -1898,8 +2060,10 @@ document.addEventListener('alpine:init', () => {
                 table.width      = Math.round(newW);
                 table.height     = Math.round(newH);
                 // Corregir posición CSS para que la esquina visual superior-izquierda no se mueva
-                table.position_x = Math.max(0, Math.round(startPx + dW / 2 * (cosθ - 1) - dH / 2 * sinθ));
-                table.position_y = Math.max(0, Math.round(startPy + dW / 2 * sinθ + dH / 2 * (cosθ - 1)));
+                const rawX = Math.round(startPx + dW / 2 * (cosθ - 1) - dH / 2 * sinθ);
+                const rawY = Math.round(startPy + dW / 2 * sinθ + dH / 2 * (cosθ - 1));
+                table.position_x = Math.max(0, Math.min(this.floorWidth  - table.width,  rawX));
+                table.position_y = Math.max(0, Math.min(this.floorHeight - table.height, rawY));
             };
 
             const onUp = async () => {
