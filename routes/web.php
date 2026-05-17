@@ -1,4 +1,5 @@
 <?php
+use App\Http\Controllers\DailyMenuController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\IngredientController;
 use App\Http\Controllers\StaffController;
@@ -71,6 +72,21 @@ Route::middleware(['auth', 'business.active'])->group(function () {
         Route::post('/zonas', [ZoneController::class, 'store'])->name('zones.store');
         Route::patch('/zonas/{zone}', [ZoneController::class, 'update'])->name('zones.update');
         Route::delete('/zonas/{zone}', [ZoneController::class, 'destroy'])->name('zones.destroy');
+
+        // Menú del Día — gestión del gerente (Bloque 14.2)
+        Route::resource('daily-menus', DailyMenuController::class)
+             ->except(['show'])
+             ->parameters(['daily-menus' => 'dailyMenu']);
+        Route::get('/daily-menus/{dailyMenu}/sections', [DailyMenuController::class, 'sections'])
+             ->name('daily-menus.sections');
+        Route::post('/daily-menus/{dailyMenu}/sections', [DailyMenuController::class, 'storeSection'])
+             ->name('daily-menus.sections.store');
+        Route::delete('/daily-menus/{dailyMenu}/sections/{section}', [DailyMenuController::class, 'destroySection'])
+             ->name('daily-menus.sections.destroy');
+        Route::post('/daily-menus/{dailyMenu}/sections/{section}/products/sync', [DailyMenuController::class, 'syncProducts'])
+             ->name('daily-menus.sync-products');
+        Route::post('/daily-menus/{dailyMenu}/timing', [DailyMenuController::class, 'storeTiming'])
+             ->name('daily-menus.timing');
     });
 
     // Mapa visual — lectura para admin y camarero, edición solo admin

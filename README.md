@@ -13,7 +13,7 @@ Plataforma SaaS para la digitalización de bares y restaurantes. Permite gestion
 
 - Gestión completa de carta digital: categorías, productos, ingredientes y alérgenos automáticos
 - Carta pública accesible por QR sin login, con filtros dinámicos de alérgenos por alérgeno
-- Chatbot IA contextualizado a la carta del restaurante (OpenAI GPT)
+- Chatbot IA contextualizado a la carta del restaurante (OpenAI GPT en producción, Grok API para pruebas y desarrollo)
 - Pedidos en tiempo real con panel de cocina y panel de barra diferenciados por destino
 - Sistema de tapas configurable: gratuitas o de pago, precio fijo global o por producto, horario de cocina
 - Pagos en efectivo y con tarjeta vía Stripe (modo test), con propina desglosada para el gerente
@@ -36,7 +36,8 @@ Plataforma SaaS para la digitalización de bares y restaurantes. Permite gestion
 | Vite | 7.x |
 | Node.js | 20.x |
 | Composer | 2.x |
-| OpenAI API | GPT-4o / GPT-4o-mini |
+| OpenAI API | GPT-4o / GPT-4o-mini (producción) |
+| Grok API (xAI) | Compatible con OpenAI SDK (pruebas/desarrollo) |
 | Stripe | API v3 (modo test) |
 | Pest PHP | 3.x |
 
@@ -72,7 +73,9 @@ npm install && npm run build
 cp .env.example .env
 php artisan key:generate
 
-# 6. Ajustar DB, OPENAI_API_KEY y STRIPE_KEY en .env
+# 6. Ajustar DB, STRIPE_KEY y la API key del chatbot en .env
+#    - Desarrollo: usa GROK_API_KEY (Grok xAI, gratuito)
+#    - Producción:  usa OPENAI_API_KEY (OpenAI, requiere créditos por cliente)
 
 # 7. Crear base de datos y ejecutar migraciones con datos de prueba
 php artisan migrate:fresh --seed
@@ -105,9 +108,21 @@ Copia `.env.example` a `.env` y configura al menos las siguientes:
 | `DB_USERNAME` | Usuario de MySQL |
 | `DB_PASSWORD` | Contraseña de MySQL |
 | `FILESYSTEM_DISK` | `public` (para imágenes de productos) |
-| `OPENAI_API_KEY` | API key de OpenAI (chatbot IA) |
+| `OPENAI_API_KEY` | API key del proveedor de IA para el chatbot (ver nota abajo) |
+| `GROK_API_KEY` | API key de Grok (xAI) — alternativa gratuita para pruebas y desarrollo |
 | `STRIPE_KEY` | Clave pública de Stripe (modo test) |
 | `STRIPE_SECRET` | Clave secreta de Stripe (modo test) |
+
+### Chatbot IA — OpenAI vs Grok
+
+El chatbot usa la API de OpenAI como proveedor oficial en producción. Para entornos de desarrollo y pruebas se puede utilizar **Grok (xAI)**, cuya API es compatible con el SDK de OpenAI, lo que permite sustituirla sin cambiar código.
+
+| Escenario | Proveedor recomendado | Variable a configurar |
+| --------- | --------------------- | --------------------- |
+| Desarrollo y pruebas | **Grok (xAI)** — gratuito con límite generoso | `GROK_API_KEY` |
+| Producción (clientes reales) | **OpenAI** — requiere créditos propios por cliente | `OPENAI_API_KEY` |
+
+> **Importante:** En un entorno real cada restaurante debe operar con sus propias credenciales de OpenAI y créditos suficientes. No compartir una única API key entre todos los clientes de la plataforma.
 
 ---
 
