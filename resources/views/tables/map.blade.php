@@ -906,21 +906,9 @@
                                        :aria-label="`Nombre de la zona ${editingZone.name}`">
                             </div>
 
-                            <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">Color</p>
-                            <div class="flex items-center gap-2 mb-2">
-                                <input type="color"
-                                       :value="editingZone.color"
-                                       @input.stop="editingZone.color = $event.target.value"
-                                       @change.stop="updateZoneColor(editingZone, $event.target.value)"
-                                       @click.stop
-                                       class="w-8 h-8 rounded cursor-pointer border border-gray-200 p-0.5"
-                                       :aria-label="`Color de la zona ${editingZone.name}`">
-                                <span class="text-xs text-gray-500 font-mono" x-text="editingZone.color"></span>
-                            </div>
-
                             <template x-if="floorsEnabled && floorCount > 1">
                                 <div>
-                                    <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 mt-3 uppercase tracking-wide">Planta</p>
+                                    <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">Planta</p>
                                     <select @change.stop="moveZoneToFloor(editingZone, parseInt($event.target.value))"
                                             @click.stop
                                             class="w-full rounded-lg border border-gray-300 dark:border-gray-600
@@ -936,6 +924,18 @@
                                     </select>
                                 </div>
                             </template>
+
+                            <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">Color</p>
+                            <div class="flex items-center gap-2 mb-2">
+                                <input type="color"
+                                       :value="editingZone.color"
+                                       @input.stop="editingZone.color = $event.target.value"
+                                       @change.stop="updateZoneColor(editingZone, $event.target.value)"
+                                       @click.stop
+                                       class="w-8 h-8 rounded cursor-pointer border border-gray-200 p-0.5"
+                                       :aria-label="`Color de la zona ${editingZone.name}`">
+                                <span class="text-xs text-gray-500 font-mono" x-text="editingZone.color"></span>
+                            </div>
                         </div>
                     </template>
                 </div>
@@ -1632,9 +1632,7 @@ document.addEventListener('alpine:init', () => {
                             const el   = event.target;
                             const id   = parseInt(el.dataset.tableId);
                             const item = this.tables.find(t => t.id === id) ?? this.elements.find(e => e.id === id);
-                            this.editingTableId  = null;
-                            this.editingTable    = null;
-                            this._editBtnEl      = null;
+                            this.closeEditPanels();
                             this.draggingId      = id;
                             el._startedColliding = item ? this.hasCollision(item) : false;
                         },
@@ -1727,6 +1725,7 @@ document.addEventListener('alpine:init', () => {
             const startPx   = zone.position_x;
             const startPy   = zone.position_y;
 
+            this.closeEditPanels();
             this.draggingId            = zone.id;
             document.body.style.cursor = 'grabbing';
 
@@ -1755,6 +1754,7 @@ document.addEventListener('alpine:init', () => {
             const centerX    = canvasRect.left + zone.position_x + zone.width  / 2;
             const centerY    = canvasRect.top  + zone.position_y + zone.height / 2;
 
+            this.closeEditPanels();
             this.isRotating            = true;
             this.rotatingId            = zone.id;
             this.rotTooltip.show       = true;
@@ -1792,6 +1792,7 @@ document.addEventListener('alpine:init', () => {
             const startMX = event.clientX;
             const startMY = event.clientY;
 
+            this.closeEditPanels();
             this.draggingId            = element.id;
             document.body.style.cursor = 'grabbing';
 
@@ -2218,6 +2219,7 @@ document.addEventListener('alpine:init', () => {
             const startMY = event.clientY;
             const startW  = zone.width;
             const startH  = zone.height;
+            this.closeEditPanels();
             this.resizingId            = zone.id;
             document.body.style.cursor = 'se-resize';
 
@@ -2298,6 +2300,7 @@ document.addEventListener('alpine:init', () => {
             const startPx = table.position_x;
             const startPy = table.position_y;
 
+            this.closeEditPanels();
             this.resizingId            = table.id;
             document.body.style.cursor = 'se-resize';
 
@@ -2479,9 +2482,7 @@ document.addEventListener('alpine:init', () => {
 
         // ── Rotación libre arrastrando el handle (estilo Canva) ───────────────
         startRotation(event, table) {
-            this.editingTableId = null;
-            this.editingTable   = null;
-            this._editBtnEl     = null;
+            this.closeEditPanels();
             this.rotatingId     = table.id;
 
             const canvasRect = this.$refs.canvas.getBoundingClientRect();
@@ -2526,6 +2527,15 @@ document.addEventListener('alpine:init', () => {
 
             document.addEventListener('mousemove', onMove);
             document.addEventListener('mouseup',   onUp);
+        },
+
+        closeEditPanels() {
+            this.editingTableId = null;
+            this.editingTable   = null;
+            this._editBtnEl     = null;
+            this.editingZoneId  = null;
+            this.editingZone    = null;
+            this._zoneBtnEl     = null;
         },
 
         isActive(id) {
