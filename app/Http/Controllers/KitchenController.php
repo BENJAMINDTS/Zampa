@@ -74,6 +74,7 @@ class KitchenController extends Controller
                         'id'            => $item->id,
                         'product_name'  => $item->product->name,
                         'quantity'      => $item->quantity,
+                        'is_daily_menu' => (bool) $item->is_daily_menu,
                         'modifications' => $item->modifications
                             ->map(fn($mod) => [
                                 'action'     => $mod->action,

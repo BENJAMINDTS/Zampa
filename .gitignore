@@ -1,5 +1,6 @@
 *.log
 .DS_Store
+/copy_chatbot.php
 .env
 .env.backup
 .env.production

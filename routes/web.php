@@ -114,8 +114,11 @@ Route::middleware(['auth', 'business.active'])->group(function () {
     Route::middleware('can.bar')->group(function () {
         Route::get('/bar', [BarPanelController::class, 'index'])->name('bar.index');
         Route::get('/bar/badge', [BarPanelController::class, 'badgeCount'])->name('bar.badge');
+        Route::get('/bar/status', [BarPanelController::class, 'tableStatus'])->name('bar.table.status');
+        Route::get('/bar/tables/{table}', [BarPanelController::class, 'tableDetail'])->name('bar.table.detail');
         Route::get('/bar/pendientes', [BarPanelController::class, 'pendingItems'])->name('bar.pending');
         Route::patch('/bar/items/{item}', [BarPanelController::class, 'updateItem'])->name('bar.items.update');
+        Route::patch('/bar/items/{item}/served', [BarPanelController::class, 'markItemServed'])->name('bar.items.served');
 
         Route::get('/notifications/ready', [NotificationController::class, 'ready'])
              ->name('notifications.ready');
