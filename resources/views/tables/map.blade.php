@@ -1576,7 +1576,7 @@ document.addEventListener('alpine:init', () => {
 
             const isSpecial = ['bar', 'stool'].includes(item.shape);
             const selfId    = item.id ?? null;
-            const itemFloor = this.floorsEnabled ? (item.floor ?? 1) : null;
+            const itemFloor = this.floorsEnabled ? (item.floor ?? this.currentFloor) : null;
             const sameFloor = (other) => !this.floorsEnabled || (other.floor ?? 1) === (itemFloor ?? 1);
 
             if (isSpecial) {
