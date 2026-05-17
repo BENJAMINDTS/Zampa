@@ -464,7 +464,7 @@
 
                         {{-- Botón editar zona --}}
                         <button type="button"
-                                @click.stop="if (editingZoneId === zone.id) { editingZoneId = null; editingZone = null; } else { editingZoneId = zone.id; editingZone = zone; const r = $el.getBoundingClientRect(); const panelW = 220; const panelH = 180; const vpW = window.innerWidth; const vpH = window.innerHeight; const px = Math.min(Math.max(8, r.left + r.width / 2 - panelW / 2), vpW - panelW - 8); const py = Math.min(r.bottom + 8, vpH - panelH - 8); editZonePanelPos = { x: px, y: py }; }"
+                                @click.stop="if (editingZoneId === zone.id) { editingZoneId = null; editingZone = null; _zoneBtnEl = null; } else { editingZoneId = zone.id; editingZone = zone; _zoneBtnEl = $el; editZonePanelPos = panelPosFromBtn($el, 220); editingTableId = null; editingTable = null; _editBtnEl = null; }"
                                 class="absolute -top-2.5 -right-9
                                        w-6 h-6 rounded-full bg-gray-600 dark:bg-gray-500 text-white
                                        flex items-center justify-center transition-opacity
@@ -770,7 +770,7 @@
                             {{-- Botón editar forma — solo admin --}}
                             <button type="button"
                                     x-show="!readonly && !(isRotating && rotatingId === table.id)"
-                                    @click.stop="if (editingTableId === table.id) { editingTableId = null; editingTable = null; } else { editingTableId = table.id; editingTable = table; const r = $el.getBoundingClientRect(); const panelW = 220; const panelH = 260; const vpW = window.innerWidth; const vpH = window.innerHeight; const px = Math.min(Math.max(8, r.left + r.width / 2 - panelW / 2), vpW - panelW - 8); const py = Math.min(r.bottom + 8, vpH - panelH - 8); editPanelPos = { x: px, y: py }; }"
+                                    @click.stop="if (editingTableId === table.id) { editingTableId = null; editingTable = null; _editBtnEl = null; } else { editingTableId = table.id; editingTable = table; _editBtnEl = $el; editPanelPos = panelPosFromBtn($el, 220); editingZoneId = null; editingZone = null; _zoneBtnEl = null; }"
                                     class="absolute -top-2.5 -right-16
                                            w-6 h-6 rounded-full bg-gray-600 dark:bg-gray-500 text-white
                                            flex items-center justify-center transition-opacity
@@ -874,8 +874,8 @@
              x-transition:enter-start="opacity-0 scale-95"
              x-transition:enter-end="opacity-100 scale-100"
              @click.stop
-             @keydown.escape.window="editingZoneId = null; editingZone = null"
-             class="fixed z-[200] bg-white dark:bg-gray-800 rounded-xl shadow-xl
+             @keydown.escape.window="editingZoneId = null; editingZone = null; _zoneBtnEl = null"
+             class="absolute z-[200] bg-white dark:bg-gray-800 rounded-xl shadow-xl
                     border border-gray-200 dark:border-gray-700 p-3 min-w-[200px]"
              :style="`left:${editZonePanelPos.x}px; top:${editZonePanelPos.y}px`"
              role="dialog"
@@ -896,6 +896,22 @@
                                       px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                :aria-label="`Nombre de la zona ${editingZone.name}`">
                     </div>
+
+                    <template x-if="floorsEnabled && floorCount > 1">
+                        <div>
+                            <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">Planta</p>
+                            <select @change.stop="moveZoneToFloor(editingZone, parseInt($event.target.value))"
+                                    @click.stop
+                                    class="w-full rounded-lg border border-gray-300 dark:border-gray-600
+                                           bg-white dark:bg-gray-700 text-gray-900 dark:text-white
+                                           px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-3"
+                                    :aria-label="`Planta de la zona ${editingZone.name}`">
+                                <template x-for="n in floorCount" :key="n">
+                                    <option :value="n" :selected="(editingZone.floor ?? 1) === n" x-text="`Planta ${n}`"></option>
+                                </template>
+                            </select>
+                        </div>
+                    </template>
 
                     <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">Color</p>
                     <div class="flex items-center gap-2 mb-2">
@@ -918,8 +934,8 @@
              x-transition:enter-start="opacity-0 scale-95"
              x-transition:enter-end="opacity-100 scale-100"
              @click.stop
-             @keydown.escape.window="editingTableId = null; editingTable = null"
-             class="fixed z-[200] bg-white dark:bg-gray-800 rounded-xl shadow-xl
+             @keydown.escape.window="editingTableId = null; editingTable = null; _editBtnEl = null"
+             class="absolute z-[200] bg-white dark:bg-gray-800 rounded-xl shadow-xl
                     border border-gray-200 dark:border-gray-700 p-3 min-w-[200px]"
              :style="`left:${editPanelPos.x}px; top:${editPanelPos.y}px`"
              role="dialog"
@@ -951,12 +967,29 @@
                                    px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-3"
                             :aria-label="`Zona de la mesa ${editingTable.name}`">
                         <option value="">Sin zona</option>
-                        <template x-for="zone in zones" :key="zone.id">
+                        <template x-for="zone in zones.filter(z => !floorsEnabled || (z.floor ?? 1) === (editingTable.floor ?? 1))" :key="zone.id">
                             <option :value="zone.id"
                                     :selected="editingTable.zone_id == zone.id"
                                     x-text="zone.name"></option>
                         </template>
                     </select>
+
+                    {{-- Planta — solo si floorsEnabled y hay más de 1 planta --}}
+                    <template x-if="floorsEnabled && floorCount > 1">
+                        <div>
+                            <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 mt-3 uppercase tracking-wide">Planta</p>
+                            <select @change.stop="moveToFloor(editingTable, parseInt($event.target.value))"
+                                    @click.stop
+                                    class="w-full rounded-lg border border-gray-300 dark:border-gray-600
+                                           bg-white dark:bg-gray-700 text-gray-900 dark:text-white
+                                           px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-3"
+                                    :aria-label="`Planta de la mesa ${editingTable.name}`">
+                                <template x-for="n in floorCount" :key="n">
+                                    <option :value="n" :selected="(editingTable.floor ?? 1) === n" x-text="`Planta ${n}`"></option>
+                                </template>
+                            </select>
+                        </div>
+                    </template>
 
                     <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">Forma</p>
                     <div class="flex gap-1.5" role="group" aria-label="Seleccionar forma">
