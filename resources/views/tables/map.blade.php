@@ -58,33 +58,20 @@
         </div>
 
         <div class="flex items-center gap-3 flex-wrap">
-            {{-- Toast --}}
-            <div x-show="toast.show"
-                 x-transition:enter="transition ease-out duration-200"
-                 x-transition:enter-start="opacity-0 translate-y-1"
-                 x-transition:enter-end="opacity-100 translate-y-0"
-                 x-transition:leave="transition ease-in duration-150"
-                 x-transition:leave-end="opacity-0"
-                 :class="toast.error ? 'bg-red-100 text-red-700 border-red-300' : 'bg-green-100 text-green-700 border-green-300'"
-                 class="border rounded-lg px-3 py-1.5 text-sm font-medium"
-                 x-text="toast.msg"
-                 role="alert"
-                 aria-live="polite">
-            </div>
-
             {{-- ── Control de tamaño del lienzo — solo admin ──────────────── --}}
             <div x-show="!readonly" class="flex items-center gap-2">
                 <span class="text-xs font-medium text-gray-500 dark:text-gray-400 hidden sm:block"
                       aria-hidden="true">Plano:</span>
 
-                {{-- Botones S / M / L / XL --}}
-                <div class="flex rounded-lg overflow-hidden border border-gray-200 dark:border-gray-600"
+                {{-- Botones S / M / L / XL — ocultos en vista general (tamaño automático) --}}
+                <div x-show="!(floorsEnabled && currentView === 'general')"
+                     class="flex rounded-lg overflow-hidden border border-gray-200 dark:border-gray-600"
                      role="group"
                      aria-label="Tamaño del lienzo del plano">
                     <button type="button"
                             @click="setCanvasSize(1200, 800)"
-                            :aria-pressed="floorWidth === 1200 && floorHeight === 800"
-                            :class="floorWidth === 1200 && floorHeight === 800
+                            :aria-pressed="(floorCanvasSizes[currentFloor] ?? {width:floorWidth,height:floorHeight}).width === 1200 && (floorCanvasSizes[currentFloor] ?? {width:floorWidth,height:floorHeight}).height === 800"
+                            :class="(floorCanvasSizes[currentFloor] ?? {width:floorWidth,height:floorHeight}).width === 1200 && (floorCanvasSizes[currentFloor] ?? {width:floorWidth,height:floorHeight}).height === 800
                                 ? 'bg-indigo-600 text-white'
                                 : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'"
                             class="px-3 py-1.5 text-xs font-semibold border-r border-gray-200 dark:border-gray-600
@@ -92,8 +79,8 @@
                             aria-label="Lienzo pequeño: 1200 × 800 px">S</button>
                     <button type="button"
                             @click="setCanvasSize(1600, 1000)"
-                            :aria-pressed="floorWidth === 1600 && floorHeight === 1000"
-                            :class="floorWidth === 1600 && floorHeight === 1000
+                            :aria-pressed="(floorCanvasSizes[currentFloor] ?? {width:floorWidth,height:floorHeight}).width === 1600 && (floorCanvasSizes[currentFloor] ?? {width:floorWidth,height:floorHeight}).height === 1000"
+                            :class="(floorCanvasSizes[currentFloor] ?? {width:floorWidth,height:floorHeight}).width === 1600 && (floorCanvasSizes[currentFloor] ?? {width:floorWidth,height:floorHeight}).height === 1000
                                 ? 'bg-indigo-600 text-white'
                                 : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'"
                             class="px-3 py-1.5 text-xs font-semibold border-r border-gray-200 dark:border-gray-600
@@ -101,8 +88,8 @@
                             aria-label="Lienzo mediano: 1600 × 1000 px">M</button>
                     <button type="button"
                             @click="setCanvasSize(2000, 1200)"
-                            :aria-pressed="floorWidth === 2000 && floorHeight === 1200"
-                            :class="floorWidth === 2000 && floorHeight === 1200
+                            :aria-pressed="(floorCanvasSizes[currentFloor] ?? {width:floorWidth,height:floorHeight}).width === 2000 && (floorCanvasSizes[currentFloor] ?? {width:floorWidth,height:floorHeight}).height === 1200"
+                            :class="(floorCanvasSizes[currentFloor] ?? {width:floorWidth,height:floorHeight}).width === 2000 && (floorCanvasSizes[currentFloor] ?? {width:floorWidth,height:floorHeight}).height === 1200
                                 ? 'bg-indigo-600 text-white'
                                 : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'"
                             class="px-3 py-1.5 text-xs font-semibold border-r border-gray-200 dark:border-gray-600
@@ -110,8 +97,8 @@
                             aria-label="Lienzo grande: 2000 × 1200 px">L</button>
                     <button type="button"
                             @click="setCanvasSize(2400, 1500)"
-                            :aria-pressed="floorWidth === 2400 && floorHeight === 1500"
-                            :class="floorWidth === 2400 && floorHeight === 1500
+                            :aria-pressed="(floorCanvasSizes[currentFloor] ?? {width:floorWidth,height:floorHeight}).width === 2400 && (floorCanvasSizes[currentFloor] ?? {width:floorWidth,height:floorHeight}).height === 1500"
+                            :class="(floorCanvasSizes[currentFloor] ?? {width:floorWidth,height:floorHeight}).width === 2400 && (floorCanvasSizes[currentFloor] ?? {width:floorWidth,height:floorHeight}).height === 1500
                                 ? 'bg-indigo-600 text-white'
                                 : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'"
                             class="px-3 py-1.5 text-xs font-semibold transition-colors
@@ -325,6 +312,32 @@
                                 whitespace-nowrap pointer-events-none">
                         Ajusta el zoom al 100% para editar el plano
                     </div>
+                </div>
+
+                {{-- Toast de confirmación / error — parte superior del canvas --}}
+                <div x-show="toast.show"
+                     x-transition:enter="transition ease-out duration-200"
+                     x-transition:enter-start="opacity-0 -translate-y-2"
+                     x-transition:enter-end="opacity-100 translate-y-0"
+                     x-transition:leave="transition ease-in duration-150"
+                     x-transition:leave-end="opacity-0"
+                     :class="toast.error ? 'bg-red-100 text-red-700 border-red-300' : 'bg-green-100 text-green-700 border-green-300'"
+                     class="absolute top-3 left-1/2 -translate-x-1/2 z-[300]
+                            border rounded-lg px-4 py-2 text-sm font-medium shadow-md pointer-events-none whitespace-nowrap"
+                     x-text="toast.msg"
+                     role="alert"
+                     aria-live="polite">
+                </div>
+
+                {{-- Banner vista general --}}
+                <div x-show="floorsEnabled && currentView === 'general'"
+                     aria-live="polite"
+                     class="absolute top-2 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium
+                                 bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300
+                                 border border-indigo-200 dark:border-indigo-700 shadow-sm">
+                        Vista general — todas las plantas visibles · colisión desactivada
+                    </span>
                 </div>
 
                 {{-- Cuadrícula decorativa --}}
@@ -1209,6 +1222,11 @@ document.addEventListener('alpine:init', () => {
         zones:                 @json($zones),
         floorWidth:            {{ $floorWidth }},
         floorHeight:           {{ $floorHeight }},
+        floorsEnabled:         {{ $floorsEnabled ? 'true' : 'false' }},
+        floorCount:            {{ $floorCount }},
+        floorCanvasSizes:      @json($floorCanvasSizes),
+        currentFloor:          1,
+        currentView:           'floor',
         readonly:              {{ $readonly ? 'true' : 'false' }},
         canvasZoom:            1,
         isDraggingFromPalette: false,
@@ -1315,9 +1333,14 @@ document.addEventListener('alpine:init', () => {
 
         // ── Cambiar tamaño del lienzo y persistir en BD ───────────────────────
         async setCanvasSize(w, h) {
-            const prev = { w: this.floorWidth, h: this.floorHeight };
+            const floor    = this.floorsEnabled ? this.currentFloor : 1;
+            const prevW    = this.floorWidth;
+            const prevH    = this.floorHeight;
+            const prevSize = this.floorCanvasSizes[floor] ? { ...this.floorCanvasSizes[floor] } : { width: prevW, height: prevH };
+
             this.floorWidth  = w;
             this.floorHeight = h;
+            this.floorCanvasSizes[floor] = { width: w, height: h };
 
             try {
                 const res = await fetch('{{ route("tables.canvas.update") }}', {
@@ -1327,22 +1350,24 @@ document.addEventListener('alpine:init', () => {
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                         'Accept':       'application/json',
                     },
-                    body: JSON.stringify({ floor_width: w, floor_height: h }),
+                    body: JSON.stringify({ floor_width: w, floor_height: h, floor }),
                 });
 
                 const json = await res.json();
 
                 if (!res.ok || !json.success) {
-                    this.floorWidth  = prev.w;
-                    this.floorHeight = prev.h;
+                    this.floorWidth  = prevW;
+                    this.floorHeight = prevH;
+                    this.floorCanvasSizes[floor] = prevSize;
                     this.showToast(json.message ?? 'Error al guardar el tamaño.', true);
                     return;
                 }
 
                 this.showToast(`Plano ${w} × ${h} px guardado.`);
             } catch {
-                this.floorWidth  = prev.w;
-                this.floorHeight = prev.h;
+                this.floorWidth  = prevW;
+                this.floorHeight = prevH;
+                this.floorCanvasSizes[floor] = prevSize;
                 this.showToast('Error de red al guardar el tamaño.', true);
             }
         },
@@ -2343,6 +2368,259 @@ document.addEventListener('alpine:init', () => {
             document.addEventListener('mousemove', onMove);
             document.addEventListener('mouseup',   onUp);
         },
+
+        closeEditPanels() {
+            this.editingTableId = null;
+            this.editingTable   = null;
+            this._editBtnEl     = null;
+            this.editingZoneId  = null;
+            this.editingZone    = null;
+            this._zoneBtnEl     = null;
+        },
+
+        isActive(id) {
+            return this.selectedId     === id
+                || this.rotatingId     === id
+                || this.draggingId     === id
+                || this.resizingId     === id
+                || this.editingTableId === id
+                || this.editingZoneId  === id;
+        },
+
+        panelPosFromBtn(btn, panelW) {
+            const canvas = this.$refs.canvas;
+            const cRect  = canvas.getBoundingClientRect();
+            const bRect  = btn.getBoundingClientRect();
+            const zoom   = this.canvasZoom;
+            // Convertir coords de viewport a espacio del canvas (divir por zoom deshace el transform:scale)
+            const left = (bRect.left + bRect.width / 2 - cRect.left) / zoom - panelW / 2;
+            const top  = (bRect.bottom - cRect.top) / zoom + 8;
+            return {
+                x: Math.max(4, left),
+                y: Math.max(4, top),
+            };
+        },
+
+        // ── Filtros de visibilidad por planta ────────────────────────────────
+        visibleTables() {
+            if (!this.floorsEnabled || this.currentView === 'general') return this.tables;
+            return this.tables.filter(t => (t.floor ?? 1) === this.currentFloor);
+        },
+
+        visibleElements() {
+            if (!this.floorsEnabled || this.currentView === 'general') return this.elements;
+            return this.elements.filter(e => (e.floor ?? 1) === this.currentFloor);
+        },
+
+        visibleZones() {
+            if (!this.floorsEnabled || this.currentView === 'general') return this.zones;
+            return this.zones.filter(z => (z.floor ?? 1) === this.currentFloor);
+        },
+
+        // ── Navegación entre plantas y vistas ────────────────────────────────
+        switchFloor(n) {
+            this.currentFloor   = n;
+            this.currentView    = 'floor';
+            const size = this.floorCanvasSizes[n];
+            if (size) {
+                this.floorWidth  = size.width;
+                this.floorHeight = size.height;
+            }
+            this.editingTableId = null;
+            this.editingTable   = null;
+            this._editBtnEl     = null;
+            this.editingZoneId  = null;
+            this.editingZone    = null;
+            this._zoneBtnEl     = null;
+        },
+
+        switchView(view) {
+            this.currentView    = view;
+            if (view === 'general' && this.floorsEnabled) {
+                const sizes = Object.values(this.floorCanvasSizes);
+                if (sizes.length) {
+                    this.floorWidth  = Math.max(...sizes.map(s => s.width));
+                    this.floorHeight = Math.max(...sizes.map(s => s.height));
+                }
+            }
+            this.editingTableId = null;
+            this.editingTable   = null;
+            this._editBtnEl     = null;
+            this.editingZoneId  = null;
+            this.editingZone    = null;
+            this._zoneBtnEl     = null;
+        },
+
+        // ── Mover zona a otra planta ─────────────────────────────────────────
+        async moveZoneToFloor(zone, newFloor) {
+            if (!zone || newFloor === (zone.floor ?? 1)) return;
+            const prev = zone.floor ?? 1;
+            zone.floor = newFloor;
+            try {
+                const res = await fetch(`/zonas/${zone.id}`, {
+                    method:  'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept':       'application/json',
+                    },
+                    body: JSON.stringify({ floor: newFloor }),
+                });
+                const json = await res.json();
+                if (!res.ok || !json.success) {
+                    zone.floor = prev;
+                    this.showToast(json.message ?? 'Error al mover la zona.', true);
+                    return;
+                }
+                this.editingZoneId = null;
+                this.editingZone   = null;
+                this._zoneBtnEl    = null;
+                this.showToast(json.message);
+            } catch {
+                zone.floor = prev;
+                this.showToast('Error de red al mover la zona.', true);
+            }
+        },
+
+        // ── Toggle sistema de plantas ─────────────────────────────────────────
+        async toggleFloorsEnabled(enabled) {
+            if (!enabled) {
+                const hasUpperStructures =
+                    this.tables.some(t => (t.floor ?? 1) > 1) ||
+                    this.elements.some(e => (e.floor ?? 1) > 1) ||
+                    this.zones.some(z => (z.floor ?? 1) > 1);
+                if (hasUpperStructures) {
+                    this.showToast('Elimina todas las estructuras de las plantas superiores antes de desactivar el sistema.', true);
+                    return;
+                }
+                this.currentView  = 'floor';
+                this.currentFloor = 1;
+            }
+            const prev = this.floorsEnabled;
+            this.floorsEnabled = enabled;
+            try {
+                const res = await fetch('{{ route("tables.floor-settings") }}', {
+                    method:  'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept':       'application/json',
+                    },
+                    body: JSON.stringify({ floors_enabled: enabled }),
+                });
+                const json = await res.json();
+                if (!res.ok || !json.success) {
+                    this.floorsEnabled = prev;
+                    this.showToast(json.message ?? 'Error al guardar la configuración de plantas.', true);
+                }
+            } catch {
+                this.floorsEnabled = prev;
+                this.showToast('Error al guardar la configuración de plantas.', true);
+            }
+        },
+
+        // ── Añadir planta ─────────────────────────────────────────────────────
+        async addFloor() {
+            if (this.floorCount >= 5) return;
+            const newCount = this.floorCount + 1;
+            try {
+                const res = await fetch('{{ route("tables.floor-settings") }}', {
+                    method:  'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept':       'application/json',
+                    },
+                    body: JSON.stringify({ floor_count: newCount }),
+                });
+                const json = await res.json();
+                if (res.ok && json.success) {
+                    this.floorCount = newCount;
+                    const floor1Size = this.floorCanvasSizes[1] ?? { width: this.floorWidth, height: this.floorHeight };
+                    this.floorCanvasSizes[newCount] = { ...floor1Size };
+                    this.switchFloor(newCount);
+                    this.showToast(`Planta ${newCount} creada.`);
+                }
+            } catch {
+                this.showToast('Error al crear la planta.', true);
+            }
+        },
+
+        // ── Confirmar y eliminar última planta ───────────────────────────────
+        async confirmDeleteFloor(floor) {
+            const structuresOnFloor = [
+                ...this.tables.filter(t => (t.floor ?? 1) === floor),
+                ...this.elements.filter(e => (e.floor ?? 1) === floor),
+            ];
+
+            const confirmed = await Alpine.store('deleteModal').prompt({
+                name:     String(floor),
+                shape:    null,
+                _isFloor: true,
+                _count:   structuresOnFloor.length,
+            });
+
+            if (!confirmed) return;
+
+            try {
+                const res = await fetch(`/mesas/mapa/plantas/${floor}`, {
+                    method:  'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept':       'application/json',
+                    },
+                });
+                const json = await res.json();
+                if (!res.ok || !json.success) {
+                    this.showToast(json.message ?? 'Error al eliminar la planta.', true);
+                    return;
+                }
+                this.tables   = this.tables.filter(t => (t.floor ?? 1) !== floor);
+                this.elements = this.elements.filter(e => (e.floor ?? 1) !== floor);
+                this.floorCount = floor - 1;
+                if (this.currentFloor >= floor) this.switchFloor(floor - 1);
+                this.$nextTick(() => {
+                    this.initTableInteract();
+                    this.initCanvasDropzone();
+                });
+                this.showToast(`Planta ${floor} eliminada.`);
+            } catch {
+                this.showToast('Error de red al eliminar la planta.', true);
+            }
+        },
+
+        // ── Mover estructura a otra planta ───────────────────────────────────
+        async moveToFloor(item, newFloor) {
+            if (!item || newFloor === (item.floor ?? 1)) return;
+            const prev = item.floor ?? 1;
+            item.floor = newFloor;
+            try {
+                const res = await fetch(`/mesas/${item.id}/planta`, {
+                    method:  'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept':       'application/json',
+                    },
+                    body: JSON.stringify({ floor: newFloor }),
+                });
+                const json = await res.json();
+                if (!res.ok || !json.success) {
+                    item.floor = prev;
+                    this.showToast(json.message ?? 'Error al mover la estructura.', true);
+                    return;
+                }
+                this.editingTableId = null;
+                this.editingTable   = null;
+                this._editBtnEl     = null;
+                this.$nextTick(() => this.initTableInteract());
+                this.showToast(json.message);
+            } catch {
+                item.floor = prev;
+                this.showToast('Error de red al mover la estructura.', true);
+            }
+        },
+
 
         // ── AJAX: eliminar mesa ───────────────────────────────────────────────
         async deleteTable(table) {
