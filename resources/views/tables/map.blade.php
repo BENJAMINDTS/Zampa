@@ -1472,6 +1472,7 @@ document.addEventListener('alpine:init', () => {
                         ghost.style.borderRadius =
                             dropShape === 'round' ? '9999px' :
                             dropShape === 'square' ? '12px' : '8px';
+                        ghost.querySelector('span').textContent = 'Nueva mesa';
                         ghost.classList.remove('hidden');
                         ghost.classList.add('flex');
 
@@ -1536,6 +1537,7 @@ document.addEventListener('alpine:init', () => {
                         ghost.style.borderRadius = shape === 'stool' ? '9999px' : '8px';
                         ghost.style.borderColor  = '#d97706';
                         ghost.style.background   = 'rgba(251,191,36,0.3)';
+                        ghost.querySelector('span').textContent = shape === 'bar' ? 'Nueva barra' : 'Nuevo taburete';
                         ghost.classList.remove('hidden');
                         ghost.classList.add('flex');
                         this.isDraggingFromPalette = true;
@@ -1590,6 +1592,7 @@ document.addEventListener('alpine:init', () => {
                         ghost.style.borderRadius = '8px';
                         ghost.style.borderColor  = this.zoneColor;
                         ghost.style.background   = this.zoneColor + '33';
+                        ghost.querySelector('span').textContent = 'Nueva zona';
                         ghost.classList.remove('hidden');
                         ghost.classList.add('flex');
                         this.isDraggingZone = true;
