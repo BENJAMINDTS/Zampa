@@ -307,7 +307,7 @@
                 :style="`width:${floorWidth}px; height:${floorHeight}px; min-width:100%;
                          transform:scale(${canvasZoom}); transform-origin:top left;`"
                 aria-label="Plano del restaurante"
-                @click="if (canvasZoom === 1) { editingTableId = null; editingTable = null; editingZoneId = null; }"
+                @click="if (canvasZoom === 1) { editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null; }"
             >
                 {{-- Overlay de zoom: bloquea edición cuando canvasZoom < 1 --}}
                 <div x-show="canvasZoom < 1"
@@ -350,12 +350,14 @@
                             height:${zone.height}px;
                             background-color:${zone.color}22;
                             border:2px solid ${zone.color};
-                            z-index:${editingZoneId === zone.id ? 3 : 2};
+                            z-index:${hoveredId === zone.id || editingZoneId === zone.id ? 8 : 2};
                             pointer-events:all;
                             transform:rotate(${zone.rotation ?? 0}deg);
                             transform-origin:center;
                         `"
                         :aria-label="`Zona ${zone.name}`"
+                        @mouseenter="hoveredId = zone.id"
+                        @mouseleave="hoveredId = null"
                         @mousedown.prevent.self="startZoneDrag($event, zone)"
                     >
                         {{-- Etiqueta de zona --}}
@@ -366,7 +368,7 @@
 
                         {{-- Botón editar zona --}}
                         <button type="button"
-                                @click.stop="editingZoneId = editingZoneId === zone.id ? null : zone.id"
+                                @click.stop="if (editingZoneId === zone.id) { editingZoneId = null; editingZone = null; } else { editingZoneId = zone.id; editingZone = zone; const r = $el.getBoundingClientRect(); const panelW = 220; const panelH = 180; const vpW = window.innerWidth; const vpH = window.innerHeight; const px = Math.min(Math.max(8, r.left + r.width / 2 - panelW / 2), vpW - panelW - 8); const py = Math.min(r.bottom + 8, vpH - panelH - 8); editZonePanelPos = { x: px, y: py }; }"
                                 class="absolute -top-2.5 -right-9
                                        w-6 h-6 rounded-full bg-gray-600 dark:bg-gray-500 text-white
                                        flex items-center justify-center
@@ -395,45 +397,7 @@
                             </svg>
                         </button>
 
-                        {{-- Panel de edición de zona --}}
-                        <div x-show="editingZoneId === zone.id"
-                             x-transition:enter="transition ease-out duration-150"
-                             x-transition:enter-start="opacity-0 scale-95"
-                             x-transition:enter-end="opacity-100 scale-100"
-                             @click.stop
-                             class="absolute top-7 right-0 z-30
-                                    bg-white dark:bg-gray-800 rounded-xl shadow-xl
-                                    border border-gray-200 dark:border-gray-700
-                                    p-3 min-w-max"
-                             role="dialog"
-                             :aria-label="`Editar zona ${zone.name}`">
-
-                            <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">Nombre</p>
-                            <div class="flex gap-1 mb-3">
-                                <input type="text"
-                                       :value="zone.name"
-                                       @keydown.enter.stop="updateZoneName(zone, $event.target.value); $event.target.blur()"
-                                       @blur.stop="updateZoneName(zone, $event.target.value)"
-                                       @click.stop
-                                       maxlength="50"
-                                       class="w-full rounded-lg border border-gray-300 dark:border-gray-600
-                                              bg-white dark:bg-gray-700 text-gray-900 dark:text-white
-                                              px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                       :aria-label="`Nombre de la zona ${zone.name}`">
-                            </div>
-
-                            <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">Color</p>
-                            <div class="flex items-center gap-2 mb-2">
-                                <input type="color"
-                                       :value="zone.color"
-                                       @input.stop="zone.color = $event.target.value"
-                                       @change.stop="updateZoneColor(zone, $event.target.value)"
-                                       @click.stop
-                                       class="w-8 h-8 rounded cursor-pointer border border-gray-200 p-0.5"
-                                       :aria-label="`Color de la zona ${zone.name}`">
-                                <span class="text-xs text-gray-500 font-mono" x-text="zone.color"></span>
-                            </div>
-                        </div>
+                        {{-- Panel de edición de zona movido fuera del canvas (fixed) para evitar herencia de transform --}}
 
                         {{-- Handle de rotación de zona (color sincronizado con zone.color) --}}
                         <div class="absolute -top-9 left-1/2 -translate-x-1/2
@@ -483,7 +447,9 @@
                                  width:${bar.width}px; height:${bar.height}px;
                                  transform:rotate(${bar.rotation ?? 0}deg);
                                  transform-origin:center;
-                                 z-index:10;`"
+                                 z-index:${hoveredId === bar.id || rotatingId === bar.id ? 30 : 10};`"
+                        @mouseenter="hoveredId = bar.id"
+                        @mouseleave="hoveredId = null"
                         :aria-label="`Barra: ${bar.name}`"
                     >
                         <div class="w-full h-full relative flex items-center justify-center
@@ -562,7 +528,9 @@
                                  width:${stool.width}px; height:${stool.height}px;
                                  transform:rotate(${stool.rotation ?? 0}deg);
                                  transform-origin:center;
-                                 z-index:10;`"
+                                 z-index:${hoveredId === stool.id || rotatingId === stool.id ? 30 : 10};`"
+                        @mouseenter="hoveredId = stool.id"
+                        @mouseleave="hoveredId = null"
                         :aria-label="`Taburete: ${stool.name}`"
                     >
                         <div class="w-full h-full relative flex items-center justify-center
@@ -643,7 +611,9 @@
                                  width:${table.width}px; height:${table.height}px;
                                  transform: rotate(${table.rotation ?? 0}deg);
                                  transform-origin: center;
-                                 z-index: 10;`"
+                                 z-index: ${hoveredId === table.id || rotatingId === table.id || editingTableId === table.id ? 30 : 10};`"
+                        @mouseenter="hoveredId = table.id"
+                        @mouseleave="hoveredId = null"
                         :aria-label="`Mesa ${table.name}`"
                     >
                         {{-- Fondo de la mesa --}}
@@ -794,6 +764,50 @@
                 </div>
             </div>
         </main>
+
+        {{-- Panel de edición de zona — fixed para escapar del transform:rotate del padre --}}
+        <div x-show="editingZoneId !== null && editingZone !== null"
+             x-transition:enter="transition ease-out duration-150"
+             x-transition:enter-start="opacity-0 scale-95"
+             x-transition:enter-end="opacity-100 scale-100"
+             @click.stop
+             @keydown.escape.window="editingZoneId = null; editingZone = null"
+             class="fixed z-[200] bg-white dark:bg-gray-800 rounded-xl shadow-xl
+                    border border-gray-200 dark:border-gray-700 p-3 min-w-[200px]"
+             :style="`left:${editZonePanelPos.x}px; top:${editZonePanelPos.y}px`"
+             role="dialog"
+             :aria-label="editingZone ? `Editar zona ${editingZone.name}` : 'Editar zona'">
+
+            <template x-if="editingZone">
+                <div>
+                    <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">Nombre</p>
+                    <div class="flex gap-1 mb-3">
+                        <input type="text"
+                               :value="editingZone.name"
+                               @keydown.enter.stop="updateZoneName(editingZone, $event.target.value); $event.target.blur()"
+                               @blur.stop="updateZoneName(editingZone, $event.target.value)"
+                               @click.stop
+                               maxlength="50"
+                               class="w-full rounded-lg border border-gray-300 dark:border-gray-600
+                                      bg-white dark:bg-gray-700 text-gray-900 dark:text-white
+                                      px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                               :aria-label="`Nombre de la zona ${editingZone.name}`">
+                    </div>
+
+                    <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">Color</p>
+                    <div class="flex items-center gap-2 mb-2">
+                        <input type="color"
+                               :value="editingZone.color"
+                               @input.stop="editingZone.color = $event.target.value"
+                               @change.stop="updateZoneColor(editingZone, $event.target.value)"
+                               @click.stop
+                               class="w-8 h-8 rounded cursor-pointer border border-gray-200 p-0.5"
+                               :aria-label="`Color de la zona ${editingZone.name}`">
+                        <span class="text-xs text-gray-500 font-mono" x-text="editingZone.color"></span>
+                    </div>
+                </div>
+            </template>
+        </div>
 
         {{-- Panel de edición de mesa — fixed para escapar del transform:rotate del padre --}}
         <div x-show="editingTableId !== null && editingTable !== null"
@@ -1196,8 +1210,11 @@ document.addEventListener('alpine:init', () => {
         editingTable:          null,
         editPanelPos:          { x: 0, y: 0 },
         editingZoneId:         null,
+        editingZone:           null,
+        editZonePanelPos:      { x: 0, y: 0 },
         isRotating:            false,
         rotatingId:            null,
+        hoveredId:             null,
         isRotatingZone:        false,
         zoneColor:             '#6366f1',
         toast:                 { show: false, msg: '', error: false, _timer: null },
