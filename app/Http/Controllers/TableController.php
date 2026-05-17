@@ -388,6 +388,7 @@ class TableController extends Controller
         }
 
         Table::where('user_id', Auth::id())->where('floor', $floor)->delete();
+        Zone::where('user_id', Auth::id())->where('floor', $floor)->delete();
 
         $user->update(['floor_count' => $floorCount - 1]);
 
