@@ -280,9 +280,12 @@ class TableController extends Controller
 
         $table->update($data);
 
-        $message = $data['zone_id']
-            ? "Zona asignada a \"{$table->name}\"."
-            : "Zona eliminada de \"{$table->name}\".";
+        if ($data['zone_id']) {
+            $zoneName = Zone::find($data['zone_id'])?->name ?? 'desconocida';
+            $message  = "Zona \"{$zoneName}\" asignada a \"{$table->name}\".";
+        } else {
+            $message = "Zona eliminada de \"{$table->name}\".";
+        }
 
         return response()->json([
             'success' => true,
