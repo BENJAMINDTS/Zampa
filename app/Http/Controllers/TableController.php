@@ -162,6 +162,7 @@ class TableController extends Controller
             'width'            => 'required|integer|min:40|max:800',
             'height'           => 'required|integer|min:40|max:400',
             'is_service_point' => 'sometimes|boolean',
+            'floor'            => 'sometimes|integer|min:1|max:5',
             'zone_id'          => ['sometimes', 'nullable', Rule::exists('zones', 'id')->where('user_id', Auth::id())],
         ]);
 
