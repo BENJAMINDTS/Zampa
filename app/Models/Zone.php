@@ -23,6 +23,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int    $width       Ancho en px
  * @property int    $height      Alto en px
  * @property int    $rotation    Rotación en grados
+ * @property int    $floor       Planta en la que se encuentra la zona (1–5)
  * @author AyrtonAlania
  */
 class Zone extends Model
@@ -38,6 +39,11 @@ class Zone extends Model
         'width',
         'height',
         'rotation',
+        'floor',
+    ];
+
+    protected $casts = [
+        'floor' => 'integer',
     ];
 
     /**
