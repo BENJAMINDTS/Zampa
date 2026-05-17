@@ -136,6 +136,18 @@ class TableController extends Controller
             'floor_count'    => 'sometimes|integer|min:1|max:5',
         ]);
 
+        if (isset($data['floors_enabled']) && ! $data['floors_enabled']) {
+            $hasStructures = Table::where('user_id', Auth::id())->where('floor', '>', 1)->exists()
+                          || Zone::where('user_id', Auth::id())->where('floor', '>', 1)->exists();
+
+            if ($hasStructures) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Elimina todas las estructuras de las plantas superiores antes de desactivar el sistema.',
+                ], 422);
+            }
+        }
+
         Auth::user()->update($data);
 
         $user = Auth::user()->fresh();
