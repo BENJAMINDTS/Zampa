@@ -28,6 +28,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property int      $position_y       Coordenada Y en el plano
  * @property int      $width            Ancho de la mesa (px)
  * @property int      $height           Alto de la mesa (px)
+ * @property int      $floor            Planta en la que se encuentra la mesa (1–5)
  * @property bool     $is_service_point Si genera QR y acepta pedidos
  * @author AyrtonAlania
  */
@@ -47,10 +48,12 @@ class Table extends Model
         'height',
         'shape',
         'rotation',
+        'floor',
         'is_service_point',
     ];
 
     protected $casts = [
+        'floor'            => 'integer',
         'is_service_point' => 'boolean',
     ];
 
