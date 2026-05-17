@@ -663,7 +663,8 @@
                                 'rounded-full':  table.shape === 'round',
                                 'rounded-xl':    table.shape === 'square',
                                 'rounded-lg':    table.shape === 'rectangle',
-                             }">
+                             }"
+                             :style="zoneFor(table) ? `border-color: ${zoneFor(table).color}` : null">
 
                             {{-- Nombre --}}
                             <span class="text-xs font-semibold text-indigo-700 dark:text-indigo-300
@@ -1966,6 +1967,10 @@ document.addEventListener('alpine:init', () => {
         },
 
         // ── AJAX: actualizar nombre de mesa existente ─────────────────────────
+        zoneFor(table) {
+            return table.zone_id ? (this.zones.find(z => z.id == table.zone_id) ?? null) : null;
+        },
+
         async updateZoneAssignment(table, zoneId) {
             const prev       = table.zone_id;
             table.zone_id    = zoneId ? parseInt(zoneId) : null;
