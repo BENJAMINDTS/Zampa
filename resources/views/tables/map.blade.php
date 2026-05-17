@@ -144,6 +144,88 @@
                 </div>
             </div>
 
+            {{-- ── Toggle + selector de plantas — solo admin ──────────────── --}}
+            <template x-if="!readonly">
+                <div class="flex items-center gap-2">
+                    {{-- Toggle activar/desactivar sistema de plantas --}}
+                    <label class="flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-400 cursor-pointer select-none"
+                           id="floors-toggle-desc">
+                        <button type="button"
+                                role="switch"
+                                :aria-checked="floorsEnabled"
+                                @click="toggleFloorsEnabled(!floorsEnabled)"
+                                aria-describedby="floors-toggle-desc"
+                                :class="floorsEnabled
+                                    ? 'bg-indigo-600'
+                                    : 'bg-gray-300 dark:bg-gray-600'"
+                                class="relative inline-flex w-9 h-5 rounded-full transition-colors
+                                       focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-1">
+                            <span :class="floorsEnabled ? 'translate-x-4' : 'translate-x-0.5'"
+                                  class="inline-block w-4 h-4 mt-0.5 bg-white rounded-full shadow transition-transform">
+                            </span>
+                        </button>
+                        Plantas
+                    </label>
+
+                    {{-- Selector de plantas — solo si floorsEnabled --}}
+                    <template x-if="floorsEnabled">
+                        <div class="flex items-center gap-1"
+                             role="group"
+                             aria-label="Selector de planta">
+
+                            {{-- Botón por cada planta --}}
+                            <template x-for="n in floorCount" :key="n">
+                                <button type="button"
+                                        @click="switchFloor(n)"
+                                        :aria-pressed="currentView === 'floor' && currentFloor === n"
+                                        :aria-label="`Planta ${n}`"
+                                        :class="currentView === 'floor' && currentFloor === n
+                                            ? 'bg-indigo-600 text-white'
+                                            : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'"
+                                        class="px-2.5 py-1.5 rounded text-xs font-semibold border border-gray-200 dark:border-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-400"
+                                        x-text="`P${n}`">
+                                </button>
+                            </template>
+
+                            {{-- Botón Vista General --}}
+                            <button type="button"
+                                    @click="switchView('general')"
+                                    :aria-pressed="currentView === 'general'"
+                                    :class="currentView === 'general'
+                                        ? 'bg-indigo-600 text-white'
+                                        : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'"
+                                    class="px-2.5 py-1.5 rounded text-xs font-semibold border border-gray-200 dark:border-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-400">
+                                General
+                            </button>
+
+                            {{-- Añadir planta --}}
+                            <button type="button"
+                                    x-show="floorCount < 5"
+                                    @click="addFloor()"
+                                    aria-label="Añadir planta"
+                                    class="px-2 py-1.5 rounded text-xs font-semibold border border-gray-200 dark:border-gray-600
+                                           bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300
+                                           hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors
+                                           focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-400">
+                                + P
+                            </button>
+
+                            {{-- Eliminar última planta --}}
+                            <button type="button"
+                                    x-show="floorCount > 1"
+                                    @click="confirmDeleteFloor(floorCount)"
+                                    :aria-label="`Eliminar Planta ${floorCount}`"
+                                    class="px-2 py-1.5 rounded text-xs font-semibold border border-red-300 dark:border-red-700
+                                           bg-white dark:bg-gray-700 text-red-500 dark:text-red-400
+                                           hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors
+                                           focus:outline-none focus:ring-2 focus:ring-inset focus:ring-red-400">
+                                − P<span x-text="floorCount"></span>
+                            </button>
+                        </div>
+                    </template>
+                </div>
+            </template>
+
             <a href="{{ route('tables.index') }}"
                class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-white
                       bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors"
@@ -327,6 +409,17 @@
                     </div>
                 </div>
 
+                {{-- Banner vista general --}}
+                <div x-show="floorsEnabled && currentView === 'general'"
+                     aria-live="polite"
+                     class="absolute top-2 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium
+                                 bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300
+                                 border border-indigo-200 dark:border-indigo-700 shadow-sm">
+                        Vista general — todas las plantas visibles · colisión desactivada
+                    </span>
+                </div>
+
                 {{-- Cuadrícula decorativa --}}
                 <svg class="absolute inset-0 w-full h-full pointer-events-none opacity-30 dark:opacity-10"
                      xmlns="http://www.w3.org/2000/svg">
@@ -339,7 +432,7 @@
                 </svg>
 
                 {{-- Zonas (capa de fondo, z-index 5) --}}
-                <template x-for="zone in zones" :key="'z'+zone.id">
+                <template x-for="zone in visibleZones()" :key="'z'+zone.id">
                     <div
                         :data-zone-id="zone.id"
                         class="zone-item absolute group select-none touch-none cursor-grab"
@@ -441,7 +534,7 @@
                 </template>
 
                 {{-- Barras especiales: usa table-item para interact.js, idéntico al sistema de mesas --}}
-                <template x-for="bar in elements.filter(e => e.shape === 'bar')" :key="'b'+bar.id">
+                <template x-for="bar in visibleElements().filter(e => e.shape === 'bar')" :key="'b'+bar.id">
                     <div
                         :data-table-id="bar.id"
                         class="table-item absolute group select-none touch-none"
@@ -524,7 +617,7 @@
                 </template>
 
                 {{-- Taburetes: drag Alpine-nativo --}}
-                <template x-for="stool in elements.filter(e => e.shape === 'stool')" :key="'s'+stool.id">
+                <template x-for="stool in visibleElements().filter(e => e.shape === 'stool')" :key="'s'+stool.id">
                     <div
                         :data-table-id="stool.id"
                         class="element-item absolute group select-none touch-none"
@@ -609,7 +702,7 @@
                 </template>
 
                 {{-- Mesas existentes --}}
-                <template x-for="table in tables" :key="table.id">
+                <template x-for="table in visibleTables()" :key="table.id">
                     <div
                         :data-table-id="table.id"
                         class="table-item absolute group select-none touch-none"
@@ -617,7 +710,9 @@
                                  width:${table.width}px; height:${table.height}px;
                                  transform: rotate(${table.rotation ?? 0}deg);
                                  transform-origin: center;
-                                 z-index: ${hoveredId === table.id || selectedId === table.id || rotatingId === table.id || editingTableId === table.id ? 30 : 10};`"
+                                 z-index: ${hoveredId === table.id || selectedId === table.id || rotatingId === table.id || editingTableId === table.id
+                                     ? (floorsEnabled && currentView === 'general' ? 100 : 30)
+                                     : (floorsEnabled && currentView === 'general' ? 10 + ((table.floor ?? 1) - 1) * 10 : 10)};`"
                         @mouseenter="hoveredId = table.id"
                         @mouseleave="hoveredId = null"
                         @click.stop="selectedId = selectedId === table.id ? null : table.id; editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null;"
@@ -863,6 +958,26 @@
                         </template>
                     </select>
 
+                    {{-- Planta — solo si floorsEnabled y hay más de 1 planta --}}
+                    <template x-if="floorsEnabled && floorCount > 1">
+                        <div>
+                            <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 mt-3 uppercase tracking-wide">Planta</p>
+                            <select @change.stop="moveToFloor(editingTable, parseInt($event.target.value))"
+                                    @click.stop
+                                    class="w-full rounded-lg border border-gray-300 dark:border-gray-600
+                                           bg-white dark:bg-gray-700 text-gray-900 dark:text-white
+                                           px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-3"
+                                    :aria-label="`Planta de la mesa ${editingTable.name}`">
+                                <template x-for="n in floorCount" :key="n">
+                                    <option :value="n"
+                                            :selected="(editingTable.floor ?? 1) === n"
+                                            x-text="`Planta ${n}`">
+                                    </option>
+                                </template>
+                            </select>
+                        </div>
+                    </template>
+
                     <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">Forma</p>
                     <div class="flex gap-1.5" role="group" aria-label="Seleccionar forma">
                         <button type="button"
@@ -1027,6 +1142,7 @@
         <h2 id="delete-modal-title"
             class="text-lg font-bold text-center text-gray-900 dark:text-white mb-2"
             x-text="
+                $store.deleteModal.table?._isFloor          ? `Eliminar Planta ${$store.deleteModal.table.name}` :
                 $store.deleteModal.table?.shape === 'bar'   ? 'Eliminar barra' :
                 $store.deleteModal.table?.shape === 'stool' ? 'Eliminar taburete' :
                 $store.deleteModal.table?.shape             ? 'Eliminar mesa' :
@@ -1036,9 +1152,22 @@
 
         <p id="delete-modal-desc"
            class="text-sm text-center text-gray-500 dark:text-gray-400 mb-6">
-            ¿Eliminar <span class="font-semibold text-gray-700 dark:text-gray-200"
-                            x-text="`&quot;${$store.deleteModal.table?.name}&quot;`"></span>?
-            Esta acción no se puede deshacer.
+            <template x-if="$store.deleteModal.table?._isFloor">
+                <span>
+                    Se eliminarán <span class="font-semibold text-gray-700 dark:text-gray-200"
+                                        x-text="$store.deleteModal.table._count"></span>
+                    estructura(s) de la <span class="font-semibold text-gray-700 dark:text-gray-200"
+                                              x-text="`Planta ${$store.deleteModal.table.name}`"></span>.
+                    Esta acción no se puede deshacer.
+                </span>
+            </template>
+            <template x-if="!$store.deleteModal.table?._isFloor">
+                <span>
+                    ¿Eliminar <span class="font-semibold text-gray-700 dark:text-gray-200"
+                                    x-text="`&quot;${$store.deleteModal.table?.name}&quot;`"></span>?
+                    Esta acción no se puede deshacer.
+                </span>
+            </template>
         </p>
 
         <div class="flex gap-3">
@@ -1209,6 +1338,10 @@ document.addEventListener('alpine:init', () => {
         zones:                 @json($zones),
         floorWidth:            {{ $floorWidth }},
         floorHeight:           {{ $floorHeight }},
+        floorsEnabled:         {{ $floorsEnabled ? 'true' : 'false' }},
+        floorCount:            {{ $floorCount }},
+        currentFloor:          1,
+        currentView:           'floor',
         readonly:              {{ $readonly ? 'true' : 'false' }},
         canvasZoom:            1,
         isDraggingFromPalette: false,
@@ -1437,16 +1570,21 @@ document.addEventListener('alpine:init', () => {
         // Devuelve true si el item colisiona con elementos prohibidos.
         // Mesas ↔ mesas: prohibido. Mesas ↔ especiales: prohibido.
         // Especiales ↔ especiales: prohibido. Zonas: siempre permitidas.
+        // En vista general con plantas activas: solapamiento libre entre plantas.
         hasCollision(item) {
+            if (this.floorsEnabled && this.currentView === 'general') return false;
+
             const isSpecial = ['bar', 'stool'].includes(item.shape);
             const selfId    = item.id ?? null;
+            const itemFloor = this.floorsEnabled ? (item.floor ?? 1) : null;
+            const sameFloor = (other) => !this.floorsEnabled || (other.floor ?? 1) === (itemFloor ?? 1);
 
             if (isSpecial) {
-                return this.tables.some(t => this.overlaps(item, t)) ||
-                       this.elements.some(e => e.id !== selfId && this.overlaps(item, e));
+                return this.tables.filter(sameFloor).some(t => this.overlaps(item, t)) ||
+                       this.elements.filter(sameFloor).some(e => e.id !== selfId && this.overlaps(item, e));
             }
-            return this.tables.some(t => t.id !== selfId && this.overlaps(item, t)) ||
-                   this.elements.some(e => this.overlaps(item, e));
+            return this.tables.filter(sameFloor).some(t => t.id !== selfId && this.overlaps(item, t)) ||
+                   this.elements.filter(sameFloor).some(e => this.overlaps(item, e));
         },
 
         // ── Interactividad de mesas existentes ────────────────────────────────
@@ -1883,6 +2021,7 @@ document.addEventListener('alpine:init', () => {
                         width:            w,
                         height:           h,
                         is_service_point: true,
+                        floor:            this.floorsEnabled ? this.currentFloor : 1,
                     }),
                 });
 
@@ -1919,6 +2058,7 @@ document.addEventListener('alpine:init', () => {
                         width:            w,
                         height:           h,
                         is_service_point: false,
+                        floor:            this.floorsEnabled ? this.currentFloor : 1,
                     }),
                 });
 
@@ -2342,6 +2482,162 @@ document.addEventListener('alpine:init', () => {
 
             document.addEventListener('mousemove', onMove);
             document.addEventListener('mouseup',   onUp);
+        },
+
+        // ── Filtros de visibilidad por planta ────────────────────────────────
+        visibleTables() {
+            if (!this.floorsEnabled || this.currentView === 'general') return this.tables;
+            return this.tables.filter(t => (t.floor ?? 1) === this.currentFloor);
+        },
+
+        visibleElements() {
+            if (!this.floorsEnabled || this.currentView === 'general') return this.elements;
+            return this.elements.filter(e => (e.floor ?? 1) === this.currentFloor);
+        },
+
+        visibleZones() {
+            if (!this.floorsEnabled || this.currentView === 'general') return this.zones;
+            return this.zones.filter(z => (z.floor ?? 1) === this.currentFloor);
+        },
+
+        // ── Navegación entre plantas y vistas ────────────────────────────────
+        switchFloor(n) {
+            this.currentFloor   = n;
+            this.currentView    = 'floor';
+            this.editingTableId = null;
+            this.editingTable   = null;
+            this.editingZoneId  = null;
+            this.editingZone    = null;
+        },
+
+        switchView(view) {
+            this.currentView    = view;
+            this.editingTableId = null;
+            this.editingTable   = null;
+            this.editingZoneId  = null;
+            this.editingZone    = null;
+        },
+
+        // ── Toggle sistema de plantas ─────────────────────────────────────────
+        async toggleFloorsEnabled(enabled) {
+            this.floorsEnabled = enabled;
+            if (!enabled) {
+                this.currentView  = 'floor';
+                this.currentFloor = 1;
+            }
+            try {
+                await fetch('{{ route("tables.floor-settings") }}', {
+                    method:  'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept':       'application/json',
+                    },
+                    body: JSON.stringify({ floors_enabled: enabled }),
+                });
+            } catch {
+                this.floorsEnabled = !enabled;
+                this.showToast('Error al guardar la configuración de plantas.', true);
+            }
+        },
+
+        // ── Añadir planta ─────────────────────────────────────────────────────
+        async addFloor() {
+            if (this.floorCount >= 5) return;
+            const newCount = this.floorCount + 1;
+            try {
+                const res = await fetch('{{ route("tables.floor-settings") }}', {
+                    method:  'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept':       'application/json',
+                    },
+                    body: JSON.stringify({ floor_count: newCount }),
+                });
+                const json = await res.json();
+                if (res.ok && json.success) {
+                    this.floorCount = newCount;
+                    this.switchFloor(newCount);
+                    this.showToast(`Planta ${newCount} creada.`);
+                }
+            } catch {
+                this.showToast('Error al crear la planta.', true);
+            }
+        },
+
+        // ── Confirmar y eliminar última planta ───────────────────────────────
+        async confirmDeleteFloor(floor) {
+            const structuresOnFloor = [
+                ...this.tables.filter(t => (t.floor ?? 1) === floor),
+                ...this.elements.filter(e => (e.floor ?? 1) === floor),
+            ];
+
+            const confirmed = await Alpine.store('deleteModal').prompt({
+                name:     String(floor),
+                shape:    null,
+                _isFloor: true,
+                _count:   structuresOnFloor.length,
+            });
+
+            if (!confirmed) return;
+
+            try {
+                const res = await fetch(`/mesas/mapa/plantas/${floor}`, {
+                    method:  'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept':       'application/json',
+                    },
+                });
+                const json = await res.json();
+                if (!res.ok || !json.success) {
+                    this.showToast(json.message ?? 'Error al eliminar la planta.', true);
+                    return;
+                }
+                this.tables   = this.tables.filter(t => (t.floor ?? 1) !== floor);
+                this.elements = this.elements.filter(e => (e.floor ?? 1) !== floor);
+                this.floorCount = floor - 1;
+                if (this.currentFloor >= floor) this.switchFloor(floor - 1);
+                this.$nextTick(() => {
+                    this.initTableInteract();
+                    this.initCanvasDropzone();
+                });
+                this.showToast(`Planta ${floor} eliminada.`);
+            } catch {
+                this.showToast('Error de red al eliminar la planta.', true);
+            }
+        },
+
+        // ── Mover estructura a otra planta ───────────────────────────────────
+        async moveToFloor(item, newFloor) {
+            if (!item || newFloor === (item.floor ?? 1)) return;
+            const prev = item.floor ?? 1;
+            item.floor = newFloor;
+            try {
+                const res = await fetch(`/mesas/${item.id}/planta`, {
+                    method:  'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept':       'application/json',
+                    },
+                    body: JSON.stringify({ floor: newFloor }),
+                });
+                const json = await res.json();
+                if (!res.ok || !json.success) {
+                    item.floor = prev;
+                    this.showToast(json.message ?? 'Error al mover la estructura.', true);
+                    return;
+                }
+                this.editingTableId = null;
+                this.editingTable   = null;
+                this.$nextTick(() => this.initTableInteract());
+                this.showToast(json.message);
+            } catch {
+                item.floor = prev;
+                this.showToast('Error de red al mover la estructura.', true);
+            }
         },
 
         // ── AJAX: eliminar mesa ───────────────────────────────────────────────
