@@ -68,20 +68,6 @@
         </div>
 
         <div class="flex items-center gap-3 flex-wrap">
-            {{-- Toast --}}
-            <div x-show="toast.show"
-                 x-transition:enter="transition ease-out duration-200"
-                 x-transition:enter-start="opacity-0 translate-y-1"
-                 x-transition:enter-end="opacity-100 translate-y-0"
-                 x-transition:leave="transition ease-in duration-150"
-                 x-transition:leave-end="opacity-0"
-                 :class="toast.error ? 'bg-red-100 text-red-700 border-red-300' : 'bg-green-100 text-green-700 border-green-300'"
-                 class="border rounded-lg px-3 py-1.5 text-sm font-medium"
-                 x-text="toast.msg"
-                 role="alert"
-                 aria-live="polite">
-            </div>
-
             {{-- ── Control de tamaño del lienzo — solo admin ──────────────── --}}
             <div x-show="!readonly" class="flex items-center gap-2">
                 <span class="text-xs font-medium text-gray-500 dark:text-gray-400 hidden sm:block"
@@ -1287,6 +1273,20 @@
                 Crear
             </button>
         </div>
+    </div>
+
+    {{-- Toast fijo — siempre visible sin importar scroll ni zoom del canvas --}}
+    <div x-show="toast.show"
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0 translate-y-2"
+         x-transition:enter-end="opacity-100 translate-y-0"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-end="opacity-0 translate-y-2"
+         :class="toast.error ? 'bg-red-100 text-red-700 border-red-300' : 'bg-green-100 text-green-700 border-green-300'"
+         class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] border rounded-lg px-4 py-2 text-sm font-medium shadow-lg pointer-events-none"
+         x-text="toast.msg"
+         role="alert"
+         aria-live="polite">
     </div>
 </div>
 
