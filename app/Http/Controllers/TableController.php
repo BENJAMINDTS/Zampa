@@ -303,12 +303,19 @@ class TableController extends Controller
     {
         abort_if($table->user_id !== Auth::id(), 403, 'Acceso denegado.');
 
-        $name = $table->name;
+        $name  = $table->name;
+        $shape = $table->shape;
         $table->delete();
+
+        $message = match ($shape) {
+            'bar'   => 'Barra eliminada del plano.',
+            'stool' => 'Taburete eliminado del plano.',
+            default => "Mesa \"{$name}\" eliminada.",
+        };
 
         return response()->json([
             'success' => true,
-            'message' => "Mesa \"{$name}\" eliminada.",
+            'message' => $message,
         ]);
     }
 
