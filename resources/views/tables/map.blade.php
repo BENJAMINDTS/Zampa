@@ -951,7 +951,7 @@
                                    px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-3"
                             :aria-label="`Zona de la mesa ${editingTable.name}`">
                         <option value="">Sin zona</option>
-                        <template x-for="zone in zones" :key="zone.id">
+                        <template x-for="zone in zones.filter(z => !floorsEnabled || (z.floor ?? 1) === (editingTable.floor ?? 1))" :key="zone.id">
                             <option :value="zone.id"
                                     :selected="editingTable.zone_id == zone.id"
                                     x-text="zone.name"></option>
