@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Jobs\SendDailyMenuRound;
 use App\Models\DailyMenuOrder;
 use App\Models\DailyMenuTimingRule;
 use Illuminate\Support\Collection;
@@ -27,6 +28,16 @@ class DailyMenuOrderService
         Collection $timingRules,
         array $timingOverrides
     ): void {
-        // TODO: implementado en Bloque 14.4
+        foreach ($timingRules as $rule) {
+            $override = collect($timingOverrides)->firstWhere('round', $rule->round_number);
+
+            $clientDelay = $override['delay_minutes'] ?? $rule->default_delay_minutes;
+
+            // dispatch_at = now + client_delay - estimated_prep  (mínimo 0 segundos)
+            $delaySeconds = max(0, ($clientDelay - $rule->estimated_prep_minutes) * 60);
+
+            SendDailyMenuRound::dispatch($dailyMenuOrder, $rule->round_number)
+                ->delay(now()->addSeconds($delaySeconds));
+        }
     }
 }
