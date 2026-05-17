@@ -307,7 +307,7 @@
                 :style="`width:${floorWidth}px; height:${floorHeight}px; min-width:100%;
                          transform:scale(${canvasZoom}); transform-origin:top left;`"
                 aria-label="Plano del restaurante"
-                @click="if (canvasZoom === 1) { editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null; }"
+                @click="if (canvasZoom === 1) { editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null; selectedId = null; }"
             >
                 {{-- Overlay de zoom: bloquea edición cuando canvasZoom < 1 --}}
                 <div x-show="canvasZoom < 1"
@@ -350,7 +350,7 @@
                             height:${zone.height}px;
                             background-color:${zone.color}22;
                             border:2px solid ${zone.color};
-                            z-index:${hoveredId === zone.id || editingZoneId === zone.id ? 8 : 2};
+                            z-index:${hoveredId === zone.id || selectedId === zone.id || editingZoneId === zone.id ? 8 : 2};
                             pointer-events:all;
                             transform:rotate(${zone.rotation ?? 0}deg);
                             transform-origin:center;
@@ -358,6 +358,7 @@
                         :aria-label="`Zona ${zone.name}`"
                         @mouseenter="hoveredId = zone.id"
                         @mouseleave="hoveredId = null"
+                        @click.stop="selectedId = selectedId === zone.id ? null : zone.id"
                         @mousedown.prevent.self="startZoneDrag($event, zone)"
                     >
                         {{-- Etiqueta de zona --}}
@@ -371,10 +372,10 @@
                                 @click.stop="if (editingZoneId === zone.id) { editingZoneId = null; editingZone = null; } else { editingZoneId = zone.id; editingZone = zone; const r = $el.getBoundingClientRect(); const panelW = 220; const panelH = 180; const vpW = window.innerWidth; const vpH = window.innerHeight; const px = Math.min(Math.max(8, r.left + r.width / 2 - panelW / 2), vpW - panelW - 8); const py = Math.min(r.bottom + 8, vpH - panelH - 8); editZonePanelPos = { x: px, y: py }; }"
                                 class="absolute -top-2.5 -right-9
                                        w-6 h-6 rounded-full bg-gray-600 dark:bg-gray-500 text-white
-                                       flex items-center justify-center
-                                       opacity-0 group-hover:opacity-100 transition-opacity
+                                       flex items-center justify-center transition-opacity
                                        hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-400
                                        shadow-md"
+                                :class="selectedId === zone.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'"
                                 :aria-label="`Editar zona ${zone.name}`"
                                 :aria-expanded="editingZoneId === zone.id">
                             <svg aria-hidden="true" class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
@@ -387,10 +388,10 @@
                                 @click.stop="deleteZone(zone)"
                                 class="absolute -top-2.5 -right-2.5
                                        w-6 h-6 rounded-full bg-red-500 text-white
-                                       flex items-center justify-center
-                                       opacity-0 group-hover:opacity-100 transition-opacity
+                                       flex items-center justify-center transition-opacity
                                        hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-400
                                        shadow-md"
+                                :class="selectedId === zone.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'"
                                 :aria-label="`Eliminar zona ${zone.name}`">
                             <svg aria-hidden="true" class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
@@ -402,7 +403,8 @@
                         {{-- Handle de rotación de zona (color sincronizado con zone.color) --}}
                         <div class="absolute -top-9 left-1/2 -translate-x-1/2
                                     flex flex-col items-center gap-0
-                                    opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                                    transition-opacity z-10"
+                             :class="selectedId === zone.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'"
                              @mousedown.stop.prevent="startZoneRotation($event, zone)"
                              role="button"
                              tabindex="0"
@@ -426,8 +428,8 @@
 
                         {{-- Handle de redimensionado de zona --}}
                         <div class="zone-resize-handle absolute bottom-0 right-0
-                                    w-4 h-4 cursor-se-resize opacity-0 group-hover:opacity-100
-                                    transition-opacity"
+                                    w-4 h-4 cursor-se-resize transition-opacity"
+                             :class="selectedId === zone.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'"
                              @mousedown.stop.prevent="startZoneResize($event, zone)"
                              role="button"
                              :aria-label="`Redimensionar zona ${zone.name}`">
@@ -447,9 +449,10 @@
                                  width:${bar.width}px; height:${bar.height}px;
                                  transform:rotate(${bar.rotation ?? 0}deg);
                                  transform-origin:center;
-                                 z-index:${hoveredId === bar.id || rotatingId === bar.id ? 30 : 10};`"
+                                 z-index:${hoveredId === bar.id || selectedId === bar.id || rotatingId === bar.id ? 30 : 10};`"
                         @mouseenter="hoveredId = bar.id"
                         @mouseleave="hoveredId = null"
+                        @click.stop="selectedId = selectedId === bar.id ? null : bar.id"
                         :aria-label="`Barra: ${bar.name}`"
                     >
                         <div class="w-full h-full relative flex items-center justify-center
@@ -472,10 +475,10 @@
                                     @click.stop="deleteElement(bar)"
                                     class="absolute -top-2.5 -right-2.5
                                            w-6 h-6 rounded-full bg-red-500 text-white
-                                           flex items-center justify-center
-                                           opacity-0 group-hover:opacity-100 transition-opacity
+                                           flex items-center justify-center transition-opacity
                                            hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-400
                                            shadow-md"
+                                    :class="selectedId === bar.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'"
                                     :aria-label="`Eliminar ${bar.name}`">
                                 <svg aria-hidden="true" class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
@@ -486,7 +489,8 @@
                         {{-- Handle de rotación --}}
                         <div class="rotation-handle absolute -top-9 left-1/2 -translate-x-1/2
                                     flex flex-col items-center gap-0
-                                    opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                                    transition-opacity z-10"
+                             :class="selectedId === bar.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'"
                              @mousedown.stop.prevent="startRotation($event, bar)"
                              role="button"
                              tabindex="0"
@@ -528,9 +532,10 @@
                                  width:${stool.width}px; height:${stool.height}px;
                                  transform:rotate(${stool.rotation ?? 0}deg);
                                  transform-origin:center;
-                                 z-index:${hoveredId === stool.id || rotatingId === stool.id ? 30 : 10};`"
+                                 z-index:${hoveredId === stool.id || selectedId === stool.id || rotatingId === stool.id ? 30 : 10};`"
                         @mouseenter="hoveredId = stool.id"
                         @mouseleave="hoveredId = null"
+                        @click.stop="selectedId = selectedId === stool.id ? null : stool.id"
                         :aria-label="`Taburete: ${stool.name}`"
                     >
                         <div class="w-full h-full relative flex items-center justify-center
@@ -555,10 +560,10 @@
                                     @click.stop="deleteElement(stool)"
                                     class="absolute -top-2.5 -right-2.5
                                            w-6 h-6 rounded-full bg-red-500 text-white
-                                           flex items-center justify-center
-                                           opacity-0 group-hover:opacity-100 transition-opacity
+                                           flex items-center justify-center transition-opacity
                                            hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-400
                                            shadow-md"
+                                    :class="selectedId === stool.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'"
                                     :aria-label="`Eliminar ${stool.name}`">
                                 <svg aria-hidden="true" class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
@@ -569,7 +574,8 @@
                         {{-- Handle de rotación --}}
                         <div class="rotation-handle absolute -top-9 left-1/2 -translate-x-1/2
                                     flex flex-col items-center gap-0
-                                    opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                                    transition-opacity z-10"
+                             :class="selectedId === stool.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'"
                              @mousedown.stop.prevent="startRotation($event, stool)"
                              role="button"
                              tabindex="0"
@@ -611,9 +617,10 @@
                                  width:${table.width}px; height:${table.height}px;
                                  transform: rotate(${table.rotation ?? 0}deg);
                                  transform-origin: center;
-                                 z-index: ${hoveredId === table.id || rotatingId === table.id || editingTableId === table.id ? 30 : 10};`"
+                                 z-index: ${hoveredId === table.id || selectedId === table.id || rotatingId === table.id || editingTableId === table.id ? 30 : 10};`"
                         @mouseenter="hoveredId = table.id"
                         @mouseleave="hoveredId = null"
+                        @click.stop="selectedId = selectedId === table.id ? null : table.id"
                         :aria-label="`Mesa ${table.name}`"
                     >
                         {{-- Fondo de la mesa --}}
@@ -671,10 +678,10 @@
                                     @click.stop="if (editingTableId === table.id) { editingTableId = null; editingTable = null; } else { editingTableId = table.id; editingTable = table; const r = $el.getBoundingClientRect(); const panelW = 220; const panelH = 260; const vpW = window.innerWidth; const vpH = window.innerHeight; const px = Math.min(Math.max(8, r.left + r.width / 2 - panelW / 2), vpW - panelW - 8); const py = Math.min(r.bottom + 8, vpH - panelH - 8); editPanelPos = { x: px, y: py }; }"
                                     class="absolute -top-2.5 -right-16
                                            w-6 h-6 rounded-full bg-gray-600 dark:bg-gray-500 text-white
-                                           flex items-center justify-center
-                                           opacity-0 group-hover:opacity-100 transition-opacity
+                                           flex items-center justify-center transition-opacity
                                            hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-400
                                            shadow-md"
+                                    :class="selectedId === table.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'"
                                     :aria-label="`Editar forma de mesa ${table.name}`"
                                     :aria-expanded="editingTableId === table.id">
                                 <svg aria-hidden="true" class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
@@ -688,10 +695,10 @@
                                     @click.stop="$store.qrModal.open(table)"
                                     class="absolute -top-2.5 -right-9
                                            w-6 h-6 rounded-full bg-indigo-500 text-white
-                                           flex items-center justify-center
-                                           opacity-0 group-hover:opacity-100 transition-opacity
+                                           flex items-center justify-center transition-opacity
                                            hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-400
                                            shadow-md"
+                                    :class="selectedId === table.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'"
                                     :aria-label="`Ver QR de la mesa ${table.name}`">
                                 <svg aria-hidden="true" class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
                                     <path d="M3 3h7v7H3V3zm2 2v3h3V5H5zm9-2h7v7h-7V3zm2 2v3h3V5h-3zM3 14h7v7H3v-7zm2 2v3h3v-3H5zm11.5-2a.5.5 0 01.5.5v1h1.5a.5.5 0 010 1H17v1.5a.5.5 0 01-1 0V17h-1.5a.5.5 0 010-1H16v-1.5a.5.5 0 01.5-.5zm3 3a.5.5 0 01.5.5V21h-2.5a.5.5 0 010-1H21v-1.5a.5.5 0 01.5-.5z"/>
@@ -704,10 +711,10 @@
                                     @click.stop="deleteTable(table)"
                                     class="absolute -top-2.5 -right-2.5
                                            w-6 h-6 rounded-full bg-red-500 text-white
-                                           flex items-center justify-center
-                                           opacity-0 group-hover:opacity-100 transition-opacity
+                                           flex items-center justify-center transition-opacity
                                            hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-400
                                            shadow-md"
+                                    :class="selectedId === table.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'"
                                     :aria-label="`Eliminar mesa ${table.name}`">
                                 <svg aria-hidden="true" class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
@@ -720,7 +727,8 @@
                         {{-- Handle de rotación — solo admin --}}
                         <div x-show="!readonly" class="rotation-handle absolute -top-9 left-1/2 -translate-x-1/2
                                     flex flex-col items-center gap-0
-                                    opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                                    transition-opacity z-10"
+                             :class="selectedId === table.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'"
                              @mousedown.stop.prevent="startRotation($event, table)"
                              role="button"
                              tabindex="0"
@@ -742,8 +750,8 @@
                         {{-- Handle de redimensionado — solo admin --}}
                         <div x-show="!readonly"
                              class="resize-handle absolute bottom-0 right-0
-                                    w-4 h-4 cursor-se-resize opacity-0 group-hover:opacity-100
-                                    transition-opacity"
+                                    w-4 h-4 cursor-se-resize transition-opacity"
+                             :class="selectedId === table.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'"
                              @mousedown.stop.prevent="startResize($event, table)"
                              role="button"
                              :aria-label="`Redimensionar mesa ${table.name}`">
@@ -1215,6 +1223,7 @@ document.addEventListener('alpine:init', () => {
         isRotating:            false,
         rotatingId:            null,
         hoveredId:             null,
+        selectedId:            null,
         isRotatingZone:        false,
         zoneColor:             '#6366f1',
         toast:                 { show: false, msg: '', error: false, _timer: null },
