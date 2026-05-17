@@ -62,13 +62,28 @@ class TableController extends Controller
                            ->orderBy('name')
                            ->get();
         $zones       = Zone::where('user_id', $ownerId)->orderBy('name')->get();
-        $owner       = Auth::user()->isAdmin() ? Auth::user() : Auth::user()->admin;
-        $maxTables   = $owner?->plan?->max_tables ?? 10;
-        $floorWidth  = $owner?->floor_width  ?? 1200;
-        $floorHeight = $owner?->floor_height ?? 800;
-        $readonly    = ! Auth::user()->isAdmin();
+        $owner         = Auth::user()->isAdmin() ? Auth::user() : Auth::user()->admin;
+        $maxTables     = $owner?->plan?->max_tables ?? 10;
+        $floorWidth    = $owner?->floor_width    ?? 1200;
+        $floorHeight   = $owner?->floor_height   ?? 800;
+        $floorCount    = $owner?->floor_count    ?? 1;
+        $floorsEnabled = $owner?->floors_enabled ?? false;
+        $readonly      = ! Auth::user()->isAdmin();
 
-        return view('tables.map', compact('tables', 'elements', 'zones', 'maxTables', 'floorWidth', 'floorHeight', 'readonly'));
+        $savedSizes       = $owner?->floor_canvas_sizes ?? [];
+        $floorCanvasSizes = [];
+        for ($f = 1; $f <= $floorCount; $f++) {
+            $floorCanvasSizes[$f] = [
+                'width'  => $savedSizes[$f]['width']  ?? $floorWidth,
+                'height' => $savedSizes[$f]['height'] ?? $floorHeight,
+            ];
+        }
+
+        return view('tables.map', compact(
+            'tables', 'elements', 'zones', 'maxTables',
+            'floorWidth', 'floorHeight', 'floorCount', 'floorsEnabled',
+            'floorCanvasSizes', 'readonly'
+        ));
     }
 
     /**
@@ -107,9 +122,23 @@ class TableController extends Controller
         $data = $request->validate([
             'floor_width'  => 'required|integer|min:800|max:3000',
             'floor_height' => 'required|integer|min:600|max:2000',
+            'floor'        => 'sometimes|integer|min:1|max:5',
         ]);
 
-        Auth::user()->update($data);
+        $user  = Auth::user();
+        $floor = $data['floor'] ?? 1;
+
+        $sizes          = $user->floor_canvas_sizes ?? [];
+        $sizes[$floor]  = ['width' => $data['floor_width'], 'height' => $data['floor_height']];
+
+        $updatePayload = ['floor_canvas_sizes' => $sizes];
+
+        if ($floor === 1) {
+            $updatePayload['floor_width']  = $data['floor_width'];
+            $updatePayload['floor_height'] = $data['floor_height'];
+        }
+
+        $user->update($updatePayload);
 
         return response()->json([
             'success' => true,
