@@ -40,8 +40,24 @@ class BarPanelController extends Controller
         $zones       = Zone::where('user_id', $ownerId)->orderBy('name')->get();
         $floorWidth  = $owner?->floor_width  ?? 1200;
         $floorHeight = $owner?->floor_height ?? 800;
+        $readyOrders = Order::with('table')
+                            ->where('notification_ready', true)
+                            ->whereHas('table', fn ($q) => $q->where('user_id', $ownerId))
+                            ->get()
+                            ->map(fn (Order $o) => ['id' => $o->id, 'table' => $o->table->name])
+                            ->values();
+        $orders      = Order::with([
+                                'table',
+                                'items' => fn ($q) => $q->where('destination', 'bar')
+                                    ->where('status', 'queued')
+                                    ->with('product'),
+                            ])
+                            ->whereIn('status', ['pending', 'cooking'])
+                            ->whereHas('table', fn ($q) => $q->where('user_id', $ownerId))
+                            ->whereHas('items', fn ($q) => $q->where('destination', 'bar')->where('status', 'queued'))
+                            ->get();
 
-        return view('bar.index', compact('tables', 'zones', 'floorWidth', 'floorHeight'));
+        return view('bar.index', compact('tables', 'zones', 'floorWidth', 'floorHeight', 'readyOrders', 'orders'));
     }
 
     /**
