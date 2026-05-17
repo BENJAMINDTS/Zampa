@@ -4,6 +4,16 @@
  | @author AyrtonAlania
  | @author SebastianBCF
 --}}
+<style>
+@keyframes zampa-selected-pulse {
+    0%, 100% { box-shadow: 0 0 0 2px rgba(99,102,241,0.85), 0 0 0 5px rgba(99,102,241,0.25); }
+    50%       { box-shadow: 0 0 0 3px rgba(99,102,241,0.55), 0 0 0 9px rgba(99,102,241,0.08); }
+}
+.zampa-selected {
+    animation: zampa-selected-pulse 1.4s ease-in-out infinite;
+}
+</style>
+
 <x-app-layout>
 <div
     class="flex flex-col h-screen bg-gray-100 dark:bg-gray-900"
@@ -58,6 +68,20 @@
         </div>
 
         <div class="flex items-center gap-3 flex-wrap">
+            {{-- Toast --}}
+            <div x-show="toast.show"
+                 x-transition:enter="transition ease-out duration-200"
+                 x-transition:enter-start="opacity-0 translate-y-1"
+                 x-transition:enter-end="opacity-100 translate-y-0"
+                 x-transition:leave="transition ease-in duration-150"
+                 x-transition:leave-end="opacity-0"
+                 :class="toast.error ? 'bg-red-100 text-red-700 border-red-300' : 'bg-green-100 text-green-700 border-green-300'"
+                 class="border rounded-lg px-3 py-1.5 text-sm font-medium"
+                 x-text="toast.msg"
+                 role="alert"
+                 aria-live="polite">
+            </div>
+
             {{-- ── Control de tamaño del lienzo — solo admin ──────────────── --}}
             <div x-show="!readonly" class="flex items-center gap-2">
                 <span class="text-xs font-medium text-gray-500 dark:text-gray-400 hidden sm:block"
@@ -368,7 +392,7 @@
         </aside>
 
         {{-- ── CANVAS ───────────────────────────────────────── --}}
-        <main id="main-content" class="flex-1 overflow-auto p-4">
+        <main id="main-content" class="flex-1 overflow-auto p-4 relative">
             <div
                 x-ref="canvas"
                 class="relative bg-white dark:bg-gray-800 rounded-xl shadow-inner
@@ -396,21 +420,6 @@
                     </div>
                 </div>
 
-                {{-- Toast de confirmación / error — parte superior del canvas --}}
-                <div x-show="toast.show"
-                     x-transition:enter="transition ease-out duration-200"
-                     x-transition:enter-start="opacity-0 -translate-y-2"
-                     x-transition:enter-end="opacity-100 translate-y-0"
-                     x-transition:leave="transition ease-in duration-150"
-                     x-transition:leave-end="opacity-0"
-                     :class="toast.error ? 'bg-red-100 text-red-700 border-red-300' : 'bg-green-100 text-green-700 border-green-300'"
-                     class="absolute top-3 left-1/2 -translate-x-1/2 z-[300]
-                            border rounded-lg px-4 py-2 text-sm font-medium shadow-md pointer-events-none whitespace-nowrap"
-                     x-text="toast.msg"
-                     role="alert"
-                     aria-live="polite">
-                </div>
-
                 {{-- Banner vista general --}}
                 <div x-show="floorsEnabled && currentView === 'general'"
                      aria-live="polite"
@@ -434,10 +443,11 @@
                 </svg>
 
                 {{-- Zonas (capa de fondo, z-index 5) --}}
-                <template x-for="zone in zones" :key="'z'+zone.id">
+                <template x-for="zone in visibleZones()" :key="'z'+zone.id">
                     <div
                         :data-zone-id="zone.id"
                         class="zone-item absolute group select-none touch-none cursor-grab"
+                        :class="{'zampa-selected': isActive(zone.id)}"
                         :style="`
                             left:${zone.position_x}px;
                             top:${zone.position_y}px;
@@ -493,7 +503,6 @@
                             </svg>
                         </button>
 
-                        {{-- Panel de edición de zona movido fuera del canvas (fixed) para evitar herencia de transform --}}
 
                         {{-- Handle de rotación de zona (color sincronizado con zone.color) --}}
                         <div class="absolute -top-9 left-1/2 -translate-x-1/2
@@ -536,7 +545,7 @@
                 </template>
 
                 {{-- Barras especiales: usa table-item para interact.js, idéntico al sistema de mesas --}}
-                <template x-for="bar in elements.filter(e => e.shape === 'bar')" :key="'b'+bar.id">
+                <template x-for="bar in visibleElements().filter(e => e.shape === 'bar')" :key="'b'+bar.id">
                     <div
                         :data-table-id="bar.id"
                         class="table-item absolute group select-none touch-none"
@@ -555,7 +564,8 @@
                                     bg-amber-100 dark:bg-amber-900
                                     border-2 border-amber-400 dark:border-amber-600
                                     shadow-md cursor-grab active:cursor-grabbing
-                                    transition-shadow hover:shadow-lg">
+                                    transition-shadow hover:shadow-lg"
+                             :class="{'zampa-selected': isActive(bar.id)}">
 
                             <span class="text-xs font-semibold text-amber-800 dark:text-amber-300
                                          text-center px-1 leading-tight pointer-events-none"
@@ -619,7 +629,7 @@
                 </template>
 
                 {{-- Taburetes: drag Alpine-nativo --}}
-                <template x-for="stool in elements.filter(e => e.shape === 'stool')" :key="'s'+stool.id">
+                <template x-for="stool in visibleElements().filter(e => e.shape === 'stool')" :key="'s'+stool.id">
                     <div
                         :data-table-id="stool.id"
                         class="element-item absolute group select-none touch-none"
@@ -639,6 +649,7 @@
                                     border-2 border-amber-400 dark:border-amber-600
                                     shadow-md cursor-grab active:cursor-grabbing
                                     transition-shadow hover:shadow-lg"
+                             :class="{'zampa-selected': isActive(stool.id)}"
                              @mousedown.prevent="startElementDrag($event, stool)">
 
                             <span class="text-xs font-semibold text-amber-800 dark:text-amber-300
@@ -704,7 +715,7 @@
                 </template>
 
                 {{-- Mesas existentes --}}
-                <template x-for="table in tables" :key="table.id">
+                <template x-for="table in visibleTables()" :key="table.id">
                     <div
                         :data-table-id="table.id"
                         class="table-item absolute group select-none touch-none"
@@ -712,7 +723,9 @@
                                  width:${table.width}px; height:${table.height}px;
                                  transform: rotate(${table.rotation ?? 0}deg);
                                  transform-origin: center;
-                                 z-index: ${hoveredId === table.id || selectedId === table.id || rotatingId === table.id || editingTableId === table.id ? 30 : 10};`"
+                                 z-index: ${hoveredId === table.id || selectedId === table.id || rotatingId === table.id || editingTableId === table.id
+                                     ? (floorsEnabled && currentView === 'general' ? 100 : 30)
+                                     : (floorsEnabled && currentView === 'general' ? 10 + ((table.floor ?? 1) - 1) * 10 : 10)};`"
                         @mouseenter="hoveredId = table.id"
                         @mouseleave="hoveredId = null"
                         @click.stop="selectedId = selectedId === table.id ? null : table.id; editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null;"
@@ -725,9 +738,10 @@
                                     shadow-md cursor-grab active:cursor-grabbing
                                     transition-shadow hover:shadow-lg"
                              :class="{
-                                'rounded-full':  table.shape === 'round',
-                                'rounded-xl':    table.shape === 'square',
-                                'rounded-lg':    table.shape === 'rectangle',
+                                'rounded-full':    table.shape === 'round',
+                                'rounded-xl':      table.shape === 'square',
+                                'rounded-lg':      table.shape === 'rectangle',
+                                'zampa-selected':  isActive(table.id),
                              }"
                              :style="zoneFor(table) ? `border-color: ${zoneFor(table).color}` : null">
 
@@ -816,7 +830,6 @@
                                 </svg>
                             </button>
 
-                            {{-- Panel de edición movido fuera del canvas (fixed) para evitar herencia del transform:rotate --}}
                         </div>
 
                         {{-- Handle de rotación — solo admin --}}
@@ -865,165 +878,167 @@
                     <p class="text-indigo-500 font-semibold text-lg"
                        x-text="currentDragShape === 'bar' ? 'Suelta aquí para colocar la barra' : currentDragShape === 'stool' ? 'Suelta aquí para colocar el taburete' : 'Suelta aquí para crear la mesa'"></p>
                 </div>
+                {{-- Panel de edición de zona — absolute dentro del canvas, coordenadas en espacio del canvas --}}
+                <div x-show="editingZoneId !== null && editingZone !== null"
+                     x-transition:enter="transition ease-out duration-150"
+                     x-transition:enter-start="opacity-0 scale-95"
+                     x-transition:enter-end="opacity-100 scale-100"
+                     @click.stop
+                     @keydown.escape.window="editingZoneId = null; editingZone = null; _zoneBtnEl = null"
+                     class="absolute z-[200] bg-white dark:bg-gray-800 rounded-xl shadow-xl
+                            border border-gray-200 dark:border-gray-700 p-3 min-w-[200px]"
+                     :style="`left:${editZonePanelPos.x}px; top:${editZonePanelPos.y}px`"
+                     role="dialog"
+                     :aria-label="editingZone ? `Editar zona ${editingZone.name}` : 'Editar zona'">
+
+                    <template x-if="editingZone">
+                        <div>
+                            <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">Nombre</p>
+                            <div class="flex gap-1 mb-3">
+                                <input type="text"
+                                       :value="editingZone.name"
+                                       @keydown.enter.stop="updateZoneName(editingZone, $event.target.value); $event.target.blur()"
+                                       @blur.stop="updateZoneName(editingZone, $event.target.value)"
+                                       @click.stop
+                                       maxlength="50"
+                                       class="w-full rounded-lg border border-gray-300 dark:border-gray-600
+                                              bg-white dark:bg-gray-700 text-gray-900 dark:text-white
+                                              px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                       :aria-label="`Nombre de la zona ${editingZone.name}`">
+                            </div>
+
+                            <template x-if="floorsEnabled && floorCount > 1">
+                                <div>
+                                    <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">Planta</p>
+                                    <select @change.stop="moveZoneToFloor(editingZone, parseInt($event.target.value))"
+                                            @click.stop
+                                            class="w-full rounded-lg border border-gray-300 dark:border-gray-600
+                                                   bg-white dark:bg-gray-700 text-gray-900 dark:text-white
+                                                   px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-3"
+                                            :aria-label="`Planta de la zona ${editingZone.name}`">
+                                        <template x-for="n in floorCount" :key="n">
+                                            <option :value="n"
+                                                    :selected="(editingZone.floor ?? 1) === n"
+                                                    x-text="`Planta ${n}`">
+                                            </option>
+                                        </template>
+                                    </select>
+                                </div>
+                            </template>
+
+                            <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">Color</p>
+                            <div class="flex items-center gap-2 mb-2">
+                                <input type="color"
+                                       :value="editingZone.color"
+                                       @input.stop="editingZone.color = $event.target.value"
+                                       @change.stop="updateZoneColor(editingZone, $event.target.value)"
+                                       @click.stop
+                                       class="w-8 h-8 rounded cursor-pointer border border-gray-200 p-0.5"
+                                       :aria-label="`Color de la zona ${editingZone.name}`">
+                                <span class="text-xs text-gray-500 font-mono" x-text="editingZone.color"></span>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+
+                {{-- Panel de edición de mesa — absolute dentro del canvas, coordenadas en espacio del canvas --}}
+                <div x-show="editingTableId !== null && editingTable !== null"
+                     x-transition:enter="transition ease-out duration-150"
+                     x-transition:enter-start="opacity-0 scale-95"
+                     x-transition:enter-end="opacity-100 scale-100"
+                     @click.stop
+                     @keydown.escape.window="editingTableId = null; editingTable = null; _editBtnEl = null"
+                     class="absolute z-[200] bg-white dark:bg-gray-800 rounded-xl shadow-xl
+                            border border-gray-200 dark:border-gray-700 p-3 min-w-[200px]"
+                     :style="`left:${editPanelPos.x}px; top:${editPanelPos.y}px`"
+                     role="dialog"
+                     :aria-label="editingTable ? `Editar mesa ${editingTable.name}` : 'Editar mesa'">
+
+                    <template x-if="editingTable">
+                        <div>
+                            <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">Nombre</p>
+                            <div class="flex gap-1 mb-3">
+                                <input type="text"
+                                       :value="editingTable.name"
+                                       @keydown.enter.stop="updateName(editingTable, $event.target.value); $event.target.blur()"
+                                       @blur.stop="updateName(editingTable, $event.target.value)"
+                                       @click.stop
+                                       maxlength="50"
+                                       class="w-full rounded-lg border border-gray-300 dark:border-gray-600
+                                              bg-white dark:bg-gray-700 text-gray-900 dark:text-white
+                                              px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                       :aria-label="`Nombre de la mesa ${editingTable.name}`">
+                            </div>
+
+                            <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 mt-3 uppercase tracking-wide">Zona</p>
+                            <select @change.stop="updateZoneAssignment(editingTable, $event.target.value)"
+                                    @click.stop
+                                    class="w-full rounded-lg border border-gray-300 dark:border-gray-600
+                                           bg-white dark:bg-gray-700 text-gray-900 dark:text-white
+                                           px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-3"
+                                    :aria-label="`Zona de la mesa ${editingTable.name}`">
+                                <option value="">Sin zona</option>
+                                <template x-for="zone in zones.filter(z => !floorsEnabled || (z.floor ?? 1) === (editingTable.floor ?? 1))" :key="zone.id">
+                                    <option :value="zone.id"
+                                            :selected="editingTable.zone_id == zone.id"
+                                            x-text="zone.name"></option>
+                                </template>
+                            </select>
+
+                            <template x-if="floorsEnabled && floorCount > 1">
+                                <div>
+                                    <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 mt-3 uppercase tracking-wide">Planta</p>
+                                    <select @change.stop="moveToFloor(editingTable, parseInt($event.target.value))"
+                                            @click.stop
+                                            class="w-full rounded-lg border border-gray-300 dark:border-gray-600
+                                                   bg-white dark:bg-gray-700 text-gray-900 dark:text-white
+                                                   px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-3"
+                                            :aria-label="`Planta de la mesa ${editingTable.name}`">
+                                        <template x-for="n in floorCount" :key="n">
+                                            <option :value="n"
+                                                    :selected="(editingTable.floor ?? 1) === n"
+                                                    x-text="`Planta ${n}`">
+                                            </option>
+                                        </template>
+                                    </select>
+                                </div>
+                            </template>
+
+                            <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">Forma</p>
+                            <div class="flex gap-1.5" role="group" aria-label="Seleccionar forma">
+                                <button type="button"
+                                        @click.stop="updateShape(editingTable, 'square')"
+                                        :class="editingTable.shape === 'square'
+                                            ? 'bg-indigo-600 text-white ring-2 ring-indigo-400'
+                                            : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30'"
+                                        class="w-9 h-9 rounded-lg flex items-center justify-center transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                                        aria-label="Forma cuadrada">
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/></svg>
+                                </button>
+                                <button type="button"
+                                        @click.stop="updateShape(editingTable, 'round')"
+                                        :class="editingTable.shape === 'round'
+                                            ? 'bg-indigo-600 text-white ring-2 ring-indigo-400'
+                                            : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30'"
+                                        class="w-9 h-9 rounded-lg flex items-center justify-center transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                                        aria-label="Forma redonda">
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/></svg>
+                                </button>
+                                <button type="button"
+                                        @click.stop="updateShape(editingTable, 'rectangle')"
+                                        :class="editingTable.shape === 'rectangle'
+                                            ? 'bg-indigo-600 text-white ring-2 ring-indigo-400'
+                                            : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30'"
+                                        class="w-9 h-9 rounded-lg flex items-center justify-center transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                                        aria-label="Forma rectangular">
+                                    <svg class="w-5 h-3" fill="currentColor" viewBox="0 0 24 14" aria-hidden="true"><rect x="0" y="0" width="24" height="14" rx="3"/></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+                </div>
             </div>
         </main>
-
-        {{-- Panel de edición de zona — fixed para escapar del transform:rotate del padre --}}
-        <div x-show="editingZoneId !== null && editingZone !== null"
-             x-transition:enter="transition ease-out duration-150"
-             x-transition:enter-start="opacity-0 scale-95"
-             x-transition:enter-end="opacity-100 scale-100"
-             @click.stop
-             @keydown.escape.window="editingZoneId = null; editingZone = null; _zoneBtnEl = null"
-             class="absolute z-[200] bg-white dark:bg-gray-800 rounded-xl shadow-xl
-                    border border-gray-200 dark:border-gray-700 p-3 min-w-[200px]"
-             :style="`left:${editZonePanelPos.x}px; top:${editZonePanelPos.y}px`"
-             role="dialog"
-             :aria-label="editingZone ? `Editar zona ${editingZone.name}` : 'Editar zona'">
-
-            <template x-if="editingZone">
-                <div>
-                    <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">Nombre</p>
-                    <div class="flex gap-1 mb-3">
-                        <input type="text"
-                               :value="editingZone.name"
-                               @keydown.enter.stop="updateZoneName(editingZone, $event.target.value); $event.target.blur()"
-                               @blur.stop="updateZoneName(editingZone, $event.target.value)"
-                               @click.stop
-                               maxlength="50"
-                               class="w-full rounded-lg border border-gray-300 dark:border-gray-600
-                                      bg-white dark:bg-gray-700 text-gray-900 dark:text-white
-                                      px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                               :aria-label="`Nombre de la zona ${editingZone.name}`">
-                    </div>
-
-                    <template x-if="floorsEnabled && floorCount > 1">
-                        <div>
-                            <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">Planta</p>
-                            <select @change.stop="moveZoneToFloor(editingZone, parseInt($event.target.value))"
-                                    @click.stop
-                                    class="w-full rounded-lg border border-gray-300 dark:border-gray-600
-                                           bg-white dark:bg-gray-700 text-gray-900 dark:text-white
-                                           px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-3"
-                                    :aria-label="`Planta de la zona ${editingZone.name}`">
-                                <template x-for="n in floorCount" :key="n">
-                                    <option :value="n" :selected="(editingZone.floor ?? 1) === n" x-text="`Planta ${n}`"></option>
-                                </template>
-                            </select>
-                        </div>
-                    </template>
-
-                    <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">Color</p>
-                    <div class="flex items-center gap-2 mb-2">
-                        <input type="color"
-                               :value="editingZone.color"
-                               @input.stop="editingZone.color = $event.target.value"
-                               @change.stop="updateZoneColor(editingZone, $event.target.value)"
-                               @click.stop
-                               class="w-8 h-8 rounded cursor-pointer border border-gray-200 p-0.5"
-                               :aria-label="`Color de la zona ${editingZone.name}`">
-                        <span class="text-xs text-gray-500 font-mono" x-text="editingZone.color"></span>
-                    </div>
-                </div>
-            </template>
-        </div>
-
-        {{-- Panel de edición de mesa — fixed para escapar del transform:rotate del padre --}}
-        <div x-show="editingTableId !== null && editingTable !== null"
-             x-transition:enter="transition ease-out duration-150"
-             x-transition:enter-start="opacity-0 scale-95"
-             x-transition:enter-end="opacity-100 scale-100"
-             @click.stop
-             @keydown.escape.window="editingTableId = null; editingTable = null; _editBtnEl = null"
-             class="absolute z-[200] bg-white dark:bg-gray-800 rounded-xl shadow-xl
-                    border border-gray-200 dark:border-gray-700 p-3 min-w-[200px]"
-             :style="`left:${editPanelPos.x}px; top:${editPanelPos.y}px`"
-             role="dialog"
-             :aria-label="editingTable ? `Editar mesa ${editingTable.name}` : 'Editar mesa'">
-
-            <template x-if="editingTable">
-                <div>
-                    {{-- Editar nombre --}}
-                    <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">Nombre</p>
-                    <div class="flex gap-1 mb-3">
-                        <input type="text"
-                               :value="editingTable.name"
-                               @keydown.enter.stop="updateName(editingTable, $event.target.value); $event.target.blur()"
-                               @blur.stop="updateName(editingTable, $event.target.value)"
-                               @click.stop
-                               maxlength="50"
-                               class="w-full rounded-lg border border-gray-300 dark:border-gray-600
-                                      bg-white dark:bg-gray-700 text-gray-900 dark:text-white
-                                      px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                               :aria-label="`Nombre de la mesa ${editingTable.name}`">
-                    </div>
-
-                    {{-- Zona --}}
-                    <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 mt-3 uppercase tracking-wide">Zona</p>
-                    <select @change.stop="updateZoneAssignment(editingTable, $event.target.value)"
-                            @click.stop
-                            class="w-full rounded-lg border border-gray-300 dark:border-gray-600
-                                   bg-white dark:bg-gray-700 text-gray-900 dark:text-white
-                                   px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-3"
-                            :aria-label="`Zona de la mesa ${editingTable.name}`">
-                        <option value="">Sin zona</option>
-                        <template x-for="zone in zones.filter(z => !floorsEnabled || (z.floor ?? 1) === (editingTable.floor ?? 1))" :key="zone.id">
-                            <option :value="zone.id"
-                                    :selected="editingTable.zone_id == zone.id"
-                                    x-text="zone.name"></option>
-                        </template>
-                    </select>
-
-                    {{-- Planta — solo si floorsEnabled y hay más de 1 planta --}}
-                    <template x-if="floorsEnabled && floorCount > 1">
-                        <div>
-                            <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 mt-3 uppercase tracking-wide">Planta</p>
-                            <select @change.stop="moveToFloor(editingTable, parseInt($event.target.value))"
-                                    @click.stop
-                                    class="w-full rounded-lg border border-gray-300 dark:border-gray-600
-                                           bg-white dark:bg-gray-700 text-gray-900 dark:text-white
-                                           px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-3"
-                                    :aria-label="`Planta de la mesa ${editingTable.name}`">
-                                <template x-for="n in floorCount" :key="n">
-                                    <option :value="n" :selected="(editingTable.floor ?? 1) === n" x-text="`Planta ${n}`"></option>
-                                </template>
-                            </select>
-                        </div>
-                    </template>
-
-                    <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">Forma</p>
-                    <div class="flex gap-1.5" role="group" aria-label="Seleccionar forma">
-                        <button type="button"
-                                @click.stop="updateShape(editingTable, 'square')"
-                                :class="editingTable.shape === 'square'
-                                    ? 'bg-indigo-600 text-white ring-2 ring-indigo-400'
-                                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30'"
-                                class="w-9 h-9 rounded-lg flex items-center justify-center transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                                aria-label="Forma cuadrada">
-                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/></svg>
-                        </button>
-                        <button type="button"
-                                @click.stop="updateShape(editingTable, 'round')"
-                                :class="editingTable.shape === 'round'
-                                    ? 'bg-indigo-600 text-white ring-2 ring-indigo-400'
-                                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30'"
-                                class="w-9 h-9 rounded-lg flex items-center justify-center transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                                aria-label="Forma redonda">
-                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/></svg>
-                        </button>
-                        <button type="button"
-                                @click.stop="updateShape(editingTable, 'rectangle')"
-                                :class="editingTable.shape === 'rectangle'
-                                    ? 'bg-indigo-600 text-white ring-2 ring-indigo-400'
-                                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30'"
-                                class="w-9 h-9 rounded-lg flex items-center justify-center transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                                aria-label="Forma rectangular">
-                            <svg class="w-5 h-3" fill="currentColor" viewBox="0 0 24 14" aria-hidden="true"><rect x="0" y="0" width="24" height="14" rx="3"/></svg>
-                        </button>
-                    </div>
-                </div>
-            </template>
-        </div>
 
         {{-- Indicador de grados de rotación — fuera del canvas escalado para que fixed funcione correctamente --}}
         <div x-show="rotTooltip.show"
@@ -1155,6 +1170,7 @@
         <h2 id="delete-modal-title"
             class="text-lg font-bold text-center text-gray-900 dark:text-white mb-2"
             x-text="
+                $store.deleteModal.table?._isFloor          ? `Eliminar Planta ${$store.deleteModal.table.name}` :
                 $store.deleteModal.table?.shape === 'bar'   ? 'Eliminar barra' :
                 $store.deleteModal.table?.shape === 'stool' ? 'Eliminar taburete' :
                 $store.deleteModal.table?.shape             ? 'Eliminar mesa' :
@@ -1164,9 +1180,22 @@
 
         <p id="delete-modal-desc"
            class="text-sm text-center text-gray-500 dark:text-gray-400 mb-6">
-            ¿Eliminar <span class="font-semibold text-gray-700 dark:text-gray-200"
-                            x-text="`&quot;${$store.deleteModal.table?.name}&quot;`"></span>?
-            Esta acción no se puede deshacer.
+            <template x-if="$store.deleteModal.table?._isFloor">
+                <span>
+                    Se eliminarán <span class="font-semibold text-gray-700 dark:text-gray-200"
+                                        x-text="$store.deleteModal.table._count"></span>
+                    estructura(s) de la <span class="font-semibold text-gray-700 dark:text-gray-200"
+                                              x-text="`Planta ${$store.deleteModal.table.name}`"></span>.
+                    Esta acción no se puede deshacer.
+                </span>
+            </template>
+            <template x-if="!$store.deleteModal.table?._isFloor">
+                <span>
+                    ¿Eliminar <span class="font-semibold text-gray-700 dark:text-gray-200"
+                                    x-text="`&quot;${$store.deleteModal.table?.name}&quot;`"></span>?
+                    Esta acción no se puede deshacer.
+                </span>
+            </template>
         </p>
 
         <div class="flex gap-3">
@@ -1353,8 +1382,12 @@ document.addEventListener('alpine:init', () => {
         editingZoneId:         null,
         editingZone:           null,
         editZonePanelPos:      { x: 0, y: 0 },
+        _editBtnEl:            null,
+        _zoneBtnEl:            null,
         isRotating:            false,
         rotatingId:            null,
+        draggingId:            null,
+        resizingId:            null,
         hoveredId:             null,
         selectedId:            null,
         isRotatingZone:        false,
@@ -1577,16 +1610,21 @@ document.addEventListener('alpine:init', () => {
         // Devuelve true si el item colisiona con elementos prohibidos.
         // Mesas ↔ mesas: prohibido. Mesas ↔ especiales: prohibido.
         // Especiales ↔ especiales: prohibido. Zonas: siempre permitidas.
+        // En vista general con plantas activas: solapamiento libre entre plantas.
         hasCollision(item) {
+            if (this.floorsEnabled && this.currentView === 'general') return false;
+
             const isSpecial = ['bar', 'stool'].includes(item.shape);
             const selfId    = item.id ?? null;
+            const itemFloor = this.floorsEnabled ? (item.floor ?? this.currentFloor) : null;
+            const sameFloor = (other) => !this.floorsEnabled || (other.floor ?? 1) === (itemFloor ?? 1);
 
             if (isSpecial) {
-                return this.tables.some(t => this.overlaps(item, t)) ||
-                       this.elements.some(e => e.id !== selfId && this.overlaps(item, e));
+                return this.tables.filter(sameFloor).some(t => this.overlaps(item, t)) ||
+                       this.elements.filter(sameFloor).some(e => e.id !== selfId && this.overlaps(item, e));
             }
-            return this.tables.some(t => t.id !== selfId && this.overlaps(item, t)) ||
-                   this.elements.some(e => this.overlaps(item, e));
+            return this.tables.filter(sameFloor).some(t => t.id !== selfId && this.overlaps(item, t)) ||
+                   this.elements.filter(sameFloor).some(e => this.overlaps(item, e));
         },
 
         // ── Interactividad de mesas existentes ────────────────────────────────
@@ -1603,10 +1641,8 @@ document.addEventListener('alpine:init', () => {
                             const el   = event.target;
                             const id   = parseInt(el.dataset.tableId);
                             const item = this.tables.find(t => t.id === id) ?? this.elements.find(e => e.id === id);
-                            // Cierra el panel de edición al iniciar arrastre
-                            this.editingTableId = null;
-                            this.editingTable   = null;
-                            // Marca si el elemento arranca ya en colisión (permite desatascarlo)
+                            this.closeEditPanels();
+                            this.draggingId      = id;
                             el._startedColliding = item ? this.hasCollision(item) : false;
                         },
                         move: (event) => {
@@ -1668,6 +1704,7 @@ document.addEventListener('alpine:init', () => {
                             const y  = Math.round(parseFloat(el.style.top)  || 0);
                             const w  = Math.round(parseFloat(el.style.width)  || 100);
                             const h  = Math.round(parseFloat(el.style.height) || 100);
+                            this.draggingId = null;
                             this.persistPosition(id, x, y, w, h);
                         },
                     },
@@ -1697,6 +1734,8 @@ document.addEventListener('alpine:init', () => {
             const startPx   = zone.position_x;
             const startPy   = zone.position_y;
 
+            this.closeEditPanels();
+            this.draggingId            = zone.id;
             document.body.style.cursor = 'grabbing';
 
             const onMove = (e) => {
@@ -1709,6 +1748,7 @@ document.addEventListener('alpine:init', () => {
             const onUp = async () => {
                 document.removeEventListener('mousemove', onMove);
                 document.removeEventListener('mouseup',   onUp);
+                this.draggingId            = null;
                 document.body.style.cursor = '';
                 await this.persistZonePosition(zone.id, zone.position_x, zone.position_y);
             };
@@ -1723,7 +1763,9 @@ document.addEventListener('alpine:init', () => {
             const centerX    = canvasRect.left + zone.position_x + zone.width  / 2;
             const centerY    = canvasRect.top  + zone.position_y + zone.height / 2;
 
+            this.closeEditPanels();
             this.isRotating            = true;
+            this.rotatingId            = zone.id;
             this.rotTooltip.show       = true;
             document.body.style.cursor = "url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2720%27 height=%2720%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27M21 2v6h-6%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M3 12a9 9 0 0 1 15-6.7L21 8%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M3 22v-6h6%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M21 12a9 9 0 0 1-15 6.7L3 16%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M21 2v6h-6%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M3 12a9 9 0 0 1 15-6.7L21 8%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M3 22v-6h6%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M21 12a9 9 0 0 1-15 6.7L3 16%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3C/svg%3E') 10 10, grabbing";
 
@@ -1742,6 +1784,7 @@ document.addEventListener('alpine:init', () => {
                 document.removeEventListener('mousemove', onMove);
                 document.removeEventListener('mouseup',   onUp);
                 this.isRotating            = false;
+                this.rotatingId            = null;
                 this.rotTooltip.show       = false;
                 document.body.style.cursor = '';
                 await this.persistZoneRotation(zone.id, zone.rotation ?? 0);
@@ -1758,6 +1801,8 @@ document.addEventListener('alpine:init', () => {
             const startMX = event.clientX;
             const startMY = event.clientY;
 
+            this.closeEditPanels();
+            this.draggingId            = element.id;
             document.body.style.cursor = 'grabbing';
 
             // Si el elemento ya está en colisión al iniciar, permitir movimiento libre hasta salir
@@ -1794,6 +1839,7 @@ document.addEventListener('alpine:init', () => {
             const onUp = async () => {
                 document.removeEventListener('mousemove', onMove);
                 document.removeEventListener('mouseup',   onUp);
+                this.draggingId            = null;
                 document.body.style.cursor = '';
                 await this.persistPosition(element.id, element.position_x, element.position_y, element.width, element.height);
             };
@@ -2023,6 +2069,7 @@ document.addEventListener('alpine:init', () => {
                         width:            w,
                         height:           h,
                         is_service_point: true,
+                        floor:            this.floorsEnabled ? this.currentFloor : 1,
                     }),
                 });
 
@@ -2059,6 +2106,7 @@ document.addEventListener('alpine:init', () => {
                         width:            w,
                         height:           h,
                         is_service_point: false,
+                        floor:            this.floorsEnabled ? this.currentFloor : 1,
                     }),
                 });
 
@@ -2087,7 +2135,7 @@ document.addEventListener('alpine:init', () => {
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                         'Accept':       'application/json',
                     },
-                    body: JSON.stringify({ name, color, position_x: x, position_y: y, width: w, height: h }),
+                    body: JSON.stringify({ name, color, position_x: x, position_y: y, width: w, height: h, floor: this.floorsEnabled ? this.currentFloor : 1 }),
                 });
 
                 const json = await res.json();
@@ -2180,6 +2228,8 @@ document.addEventListener('alpine:init', () => {
             const startMY = event.clientY;
             const startW  = zone.width;
             const startH  = zone.height;
+            this.closeEditPanels();
+            this.resizingId            = zone.id;
             document.body.style.cursor = 'se-resize';
 
             const onMove = (e) => {
@@ -2192,6 +2242,7 @@ document.addEventListener('alpine:init', () => {
             const onUp = async () => {
                 document.removeEventListener('mousemove', onMove);
                 document.removeEventListener('mouseup',   onUp);
+                this.resizingId            = null;
                 document.body.style.cursor = '';
                 try {
                     await fetch(`/zonas/${zone.id}`, {
@@ -2258,6 +2309,8 @@ document.addEventListener('alpine:init', () => {
             const startPx = table.position_x;
             const startPy = table.position_y;
 
+            this.closeEditPanels();
+            this.resizingId            = table.id;
             document.body.style.cursor = 'se-resize';
 
             const onMove = (e) => {
@@ -2290,6 +2343,7 @@ document.addEventListener('alpine:init', () => {
             const onUp = async () => {
                 document.removeEventListener('mousemove', onMove);
                 document.removeEventListener('mouseup',   onUp);
+                this.resizingId            = null;
                 document.body.style.cursor = '';
                 await this.persistPosition(table.id, table.position_x, table.position_y, table.width, table.height);
             };
@@ -2339,6 +2393,7 @@ document.addEventListener('alpine:init', () => {
             table.shape = shape;
             this.editingTableId = null;
             this.editingTable   = null;
+            this._editBtnEl     = null;
 
             try {
                 const res = await fetch(`/mesas/${table.id}/forma`, {
@@ -2436,8 +2491,7 @@ document.addEventListener('alpine:init', () => {
 
         // ── Rotación libre arrastrando el handle (estilo Canva) ───────────────
         startRotation(event, table) {
-            this.editingTableId = null;
-            this.editingTable   = null;
+            this.closeEditPanels();
             this.rotatingId     = table.id;
 
             const canvasRect = this.$refs.canvas.getBoundingClientRect();
@@ -2735,7 +2789,6 @@ document.addEventListener('alpine:init', () => {
                 this.showToast('Error de red al mover la estructura.', true);
             }
         },
-
 
         // ── AJAX: eliminar mesa ───────────────────────────────────────────────
         async deleteTable(table) {
