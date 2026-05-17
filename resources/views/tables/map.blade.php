@@ -865,22 +865,6 @@
                     </div>
                 </template>
 
-                {{-- Indicador de grados de rotación (sigue al cursor) --}}
-                <div x-show="rotTooltip.show"
-                     x-transition:enter="transition ease-out duration-75"
-                     x-transition:enter-start="opacity-0 scale-95"
-                     x-transition:enter-end="opacity-100 scale-100"
-                     class="fixed pointer-events-none z-[200] select-none"
-                     :style="`left:${rotTooltip.x + 18}px; top:${rotTooltip.y - 10}px`"
-                     aria-hidden="true">
-                    <span class="inline-flex items-center gap-0.5
-                                 bg-gray-900/90 text-white
-                                 text-xs font-mono font-semibold
-                                 px-1.5 py-0.5 rounded-md shadow-lg ring-1 ring-white/10">
-                        <span x-text="rotTooltip.deg > 180 ? rotTooltip.deg - 360 : rotTooltip.deg"></span>°
-                    </span>
-                </div>
-
                 {{-- Indicador de zona de soltar --}}
                 <div x-show="isDraggingFromPalette"
                      class="absolute inset-0 rounded-xl border-4 border-dashed border-indigo-400
@@ -890,6 +874,22 @@
                 </div>
             </div>
         </main>
+
+        {{-- Indicador de grados de rotación — fuera del canvas escalado para que fixed funcione correctamente --}}
+        <div x-show="rotTooltip.show"
+             x-transition:enter="transition ease-out duration-75"
+             x-transition:enter-start="opacity-0 scale-95"
+             x-transition:enter-end="opacity-100 scale-100"
+             class="fixed pointer-events-none z-[200] select-none"
+             :style="`left:${rotTooltip.x + 14}px; top:${rotTooltip.y + 14}px`"
+             aria-hidden="true">
+            <span class="inline-flex items-center gap-0.5
+                         bg-gray-900/90 text-white
+                         text-xs font-mono font-semibold
+                         px-1.5 py-0.5 rounded-md shadow-lg ring-1 ring-white/10">
+                <span x-text="rotTooltip.deg > 180 ? rotTooltip.deg - 360 : rotTooltip.deg"></span>°
+            </span>
+        </div>
     </div>
 </div>
 
