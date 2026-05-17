@@ -1216,13 +1216,30 @@ document.addEventListener('alpine:init', () => {
             setInterval(() => this.pollStatuses(), 5000);
         },
 
+        // Devuelve los límites de posición válidos para un item considerando su rotación.
+        // position_x/y pueden ser negativos en elementos más altos que anchos rotados 90°.
+        canvasBounds(item) {
+            const rad   = (item.rotation ?? 0) * Math.PI / 180;
+            const cos   = Math.abs(Math.cos(rad));
+            const sin   = Math.abs(Math.sin(rad));
+            const hw    = item.width  / 2;
+            const hh    = item.height / 2;
+            const halfW = hw * cos + hh * sin;
+            const halfH = hw * sin + hh * cos;
+            return {
+                minX: halfW - hw,
+                maxX: this.floorWidth  - hw - halfW,
+                minY: halfH - hh,
+                maxY: this.floorHeight - hh - halfH,
+            };
+        },
+
         // Recupera estructuras y zonas que hayan quedado fuera del canvas y persiste la corrección.
         async clampAllToCanvas() {
             for (const item of [...this.tables, ...this.elements]) {
-                const maxX = Math.max(0, this.floorWidth  - item.width);
-                const maxY = Math.max(0, this.floorHeight - item.height);
-                const cx   = Math.max(0, Math.min(maxX, item.position_x));
-                const cy   = Math.max(0, Math.min(maxY, item.position_y));
+                const { minX, maxX, minY, maxY } = this.canvasBounds(item);
+                const cx = Math.max(minX, Math.min(maxX, item.position_x));
+                const cy = Math.max(minY, Math.min(maxY, item.position_y));
                 if (cx !== item.position_x || cy !== item.position_y) {
                     await this.persistPosition(item.id, cx, cy, item.width, item.height);
                 }
@@ -1419,11 +1436,12 @@ document.addEventListener('alpine:init', () => {
                             const curX = parseFloat(el.style.left) || 0;
                             const curY = parseFloat(el.style.top)  || 0;
 
-                            // Clamp al canvas (reemplaza restrictRect)
-                            const maxX  = Math.max(0, this.floorWidth  - (item?.width  ?? 100));
-                            const maxY  = Math.max(0, this.floorHeight - (item?.height ?? 100));
-                            const propX = Math.max(0, Math.min(maxX, Math.round(curX + event.dx)));
-                            const propY = Math.max(0, Math.min(maxY, Math.round(curY + event.dy)));
+                            // Clamp al canvas considerando rotación visual del elemento
+                            const { minX, maxX, minY, maxY } = item
+                                ? this.canvasBounds(item)
+                                : { minX: 0, maxX: this.floorWidth - 100, minY: 0, maxY: this.floorHeight - 100 };
+                            const propX = Math.max(minX, Math.min(maxX, Math.round(curX + event.dx)));
+                            const propY = Math.max(minY, Math.min(maxY, Math.round(curY + event.dy)));
 
                             if (!item) {
                                 el.style.left = `${propX}px`;
@@ -1565,11 +1583,10 @@ document.addEventListener('alpine:init', () => {
             let startedColliding = this.hasCollision(element);
 
             const onMove = (e) => {
-                const maxX = Math.max(0, this.floorWidth  - element.width);
-                const maxY = Math.max(0, this.floorHeight - element.height);
+                const { minX, maxX, minY, maxY } = this.canvasBounds(element);
 
-                const propX = Math.max(0, Math.min(maxX, Math.round(startPx + (e.clientX - startMX))));
-                const propY = Math.max(0, Math.min(maxY, Math.round(startPy + (e.clientY - startMY))));
+                const propX = Math.max(minX, Math.min(maxX, Math.round(startPx + (e.clientX - startMX))));
+                const propY = Math.max(minY, Math.min(maxY, Math.round(startPy + (e.clientY - startMY))));
 
                 if (startedColliding) {
                     element.position_x = propX;
