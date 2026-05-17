@@ -62,13 +62,19 @@ class TableController extends Controller
                            ->orderBy('name')
                            ->get();
         $zones       = Zone::where('user_id', $ownerId)->orderBy('name')->get();
-        $owner       = Auth::user()->isAdmin() ? Auth::user() : Auth::user()->admin;
-        $maxTables   = $owner?->plan?->max_tables ?? 10;
-        $floorWidth  = $owner?->floor_width  ?? 1200;
-        $floorHeight = $owner?->floor_height ?? 800;
-        $readonly    = ! Auth::user()->isAdmin();
+        $owner         = Auth::user()->isAdmin() ? Auth::user() : Auth::user()->admin;
+        $maxTables     = $owner?->plan?->max_tables ?? 10;
+        $floorWidth    = $owner?->floor_width    ?? 1200;
+        $floorHeight   = $owner?->floor_height   ?? 800;
+        $floorCount    = $owner?->floor_count    ?? 1;
+        $floorsEnabled = $owner?->floors_enabled ?? false;
+        $readonly      = ! Auth::user()->isAdmin();
 
-        return view('tables.map', compact('tables', 'elements', 'zones', 'maxTables', 'floorWidth', 'floorHeight', 'readonly'));
+        return view('tables.map', compact(
+            'tables', 'elements', 'zones', 'maxTables',
+            'floorWidth', 'floorHeight', 'floorCount', 'floorsEnabled',
+            'readonly'
+        ));
     }
 
     /**
@@ -118,6 +124,33 @@ class TableController extends Controller
     }
 
     /**
+     * Actualiza la configuración del sistema de plantas del mapa.
+     *
+     * @param  Request $request
+     * @return JsonResponse
+     */
+    public function updateFloorSettings(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'floors_enabled' => 'sometimes|boolean',
+            'floor_count'    => 'sometimes|integer|min:1|max:5',
+        ]);
+
+        Auth::user()->update($data);
+
+        $user = Auth::user()->fresh();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Configuración de plantas guardada.',
+            'data'    => [
+                'floors_enabled' => $user->floors_enabled,
+                'floor_count'    => $user->floor_count,
+            ],
+        ]);
+    }
+
+    /**
      * Crea una nueva mesa desde el mapa visual.
      *
      * @param  Request  $request
@@ -134,6 +167,7 @@ class TableController extends Controller
             'height'           => 'required|integer|min:40|max:400',
             'is_service_point' => 'sometimes|boolean',
             'zone_id'          => ['sometimes', 'nullable', Rule::exists('zones', 'id')->where('user_id', Auth::id())],
+            'floor'            => 'sometimes|integer|min:1|max:5',
         ]);
 
         $isServicePoint = in_array($data['shape'], ['bar', 'stool'])
@@ -166,6 +200,7 @@ class TableController extends Controller
             'unique_hash'      => Str::uuid()->toString(),
             'status'           => 'free',
             'is_service_point' => $isServicePoint,
+            'floor'            => $data['floor'] ?? 1,
         ]);
 
         $message = match ($table->shape) {
@@ -262,6 +297,39 @@ class TableController extends Controller
     }
 
     /**
+     * Mueve una mesa o elemento a una planta diferente.
+     *
+     * @param  Request $request
+     * @param  Table   $table
+     * @return JsonResponse
+     */
+    public function updateFloor(Request $request, Table $table): JsonResponse
+    {
+        abort_if($table->user_id !== Auth::id(), 403, 'Acceso denegado.');
+
+        $data = $request->validate([
+            'floor' => 'required|integer|min:1|max:5',
+        ]);
+
+        $floorCount = Auth::user()->floor_count ?? 1;
+
+        if ($data['floor'] > $floorCount) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Planta inexistente.',
+            ], 422);
+        }
+
+        $table->update(['floor' => $data['floor']]);
+
+        return response()->json([
+            'success' => true,
+            'data'    => $table,
+            'message' => "Mesa movida a la Planta {$data['floor']}.",
+        ]);
+    }
+
+    /**
      * Actualiza la forma visual de una mesa existente en el mapa.
      *
      * @param  Request  $request
@@ -290,6 +358,43 @@ class TableController extends Controller
             'success' => true,
             'data'    => $table,
             'message' => "Forma de \"{$table->name}\" cambiada a {$label}.",
+        ]);
+    }
+
+    /**
+     * Elimina todas las mesas y elementos de una planta específica
+     * y reduce floor_count en 1. Solo se puede eliminar la última planta.
+     *
+     * @param  int $floor
+     * @return JsonResponse
+     */
+    public function destroyFloor(int $floor): JsonResponse
+    {
+        $user       = Auth::user();
+        $floorCount = $user->floor_count ?? 1;
+
+        if ($floor <= 1) {
+            return response()->json([
+                'success' => false,
+                'message' => 'La planta 1 no puede eliminarse.',
+            ], 422);
+        }
+
+        if ($floor !== $floorCount) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Solo se puede eliminar la última planta.',
+            ], 422);
+        }
+
+        Table::where('user_id', Auth::id())->where('floor', $floor)->delete();
+
+        $user->update(['floor_count' => $floorCount - 1]);
+
+        return response()->json([
+            'success' => true,
+            'message' => "Planta {$floor} eliminada.",
+            'data'    => ['floor_count' => $floorCount - 1],
         ]);
     }
 
