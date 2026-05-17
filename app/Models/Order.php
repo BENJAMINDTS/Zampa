@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Models\DailyMenuOrder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * Class Order
@@ -73,5 +75,15 @@ class Order extends Model
     public function items(): HasMany
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    /**
+     * El pedido de menú del día vinculado a este pedido, si existe.
+     *
+     * @return HasOne
+     */
+    public function dailyMenuOrder(): HasOne
+    {
+        return $this->hasOne(DailyMenuOrder::class);
     }
 }
