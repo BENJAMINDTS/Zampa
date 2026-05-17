@@ -2087,7 +2087,7 @@ document.addEventListener('alpine:init', () => {
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                         'Accept':       'application/json',
                     },
-                    body: JSON.stringify({ name, color, position_x: x, position_y: y, width: w, height: h }),
+                    body: JSON.stringify({ name, color, position_x: x, position_y: y, width: w, height: h, floor: this.floorsEnabled ? this.currentFloor : 1 }),
                 });
 
                 const json = await res.json();
