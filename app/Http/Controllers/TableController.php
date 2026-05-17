@@ -324,6 +324,36 @@ class TableController extends Controller
     }
 
     /**
+     * Mueve una mesa o elemento a una planta diferente.
+     *
+     * @param  Request  $request
+     * @param  Table    $table
+     * @return JsonResponse
+     */
+    public function updateFloor(Request $request, Table $table): JsonResponse
+    {
+        abort_if($table->user_id !== Auth::id(), 403, 'Acceso denegado.');
+
+        $data = $request->validate([
+            'floor' => 'required|integer|min:1|max:5',
+        ]);
+
+        $table->update($data);
+
+        $label = match ($table->shape) {
+            'bar'   => 'Barra',
+            'stool' => 'Taburete',
+            default => "Mesa \"{$table->name}\"",
+        };
+
+        return response()->json([
+            'success' => true,
+            'data'    => $table,
+            'message' => "{$label} movida a Planta {$table->floor}.",
+        ]);
+    }
+
+    /**
      * Elimina una mesa del mapa y de la base de datos.
      *
      * @param  Table  $table
