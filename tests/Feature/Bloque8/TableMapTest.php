@@ -182,7 +182,7 @@ it('store generates unique_hash automatically', function () {
     expect(strlen($table->unique_hash))->toBeGreaterThan(10);
 });
 
-it('fails to create table without name', function () {
+it('auto-generates name when table is created without name', function () {
     $this->actingAs($this->admin)
          ->postJson(route('tables.store'), [
              'shape'      => 'square',
@@ -191,7 +191,16 @@ it('fails to create table without name', function () {
              'width'      => 100,
              'height'     => 100,
          ])
-         ->assertUnprocessable();
+         ->assertCreated()
+         ->assertJsonPath('success', true);
+
+    $this->assertDatabaseHas('tables', [
+        'user_id' => $this->admin->id,
+        'shape'   => 'square',
+    ]);
+
+    $table = \App\Models\Table::where('user_id', $this->admin->id)->latest()->first();
+    expect($table->name)->not->toBeNull()->not->toBeEmpty();
 });
 
 it('fails to create table without shape', function () {
