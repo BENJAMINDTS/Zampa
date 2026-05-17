@@ -68,6 +68,7 @@ class ZoneController extends Controller
             'width'      => 'sometimes|integer|min:80|max:2000',
             'height'     => 'sometimes|integer|min:60|max:1500',
             'rotation'   => 'sometimes|integer|min:0|max:359',
+            'floor'      => 'sometimes|integer|min:1|max:5',
         ]);
 
         $zone->update($data);
