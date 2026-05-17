@@ -502,22 +502,6 @@
 
                             <span class="absolute top-1 left-1 text-xs text-amber-600 dark:text-amber-400 pointer-events-none leading-none">🍺</span>
 
-                            {{-- Botón editar nombre --}}
-                            <button type="button"
-                                    @click.stop="editingTableId = editingTableId === bar.id ? null : bar.id"
-                                    class="absolute -top-2.5 -right-9
-                                           w-6 h-6 rounded-full bg-gray-600 dark:bg-gray-500 text-white
-                                           flex items-center justify-center
-                                           opacity-0 group-hover:opacity-100 transition-opacity
-                                           hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-400
-                                           shadow-md"
-                                    :aria-label="`Editar ${bar.name}`"
-                                    :aria-expanded="editingTableId === bar.id">
-                                <svg aria-hidden="true" class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z"/>
-                                </svg>
-                            </button>
-
                             {{-- Botón eliminar --}}
                             <button type="button"
                                     @click.stop="deleteElement(bar)"
@@ -532,33 +516,6 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
                                 </svg>
                             </button>
-
-                            {{-- Panel de edición de nombre --}}
-                            <div x-show="editingTableId === bar.id"
-                                 x-transition:enter="transition ease-out duration-150"
-                                 x-transition:enter-start="opacity-0 scale-95"
-                                 x-transition:enter-end="opacity-100 scale-100"
-                                 @click.stop
-                                 class="absolute top-7 right-0 z-20
-                                        bg-white dark:bg-gray-800 rounded-xl shadow-xl
-                                        border border-gray-200 dark:border-gray-700
-                                        p-3 min-w-max"
-                                 role="dialog"
-                                 :aria-label="`Editar ${bar.name}`">
-                                <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">Nombre</p>
-                                <div class="flex gap-1">
-                                    <input type="text"
-                                           :value="bar.name"
-                                           @keydown.enter.stop="updateName(bar, $event.target.value); $event.target.blur()"
-                                           @blur.stop="updateName(bar, $event.target.value)"
-                                           @click.stop
-                                           maxlength="50"
-                                           class="w-full rounded-lg border border-gray-300 dark:border-gray-600
-                                                  bg-white dark:bg-gray-700 text-gray-900 dark:text-white
-                                                  px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
-                                           :aria-label="`Nombre de ${bar.name}`">
-                                </div>
-                            </div>
                         </div>
 
                         {{-- Handle de rotación --}}
@@ -627,23 +584,6 @@
 
                             <span class="absolute top-1 left-1 text-xs text-amber-600 dark:text-amber-400 pointer-events-none leading-none">●</span>
 
-                            {{-- Botón editar nombre --}}
-                            <button type="button"
-                                    @mousedown.stop
-                                    @click.stop="editingTableId = editingTableId === stool.id ? null : stool.id"
-                                    class="absolute -top-2.5 -right-9
-                                           w-6 h-6 rounded-full bg-gray-600 dark:bg-gray-500 text-white
-                                           flex items-center justify-center
-                                           opacity-0 group-hover:opacity-100 transition-opacity
-                                           hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-400
-                                           shadow-md"
-                                    :aria-label="`Editar ${stool.name}`"
-                                    :aria-expanded="editingTableId === stool.id">
-                                <svg aria-hidden="true" class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z"/>
-                                </svg>
-                            </button>
-
                             {{-- Botón eliminar --}}
                             <button type="button"
                                     @mousedown.stop
@@ -659,33 +599,6 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
                                 </svg>
                             </button>
-
-                            {{-- Panel de edición de nombre --}}
-                            <div x-show="editingTableId === stool.id"
-                                 x-transition:enter="transition ease-out duration-150"
-                                 x-transition:enter-start="opacity-0 scale-95"
-                                 x-transition:enter-end="opacity-100 scale-100"
-                                 @click.stop
-                                 class="absolute top-7 right-0 z-20
-                                        bg-white dark:bg-gray-800 rounded-xl shadow-xl
-                                        border border-gray-200 dark:border-gray-700
-                                        p-3 min-w-max"
-                                 role="dialog"
-                                 :aria-label="`Editar ${stool.name}`">
-                                <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">Nombre</p>
-                                <div class="flex gap-1">
-                                    <input type="text"
-                                           :value="stool.name"
-                                           @keydown.enter.stop="updateName(stool, $event.target.value); $event.target.blur()"
-                                           @blur.stop="updateName(stool, $event.target.value)"
-                                           @click.stop
-                                           maxlength="50"
-                                           class="w-full rounded-lg border border-gray-300 dark:border-gray-600
-                                                  bg-white dark:bg-gray-700 text-gray-900 dark:text-white
-                                                  px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
-                                           :aria-label="`Nombre de ${stool.name}`">
-                                </div>
-                            </div>
                         </div>
 
                         {{-- Handle de rotación --}}
@@ -1611,9 +1524,7 @@ document.addEventListener('alpine:init', () => {
                                      event.clientY >= rect.top  && event.clientY <= rect.bottom;
                         if (!over) return;
 
-                        const name = await Alpine.store('tableModal').prompt();
-                        if (!name) return;
-
+                        const name = dropShape === 'bar' ? 'Barra' : 'Taburete';
                         await this.createSpecialElement(name, dropShape, dropX, dropY, dropW, dropH);
                     },
                 },
