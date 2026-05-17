@@ -446,7 +446,7 @@
                     <div
                         :data-zone-id="zone.id"
                         class="zone-item absolute group select-none touch-none cursor-grab"
-                        :class="{'zampa-selected': selectedId === zone.id}"
+                        :class="{'zampa-selected': isActive(zone.id)}"
                         :style="`
                             left:${zone.position_x}px;
                             top:${zone.position_y}px;
@@ -565,7 +565,7 @@
                                     border-2 border-amber-400 dark:border-amber-600
                                     shadow-md cursor-grab active:cursor-grabbing
                                     transition-shadow hover:shadow-lg"
-                             :class="{'zampa-selected': selectedId === bar.id}">
+                             :class="{'zampa-selected': isActive(bar.id)}">
 
                             <span class="text-xs font-semibold text-amber-800 dark:text-amber-300
                                          text-center px-1 leading-tight pointer-events-none"
@@ -649,7 +649,7 @@
                                     border-2 border-amber-400 dark:border-amber-600
                                     shadow-md cursor-grab active:cursor-grabbing
                                     transition-shadow hover:shadow-lg"
-                             :class="{'zampa-selected': selectedId === stool.id}"
+                             :class="{'zampa-selected': isActive(stool.id)}"
                              @mousedown.prevent="startElementDrag($event, stool)">
 
                             <span class="text-xs font-semibold text-amber-800 dark:text-amber-300
@@ -741,7 +741,7 @@
                                 'rounded-full':    table.shape === 'round',
                                 'rounded-xl':      table.shape === 'square',
                                 'rounded-lg':      table.shape === 'rectangle',
-                                'zampa-selected':  selectedId === table.id,
+                                'zampa-selected':  isActive(table.id),
                              }"
                              :style="zoneFor(table) ? `border-color: ${zoneFor(table).color}` : null">
 
@@ -1369,6 +1369,8 @@ document.addEventListener('alpine:init', () => {
         editZonePanelPos:      { x: 0, y: 0 },
         isRotating:            false,
         rotatingId:            null,
+        draggingId:            null,
+        resizingId:            null,
         hoveredId:             null,
         selectedId:            null,
         isRotatingZone:        false,
@@ -1615,10 +1617,9 @@ document.addEventListener('alpine:init', () => {
                             const el   = event.target;
                             const id   = parseInt(el.dataset.tableId);
                             const item = this.tables.find(t => t.id === id) ?? this.elements.find(e => e.id === id);
-                            // Cierra el panel de edición al iniciar arrastre
-                            this.editingTableId = null;
-                            this.editingTable   = null;
-                            // Marca si el elemento arranca ya en colisión (permite desatascarlo)
+                            this.editingTableId  = null;
+                            this.editingTable    = null;
+                            this.draggingId      = id;
                             el._startedColliding = item ? this.hasCollision(item) : false;
                         },
                         move: (event) => {
@@ -1680,6 +1681,7 @@ document.addEventListener('alpine:init', () => {
                             const y  = Math.round(parseFloat(el.style.top)  || 0);
                             const w  = Math.round(parseFloat(el.style.width)  || 100);
                             const h  = Math.round(parseFloat(el.style.height) || 100);
+                            this.draggingId = null;
                             this.persistPosition(id, x, y, w, h);
                         },
                     },
@@ -1709,6 +1711,7 @@ document.addEventListener('alpine:init', () => {
             const startPx   = zone.position_x;
             const startPy   = zone.position_y;
 
+            this.draggingId            = zone.id;
             document.body.style.cursor = 'grabbing';
 
             const onMove = (e) => {
@@ -1721,6 +1724,7 @@ document.addEventListener('alpine:init', () => {
             const onUp = async () => {
                 document.removeEventListener('mousemove', onMove);
                 document.removeEventListener('mouseup',   onUp);
+                this.draggingId            = null;
                 document.body.style.cursor = '';
                 await this.persistZonePosition(zone.id, zone.position_x, zone.position_y);
             };
@@ -1736,6 +1740,7 @@ document.addEventListener('alpine:init', () => {
             const centerY    = canvasRect.top  + zone.position_y + zone.height / 2;
 
             this.isRotating            = true;
+            this.rotatingId            = zone.id;
             this.rotTooltip.show       = true;
             document.body.style.cursor = "url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2720%27 height=%2720%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27M21 2v6h-6%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M3 12a9 9 0 0 1 15-6.7L21 8%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M3 22v-6h6%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M21 12a9 9 0 0 1-15 6.7L3 16%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M21 2v6h-6%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M3 12a9 9 0 0 1 15-6.7L21 8%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M3 22v-6h6%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M21 12a9 9 0 0 1-15 6.7L3 16%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3C/svg%3E') 10 10, grabbing";
 
@@ -1754,6 +1759,7 @@ document.addEventListener('alpine:init', () => {
                 document.removeEventListener('mousemove', onMove);
                 document.removeEventListener('mouseup',   onUp);
                 this.isRotating            = false;
+                this.rotatingId            = null;
                 this.rotTooltip.show       = false;
                 document.body.style.cursor = '';
                 await this.persistZoneRotation(zone.id, zone.rotation ?? 0);
@@ -1770,6 +1776,7 @@ document.addEventListener('alpine:init', () => {
             const startMX = event.clientX;
             const startMY = event.clientY;
 
+            this.draggingId            = element.id;
             document.body.style.cursor = 'grabbing';
 
             // Si el elemento ya está en colisión al iniciar, permitir movimiento libre hasta salir
@@ -1806,6 +1813,7 @@ document.addEventListener('alpine:init', () => {
             const onUp = async () => {
                 document.removeEventListener('mousemove', onMove);
                 document.removeEventListener('mouseup',   onUp);
+                this.draggingId            = null;
                 document.body.style.cursor = '';
                 await this.persistPosition(element.id, element.position_x, element.position_y, element.width, element.height);
             };
@@ -2194,6 +2202,7 @@ document.addEventListener('alpine:init', () => {
             const startMY = event.clientY;
             const startW  = zone.width;
             const startH  = zone.height;
+            this.resizingId            = zone.id;
             document.body.style.cursor = 'se-resize';
 
             const onMove = (e) => {
@@ -2206,6 +2215,7 @@ document.addEventListener('alpine:init', () => {
             const onUp = async () => {
                 document.removeEventListener('mousemove', onMove);
                 document.removeEventListener('mouseup',   onUp);
+                this.resizingId            = null;
                 document.body.style.cursor = '';
                 try {
                     await fetch(`/zonas/${zone.id}`, {
@@ -2272,6 +2282,7 @@ document.addEventListener('alpine:init', () => {
             const startPx = table.position_x;
             const startPy = table.position_y;
 
+            this.resizingId            = table.id;
             document.body.style.cursor = 'se-resize';
 
             const onMove = (e) => {
@@ -2304,6 +2315,7 @@ document.addEventListener('alpine:init', () => {
             const onUp = async () => {
                 document.removeEventListener('mousemove', onMove);
                 document.removeEventListener('mouseup',   onUp);
+                this.resizingId            = null;
                 document.body.style.cursor = '';
                 await this.persistPosition(table.id, table.position_x, table.position_y, table.width, table.height);
             };
@@ -2496,6 +2508,15 @@ document.addEventListener('alpine:init', () => {
 
             document.addEventListener('mousemove', onMove);
             document.addEventListener('mouseup',   onUp);
+        },
+
+        isActive(id) {
+            return this.selectedId     === id
+                || this.rotatingId     === id
+                || this.draggingId     === id
+                || this.resizingId     === id
+                || this.editingTableId === id
+                || this.editingZoneId  === id;
         },
 
         // ── Filtros de visibilidad por planta ────────────────────────────────
