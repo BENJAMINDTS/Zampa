@@ -228,6 +228,34 @@ class TableController extends Controller
     }
 
     /**
+     * Asigna o desvincula la zona de una mesa.
+     *
+     * @param  Request  $request
+     * @param  Table    $table
+     * @return JsonResponse
+     */
+    public function updateZone(Request $request, Table $table): JsonResponse
+    {
+        abort_if($table->user_id !== Auth::id(), 403, 'Acceso denegado.');
+
+        $data = $request->validate([
+            'zone_id' => ['nullable', Rule::exists('zones', 'id')->where('user_id', Auth::id())],
+        ]);
+
+        $table->update($data);
+
+        $message = $data['zone_id']
+            ? "Zona asignada a \"{$table->name}\"."
+            : "Zona eliminada de \"{$table->name}\".";
+
+        return response()->json([
+            'success' => true,
+            'data'    => $table,
+            'message' => $message,
+        ]);
+    }
+
+    /**
      * Actualiza la forma visual de una mesa existente en el mapa.
      *
      * @param  Request  $request

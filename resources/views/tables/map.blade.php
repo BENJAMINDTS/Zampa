@@ -776,6 +776,22 @@
                                            :aria-label="`Nombre de la mesa ${table.name}`">
                                 </div>
 
+                                {{-- Zona --}}
+                                <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 mt-3 uppercase tracking-wide">Zona</p>
+                                <select @change.stop="updateZoneAssignment(table, $event.target.value)"
+                                        @click.stop
+                                        class="w-full rounded-lg border border-gray-300 dark:border-gray-600
+                                               bg-white dark:bg-gray-700 text-gray-900 dark:text-white
+                                               px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-3"
+                                        :aria-label="`Zona de la mesa ${table.name}`">
+                                    <option value="">Sin zona</option>
+                                    <template x-for="zone in zones" :key="zone.id">
+                                        <option :value="zone.id"
+                                                :selected="table.zone_id == zone.id"
+                                                x-text="zone.name"></option>
+                                    </template>
+                                </select>
+
                                 <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">Forma</p>
                                 <div class="flex gap-1.5" role="group" aria-label="Seleccionar forma">
                                     <button type="button"
@@ -1942,6 +1958,36 @@ document.addEventListener('alpine:init', () => {
         },
 
         // ── AJAX: actualizar nombre de mesa existente ─────────────────────────
+        async updateZoneAssignment(table, zoneId) {
+            const prev       = table.zone_id;
+            table.zone_id    = zoneId ? parseInt(zoneId) : null;
+
+            try {
+                const res = await fetch(`/mesas/${table.id}/zona`, {
+                    method:  'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept':       'application/json',
+                    },
+                    body: JSON.stringify({ zone_id: table.zone_id }),
+                });
+
+                const json = await res.json();
+
+                if (!res.ok || !json.success) {
+                    table.zone_id = prev;
+                    this.showToast(json.message ?? 'Error al asignar la zona.', true);
+                    return;
+                }
+
+                this.showToast(json.message);
+            } catch {
+                table.zone_id = prev;
+                this.showToast('Error de red al asignar la zona.', true);
+            }
+        },
+
         async updateName(table, name) {
             name = name.trim();
             if (!name || name === table.name) return;
