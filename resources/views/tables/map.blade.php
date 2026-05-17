@@ -4,6 +4,16 @@
  | @author AyrtonAlania
  | @author SebastianBCF
 --}}
+<style>
+@keyframes zampa-selected-pulse {
+    0%, 100% { box-shadow: 0 0 0 2px rgba(99,102,241,0.85), 0 0 0 5px rgba(99,102,241,0.25); }
+    50%       { box-shadow: 0 0 0 3px rgba(99,102,241,0.55), 0 0 0 9px rgba(99,102,241,0.08); }
+}
+.zampa-selected {
+    animation: zampa-selected-pulse 1.4s ease-in-out infinite;
+}
+</style>
+
 <x-app-layout>
 <div
     class="flex flex-col h-screen bg-gray-100 dark:bg-gray-900"
@@ -436,6 +446,7 @@
                     <div
                         :data-zone-id="zone.id"
                         class="zone-item absolute group select-none touch-none cursor-grab"
+                        :class="{'zampa-selected': selectedId === zone.id}"
                         :style="`
                             left:${zone.position_x}px;
                             top:${zone.position_y}px;
@@ -553,7 +564,8 @@
                                     bg-amber-100 dark:bg-amber-900
                                     border-2 border-amber-400 dark:border-amber-600
                                     shadow-md cursor-grab active:cursor-grabbing
-                                    transition-shadow hover:shadow-lg">
+                                    transition-shadow hover:shadow-lg"
+                             :class="{'zampa-selected': selectedId === bar.id}">
 
                             <span class="text-xs font-semibold text-amber-800 dark:text-amber-300
                                          text-center px-1 leading-tight pointer-events-none"
@@ -637,6 +649,7 @@
                                     border-2 border-amber-400 dark:border-amber-600
                                     shadow-md cursor-grab active:cursor-grabbing
                                     transition-shadow hover:shadow-lg"
+                             :class="{'zampa-selected': selectedId === stool.id}"
                              @mousedown.prevent="startElementDrag($event, stool)">
 
                             <span class="text-xs font-semibold text-amber-800 dark:text-amber-300
@@ -725,9 +738,10 @@
                                     shadow-md cursor-grab active:cursor-grabbing
                                     transition-shadow hover:shadow-lg"
                              :class="{
-                                'rounded-full':  table.shape === 'round',
-                                'rounded-xl':    table.shape === 'square',
-                                'rounded-lg':    table.shape === 'rectangle',
+                                'rounded-full':    table.shape === 'round',
+                                'rounded-xl':      table.shape === 'square',
+                                'rounded-lg':      table.shape === 'rectangle',
+                                'zampa-selected':  selectedId === table.id,
                              }"
                              :style="zoneFor(table) ? `border-color: ${zoneFor(table).color}` : null">
 
