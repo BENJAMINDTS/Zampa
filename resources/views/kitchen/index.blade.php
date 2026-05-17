@@ -63,6 +63,11 @@
                         aria-label="Cantidad"
                       ></span>
                       <span x-text="item.product_name"></span>
+                      <span
+                        x-show="item.is_daily_menu"
+                        class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200 ml-1"
+                        aria-label="Ítem del menú del día"
+                      >Menú del Día</span>
                     </p>
 
                     {{-- Modificaciones del cliente --}}
@@ -138,6 +143,7 @@
         'id'            => $i->id,
         'product_name'  => $i->product->name,
         'quantity'      => $i->quantity,
+        'is_daily_menu' => (bool) $i->is_daily_menu,
         'marking'       => false,
         'modifications' => $i->modifications->map(fn($m) => [
           'action'     => $m->action,
