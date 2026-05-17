@@ -168,10 +168,16 @@ class TableController extends Controller
             'is_service_point' => $isServicePoint,
         ]);
 
+        $message = match ($table->shape) {
+            'bar'   => 'Barra colocada en el plano.',
+            'stool' => 'Taburete colocado en el plano.',
+            default => "Mesa \"{$table->name}\" creada.",
+        };
+
         return response()->json([
             'success' => true,
             'data'    => $table,
-            'message' => "Mesa \"{$table->name}\" creada.",
+            'message' => $message,
         ], 201);
     }
 

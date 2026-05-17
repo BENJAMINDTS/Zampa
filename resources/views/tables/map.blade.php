@@ -872,7 +872,8 @@
                      class="absolute inset-0 rounded-xl border-4 border-dashed border-indigo-400
                             bg-indigo-50/30 dark:bg-indigo-900/20 pointer-events-none
                             flex items-center justify-center">
-                    <p class="text-indigo-500 font-semibold text-lg">Suelta aquí para crear la mesa</p>
+                    <p class="text-indigo-500 font-semibold text-lg"
+                       x-text="currentDragShape === 'bar' ? 'Suelta aquí para colocar la barra' : currentDragShape === 'stool' ? 'Suelta aquí para colocar el taburete' : 'Suelta aquí para crear la mesa'"></p>
                 </div>
             </div>
         </main>
@@ -1005,8 +1006,13 @@
         </div>
 
         <h2 id="delete-modal-title"
-            class="text-lg font-bold text-center text-gray-900 dark:text-white mb-2">
-            Eliminar mesa
+            class="text-lg font-bold text-center text-gray-900 dark:text-white mb-2"
+            x-text="
+                $store.deleteModal.table?.shape === 'bar'   ? 'Eliminar barra' :
+                $store.deleteModal.table?.shape === 'stool' ? 'Eliminar taburete' :
+                $store.deleteModal.table?.shape             ? 'Eliminar mesa' :
+                                                              'Eliminar zona'
+            ">
         </h2>
 
         <p id="delete-modal-desc"
@@ -1187,6 +1193,7 @@ document.addEventListener('alpine:init', () => {
         readonly:              {{ $readonly ? 'true' : 'false' }},
         canvasZoom:            1,
         isDraggingFromPalette: false,
+        currentDragShape:      null,
         isDraggingZone:        false,
         editingTableId:        null,
         editingZoneId:         null,
@@ -1469,6 +1476,7 @@ document.addEventListener('alpine:init', () => {
                         ghost.classList.add('flex');
 
                         this.isDraggingFromPalette = true;
+                        this.currentDragShape      = dropShape;
                     },
 
                     move: (event) => {
@@ -1488,6 +1496,7 @@ document.addEventListener('alpine:init', () => {
                         ghost.classList.add('hidden');
                         ghost.classList.remove('flex');
                         this.isDraggingFromPalette = false;
+                        this.currentDragShape      = null;
 
                         const canvasRect = canvasEl.getBoundingClientRect();
                         const cx         = event.clientX;
@@ -1530,6 +1539,7 @@ document.addEventListener('alpine:init', () => {
                         ghost.classList.remove('hidden');
                         ghost.classList.add('flex');
                         this.isDraggingFromPalette = true;
+                        this.currentDragShape      = shape;
                     },
                     move: (event) => {
                         const w = parseInt(event.target.dataset.width)  || 80;
@@ -1549,6 +1559,7 @@ document.addEventListener('alpine:init', () => {
                         ghost.style.borderColor = '';
                         ghost.style.background  = '';
                         this.isDraggingFromPalette = false;
+                        this.currentDragShape      = null;
 
                         const rect = canvasEl.getBoundingClientRect();
                         const over = event.clientX >= rect.left && event.clientX <= rect.right &&
@@ -1818,7 +1829,7 @@ document.addEventListener('alpine:init', () => {
 
         // ── AJAX: eliminar zona ───────────────────────────────────────────────
         async deleteZone(zone) {
-            const confirmed = await Alpine.store('deleteModal').prompt({ name: `Zona "${zone.name}"` });
+            const confirmed = await Alpine.store('deleteModal').prompt(zone);
             if (!confirmed) return;
 
             try {
