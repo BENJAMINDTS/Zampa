@@ -426,6 +426,7 @@
                             <div class="flex items-center gap-2 mb-2">
                                 <input type="color"
                                        :value="zone.color"
+                                       @input.stop="zone.color = $event.target.value"
                                        @change.stop="updateZoneColor(zone, $event.target.value)"
                                        @click.stop
                                        class="w-8 h-8 rounded cursor-pointer border border-gray-200 p-0.5"
