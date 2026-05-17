@@ -147,6 +147,63 @@ class TableController extends Controller
     }
 
     /**
+     * Actualiza la configuración de plantas del restaurante (número de plantas y toggle).
+     *
+     * @param  Request  $request
+     * @return JsonResponse
+     */
+    public function updateFloorSettings(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'floor_count'    => 'sometimes|integer|min:1|max:5',
+            'floors_enabled' => 'sometimes|boolean',
+        ]);
+
+        Auth::user()->update($data);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Configuración de plantas guardada.',
+        ]);
+    }
+
+    /**
+     * Elimina la última planta y todas las estructuras que contiene.
+     *
+     * @param  int  $floor
+     * @return JsonResponse
+     */
+    public function destroyFloor(int $floor): JsonResponse
+    {
+        $user = Auth::user();
+
+        if ($floor < 2 || $floor > ($user->floor_count ?? 1)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Planta no válida.',
+            ], 422);
+        }
+
+        $ownerId = $user->ownerUserId();
+
+        Table::where('user_id', $ownerId)->where('floor', $floor)->delete();
+        Zone::where('user_id', $ownerId)->where('floor', $floor)->delete();
+
+        $newCount = $floor - 1;
+        $sizes    = $user->floor_canvas_sizes ?? [];
+        unset($sizes[$floor]);
+        $user->update([
+            'floor_count'        => $newCount,
+            'floor_canvas_sizes' => $sizes,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => "Planta {$floor} eliminada.",
+        ]);
+    }
+
+    /**
      * Crea una nueva mesa desde el mapa visual.
      *
      * @param  Request  $request
