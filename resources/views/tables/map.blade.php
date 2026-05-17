@@ -350,7 +350,7 @@
                             height:${zone.height}px;
                             background-color:${zone.color}22;
                             border:2px solid ${zone.color};
-                            z-index:${editingZoneId === zone.id ? 20 : 5};
+                            z-index:${editingZoneId === zone.id ? 3 : 2};
                             pointer-events:all;
                             transform:rotate(${zone.rotation ?? 0}deg);
                             transform-origin:center;
@@ -488,7 +488,7 @@
                     >
                         <div class="w-full h-full relative flex items-center justify-center
                                     rounded-lg
-                                    bg-amber-100 dark:bg-amber-900/40
+                                    bg-amber-100 dark:bg-amber-900
                                     border-2 border-amber-400 dark:border-amber-600
                                     shadow-md cursor-grab active:cursor-grabbing
                                     transition-shadow hover:shadow-lg">
@@ -502,6 +502,7 @@
 
                             {{-- Botón eliminar --}}
                             <button type="button"
+                                    x-show="!(isRotating && rotatingId === bar.id)"
                                     @click.stop="deleteElement(bar)"
                                     class="absolute -top-2.5 -right-2.5
                                            w-6 h-6 rounded-full bg-red-500 text-white
@@ -566,7 +567,7 @@
                     >
                         <div class="w-full h-full relative flex items-center justify-center
                                     rounded-full
-                                    bg-amber-100 dark:bg-amber-900/40
+                                    bg-amber-100 dark:bg-amber-900
                                     border-2 border-amber-400 dark:border-amber-600
                                     shadow-md cursor-grab active:cursor-grabbing
                                     transition-shadow hover:shadow-lg"
@@ -581,6 +582,7 @@
 
                             {{-- Botón eliminar --}}
                             <button type="button"
+                                    x-show="!(isRotating && rotatingId === stool.id)"
                                     @mousedown.stop
                                     @click.stop="deleteElement(stool)"
                                     class="absolute -top-2.5 -right-2.5
@@ -646,7 +648,7 @@
                     >
                         {{-- Fondo de la mesa --}}
                         <div class="w-full h-full relative flex items-center justify-center
-                                    bg-indigo-100 dark:bg-indigo-900/40
+                                    bg-indigo-100 dark:bg-indigo-900
                                     border-2 border-indigo-300 dark:border-indigo-600
                                     shadow-md cursor-grab active:cursor-grabbing
                                     transition-shadow hover:shadow-lg"
@@ -695,7 +697,7 @@
 
                             {{-- Botón editar forma — solo admin --}}
                             <button type="button"
-                                    x-show="!readonly"
+                                    x-show="!readonly && !(isRotating && rotatingId === table.id)"
                                     @click.stop="if (editingTableId === table.id) { editingTableId = null; editingTable = null; } else { editingTableId = table.id; editingTable = table; const r = $el.getBoundingClientRect(); const panelW = 220; const panelH = 260; const vpW = window.innerWidth; const vpH = window.innerHeight; const px = Math.min(Math.max(8, r.left + r.width / 2 - panelW / 2), vpW - panelW - 8); const py = Math.min(r.bottom + 8, vpH - panelH - 8); editPanelPos = { x: px, y: py }; }"
                                     class="absolute -top-2.5 -right-16
                                            w-6 h-6 rounded-full bg-gray-600 dark:bg-gray-500 text-white
@@ -712,6 +714,7 @@
 
                             {{-- Botón QR --}}
                             <button type="button"
+                                    x-show="!(isRotating && rotatingId === table.id)"
                                     @click.stop="$store.qrModal.open(table)"
                                     class="absolute -top-2.5 -right-9
                                            w-6 h-6 rounded-full bg-indigo-500 text-white
@@ -727,7 +730,7 @@
 
                             {{-- Botón eliminar — solo admin --}}
                             <button type="button"
-                                    x-show="!readonly"
+                                    x-show="!readonly && !(isRotating && rotatingId === table.id)"
                                     @click.stop="deleteTable(table)"
                                     class="absolute -top-2.5 -right-2.5
                                            w-6 h-6 rounded-full bg-red-500 text-white
@@ -1194,6 +1197,7 @@ document.addEventListener('alpine:init', () => {
         editPanelPos:          { x: 0, y: 0 },
         editingZoneId:         null,
         isRotating:            false,
+        rotatingId:            null,
         isRotatingZone:        false,
         zoneColor:             '#6366f1',
         toast:                 { show: false, msg: '', error: false, _timer: null },
@@ -2266,6 +2270,10 @@ document.addEventListener('alpine:init', () => {
 
         // ── Rotación libre arrastrando el handle (estilo Canva) ───────────────
         startRotation(event, table) {
+            this.editingTableId = null;
+            this.editingTable   = null;
+            this.rotatingId     = table.id;
+
             const canvasRect = this.$refs.canvas.getBoundingClientRect();
             const centerX    = canvasRect.left + table.position_x + table.width  / 2;
             const centerY    = canvasRect.top  + table.position_y + table.height / 2;
@@ -2300,6 +2308,7 @@ document.addEventListener('alpine:init', () => {
                 document.removeEventListener('mousemove', onMove);
                 document.removeEventListener('mouseup',   onUp);
                 this.isRotating            = false;
+                this.rotatingId            = null;
                 this.rotTooltip.show       = false;
                 document.body.style.cursor = '';
                 await this.persistPosition(table.id, table.position_x, table.position_y, table.width, table.height);
