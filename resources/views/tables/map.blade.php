@@ -307,7 +307,7 @@
                 :style="`width:${floorWidth}px; height:${floorHeight}px; min-width:100%;
                          transform:scale(${canvasZoom}); transform-origin:top left;`"
                 aria-label="Plano del restaurante"
-                @click="if (canvasZoom === 1) { editingTableId = null; editingZoneId = null; }"
+                @click="if (canvasZoom === 1) { editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null; selectedId = null; }"
             >
                 {{-- Overlay de zoom: bloquea edición cuando canvasZoom < 1 --}}
                 <div x-show="canvasZoom < 1"
@@ -350,12 +350,15 @@
                             height:${zone.height}px;
                             background-color:${zone.color}22;
                             border:2px solid ${zone.color};
-                            z-index:${editingZoneId === zone.id ? 20 : 5};
+                            z-index:${hoveredId === zone.id || selectedId === zone.id || editingZoneId === zone.id ? 8 : 2};
                             pointer-events:all;
                             transform:rotate(${zone.rotation ?? 0}deg);
                             transform-origin:center;
                         `"
                         :aria-label="`Zona ${zone.name}`"
+                        @mouseenter="hoveredId = zone.id"
+                        @mouseleave="hoveredId = null"
+                        @click.stop="selectedId = selectedId === zone.id ? null : zone.id; editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null;"
                         @mousedown.prevent.self="startZoneDrag($event, zone)"
                     >
                         {{-- Etiqueta de zona --}}
@@ -366,13 +369,13 @@
 
                         {{-- Botón editar zona --}}
                         <button type="button"
-                                @click.stop="editingZoneId = editingZoneId === zone.id ? null : zone.id"
+                                @click.stop="if (editingZoneId === zone.id) { editingZoneId = null; editingZone = null; } else { editingZoneId = zone.id; editingZone = zone; const r = $el.getBoundingClientRect(); const panelW = 220; const panelH = 180; const vpW = window.innerWidth; const vpH = window.innerHeight; const px = Math.min(Math.max(8, r.left + r.width / 2 - panelW / 2), vpW - panelW - 8); const py = Math.min(r.bottom + 8, vpH - panelH - 8); editZonePanelPos = { x: px, y: py }; }"
                                 class="absolute -top-2.5 -right-9
                                        w-6 h-6 rounded-full bg-gray-600 dark:bg-gray-500 text-white
-                                       flex items-center justify-center
-                                       opacity-0 group-hover:opacity-100 transition-opacity
+                                       flex items-center justify-center transition-opacity
                                        hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-400
                                        shadow-md"
+                                :class="selectedId === zone.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'"
                                 :aria-label="`Editar zona ${zone.name}`"
                                 :aria-expanded="editingZoneId === zone.id">
                             <svg aria-hidden="true" class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
@@ -385,63 +388,24 @@
                                 @click.stop="deleteZone(zone)"
                                 class="absolute -top-2.5 -right-2.5
                                        w-6 h-6 rounded-full bg-red-500 text-white
-                                       flex items-center justify-center
-                                       opacity-0 group-hover:opacity-100 transition-opacity
+                                       flex items-center justify-center transition-opacity
                                        hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-400
                                        shadow-md"
+                                :class="selectedId === zone.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'"
                                 :aria-label="`Eliminar zona ${zone.name}`">
                             <svg aria-hidden="true" class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
                             </svg>
                         </button>
 
-                        {{-- Panel de edición de zona --}}
-                        <div x-show="editingZoneId === zone.id"
-                             x-transition:enter="transition ease-out duration-150"
-                             x-transition:enter-start="opacity-0 scale-95"
-                             x-transition:enter-end="opacity-100 scale-100"
-                             @click.stop
-                             class="absolute top-7 right-0 z-30
-                                    bg-white dark:bg-gray-800 rounded-xl shadow-xl
-                                    border border-gray-200 dark:border-gray-700
-                                    p-3 min-w-max"
-                             role="dialog"
-                             :aria-label="`Editar zona ${zone.name}`">
-
-                            <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">Nombre</p>
-                            <div class="flex gap-1 mb-3">
-                                <input type="text"
-                                       :value="zone.name"
-                                       @keydown.enter.stop="updateZoneName(zone, $event.target.value); $event.target.blur()"
-                                       @blur.stop="updateZoneName(zone, $event.target.value)"
-                                       @click.stop
-                                       maxlength="50"
-                                       class="w-full rounded-lg border border-gray-300 dark:border-gray-600
-                                              bg-white dark:bg-gray-700 text-gray-900 dark:text-white
-                                              px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                       :aria-label="`Nombre de la zona ${zone.name}`">
-                            </div>
-
-                            <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">Color</p>
-                            <div class="flex items-center gap-2 mb-2">
-                                <input type="color"
-                                       :value="zone.color"
-                                       @change.stop="updateZoneColor(zone, $event.target.value)"
-                                       @click.stop
-                                       class="w-8 h-8 rounded cursor-pointer border border-gray-200 p-0.5"
-                                       :aria-label="`Color de la zona ${zone.name}`">
-                                <span class="text-xs text-gray-500 font-mono" x-text="zone.color"></span>
-                            </div>
-                        </div>
+                        {{-- Panel de edición de zona movido fuera del canvas (fixed) para evitar herencia de transform --}}
 
                         {{-- Handle de rotación de zona (color sincronizado con zone.color) --}}
                         <div class="absolute -top-9 left-1/2 -translate-x-1/2
                                     flex flex-col items-center gap-0
-                                    opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                                    transition-opacity z-10"
+                             :class="selectedId === zone.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'"
                              @mousedown.stop.prevent="startZoneRotation($event, zone)"
-                             @mouseenter.stop="rotTooltip = { show: true, x: $event.clientX, y: $event.clientY, deg: zone.rotation ?? 0 }"
-                             @mousemove.stop="rotTooltip.x = $event.clientX; rotTooltip.y = $event.clientY; rotTooltip.deg = zone.rotation ?? 0"
-                             @mouseleave.stop="if (!isRotating) rotTooltip.show = false"
                              role="button"
                              tabindex="0"
                              style="cursor: url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2720%27 height=%2720%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27M21 2v6h-6%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M3 12a9 9 0 0 1 15-6.7L21 8%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M3 22v-6h6%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M21 12a9 9 0 0 1-15 6.7L3 16%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M21 2v6h-6%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M3 12a9 9 0 0 1 15-6.7L21 8%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M3 22v-6h6%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M21 12a9 9 0 0 1-15 6.7L3 16%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3C/svg%3E') 10 10, grab;"
@@ -464,8 +428,8 @@
 
                         {{-- Handle de redimensionado de zona --}}
                         <div class="zone-resize-handle absolute bottom-0 right-0
-                                    w-4 h-4 cursor-se-resize opacity-0 group-hover:opacity-100
-                                    transition-opacity"
+                                    w-4 h-4 cursor-se-resize transition-opacity"
+                             :class="selectedId === zone.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'"
                              @mousedown.stop.prevent="startZoneResize($event, zone)"
                              role="button"
                              :aria-label="`Redimensionar zona ${zone.name}`">
@@ -485,12 +449,15 @@
                                  width:${bar.width}px; height:${bar.height}px;
                                  transform:rotate(${bar.rotation ?? 0}deg);
                                  transform-origin:center;
-                                 z-index:10;`"
+                                 z-index:${hoveredId === bar.id || selectedId === bar.id || rotatingId === bar.id ? 30 : 10};`"
+                        @mouseenter="hoveredId = bar.id"
+                        @mouseleave="hoveredId = null"
+                        @click.stop="selectedId = selectedId === bar.id ? null : bar.id; editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null;"
                         :aria-label="`Barra: ${bar.name}`"
                     >
                         <div class="w-full h-full relative flex items-center justify-center
                                     rounded-lg
-                                    bg-amber-100 dark:bg-amber-900/40
+                                    bg-amber-100 dark:bg-amber-900
                                     border-2 border-amber-400 dark:border-amber-600
                                     shadow-md cursor-grab active:cursor-grabbing
                                     transition-shadow hover:shadow-lg">
@@ -502,73 +469,29 @@
 
                             <span class="absolute top-1 left-1 text-xs text-amber-600 dark:text-amber-400 pointer-events-none leading-none">🍺</span>
 
-                            {{-- Botón editar nombre --}}
-                            <button type="button"
-                                    @click.stop="editingTableId = editingTableId === bar.id ? null : bar.id"
-                                    class="absolute -top-2.5 -right-9
-                                           w-6 h-6 rounded-full bg-gray-600 dark:bg-gray-500 text-white
-                                           flex items-center justify-center
-                                           opacity-0 group-hover:opacity-100 transition-opacity
-                                           hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-400
-                                           shadow-md"
-                                    :aria-label="`Editar ${bar.name}`"
-                                    :aria-expanded="editingTableId === bar.id">
-                                <svg aria-hidden="true" class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z"/>
-                                </svg>
-                            </button>
-
                             {{-- Botón eliminar --}}
                             <button type="button"
+                                    x-show="!(isRotating && rotatingId === bar.id)"
                                     @click.stop="deleteElement(bar)"
                                     class="absolute -top-2.5 -right-2.5
                                            w-6 h-6 rounded-full bg-red-500 text-white
-                                           flex items-center justify-center
-                                           opacity-0 group-hover:opacity-100 transition-opacity
+                                           flex items-center justify-center transition-opacity
                                            hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-400
                                            shadow-md"
+                                    :class="selectedId === bar.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'"
                                     :aria-label="`Eliminar ${bar.name}`">
                                 <svg aria-hidden="true" class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
                                 </svg>
                             </button>
-
-                            {{-- Panel de edición de nombre --}}
-                            <div x-show="editingTableId === bar.id"
-                                 x-transition:enter="transition ease-out duration-150"
-                                 x-transition:enter-start="opacity-0 scale-95"
-                                 x-transition:enter-end="opacity-100 scale-100"
-                                 @click.stop
-                                 class="absolute top-7 right-0 z-20
-                                        bg-white dark:bg-gray-800 rounded-xl shadow-xl
-                                        border border-gray-200 dark:border-gray-700
-                                        p-3 min-w-max"
-                                 role="dialog"
-                                 :aria-label="`Editar ${bar.name}`">
-                                <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">Nombre</p>
-                                <div class="flex gap-1">
-                                    <input type="text"
-                                           :value="bar.name"
-                                           @keydown.enter.stop="updateName(bar, $event.target.value); $event.target.blur()"
-                                           @blur.stop="updateName(bar, $event.target.value)"
-                                           @click.stop
-                                           maxlength="50"
-                                           class="w-full rounded-lg border border-gray-300 dark:border-gray-600
-                                                  bg-white dark:bg-gray-700 text-gray-900 dark:text-white
-                                                  px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
-                                           :aria-label="`Nombre de ${bar.name}`">
-                                </div>
-                            </div>
                         </div>
 
                         {{-- Handle de rotación --}}
                         <div class="rotation-handle absolute -top-9 left-1/2 -translate-x-1/2
                                     flex flex-col items-center gap-0
-                                    opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                                    transition-opacity z-10"
+                             :class="selectedId === bar.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'"
                              @mousedown.stop.prevent="startRotation($event, bar)"
-                             @mouseenter.stop="rotTooltip = { show: true, x: $event.clientX, y: $event.clientY, deg: bar.rotation ?? 0 }"
-                             @mousemove.stop="rotTooltip.x = $event.clientX; rotTooltip.y = $event.clientY; rotTooltip.deg = bar.rotation ?? 0"
-                             @mouseleave.stop="if (!isRotating) rotTooltip.show = false"
                              role="button"
                              tabindex="0"
                              style="cursor: url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2720%27 height=%2720%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27M21 2v6h-6%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M3 12a9 9 0 0 1 15-6.7L21 8%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M3 22v-6h6%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M21 12a9 9 0 0 1-15 6.7L3 16%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M21 2v6h-6%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M3 12a9 9 0 0 1 15-6.7L21 8%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M3 22v-6h6%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M21 12a9 9 0 0 1-15 6.7L3 16%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3C/svg%3E') 10 10, grab;"
@@ -609,12 +532,15 @@
                                  width:${stool.width}px; height:${stool.height}px;
                                  transform:rotate(${stool.rotation ?? 0}deg);
                                  transform-origin:center;
-                                 z-index:10;`"
+                                 z-index:${hoveredId === stool.id || selectedId === stool.id || rotatingId === stool.id ? 30 : 10};`"
+                        @mouseenter="hoveredId = stool.id"
+                        @mouseleave="hoveredId = null"
+                        @click.stop="selectedId = selectedId === stool.id ? null : stool.id; editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null;"
                         :aria-label="`Taburete: ${stool.name}`"
                     >
                         <div class="w-full h-full relative flex items-center justify-center
                                     rounded-full
-                                    bg-amber-100 dark:bg-amber-900/40
+                                    bg-amber-100 dark:bg-amber-900
                                     border-2 border-amber-400 dark:border-amber-600
                                     shadow-md cursor-grab active:cursor-grabbing
                                     transition-shadow hover:shadow-lg"
@@ -627,75 +553,30 @@
 
                             <span class="absolute top-1 left-1 text-xs text-amber-600 dark:text-amber-400 pointer-events-none leading-none">●</span>
 
-                            {{-- Botón editar nombre --}}
-                            <button type="button"
-                                    @mousedown.stop
-                                    @click.stop="editingTableId = editingTableId === stool.id ? null : stool.id"
-                                    class="absolute -top-2.5 -right-9
-                                           w-6 h-6 rounded-full bg-gray-600 dark:bg-gray-500 text-white
-                                           flex items-center justify-center
-                                           opacity-0 group-hover:opacity-100 transition-opacity
-                                           hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-400
-                                           shadow-md"
-                                    :aria-label="`Editar ${stool.name}`"
-                                    :aria-expanded="editingTableId === stool.id">
-                                <svg aria-hidden="true" class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z"/>
-                                </svg>
-                            </button>
-
                             {{-- Botón eliminar --}}
                             <button type="button"
+                                    x-show="!(isRotating && rotatingId === stool.id)"
                                     @mousedown.stop
                                     @click.stop="deleteElement(stool)"
                                     class="absolute -top-2.5 -right-2.5
                                            w-6 h-6 rounded-full bg-red-500 text-white
-                                           flex items-center justify-center
-                                           opacity-0 group-hover:opacity-100 transition-opacity
+                                           flex items-center justify-center transition-opacity
                                            hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-400
                                            shadow-md"
+                                    :class="selectedId === stool.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'"
                                     :aria-label="`Eliminar ${stool.name}`">
                                 <svg aria-hidden="true" class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
                                 </svg>
                             </button>
-
-                            {{-- Panel de edición de nombre --}}
-                            <div x-show="editingTableId === stool.id"
-                                 x-transition:enter="transition ease-out duration-150"
-                                 x-transition:enter-start="opacity-0 scale-95"
-                                 x-transition:enter-end="opacity-100 scale-100"
-                                 @click.stop
-                                 class="absolute top-7 right-0 z-20
-                                        bg-white dark:bg-gray-800 rounded-xl shadow-xl
-                                        border border-gray-200 dark:border-gray-700
-                                        p-3 min-w-max"
-                                 role="dialog"
-                                 :aria-label="`Editar ${stool.name}`">
-                                <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">Nombre</p>
-                                <div class="flex gap-1">
-                                    <input type="text"
-                                           :value="stool.name"
-                                           @keydown.enter.stop="updateName(stool, $event.target.value); $event.target.blur()"
-                                           @blur.stop="updateName(stool, $event.target.value)"
-                                           @click.stop
-                                           maxlength="50"
-                                           class="w-full rounded-lg border border-gray-300 dark:border-gray-600
-                                                  bg-white dark:bg-gray-700 text-gray-900 dark:text-white
-                                                  px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
-                                           :aria-label="`Nombre de ${stool.name}`">
-                                </div>
-                            </div>
                         </div>
 
                         {{-- Handle de rotación --}}
                         <div class="rotation-handle absolute -top-9 left-1/2 -translate-x-1/2
                                     flex flex-col items-center gap-0
-                                    opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                                    transition-opacity z-10"
+                             :class="selectedId === stool.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'"
                              @mousedown.stop.prevent="startRotation($event, stool)"
-                             @mouseenter.stop="rotTooltip = { show: true, x: $event.clientX, y: $event.clientY, deg: stool.rotation ?? 0 }"
-                             @mousemove.stop="rotTooltip.x = $event.clientX; rotTooltip.y = $event.clientY; rotTooltip.deg = stool.rotation ?? 0"
-                             @mouseleave.stop="if (!isRotating) rotTooltip.show = false"
                              role="button"
                              tabindex="0"
                              style="cursor: url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2720%27 height=%2720%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27M21 2v6h-6%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M3 12a9 9 0 0 1 15-6.7L21 8%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M3 22v-6h6%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M21 12a9 9 0 0 1-15 6.7L3 16%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M21 2v6h-6%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M3 12a9 9 0 0 1 15-6.7L21 8%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M3 22v-6h6%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M21 12a9 9 0 0 1-15 6.7L3 16%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3C/svg%3E') 10 10, grab;"
@@ -736,12 +617,15 @@
                                  width:${table.width}px; height:${table.height}px;
                                  transform: rotate(${table.rotation ?? 0}deg);
                                  transform-origin: center;
-                                 z-index: 10;`"
+                                 z-index: ${hoveredId === table.id || selectedId === table.id || rotatingId === table.id || editingTableId === table.id ? 30 : 10};`"
+                        @mouseenter="hoveredId = table.id"
+                        @mouseleave="hoveredId = null"
+                        @click.stop="selectedId = selectedId === table.id ? null : table.id; editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null;"
                         :aria-label="`Mesa ${table.name}`"
                     >
                         {{-- Fondo de la mesa --}}
                         <div class="w-full h-full relative flex items-center justify-center
-                                    bg-indigo-100 dark:bg-indigo-900/40
+                                    bg-indigo-100 dark:bg-indigo-900
                                     border-2 border-indigo-300 dark:border-indigo-600
                                     shadow-md cursor-grab active:cursor-grabbing
                                     transition-shadow hover:shadow-lg"
@@ -749,7 +633,8 @@
                                 'rounded-full':  table.shape === 'round',
                                 'rounded-xl':    table.shape === 'square',
                                 'rounded-lg':    table.shape === 'rectangle',
-                             }">
+                             }"
+                             :style="zoneFor(table) ? `border-color: ${zoneFor(table).color}` : null">
 
                             {{-- Nombre --}}
                             <span class="text-xs font-semibold text-indigo-700 dark:text-indigo-300
@@ -789,14 +674,14 @@
 
                             {{-- Botón editar forma — solo admin --}}
                             <button type="button"
-                                    x-show="!readonly"
-                                    @click.stop="editingTableId = editingTableId === table.id ? null : table.id"
+                                    x-show="!readonly && !(isRotating && rotatingId === table.id)"
+                                    @click.stop="if (editingTableId === table.id) { editingTableId = null; editingTable = null; } else { editingTableId = table.id; editingTable = table; const r = $el.getBoundingClientRect(); const panelW = 220; const panelH = 260; const vpW = window.innerWidth; const vpH = window.innerHeight; const px = Math.min(Math.max(8, r.left + r.width / 2 - panelW / 2), vpW - panelW - 8); const py = Math.min(r.bottom + 8, vpH - panelH - 8); editPanelPos = { x: px, y: py }; }"
                                     class="absolute -top-2.5 -right-16
                                            w-6 h-6 rounded-full bg-gray-600 dark:bg-gray-500 text-white
-                                           flex items-center justify-center
-                                           opacity-0 group-hover:opacity-100 transition-opacity
+                                           flex items-center justify-center transition-opacity
                                            hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-400
                                            shadow-md"
+                                    :class="selectedId === table.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'"
                                     :aria-label="`Editar forma de mesa ${table.name}`"
                                     :aria-expanded="editingTableId === table.id">
                                 <svg aria-hidden="true" class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
@@ -806,13 +691,14 @@
 
                             {{-- Botón QR --}}
                             <button type="button"
+                                    x-show="!(isRotating && rotatingId === table.id)"
                                     @click.stop="$store.qrModal.open(table)"
                                     class="absolute -top-2.5 -right-9
                                            w-6 h-6 rounded-full bg-indigo-500 text-white
-                                           flex items-center justify-center
-                                           opacity-0 group-hover:opacity-100 transition-opacity
+                                           flex items-center justify-center transition-opacity
                                            hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-400
                                            shadow-md"
+                                    :class="selectedId === table.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'"
                                     :aria-label="`Ver QR de la mesa ${table.name}`">
                                 <svg aria-hidden="true" class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
                                     <path d="M3 3h7v7H3V3zm2 2v3h3V5H5zm9-2h7v7h-7V3zm2 2v3h3V5h-3zM3 14h7v7H3v-7zm2 2v3h3v-3H5zm11.5-2a.5.5 0 01.5.5v1h1.5a.5.5 0 010 1H17v1.5a.5.5 0 01-1 0V17h-1.5a.5.5 0 010-1H16v-1.5a.5.5 0 01.5-.5zm3 3a.5.5 0 01.5.5V21h-2.5a.5.5 0 010-1H21v-1.5a.5.5 0 01.5-.5z"/>
@@ -821,89 +707,29 @@
 
                             {{-- Botón eliminar — solo admin --}}
                             <button type="button"
-                                    x-show="!readonly"
+                                    x-show="!readonly && !(isRotating && rotatingId === table.id)"
                                     @click.stop="deleteTable(table)"
                                     class="absolute -top-2.5 -right-2.5
                                            w-6 h-6 rounded-full bg-red-500 text-white
-                                           flex items-center justify-center
-                                           opacity-0 group-hover:opacity-100 transition-opacity
+                                           flex items-center justify-center transition-opacity
                                            hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-400
                                            shadow-md"
+                                    :class="selectedId === table.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'"
                                     :aria-label="`Eliminar mesa ${table.name}`">
                                 <svg aria-hidden="true" class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
                                 </svg>
                             </button>
 
-                            {{-- Panel de edición (solo forma) --}}
-                            <div x-show="editingTableId === table.id"
-                                 x-transition:enter="transition ease-out duration-150"
-                                 x-transition:enter-start="opacity-0 scale-95"
-                                 x-transition:enter-end="opacity-100 scale-100"
-                                 @click.stop
-                                 class="absolute top-7 right-0 z-20
-                                        bg-white dark:bg-gray-800 rounded-xl shadow-xl
-                                        border border-gray-200 dark:border-gray-700
-                                        p-3 min-w-max"
-                                 role="dialog"
-                                 :aria-label="`Forma de mesa ${table.name}`">
-
-                                {{-- Editar nombre --}}
-                                <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">Nombre</p>
-                                <div class="flex gap-1 mb-3">
-                                    <input type="text"
-                                           :value="table.name"
-                                           @keydown.enter.stop="updateName(table, $event.target.value); $event.target.blur()"
-                                           @blur.stop="updateName(table, $event.target.value)"
-                                           @click.stop
-                                           maxlength="50"
-                                           class="w-full rounded-lg border border-gray-300 dark:border-gray-600
-                                                  bg-white dark:bg-gray-700 text-gray-900 dark:text-white
-                                                  px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                           :aria-label="`Nombre de la mesa ${table.name}`">
-                                </div>
-
-                                <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">Forma</p>
-                                <div class="flex gap-1.5" role="group" aria-label="Seleccionar forma">
-                                    <button type="button"
-                                            @click.stop="updateShape(table, 'square')"
-                                            :class="table.shape === 'square'
-                                                ? 'bg-indigo-600 text-white ring-2 ring-indigo-400'
-                                                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30'"
-                                            class="w-9 h-9 rounded-lg flex items-center justify-center transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                                            aria-label="Forma cuadrada">
-                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/></svg>
-                                    </button>
-                                    <button type="button"
-                                            @click.stop="updateShape(table, 'round')"
-                                            :class="table.shape === 'round'
-                                                ? 'bg-indigo-600 text-white ring-2 ring-indigo-400'
-                                                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30'"
-                                            class="w-9 h-9 rounded-lg flex items-center justify-center transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                                            aria-label="Forma redonda">
-                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/></svg>
-                                    </button>
-                                    <button type="button"
-                                            @click.stop="updateShape(table, 'rectangle')"
-                                            :class="table.shape === 'rectangle'
-                                                ? 'bg-indigo-600 text-white ring-2 ring-indigo-400'
-                                                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30'"
-                                            class="w-9 h-9 rounded-lg flex items-center justify-center transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                                            aria-label="Forma rectangular">
-                                        <svg class="w-5 h-3" fill="currentColor" viewBox="0 0 24 14" aria-hidden="true"><rect x="0" y="0" width="24" height="14" rx="3"/></svg>
-                                    </button>
-                                </div>
-                            </div>
+                            {{-- Panel de edición movido fuera del canvas (fixed) para evitar herencia del transform:rotate --}}
                         </div>
 
                         {{-- Handle de rotación — solo admin --}}
                         <div x-show="!readonly" class="rotation-handle absolute -top-9 left-1/2 -translate-x-1/2
                                     flex flex-col items-center gap-0
-                                    opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                                    transition-opacity z-10"
+                             :class="selectedId === table.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'"
                              @mousedown.stop.prevent="startRotation($event, table)"
-                             @mouseenter.stop="rotTooltip = { show: true, x: $event.clientX, y: $event.clientY, deg: table.rotation ?? 0 }"
-                             @mousemove.stop="rotTooltip.x = $event.clientX; rotTooltip.y = $event.clientY; rotTooltip.deg = table.rotation ?? 0"
-                             @mouseleave.stop="if (!isRotating) rotTooltip.show = false"
                              role="button"
                              tabindex="0"
                              style="cursor: url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2720%27 height=%2720%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27M21 2v6h-6%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M3 12a9 9 0 0 1 15-6.7L21 8%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M3 22v-6h6%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M21 12a9 9 0 0 1-15 6.7L3 16%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M21 2v6h-6%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M3 12a9 9 0 0 1 15-6.7L21 8%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M3 22v-6h6%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M21 12a9 9 0 0 1-15 6.7L3 16%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3C/svg%3E') 10 10, grab;"
@@ -924,8 +750,8 @@
                         {{-- Handle de redimensionado — solo admin --}}
                         <div x-show="!readonly"
                              class="resize-handle absolute bottom-0 right-0
-                                    w-4 h-4 cursor-se-resize opacity-0 group-hover:opacity-100
-                                    transition-opacity"
+                                    w-4 h-4 cursor-se-resize transition-opacity"
+                             :class="selectedId === table.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'"
                              @mousedown.stop.prevent="startResize($event, table)"
                              role="button"
                              :aria-label="`Redimensionar mesa ${table.name}`">
@@ -936,31 +762,156 @@
                     </div>
                 </template>
 
-                {{-- Indicador de grados de rotación (sigue al cursor) --}}
-                <div x-show="rotTooltip.show"
-                     x-transition:enter="transition ease-out duration-75"
-                     x-transition:enter-start="opacity-0 scale-95"
-                     x-transition:enter-end="opacity-100 scale-100"
-                     class="fixed pointer-events-none z-[200] select-none"
-                     :style="`left:${rotTooltip.x + 18}px; top:${rotTooltip.y - 10}px`"
-                     aria-hidden="true">
-                    <span class="inline-flex items-center gap-0.5
-                                 bg-gray-900/90 text-white
-                                 text-xs font-mono font-semibold
-                                 px-1.5 py-0.5 rounded-md shadow-lg ring-1 ring-white/10">
-                        <span x-text="rotTooltip.deg > 180 ? rotTooltip.deg - 360 : rotTooltip.deg"></span>°
-                    </span>
-                </div>
-
                 {{-- Indicador de zona de soltar --}}
                 <div x-show="isDraggingFromPalette"
                      class="absolute inset-0 rounded-xl border-4 border-dashed border-indigo-400
                             bg-indigo-50/30 dark:bg-indigo-900/20 pointer-events-none
                             flex items-center justify-center">
-                    <p class="text-indigo-500 font-semibold text-lg">Suelta aquí para crear la mesa</p>
+                    <p class="text-indigo-500 font-semibold text-lg"
+                       x-text="currentDragShape === 'bar' ? 'Suelta aquí para colocar la barra' : currentDragShape === 'stool' ? 'Suelta aquí para colocar el taburete' : 'Suelta aquí para crear la mesa'"></p>
                 </div>
             </div>
         </main>
+
+        {{-- Panel de edición de zona — fixed para escapar del transform:rotate del padre --}}
+        <div x-show="editingZoneId !== null && editingZone !== null"
+             x-transition:enter="transition ease-out duration-150"
+             x-transition:enter-start="opacity-0 scale-95"
+             x-transition:enter-end="opacity-100 scale-100"
+             @click.stop
+             @keydown.escape.window="editingZoneId = null; editingZone = null"
+             class="fixed z-[200] bg-white dark:bg-gray-800 rounded-xl shadow-xl
+                    border border-gray-200 dark:border-gray-700 p-3 min-w-[200px]"
+             :style="`left:${editZonePanelPos.x}px; top:${editZonePanelPos.y}px`"
+             role="dialog"
+             :aria-label="editingZone ? `Editar zona ${editingZone.name}` : 'Editar zona'">
+
+            <template x-if="editingZone">
+                <div>
+                    <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">Nombre</p>
+                    <div class="flex gap-1 mb-3">
+                        <input type="text"
+                               :value="editingZone.name"
+                               @keydown.enter.stop="updateZoneName(editingZone, $event.target.value); $event.target.blur()"
+                               @blur.stop="updateZoneName(editingZone, $event.target.value)"
+                               @click.stop
+                               maxlength="50"
+                               class="w-full rounded-lg border border-gray-300 dark:border-gray-600
+                                      bg-white dark:bg-gray-700 text-gray-900 dark:text-white
+                                      px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                               :aria-label="`Nombre de la zona ${editingZone.name}`">
+                    </div>
+
+                    <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">Color</p>
+                    <div class="flex items-center gap-2 mb-2">
+                        <input type="color"
+                               :value="editingZone.color"
+                               @input.stop="editingZone.color = $event.target.value"
+                               @change.stop="updateZoneColor(editingZone, $event.target.value)"
+                               @click.stop
+                               class="w-8 h-8 rounded cursor-pointer border border-gray-200 p-0.5"
+                               :aria-label="`Color de la zona ${editingZone.name}`">
+                        <span class="text-xs text-gray-500 font-mono" x-text="editingZone.color"></span>
+                    </div>
+                </div>
+            </template>
+        </div>
+
+        {{-- Panel de edición de mesa — fixed para escapar del transform:rotate del padre --}}
+        <div x-show="editingTableId !== null && editingTable !== null"
+             x-transition:enter="transition ease-out duration-150"
+             x-transition:enter-start="opacity-0 scale-95"
+             x-transition:enter-end="opacity-100 scale-100"
+             @click.stop
+             @keydown.escape.window="editingTableId = null; editingTable = null"
+             class="fixed z-[200] bg-white dark:bg-gray-800 rounded-xl shadow-xl
+                    border border-gray-200 dark:border-gray-700 p-3 min-w-[200px]"
+             :style="`left:${editPanelPos.x}px; top:${editPanelPos.y}px`"
+             role="dialog"
+             :aria-label="editingTable ? `Editar mesa ${editingTable.name}` : 'Editar mesa'">
+
+            <template x-if="editingTable">
+                <div>
+                    {{-- Editar nombre --}}
+                    <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">Nombre</p>
+                    <div class="flex gap-1 mb-3">
+                        <input type="text"
+                               :value="editingTable.name"
+                               @keydown.enter.stop="updateName(editingTable, $event.target.value); $event.target.blur()"
+                               @blur.stop="updateName(editingTable, $event.target.value)"
+                               @click.stop
+                               maxlength="50"
+                               class="w-full rounded-lg border border-gray-300 dark:border-gray-600
+                                      bg-white dark:bg-gray-700 text-gray-900 dark:text-white
+                                      px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                               :aria-label="`Nombre de la mesa ${editingTable.name}`">
+                    </div>
+
+                    {{-- Zona --}}
+                    <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 mt-3 uppercase tracking-wide">Zona</p>
+                    <select @change.stop="updateZoneAssignment(editingTable, $event.target.value)"
+                            @click.stop
+                            class="w-full rounded-lg border border-gray-300 dark:border-gray-600
+                                   bg-white dark:bg-gray-700 text-gray-900 dark:text-white
+                                   px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-3"
+                            :aria-label="`Zona de la mesa ${editingTable.name}`">
+                        <option value="">Sin zona</option>
+                        <template x-for="zone in zones" :key="zone.id">
+                            <option :value="zone.id"
+                                    :selected="editingTable.zone_id == zone.id"
+                                    x-text="zone.name"></option>
+                        </template>
+                    </select>
+
+                    <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">Forma</p>
+                    <div class="flex gap-1.5" role="group" aria-label="Seleccionar forma">
+                        <button type="button"
+                                @click.stop="updateShape(editingTable, 'square')"
+                                :class="editingTable.shape === 'square'
+                                    ? 'bg-indigo-600 text-white ring-2 ring-indigo-400'
+                                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30'"
+                                class="w-9 h-9 rounded-lg flex items-center justify-center transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                                aria-label="Forma cuadrada">
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/></svg>
+                        </button>
+                        <button type="button"
+                                @click.stop="updateShape(editingTable, 'round')"
+                                :class="editingTable.shape === 'round'
+                                    ? 'bg-indigo-600 text-white ring-2 ring-indigo-400'
+                                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30'"
+                                class="w-9 h-9 rounded-lg flex items-center justify-center transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                                aria-label="Forma redonda">
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/></svg>
+                        </button>
+                        <button type="button"
+                                @click.stop="updateShape(editingTable, 'rectangle')"
+                                :class="editingTable.shape === 'rectangle'
+                                    ? 'bg-indigo-600 text-white ring-2 ring-indigo-400'
+                                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30'"
+                                class="w-9 h-9 rounded-lg flex items-center justify-center transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                                aria-label="Forma rectangular">
+                            <svg class="w-5 h-3" fill="currentColor" viewBox="0 0 24 14" aria-hidden="true"><rect x="0" y="0" width="24" height="14" rx="3"/></svg>
+                        </button>
+                    </div>
+                </div>
+            </template>
+        </div>
+
+        {{-- Indicador de grados de rotación — fuera del canvas escalado para que fixed funcione correctamente --}}
+        <div x-show="rotTooltip.show"
+             x-transition:enter="transition ease-out duration-75"
+             x-transition:enter-start="opacity-0 scale-95"
+             x-transition:enter-end="opacity-100 scale-100"
+             class="fixed pointer-events-none z-[200] select-none"
+             :style="`left:${rotTooltip.x + 14}px; top:${rotTooltip.y + 14}px`"
+             aria-hidden="true">
+            <span class="inline-flex items-center gap-0.5
+                         bg-gray-900/90 text-white
+                         text-xs font-mono font-semibold
+                         px-1.5 py-0.5 rounded-md shadow-lg ring-1 ring-white/10">
+                <span x-text="rotTooltip.deg > 180 ? rotTooltip.deg - 360 : rotTooltip.deg"></span>°
+            </span>
+        </div>
     </div>
 </div>
 
@@ -1074,8 +1025,13 @@
         </div>
 
         <h2 id="delete-modal-title"
-            class="text-lg font-bold text-center text-gray-900 dark:text-white mb-2">
-            Eliminar mesa
+            class="text-lg font-bold text-center text-gray-900 dark:text-white mb-2"
+            x-text="
+                $store.deleteModal.table?.shape === 'bar'   ? 'Eliminar barra' :
+                $store.deleteModal.table?.shape === 'stool' ? 'Eliminar taburete' :
+                $store.deleteModal.table?.shape             ? 'Eliminar mesa' :
+                                                              'Eliminar zona'
+            ">
         </h2>
 
         <p id="delete-modal-desc"
@@ -1131,25 +1087,29 @@
     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 w-full max-w-sm mx-4"
          @click.stop>
 
-        <h2 id="modal-title" class="text-lg font-bold text-gray-900 dark:text-white mb-4">
-            Nueva mesa
+        <h2 id="modal-title" class="text-lg font-bold text-gray-900 dark:text-white mb-4"
+            x-text="$store.tableModal.mode === 'zone' ? 'Nueva zona' : 'Nueva mesa'">
         </h2>
 
         <div class="mb-4">
-            <label for="new-table-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Nombre de la mesa
+            <label for="new-table-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                   x-text="$store.tableModal.mode === 'zone' ? 'Nombre de la zona' : 'Nombre de la mesa'">
             </label>
             <input id="new-table-name"
                    type="text"
                    x-model="$store.tableModal.name"
                    @keydown.enter="$store.tableModal.confirm()"
                    maxlength="50"
-                   placeholder="Ej: Mesa 1, Terraza A..."
+                   :placeholder="$store.tableModal.mode === 'zone' ? 'Ej: Terraza, Interior...' : 'Ej: Terraza A... (vacío = número automático)'"
                    class="w-full rounded-lg border border-gray-300 dark:border-gray-600
                           bg-white dark:bg-gray-700 text-gray-900 dark:text-white
                           px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                   aria-required="true"
+                   :aria-required="$store.tableModal.mode === 'zone'"
                    x-init="$watch('$store.tableModal.open', v => v && $nextTick(() => $el.focus()))">
+            <p x-show="$store.tableModal.mode === 'table'"
+               class="mt-1 text-xs text-gray-400 dark:text-gray-500">
+                Deja vacío para asignar un número automático.
+            </p>
         </div>
 
         <div class="flex gap-2 justify-end">
@@ -1163,7 +1123,7 @@
             </button>
             <button type="button"
                     @click="$store.tableModal.confirm()"
-                    :disabled="!$store.tableModal.name.trim()"
+                    :disabled="$store.tableModal.mode === 'zone' && !$store.tableModal.name.trim()"
                     class="px-4 py-2 rounded-lg text-sm font-medium text-white
                            bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50
                            disabled:cursor-not-allowed transition-colors">
@@ -1181,18 +1141,20 @@ document.addEventListener('alpine:init', () => {
 
     // ── Store para el modal de nombre de nueva mesa ───────────────────────────
     Alpine.store('tableModal', {
-        open:       false,
-        name:       '',
-        _resolve:   null,
+        open:     false,
+        name:     '',
+        mode:     'table',
+        _resolve: null,
 
-        prompt() {
+        prompt(mode = 'table') {
             this.name = '';
+            this.mode = mode;
             this.open = true;
             return new Promise(resolve => { this._resolve = resolve; });
         },
 
         confirm() {
-            if (!this.name.trim()) return;
+            if (this.mode === 'zone' && !this.name.trim()) return;
             const name = this.name.trim();
             this.open = false;
             this._resolve?.(name);
@@ -1250,10 +1212,18 @@ document.addEventListener('alpine:init', () => {
         readonly:              {{ $readonly ? 'true' : 'false' }},
         canvasZoom:            1,
         isDraggingFromPalette: false,
+        currentDragShape:      null,
         isDraggingZone:        false,
         editingTableId:        null,
+        editingTable:          null,
+        editPanelPos:          { x: 0, y: 0 },
         editingZoneId:         null,
+        editingZone:           null,
+        editZonePanelPos:      { x: 0, y: 0 },
         isRotating:            false,
+        rotatingId:            null,
+        hoveredId:             null,
+        selectedId:            null,
         isRotatingZone:        false,
         zoneColor:             '#6366f1',
         toast:                 { show: false, msg: '', error: false, _timer: null },
@@ -1274,12 +1244,55 @@ document.addEventListener('alpine:init', () => {
                     this.initTableInteract();
                     this.initZoneInteract();
                     this.initPaletteInteract();
+                    this.clampAllToCanvas();
                 }
             });
+
 
             // Polling de estados: actualiza ocupación y solicitudes de cuenta cada 5 s.
             this.pollStatuses();
             setInterval(() => this.pollStatuses(), 5000);
+        },
+
+        // Devuelve los límites de posición válidos para un item considerando su rotación.
+        // position_x/y pueden ser negativos en elementos más altos que anchos rotados 90°.
+        canvasBounds(item) {
+            const rad   = (item.rotation ?? 0) * Math.PI / 180;
+            const cos   = Math.abs(Math.cos(rad));
+            const sin   = Math.abs(Math.sin(rad));
+            const hw    = item.width  / 2;
+            const hh    = item.height / 2;
+            const halfW = hw * cos + hh * sin;
+            const halfH = hw * sin + hh * cos;
+            return {
+                minX: halfW - hw,
+                maxX: this.floorWidth  - hw - halfW,
+                minY: halfH - hh,
+                maxY: this.floorHeight - hh - halfH,
+            };
+        },
+
+        // Recupera estructuras y zonas que hayan quedado fuera del canvas y persiste la corrección.
+        async clampAllToCanvas() {
+            for (const item of [...this.tables, ...this.elements]) {
+                const { minX, maxX, minY, maxY } = this.canvasBounds(item);
+                const cx = Math.max(minX, Math.min(maxX, item.position_x));
+                const cy = Math.max(minY, Math.min(maxY, item.position_y));
+                if (cx !== item.position_x || cy !== item.position_y) {
+                    await this.persistPosition(item.id, cx, cy, item.width, item.height);
+                }
+            }
+            for (const zone of this.zones) {
+                const maxX = Math.max(0, this.floorWidth  - zone.width);
+                const maxY = Math.max(0, this.floorHeight - zone.height);
+                const cx   = Math.max(0, Math.min(maxX, zone.position_x));
+                const cy   = Math.max(0, Math.min(maxY, zone.position_y));
+                if (cx !== zone.position_x || cy !== zone.position_y) {
+                    zone.position_x = cx;
+                    zone.position_y = cy;
+                    await this.persistZonePosition(zone.id, cx, cy);
+                }
+            }
         },
 
         async pollStatuses() {
@@ -1341,6 +1354,101 @@ document.addEventListener('alpine:init', () => {
             this.toast._timer = setTimeout(() => { this.toast.show = false; }, 3000);
         },
 
+        // ── Colisión exacta: SAT (OBB vs OBB) + círculo vs OBB ───────────────
+
+        // Devuelve los 4 vértices de un rectángulo rotado en coordenadas mundo.
+        rectCorners(item) {
+            const rad = (item.rotation ?? 0) * Math.PI / 180;
+            const cos = Math.cos(rad), sin = Math.sin(rad);
+            const cx  = item.position_x + item.width  / 2;
+            const cy  = item.position_y + item.height / 2;
+            const hw  = item.width  / 2, hh = item.height / 2;
+            return [
+                { x: cx + hw*cos - hh*sin, y: cy + hw*sin + hh*cos },
+                { x: cx - hw*cos - hh*sin, y: cy - hw*sin + hh*cos },
+                { x: cx - hw*cos + hh*sin, y: cy - hw*sin - hh*cos },
+                { x: cx + hw*cos + hh*sin, y: cy + hw*sin - hh*cos },
+            ];
+        },
+
+        // Proyecta una lista de vértices sobre un eje normalizado → { min, max }.
+        projectOnAxis(corners, axis) {
+            let min = Infinity, max = -Infinity;
+            for (const c of corners) {
+                const p = c.x * axis.x + c.y * axis.y;
+                if (p < min) min = p;
+                if (p > max) max = p;
+            }
+            return { min, max };
+        },
+
+        // SAT entre dos OBBs: exacto a cualquier ángulo.
+        obbOverlaps(a, b) {
+            const ca = this.rectCorners(a);
+            const cb = this.rectCorners(b);
+            const ra = (a.rotation ?? 0) * Math.PI / 180;
+            const rb = (b.rotation ?? 0) * Math.PI / 180;
+            const axes = [
+                { x:  Math.cos(ra), y: Math.sin(ra) },
+                { x: -Math.sin(ra), y: Math.cos(ra) },
+                { x:  Math.cos(rb), y: Math.sin(rb) },
+                { x: -Math.sin(rb), y: Math.cos(rb) },
+            ];
+            for (const ax of axes) {
+                const pa = this.projectOnAxis(ca, ax);
+                const pb = this.projectOnAxis(cb, ax);
+                if (pa.max <= pb.min || pb.max <= pa.min) return false;
+            }
+            return true;
+        },
+
+        // Círculo vs OBB rotado: transforma el centro al espacio local del rect.
+        circleObbOverlaps(circle, rect) {
+            const cx  = circle.position_x + circle.width  / 2;
+            const cy  = circle.position_y + circle.height / 2;
+            const cr  = circle.width / 2;
+            const rad = (rect.rotation ?? 0) * Math.PI / 180;
+            const cos = Math.cos(rad), sin = Math.sin(rad);
+            const rx  = rect.position_x + rect.width  / 2;
+            const ry  = rect.position_y + rect.height / 2;
+            // Centro del círculo en espacio local del rect
+            const lx  = (cx - rx) * cos + (cy - ry) * sin;
+            const ly  = -(cx - rx) * sin + (cy - ry) * cos;
+            const hw  = rect.width / 2, hh = rect.height / 2;
+            const dx  = lx - Math.max(-hw, Math.min(hw, lx));
+            const dy  = ly - Math.max(-hh, Math.min(hh, ly));
+            return (dx * dx + dy * dy) < cr * cr;
+        },
+
+        overlaps(a, b) {
+            const aRound = a.shape === 'round' || a.shape === 'stool';
+            const bRound = b.shape === 'round' || b.shape === 'stool';
+            if (aRound && bRound) {
+                const dx = (a.position_x + a.width  / 2) - (b.position_x + b.width  / 2);
+                const dy = (a.position_y + a.height / 2) - (b.position_y + b.height / 2);
+                const r  = a.width / 2 + b.width / 2;
+                return (dx * dx + dy * dy) < r * r;
+            }
+            if (aRound) return this.circleObbOverlaps(a, b);
+            if (bRound) return this.circleObbOverlaps(b, a);
+            return this.obbOverlaps(a, b);
+        },
+
+        // Devuelve true si el item colisiona con elementos prohibidos.
+        // Mesas ↔ mesas: prohibido. Mesas ↔ especiales: prohibido.
+        // Especiales ↔ especiales: prohibido. Zonas: siempre permitidas.
+        hasCollision(item) {
+            const isSpecial = ['bar', 'stool'].includes(item.shape);
+            const selfId    = item.id ?? null;
+
+            if (isSpecial) {
+                return this.tables.some(t => this.overlaps(item, t)) ||
+                       this.elements.some(e => e.id !== selfId && this.overlaps(item, e));
+            }
+            return this.tables.some(t => t.id !== selfId && this.overlaps(item, t)) ||
+                   this.elements.some(e => this.overlaps(item, e));
+        },
+
         // ── Interactividad de mesas existentes ────────────────────────────────
         initTableInteract() {
             interact('.table-item').unset();
@@ -1350,34 +1458,76 @@ document.addEventListener('alpine:init', () => {
                     ignoreFrom:  '.rotation-handle, .resize-handle',
                     inertia:    false,
                     autoScroll: true,
-                    modifiers: [
-                        interact.modifiers.restrictRect({
-                            restriction: this.$refs.canvas,
-                            endOnly:     false,
-                        }),
-                    ],
                     listeners: {
-                        move: (event) => {
+                        start: (event) => {
                             const el   = event.target;
-                            const x    = (parseFloat(el.style.left) || 0) + event.dx;
-                            const y    = (parseFloat(el.style.top)  || 0) + event.dy;
-                            el.style.left = `${x}px`;
-                            el.style.top  = `${y}px`;
-                            // Sync Alpine data during drag so `:style` re-renders never overwrite interact.js
                             const id   = parseInt(el.dataset.tableId);
                             const item = this.tables.find(t => t.id === id) ?? this.elements.find(e => e.id === id);
-                            if (item) {
-                                item.position_x = Math.round(x);
-                                item.position_y = Math.round(y);
+                            // Cierra el panel de edición al iniciar arrastre
+                            this.editingTableId = null;
+                            this.editingTable   = null;
+                            // Marca si el elemento arranca ya en colisión (permite desatascarlo)
+                            el._startedColliding = item ? this.hasCollision(item) : false;
+                        },
+                        move: (event) => {
+                            const el   = event.target;
+                            const id   = parseInt(el.dataset.tableId);
+                            const item = this.tables.find(t => t.id === id) ?? this.elements.find(e => e.id === id);
+
+                            const curX = parseFloat(el.style.left) || 0;
+                            const curY = parseFloat(el.style.top)  || 0;
+
+                            // Clamp al canvas considerando rotación visual del elemento
+                            const { minX, maxX, minY, maxY } = item
+                                ? this.canvasBounds(item)
+                                : { minX: 0, maxX: this.floorWidth - 100, minY: 0, maxY: this.floorHeight - 100 };
+                            const propX = Math.max(minX, Math.min(maxX, Math.round(curX + event.dx)));
+                            const propY = Math.max(minY, Math.min(maxY, Math.round(curY + event.dy)));
+
+                            if (!item) {
+                                el.style.left = `${propX}px`;
+                                el.style.top  = `${propY}px`;
+                                return;
                             }
+
+                            // Si arrancó en colisión, movimiento libre hasta que salga — luego restringe
+                            if (el._startedColliding) {
+                                item.position_x = propX;
+                                item.position_y = propY;
+                                el.style.left   = `${propX}px`;
+                                el.style.top    = `${propY}px`;
+                                if (!this.hasCollision(item)) el._startedColliding = false;
+                                return;
+                            }
+
+                            // Axis-split: intenta mover en X e Y juntos, luego por separado
+                            const testXY = { ...item, position_x: propX, position_y: propY };
+                            const testX  = { ...item, position_x: propX, position_y: item.position_y };
+                            const testY  = { ...item, position_x: item.position_x, position_y: propY };
+
+                            let newX = item.position_x;
+                            let newY = item.position_y;
+
+                            if (!this.hasCollision(testXY)) {
+                                newX = propX; newY = propY;
+                            } else if (!this.hasCollision(testX)) {
+                                newX = propX;
+                            } else if (!this.hasCollision(testY)) {
+                                newY = propY;
+                            }
+
+                            item.position_x = newX;
+                            item.position_y = newY;
+                            el.style.left   = `${newX}px`;
+                            el.style.top    = `${newY}px`;
                         },
                         end: (event) => {
-                            const el  = event.target;
-                            const id  = parseInt(el.dataset.tableId);
-                            const x   = Math.round(parseFloat(el.style.left) || 0);
-                            const y   = Math.round(parseFloat(el.style.top)  || 0);
-                            const w   = Math.round(parseFloat(el.style.width)  || 100);
-                            const h   = Math.round(parseFloat(el.style.height) || 100);
+                            const el = event.target;
+                            const id = parseInt(el.dataset.tableId);
+                            const x  = Math.round(parseFloat(el.style.left) || 0);
+                            const y  = Math.round(parseFloat(el.style.top)  || 0);
+                            const w  = Math.round(parseFloat(el.style.width)  || 100);
+                            const h  = Math.round(parseFloat(el.style.height) || 100);
                             this.persistPosition(id, x, y, w, h);
                         },
                     },
@@ -1410,8 +1560,10 @@ document.addEventListener('alpine:init', () => {
             document.body.style.cursor = 'grabbing';
 
             const onMove = (e) => {
-                zone.position_x = Math.max(0, Math.round(startPx + (e.clientX - startMX)));
-                zone.position_y = Math.max(0, Math.round(startPy + (e.clientY - startMY)));
+                const maxX = Math.max(0, this.floorWidth  - zone.width);
+                const maxY = Math.max(0, this.floorHeight - zone.height);
+                zone.position_x = Math.max(0, Math.min(maxX, Math.round(startPx + (e.clientX - startMX))));
+                zone.position_y = Math.max(0, Math.min(maxY, Math.round(startPy + (e.clientY - startMY))));
             };
 
             const onUp = async () => {
@@ -1468,12 +1620,35 @@ document.addEventListener('alpine:init', () => {
 
             document.body.style.cursor = 'grabbing';
 
+            // Si el elemento ya está en colisión al iniciar, permitir movimiento libre hasta salir
+            let startedColliding = this.hasCollision(element);
+
             const onMove = (e) => {
-                const canvas = this.$refs.canvas;
-                const maxX = Math.max(0, canvas.offsetWidth  - element.width);
-                const maxY = Math.max(0, canvas.offsetHeight - element.height);
-                element.position_x = Math.max(0, Math.min(maxX, Math.round(startPx + (e.clientX - startMX))));
-                element.position_y = Math.max(0, Math.min(maxY, Math.round(startPy + (e.clientY - startMY))));
+                const { minX, maxX, minY, maxY } = this.canvasBounds(element);
+
+                const propX = Math.max(minX, Math.min(maxX, Math.round(startPx + (e.clientX - startMX))));
+                const propY = Math.max(minY, Math.min(maxY, Math.round(startPy + (e.clientY - startMY))));
+
+                if (startedColliding) {
+                    element.position_x = propX;
+                    element.position_y = propY;
+                    if (!this.hasCollision(element)) startedColliding = false;
+                    return;
+                }
+
+                // Axis-split: intenta mover ambos ejes, luego cada uno por separado
+                const testXY = { ...element, position_x: propX, position_y: propY };
+                const testX  = { ...element, position_x: propX, position_y: element.position_y };
+                const testY  = { ...element, position_x: element.position_x, position_y: propY };
+
+                if (!this.hasCollision(testXY)) {
+                    element.position_x = propX;
+                    element.position_y = propY;
+                } else if (!this.hasCollision(testX)) {
+                    element.position_x = propX;
+                } else if (!this.hasCollision(testY)) {
+                    element.position_y = propY;
+                }
             };
 
             const onUp = async () => {
@@ -1521,10 +1696,12 @@ document.addEventListener('alpine:init', () => {
                         ghost.style.borderRadius =
                             dropShape === 'round' ? '9999px' :
                             dropShape === 'square' ? '12px' : '8px';
+                        ghost.querySelector('span').textContent = 'Nueva mesa';
                         ghost.classList.remove('hidden');
                         ghost.classList.add('flex');
 
                         this.isDraggingFromPalette = true;
+                        this.currentDragShape      = dropShape;
                     },
 
                     move: (event) => {
@@ -1544,6 +1721,7 @@ document.addEventListener('alpine:init', () => {
                         ghost.classList.add('hidden');
                         ghost.classList.remove('flex');
                         this.isDraggingFromPalette = false;
+                        this.currentDragShape      = null;
 
                         const canvasRect = canvasEl.getBoundingClientRect();
                         const cx         = event.clientX;
@@ -1555,10 +1733,16 @@ document.addEventListener('alpine:init', () => {
 
                         if (!overCanvas) return;
 
-                        const name = await Alpine.store('tableModal').prompt();
-                        if (!name) return;
+                        const candidate = { position_x: dropX, position_y: dropY, width: dropW, height: dropH, shape: dropShape, id: null };
+                        if (this.hasCollision(candidate)) {
+                            this.showToast('No se puede colocar aquí: colisiona con otra mesa o elemento.', true);
+                            return;
+                        }
 
-                        await this.createTable(name, dropShape, dropX, dropY, dropW, dropH);
+                        const name = await Alpine.store('tableModal').prompt('table');
+                        if (name === null) return;
+
+                        await this.createTable(name || null, dropShape, dropX, dropY, dropW, dropH);
                     },
                 },
             });
@@ -1583,9 +1767,11 @@ document.addEventListener('alpine:init', () => {
                         ghost.style.borderRadius = shape === 'stool' ? '9999px' : '8px';
                         ghost.style.borderColor  = '#d97706';
                         ghost.style.background   = 'rgba(251,191,36,0.3)';
+                        ghost.querySelector('span').textContent = shape === 'bar' ? 'Nueva barra' : 'Nuevo taburete';
                         ghost.classList.remove('hidden');
                         ghost.classList.add('flex');
                         this.isDraggingFromPalette = true;
+                        this.currentDragShape      = shape;
                     },
                     move: (event) => {
                         const w = parseInt(event.target.dataset.width)  || 80;
@@ -1605,15 +1791,20 @@ document.addEventListener('alpine:init', () => {
                         ghost.style.borderColor = '';
                         ghost.style.background  = '';
                         this.isDraggingFromPalette = false;
+                        this.currentDragShape      = null;
 
                         const rect = canvasEl.getBoundingClientRect();
                         const over = event.clientX >= rect.left && event.clientX <= rect.right &&
                                      event.clientY >= rect.top  && event.clientY <= rect.bottom;
                         if (!over) return;
 
-                        const name = await Alpine.store('tableModal').prompt();
-                        if (!name) return;
+                        const candidate = { position_x: dropX, position_y: dropY, width: dropW, height: dropH, shape: dropShape, id: null };
+                        if (this.hasCollision(candidate)) {
+                            this.showToast('No se puede colocar aquí: colisiona con otra mesa o elemento.', true);
+                            return;
+                        }
 
+                        const name = dropShape === 'bar' ? 'Barra' : 'Taburete';
                         await this.createSpecialElement(name, dropShape, dropX, dropY, dropW, dropH);
                     },
                 },
@@ -1637,6 +1828,7 @@ document.addEventListener('alpine:init', () => {
                         ghost.style.borderRadius = '8px';
                         ghost.style.borderColor  = this.zoneColor;
                         ghost.style.background   = this.zoneColor + '33';
+                        ghost.querySelector('span').textContent = 'Nueva zona';
                         ghost.classList.remove('hidden');
                         ghost.classList.add('flex');
                         this.isDraggingZone = true;
@@ -1664,7 +1856,7 @@ document.addEventListener('alpine:init', () => {
                                      event.clientY >= rect.top  && event.clientY <= rect.bottom;
                         if (!over) return;
 
-                        const name = await Alpine.store('tableModal').prompt();
+                        const name = await Alpine.store('tableModal').prompt('zone');
                         if (!name) return;
 
                         await this.createZone(name, this.zoneColor, dropX, dropY, dropW, dropH);
@@ -1684,7 +1876,7 @@ document.addEventListener('alpine:init', () => {
                         'Accept':       'application/json',
                     },
                     body: JSON.stringify({
-                        name,
+                        name:             name || null,
                         shape,
                         position_x:       x,
                         position_y:       y,
@@ -1851,8 +2043,10 @@ document.addEventListener('alpine:init', () => {
             document.body.style.cursor = 'se-resize';
 
             const onMove = (e) => {
-                zone.width  = Math.min(2000, Math.max(80,  startW + (e.clientX - startMX)));
-                zone.height = Math.min(1500, Math.max(60,  startH + (e.clientY - startMY)));
+                const maxW  = Math.max(80, this.floorWidth  - zone.position_x);
+                const maxH  = Math.max(60, this.floorHeight - zone.position_y);
+                zone.width  = Math.min(maxW, Math.max(80, startW + (e.clientX - startMX)));
+                zone.height = Math.min(maxH, Math.max(60, startH + (e.clientY - startMY)));
             };
 
             const onUp = async () => {
@@ -1876,7 +2070,7 @@ document.addEventListener('alpine:init', () => {
 
         // ── AJAX: eliminar zona ───────────────────────────────────────────────
         async deleteZone(zone) {
-            const confirmed = await Alpine.store('deleteModal').prompt({ name: `Zona "${zone.name}"` });
+            const confirmed = await Alpine.store('deleteModal').prompt(zone);
             if (!confirmed) return;
 
             try {
@@ -1939,11 +2133,18 @@ document.addEventListener('alpine:init', () => {
                 const dW   = newW - startW;
                 const dH   = newH - startH;
 
-                table.width      = Math.round(newW);
-                table.height     = Math.round(newH);
-                // Corregir posición CSS para que la esquina visual superior-izquierda no se mueva
-                table.position_x = Math.max(0, Math.round(startPx + dW / 2 * (cosθ - 1) - dH / 2 * sinθ));
-                table.position_y = Math.max(0, Math.round(startPy + dW / 2 * sinθ + dH / 2 * (cosθ - 1)));
+                const rawX = Math.round(startPx + dW / 2 * (cosθ - 1) - dH / 2 * sinθ);
+                const rawY = Math.round(startPy + dW / 2 * sinθ + dH / 2 * (cosθ - 1));
+                const newX = Math.max(0, Math.min(this.floorWidth  - Math.round(newW), rawX));
+                const newY = Math.max(0, Math.min(this.floorHeight - Math.round(newH), rawY));
+
+                const testItem = { ...table, width: Math.round(newW), height: Math.round(newH), position_x: newX, position_y: newY };
+                if (!this.hasCollision(testItem)) {
+                    table.width      = Math.round(newW);
+                    table.height     = Math.round(newH);
+                    table.position_x = newX;
+                    table.position_y = newY;
+                }
             };
 
             const onUp = async () => {
@@ -1997,6 +2198,7 @@ document.addEventListener('alpine:init', () => {
             const prev = table.shape;
             table.shape = shape;
             this.editingTableId = null;
+            this.editingTable   = null;
 
             try {
                 const res = await fetch(`/mesas/${table.id}/forma`, {
@@ -2025,6 +2227,40 @@ document.addEventListener('alpine:init', () => {
         },
 
         // ── AJAX: actualizar nombre de mesa existente ─────────────────────────
+        zoneFor(table) {
+            return table.zone_id ? (this.zones.find(z => z.id == table.zone_id) ?? null) : null;
+        },
+
+        async updateZoneAssignment(table, zoneId) {
+            const prev       = table.zone_id;
+            table.zone_id    = zoneId ? parseInt(zoneId) : null;
+
+            try {
+                const res = await fetch(`/mesas/${table.id}/zona`, {
+                    method:  'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept':       'application/json',
+                    },
+                    body: JSON.stringify({ zone_id: table.zone_id }),
+                });
+
+                const json = await res.json();
+
+                if (!res.ok || !json.success) {
+                    table.zone_id = prev;
+                    this.showToast(json.message ?? 'Error al asignar la zona.', true);
+                    return;
+                }
+
+                this.showToast(json.message);
+            } catch {
+                table.zone_id = prev;
+                this.showToast('Error de red al asignar la zona.', true);
+            }
+        },
+
         async updateName(table, name) {
             name = name.trim();
             if (!name || name === table.name) return;
@@ -2060,6 +2296,10 @@ document.addEventListener('alpine:init', () => {
 
         // ── Rotación libre arrastrando el handle (estilo Canva) ───────────────
         startRotation(event, table) {
+            this.editingTableId = null;
+            this.editingTable   = null;
+            this.rotatingId     = table.id;
+
             const canvasRect = this.$refs.canvas.getBoundingClientRect();
             const centerX    = canvasRect.left + table.position_x + table.width  / 2;
             const centerY    = canvasRect.top  + table.position_y + table.height / 2;
@@ -2068,14 +2308,25 @@ document.addEventListener('alpine:init', () => {
             this.rotTooltip.show       = true;
             document.body.style.cursor = "url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2720%27 height=%2720%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27M21 2v6h-6%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M3 12a9 9 0 0 1 15-6.7L21 8%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M3 22v-6h6%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M21 12a9 9 0 0 1-15 6.7L3 16%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M21 2v6h-6%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M3 12a9 9 0 0 1 15-6.7L21 8%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M3 22v-6h6%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M21 12a9 9 0 0 1-15 6.7L3 16%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3C/svg%3E') 10 10, grabbing";
 
+            let lastValidRotation = table.rotation ?? 0;
+
             const onMove = (e) => {
-                const dx    = e.clientX - centerX;
-                const dy    = e.clientY - centerY;
-                let   angle = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
+                const dx       = e.clientX - centerX;
+                const dy       = e.clientY - centerY;
+                let   angle    = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
                 angle = ((angle % 360) + 360) % 360;
-                table.rotation     = Math.round(angle);
-                this.rotTooltip.x  = e.clientX;
-                this.rotTooltip.y  = e.clientY;
+                const proposed = Math.round(angle);
+
+                const testItem = { ...table, rotation: proposed };
+                if (!this.hasCollision(testItem)) {
+                    table.rotation    = proposed;
+                    lastValidRotation = proposed;
+                } else {
+                    table.rotation = lastValidRotation;
+                }
+
+                this.rotTooltip.x   = e.clientX;
+                this.rotTooltip.y   = e.clientY;
                 this.rotTooltip.deg = table.rotation;
             };
 
@@ -2083,6 +2334,7 @@ document.addEventListener('alpine:init', () => {
                 document.removeEventListener('mousemove', onMove);
                 document.removeEventListener('mouseup',   onUp);
                 this.isRotating            = false;
+                this.rotatingId            = null;
                 this.rotTooltip.show       = false;
                 document.body.style.cursor = '';
                 await this.persistPosition(table.id, table.position_x, table.position_y, table.width, table.height);

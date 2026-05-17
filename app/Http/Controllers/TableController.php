@@ -126,7 +126,7 @@ class TableController extends Controller
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'name'             => 'required|string|max:50',
+            'name'             => 'nullable|string|max:50',
             'shape'            => 'required|in:square,round,rectangle,bar,stool',
             'position_x'       => 'required|integer|min:0',
             'position_y'       => 'required|integer|min:0',
@@ -139,6 +139,14 @@ class TableController extends Controller
         $isServicePoint = in_array($data['shape'], ['bar', 'stool'])
             ? false
             : ($data['is_service_point'] ?? true);
+
+        if (in_array($data['shape'], ['bar', 'stool'])) {
+            $data['name'] = $data['shape'] === 'bar' ? 'Barra' : 'Taburete';
+        } elseif (empty($data['name'])) {
+            $user = Auth::user();
+            $user->increment('next_table_number');
+            $data['name'] = (string) $user->next_table_number;
+        }
 
         if ($isServicePoint) {
             $count     = Table::where('user_id', Auth::id())->servicePoints()->count();
@@ -160,10 +168,16 @@ class TableController extends Controller
             'is_service_point' => $isServicePoint,
         ]);
 
+        $message = match ($table->shape) {
+            'bar'   => 'Barra colocada en el plano.',
+            'stool' => 'Taburete colocado en el plano.',
+            default => "Mesa \"{$table->name}\" creada.",
+        };
+
         return response()->json([
             'success' => true,
             'data'    => $table,
-            'message' => "Mesa \"{$table->name}\" creada.",
+            'message' => $message,
         ], 201);
     }
 
@@ -220,6 +234,34 @@ class TableController extends Controller
     }
 
     /**
+     * Asigna o desvincula la zona de una mesa.
+     *
+     * @param  Request  $request
+     * @param  Table    $table
+     * @return JsonResponse
+     */
+    public function updateZone(Request $request, Table $table): JsonResponse
+    {
+        abort_if($table->user_id !== Auth::id(), 403, 'Acceso denegado.');
+
+        $data = $request->validate([
+            'zone_id' => ['nullable', Rule::exists('zones', 'id')->where('user_id', Auth::id())],
+        ]);
+
+        $table->update($data);
+
+        $message = $data['zone_id']
+            ? "Zona asignada a \"{$table->name}\"."
+            : "Zona eliminada de \"{$table->name}\".";
+
+        return response()->json([
+            'success' => true,
+            'data'    => $table,
+            'message' => $message,
+        ]);
+    }
+
+    /**
      * Actualiza la forma visual de una mesa existente en el mapa.
      *
      * @param  Request  $request
@@ -261,12 +303,19 @@ class TableController extends Controller
     {
         abort_if($table->user_id !== Auth::id(), 403, 'Acceso denegado.');
 
-        $name = $table->name;
+        $name  = $table->name;
+        $shape = $table->shape;
         $table->delete();
+
+        $message = match ($shape) {
+            'bar'   => 'Barra eliminada del plano.',
+            'stool' => 'Taburete eliminado del plano.',
+            default => "Mesa \"{$name}\" eliminada.",
+        };
 
         return response()->json([
             'success' => true,
-            'message' => "Mesa \"{$name}\" eliminada.",
+            'message' => $message,
         ]);
     }
 
