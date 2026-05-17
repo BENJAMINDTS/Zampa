@@ -126,7 +126,7 @@ class TableController extends Controller
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'name'             => 'required|string|max:50',
+            'name'             => 'nullable|string|max:50',
             'shape'            => 'required|in:square,round,rectangle,bar,stool',
             'position_x'       => 'required|integer|min:0',
             'position_y'       => 'required|integer|min:0',
@@ -139,6 +139,14 @@ class TableController extends Controller
         $isServicePoint = in_array($data['shape'], ['bar', 'stool'])
             ? false
             : ($data['is_service_point'] ?? true);
+
+        if (in_array($data['shape'], ['bar', 'stool'])) {
+            $data['name'] = $data['shape'] === 'bar' ? 'Barra' : 'Taburete';
+        } elseif (empty($data['name'])) {
+            $user = Auth::user();
+            $user->increment('next_table_number');
+            $data['name'] = (string) $user->next_table_number;
+        }
 
         if ($isServicePoint) {
             $count     = Table::where('user_id', Auth::id())->servicePoints()->count();

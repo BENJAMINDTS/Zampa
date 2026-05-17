@@ -1044,25 +1044,29 @@
     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 w-full max-w-sm mx-4"
          @click.stop>
 
-        <h2 id="modal-title" class="text-lg font-bold text-gray-900 dark:text-white mb-4">
-            Nueva mesa
+        <h2 id="modal-title" class="text-lg font-bold text-gray-900 dark:text-white mb-4"
+            x-text="$store.tableModal.mode === 'zone' ? 'Nueva zona' : 'Nueva mesa'">
         </h2>
 
         <div class="mb-4">
-            <label for="new-table-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Nombre de la mesa
+            <label for="new-table-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                   x-text="$store.tableModal.mode === 'zone' ? 'Nombre de la zona' : 'Nombre de la mesa'">
             </label>
             <input id="new-table-name"
                    type="text"
                    x-model="$store.tableModal.name"
                    @keydown.enter="$store.tableModal.confirm()"
                    maxlength="50"
-                   placeholder="Ej: Mesa 1, Terraza A..."
+                   :placeholder="$store.tableModal.mode === 'zone' ? 'Ej: Terraza, Interior...' : 'Ej: Terraza A... (vacío = número automático)'"
                    class="w-full rounded-lg border border-gray-300 dark:border-gray-600
                           bg-white dark:bg-gray-700 text-gray-900 dark:text-white
                           px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                   aria-required="true"
+                   :aria-required="$store.tableModal.mode === 'zone'"
                    x-init="$watch('$store.tableModal.open', v => v && $nextTick(() => $el.focus()))">
+            <p x-show="$store.tableModal.mode === 'table'"
+               class="mt-1 text-xs text-gray-400 dark:text-gray-500">
+                Deja vacío para asignar un número automático.
+            </p>
         </div>
 
         <div class="flex gap-2 justify-end">
@@ -1076,7 +1080,7 @@
             </button>
             <button type="button"
                     @click="$store.tableModal.confirm()"
-                    :disabled="!$store.tableModal.name.trim()"
+                    :disabled="$store.tableModal.mode === 'zone' && !$store.tableModal.name.trim()"
                     class="px-4 py-2 rounded-lg text-sm font-medium text-white
                            bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50
                            disabled:cursor-not-allowed transition-colors">
@@ -1094,18 +1098,20 @@ document.addEventListener('alpine:init', () => {
 
     // ── Store para el modal de nombre de nueva mesa ───────────────────────────
     Alpine.store('tableModal', {
-        open:       false,
-        name:       '',
-        _resolve:   null,
+        open:     false,
+        name:     '',
+        mode:     'table',
+        _resolve: null,
 
-        prompt() {
+        prompt(mode = 'table') {
             this.name = '';
+            this.mode = mode;
             this.open = true;
             return new Promise(resolve => { this._resolve = resolve; });
         },
 
         confirm() {
-            if (!this.name.trim()) return;
+            if (this.mode === 'zone' && !this.name.trim()) return;
             const name = this.name.trim();
             this.open = false;
             this._resolve?.(name);
@@ -1468,10 +1474,10 @@ document.addEventListener('alpine:init', () => {
 
                         if (!overCanvas) return;
 
-                        const name = await Alpine.store('tableModal').prompt();
-                        if (!name) return;
+                        const name = await Alpine.store('tableModal').prompt('table');
+                        if (name === null) return;
 
-                        await this.createTable(name, dropShape, dropX, dropY, dropW, dropH);
+                        await this.createTable(name || null, dropShape, dropX, dropY, dropW, dropH);
                     },
                 },
             });
@@ -1575,7 +1581,7 @@ document.addEventListener('alpine:init', () => {
                                      event.clientY >= rect.top  && event.clientY <= rect.bottom;
                         if (!over) return;
 
-                        const name = await Alpine.store('tableModal').prompt();
+                        const name = await Alpine.store('tableModal').prompt('zone');
                         if (!name) return;
 
                         await this.createZone(name, this.zoneColor, dropX, dropY, dropW, dropH);
@@ -1595,7 +1601,7 @@ document.addEventListener('alpine:init', () => {
                         'Accept':       'application/json',
                     },
                     body: JSON.stringify({
-                        name,
+                        name:             name || null,
                         shape,
                         position_x:       x,
                         position_y:       y,
