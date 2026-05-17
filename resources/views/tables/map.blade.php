@@ -1299,66 +1299,84 @@ document.addEventListener('alpine:init', () => {
             this.toast._timer = setTimeout(() => { this.toast.show = false; }, 3000);
         },
 
-        // Devuelve el AABB axis-aligned de un elemento ya rotado.
-        // Para 90°: un rect 200×100 devuelve 100×200. Para 0°: igual que el original.
-        effectiveBBox(item) {
-            const hw  = item.width  / 2;
-            const hh  = item.height / 2;
-            const cx  = item.position_x + hw;
-            const cy  = item.position_y + hh;
-            const rot = item.rotation ?? 0;
+        // ── Colisión exacta: SAT (OBB vs OBB) + círculo vs OBB ───────────────
 
-            if (rot === 0) {
-                return { x: item.position_x, y: item.position_y, w: item.width, h: item.height };
-            }
-
-            const rad   = rot * Math.PI / 180;
-            const cos   = Math.abs(Math.cos(rad));
-            const sin   = Math.abs(Math.sin(rad));
-            const halfW = hw * cos + hh * sin;
-            const halfH = hw * sin + hh * cos;
-
-            return { x: cx - halfW, y: cy - halfH, w: halfW * 2, h: halfH * 2 };
+        // Devuelve los 4 vértices de un rectángulo rotado en coordenadas mundo.
+        rectCorners(item) {
+            const rad = (item.rotation ?? 0) * Math.PI / 180;
+            const cos = Math.cos(rad), sin = Math.sin(rad);
+            const cx  = item.position_x + item.width  / 2;
+            const cy  = item.position_y + item.height / 2;
+            const hw  = item.width  / 2, hh = item.height / 2;
+            return [
+                { x: cx + hw*cos - hh*sin, y: cy + hw*sin + hh*cos },
+                { x: cx - hw*cos - hh*sin, y: cy - hw*sin + hh*cos },
+                { x: cx - hw*cos + hh*sin, y: cy - hw*sin - hh*cos },
+                { x: cx + hw*cos + hh*sin, y: cy + hw*sin - hh*cos },
+            ];
         },
 
-        // ── Colisión: shape-aware + rotación ──────────────────────────────────
+        // Proyecta una lista de vértices sobre un eje normalizado → { min, max }.
+        projectOnAxis(corners, axis) {
+            let min = Infinity, max = -Infinity;
+            for (const c of corners) {
+                const p = c.x * axis.x + c.y * axis.y;
+                if (p < min) min = p;
+                if (p > max) max = p;
+            }
+            return { min, max };
+        },
+
+        // SAT entre dos OBBs: exacto a cualquier ángulo.
+        obbOverlaps(a, b) {
+            const ca = this.rectCorners(a);
+            const cb = this.rectCorners(b);
+            const ra = (a.rotation ?? 0) * Math.PI / 180;
+            const rb = (b.rotation ?? 0) * Math.PI / 180;
+            const axes = [
+                { x:  Math.cos(ra), y: Math.sin(ra) },
+                { x: -Math.sin(ra), y: Math.cos(ra) },
+                { x:  Math.cos(rb), y: Math.sin(rb) },
+                { x: -Math.sin(rb), y: Math.cos(rb) },
+            ];
+            for (const ax of axes) {
+                const pa = this.projectOnAxis(ca, ax);
+                const pb = this.projectOnAxis(cb, ax);
+                if (pa.max <= pb.min || pb.max <= pa.min) return false;
+            }
+            return true;
+        },
+
+        // Círculo vs OBB rotado: transforma el centro al espacio local del rect.
+        circleObbOverlaps(circle, rect) {
+            const cx  = circle.position_x + circle.width  / 2;
+            const cy  = circle.position_y + circle.height / 2;
+            const cr  = circle.width / 2;
+            const rad = (rect.rotation ?? 0) * Math.PI / 180;
+            const cos = Math.cos(rad), sin = Math.sin(rad);
+            const rx  = rect.position_x + rect.width  / 2;
+            const ry  = rect.position_y + rect.height / 2;
+            // Centro del círculo en espacio local del rect
+            const lx  = (cx - rx) * cos + (cy - ry) * sin;
+            const ly  = -(cx - rx) * sin + (cy - ry) * cos;
+            const hw  = rect.width / 2, hh = rect.height / 2;
+            const dx  = lx - Math.max(-hw, Math.min(hw, lx));
+            const dy  = ly - Math.max(-hh, Math.min(hh, ly));
+            return (dx * dx + dy * dy) < cr * cr;
+        },
+
         overlaps(a, b) {
             const aRound = a.shape === 'round' || a.shape === 'stool';
             const bRound = b.shape === 'round' || b.shape === 'stool';
-
-            if (aRound || bRound) {
-                const circle = aRound ? a : b;
-                const other  = aRound ? b : a;
-                const cx = circle.position_x + circle.width  / 2;
-                const cy = circle.position_y + circle.height / 2;
-                const cr = circle.width / 2;
-
-                if (aRound && bRound) {
-                    // círculo vs círculo
-                    const ox  = other.position_x + other.width  / 2;
-                    const oy  = other.position_y + other.height / 2;
-                    const or2 = other.width / 2;
-                    const dx  = cx - ox, dy = cy - oy;
-                    return (dx * dx + dy * dy) < (cr + or2) * (cr + or2);
-                }
-
-                // círculo vs rectángulo rotado
-                const bbox     = this.effectiveBBox(other);
-                const closestX = Math.max(bbox.x, Math.min(cx, bbox.x + bbox.w));
-                const closestY = Math.max(bbox.y, Math.min(cy, bbox.y + bbox.h));
-                const dx = cx - closestX, dy = cy - closestY;
-                return (dx * dx + dy * dy) < cr * cr;
+            if (aRound && bRound) {
+                const dx = (a.position_x + a.width  / 2) - (b.position_x + b.width  / 2);
+                const dy = (a.position_y + a.height / 2) - (b.position_y + b.height / 2);
+                const r  = a.width / 2 + b.width / 2;
+                return (dx * dx + dy * dy) < r * r;
             }
-
-            // AABB rotado: rect vs rect
-            const bboxA = this.effectiveBBox(a);
-            const bboxB = this.effectiveBBox(b);
-            return !(
-                bboxA.x + bboxA.w <= bboxB.x ||
-                bboxB.x + bboxB.w <= bboxA.x ||
-                bboxA.y + bboxA.h <= bboxB.y ||
-                bboxB.y + bboxB.h <= bboxA.y
-            );
+            if (aRound) return this.circleObbOverlaps(a, b);
+            if (bRound) return this.circleObbOverlaps(b, a);
+            return this.obbOverlaps(a, b);
         },
 
         // Devuelve true si el item colisiona con elementos prohibidos.
@@ -2057,13 +2075,18 @@ document.addEventListener('alpine:init', () => {
                 const dW   = newW - startW;
                 const dH   = newH - startH;
 
-                table.width      = Math.round(newW);
-                table.height     = Math.round(newH);
-                // Corregir posición CSS para que la esquina visual superior-izquierda no se mueva
                 const rawX = Math.round(startPx + dW / 2 * (cosθ - 1) - dH / 2 * sinθ);
                 const rawY = Math.round(startPy + dW / 2 * sinθ + dH / 2 * (cosθ - 1));
-                table.position_x = Math.max(0, Math.min(this.floorWidth  - table.width,  rawX));
-                table.position_y = Math.max(0, Math.min(this.floorHeight - table.height, rawY));
+                const newX = Math.max(0, Math.min(this.floorWidth  - Math.round(newW), rawX));
+                const newY = Math.max(0, Math.min(this.floorHeight - Math.round(newH), rawY));
+
+                const testItem = { ...table, width: Math.round(newW), height: Math.round(newH), position_x: newX, position_y: newY };
+                if (!this.hasCollision(testItem)) {
+                    table.width      = Math.round(newW);
+                    table.height     = Math.round(newH);
+                    table.position_x = newX;
+                    table.position_y = newY;
+                }
             };
 
             const onUp = async () => {
@@ -2222,14 +2245,25 @@ document.addEventListener('alpine:init', () => {
             this.rotTooltip.show       = true;
             document.body.style.cursor = "url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2720%27 height=%2720%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27M21 2v6h-6%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M3 12a9 9 0 0 1 15-6.7L21 8%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M3 22v-6h6%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M21 12a9 9 0 0 1-15 6.7L3 16%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M21 2v6h-6%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M3 12a9 9 0 0 1 15-6.7L21 8%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M3 22v-6h6%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M21 12a9 9 0 0 1-15 6.7L3 16%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3C/svg%3E') 10 10, grabbing";
 
+            let lastValidRotation = table.rotation ?? 0;
+
             const onMove = (e) => {
-                const dx    = e.clientX - centerX;
-                const dy    = e.clientY - centerY;
-                let   angle = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
+                const dx       = e.clientX - centerX;
+                const dy       = e.clientY - centerY;
+                let   angle    = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
                 angle = ((angle % 360) + 360) % 360;
-                table.rotation     = Math.round(angle);
-                this.rotTooltip.x  = e.clientX;
-                this.rotTooltip.y  = e.clientY;
+                const proposed = Math.round(angle);
+
+                const testItem = { ...table, rotation: proposed };
+                if (!this.hasCollision(testItem)) {
+                    table.rotation    = proposed;
+                    lastValidRotation = proposed;
+                } else {
+                    table.rotation = lastValidRotation;
+                }
+
+                this.rotTooltip.x   = e.clientX;
+                this.rotTooltip.y   = e.clientY;
                 this.rotTooltip.deg = table.rotation;
             };
 
