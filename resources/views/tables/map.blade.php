@@ -358,7 +358,7 @@
                         :aria-label="`Zona ${zone.name}`"
                         @mouseenter="hoveredId = zone.id"
                         @mouseleave="hoveredId = null"
-                        @click.stop="selectedId = selectedId === zone.id ? null : zone.id"
+                        @click.stop="selectedId = selectedId === zone.id ? null : zone.id; editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null;"
                         @mousedown.prevent.self="startZoneDrag($event, zone)"
                     >
                         {{-- Etiqueta de zona --}}
@@ -452,7 +452,7 @@
                                  z-index:${hoveredId === bar.id || selectedId === bar.id || rotatingId === bar.id ? 30 : 10};`"
                         @mouseenter="hoveredId = bar.id"
                         @mouseleave="hoveredId = null"
-                        @click.stop="selectedId = selectedId === bar.id ? null : bar.id"
+                        @click.stop="selectedId = selectedId === bar.id ? null : bar.id; editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null;"
                         :aria-label="`Barra: ${bar.name}`"
                     >
                         <div class="w-full h-full relative flex items-center justify-center
@@ -535,7 +535,7 @@
                                  z-index:${hoveredId === stool.id || selectedId === stool.id || rotatingId === stool.id ? 30 : 10};`"
                         @mouseenter="hoveredId = stool.id"
                         @mouseleave="hoveredId = null"
-                        @click.stop="selectedId = selectedId === stool.id ? null : stool.id"
+                        @click.stop="selectedId = selectedId === stool.id ? null : stool.id; editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null;"
                         :aria-label="`Taburete: ${stool.name}`"
                     >
                         <div class="w-full h-full relative flex items-center justify-center
@@ -620,7 +620,7 @@
                                  z-index: ${hoveredId === table.id || selectedId === table.id || rotatingId === table.id || editingTableId === table.id ? 30 : 10};`"
                         @mouseenter="hoveredId = table.id"
                         @mouseleave="hoveredId = null"
-                        @click.stop="selectedId = selectedId === table.id ? null : table.id"
+                        @click.stop="selectedId = selectedId === table.id ? null : table.id; editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null;"
                         :aria-label="`Mesa ${table.name}`"
                     >
                         {{-- Fondo de la mesa --}}
