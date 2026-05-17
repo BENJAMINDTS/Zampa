@@ -38,6 +38,7 @@ class Zone extends Model
         'width',
         'height',
         'rotation',
+        'floor',
     ];
 
     /**

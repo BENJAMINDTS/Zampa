@@ -71,6 +71,7 @@ class User extends Authenticatable
         'floor_height',
         'floor_count',
         'floors_enabled',
+        'floor_canvas_sizes',
     ];
 
     /**
@@ -96,8 +97,9 @@ class User extends Authenticatable
             'active'            => 'boolean',
             'is_waiter'         => 'boolean',
             'is_kitchen'        => 'boolean',
-            'floor_count'       => 'integer',
-            'floors_enabled'    => 'boolean',
+            'floor_count'        => 'integer',
+            'floors_enabled'     => 'boolean',
+            'floor_canvas_sizes' => 'array',
         ];
     }
 
