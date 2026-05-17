@@ -71,7 +71,11 @@ class ChatController extends Controller
 
         return response()->json([
             'success' => ! $result['error'],
-            'data'    => ['reply' => $result['message'], 'closed' => $result['closed']],
+            'data'    => [
+                'reply'  => $result['message'],
+                'cards'  => $result['cards'] ?? [],
+                'closed' => $result['closed'],
+            ],
             'message' => $result['error'] ? 'Error en el asistente.' : 'OK',
         ]);
     }
@@ -90,6 +94,53 @@ class ChatController extends Controller
             'success' => true,
             'data'    => null,
             'message' => 'Conversación cerrada.',
+        ]);
+    }
+
+    /**
+     * Devuelve las categorías con productos activos del restaurante para el widget de chat.
+     * Permite al frontend mostrar tarjetas de productos sin pasar por la IA.
+     *
+     * @param  string  $tableHash  Hash único de la mesa
+     * @return JsonResponse
+     */
+    public function menu(string $tableHash): JsonResponse
+    {
+        $table = Table::where('unique_hash', $tableHash)->firstOrFail();
+
+        $categories = $table->user->categories()
+            ->with(['products' => function ($q) {
+                $q->where('is_active', true)
+                  ->orderBy('name')
+                  ->with('ingredients');
+            }])
+            ->get()
+            ->filter(fn ($c) => $c->products->isNotEmpty())
+            ->map(fn ($c) => [
+                'id'          => $c->id,
+                'name'        => $c->name,
+                'destination' => $c->destination,
+                'products'    => $c->products->map(fn ($p) => [
+                    'id'          => $p->id,
+                    'name'        => $p->name,
+                    'description' => $p->description ?? '',
+                    'price'       => (float) $p->price,
+                    'ingredients' => $p->ingredients->map(fn ($i) => [
+                        'id'          => $i->id,
+                        'name'        => $i->name,
+                        'is_allergen' => (bool) $i->is_allergen,
+                    ])->values(),
+                ])->values(),
+            ])
+            ->values();
+
+        return response()->json([
+            'success' => true,
+            'data'    => [
+                'restaurant' => $table->user->business_name ?: $table->user->name,
+                'table'      => $table->name,
+                'categories' => $categories,
+            ],
         ]);
     }
 }

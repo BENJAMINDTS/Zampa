@@ -46,10 +46,10 @@ it('returns 401 for unauthenticated user on destroy', function () {
 
 // ─── Control de rol ───────────────────────────────────────────────────────────
 
-it('returns 403 for non-admin on map page', function () {
+it('allows waiter read-only access to map page', function () {
     $this->actingAs($this->waiter)
          ->get(route('tables.map'))
-         ->assertForbidden();
+         ->assertOk();
 });
 
 it('returns 403 for non-admin on store', function () {

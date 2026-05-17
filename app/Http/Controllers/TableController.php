@@ -23,6 +23,7 @@ use SimpleSoftwareIO\QrCode\Facades\QrCode;
  * Incluye el mapa visual drag & drop para crear, mover y eliminar mesas.
  *
  * @author AyrtonAlania
+ * @author SebastianBCF
  */
 class TableController extends Controller
 {
@@ -47,25 +48,52 @@ class TableController extends Controller
      */
     public function map(): View
     {
-        $userId      = Auth::id();
-        $tables      = Table::where('user_id', $userId)
+        $ownerId     = Auth::user()->ownerUserId();
+        $tables      = Table::where('user_id', $ownerId)
                            ->servicePoints()
                            ->whereNotIn('shape', ['bar', 'stool'])
                            ->orderBy('name')
                            ->get();
-        $elements    = Table::where('user_id', $userId)
+        $elements    = Table::where('user_id', $ownerId)
                            ->where(function ($q) {
                                $q->where('is_service_point', false)
                                  ->orWhereIn('shape', ['bar', 'stool']);
                            })
                            ->orderBy('name')
                            ->get();
-        $zones       = Zone::where('user_id', $userId)->orderBy('name')->get();
-        $maxTables   = Auth::user()->plan?->max_tables ?? 10;
-        $floorWidth  = Auth::user()->floor_width  ?? 1200;
-        $floorHeight = Auth::user()->floor_height ?? 800;
+        $zones       = Zone::where('user_id', $ownerId)->orderBy('name')->get();
+        $owner       = Auth::user()->isAdmin() ? Auth::user() : Auth::user()->admin;
+        $maxTables   = $owner?->plan?->max_tables ?? 10;
+        $floorWidth  = $owner?->floor_width  ?? 1200;
+        $floorHeight = $owner?->floor_height ?? 800;
+        $readonly    = ! Auth::user()->isAdmin();
 
-        return view('tables.map', compact('tables', 'elements', 'zones', 'maxTables', 'floorWidth', 'floorHeight'));
+        return view('tables.map', compact('tables', 'elements', 'zones', 'maxTables', 'floorWidth', 'floorHeight', 'readonly'));
+    }
+
+    /**
+     * Devuelve el estado actual (ocupada/libre y solicitud de cuenta) de todas las mesas.
+     * Consumido por el polling del mapa en tiempo real.
+     *
+     * @return JsonResponse
+     */
+    public function mapStatuses(): JsonResponse
+    {
+        abort_if(! Auth::user()->canAccessBar(), 403, 'Acceso denegado.');
+
+        $ownerId  = Auth::user()->ownerUserId();
+        $statuses = Table::where('user_id', $ownerId)
+            ->servicePoints()
+            ->with(['activeOrder:id,table_id,bill_requested,requested_payment_method'])
+            ->get(['id', 'status'])
+            ->map(fn (Table $t) => [
+                'id'                       => $t->id,
+                'status'                   => $t->status,
+                'bill_requested'           => (bool) ($t->activeOrder?->bill_requested ?? false),
+                'requested_payment_method' => $t->activeOrder?->requested_payment_method,
+            ]);
+
+        return response()->json($statuses);
     }
 
     /**

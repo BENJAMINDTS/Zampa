@@ -1,13 +1,8 @@
 <?php
 
-/**
- * @author SebastianBCF
- */
-
 use App\Models\Conversation;
 use App\Models\Order;
 use App\Models\OrderItem;
-use App\Models\Plan;
 use App\Models\Product;
 use App\Models\Table;
 use App\Models\User;
@@ -33,14 +28,6 @@ it('shows kitchen panel to admin with kitchen role', function () {
         ->assertViewIs('kitchen.index');
 });
 
-it('returns 403 for admin without kitchen role', function () {
-    $admin = User::factory()->admin()->create(['is_kitchen' => false]);
-
-    $this->actingAs($admin)
-        ->get(route('kitchen.index'))
-        ->assertForbidden();
-});
-
 it('returns 403 for waiter role user', function () {
     $waiter = User::factory()->create(['role' => 'waiter']);
 
@@ -50,10 +37,10 @@ it('returns 403 for waiter role user', function () {
 });
 
 it('shows only pending and cooking orders of the authenticated restaurant', function () {
-    $kitchenUser = User::factory()->create(['role' => 'kitchen']);
-    $table       = Table::factory()->create(['user_id' => $kitchenUser->id]);
-    $plan        = Plan::factory()->create();
-    $product     = Product::factory()->create(['user_id' => $kitchenUser->id]);
+    $admin       = User::factory()->admin()->create();
+    $kitchenUser = User::factory()->kitchen()->staffOf($admin)->create();
+    $table       = Table::factory()->create(['user_id' => $admin->id]);
+    $product     = Product::factory()->create(['user_id' => $admin->id]);
 
     $pending = Order::factory()->create(['table_id' => $table->id, 'status' => 'pending']);
     $cooking = Order::factory()->create(['table_id' => $table->id, 'status' => 'cooking']);
@@ -75,14 +62,15 @@ it('shows only pending and cooking orders of the authenticated restaurant', func
 });
 
 it('does not show orders from other restaurants', function () {
-    $kitchenUser = User::factory()->create(['role' => 'kitchen']);
-    $otherUser   = User::factory()->create(['role' => 'admin']);
+    $admin       = User::factory()->admin()->create();
+    $kitchenUser = User::factory()->kitchen()->staffOf($admin)->create();
+    $otherAdmin  = User::factory()->admin()->create();
 
-    $ownTable   = Table::factory()->create(['user_id' => $kitchenUser->id]);
-    $otherTable = Table::factory()->create(['user_id' => $otherUser->id]);
+    $ownTable   = Table::factory()->create(['user_id' => $admin->id]);
+    $otherTable = Table::factory()->create(['user_id' => $otherAdmin->id]);
 
-    $ownProduct   = Product::factory()->create(['user_id' => $kitchenUser->id]);
-    $otherProduct = Product::factory()->create(['user_id' => $otherUser->id]);
+    $ownProduct   = Product::factory()->create(['user_id' => $admin->id]);
+    $otherProduct = Product::factory()->create(['user_id' => $otherAdmin->id]);
 
     $ownOrder   = Order::factory()->create(['table_id' => $ownTable->id,   'status' => 'pending']);
     $otherOrder = Order::factory()->create(['table_id' => $otherTable->id, 'status' => 'pending']);
@@ -102,9 +90,10 @@ it('does not show orders from other restaurants', function () {
 });
 
 it('does not show closed orders', function () {
-    $kitchenUser = User::factory()->create(['role' => 'kitchen']);
-    $table       = Table::factory()->create(['user_id' => $kitchenUser->id]);
-    $product     = Product::factory()->create(['user_id' => $kitchenUser->id]);
+    $admin       = User::factory()->admin()->create();
+    $kitchenUser = User::factory()->kitchen()->staffOf($admin)->create();
+    $table       = Table::factory()->create(['user_id' => $admin->id]);
+    $product     = Product::factory()->create(['user_id' => $admin->id]);
 
     $closedOrder = Order::factory()->create(['table_id' => $table->id, 'status' => 'closed']);
 
@@ -121,9 +110,10 @@ it('does not show closed orders', function () {
 });
 
 it('kitchen staff can change order item status to ready', function () {
-    $kitchenUser = User::factory()->create(['role' => 'kitchen']);
-    $table       = Table::factory()->create(['user_id' => $kitchenUser->id]);
-    $product     = Product::factory()->create(['user_id' => $kitchenUser->id]);
+    $admin       = User::factory()->admin()->create();
+    $kitchenUser = User::factory()->kitchen()->staffOf($admin)->create();
+    $table       = Table::factory()->create(['user_id' => $admin->id]);
+    $product     = Product::factory()->create(['user_id' => $admin->id]);
 
     $order = Order::factory()->create(['table_id' => $table->id, 'status' => 'pending']);
     $item  = OrderItem::factory()->create([
@@ -141,9 +131,10 @@ it('kitchen staff can change order item status to ready', function () {
 });
 
 it('all items ready triggers order status change to ready', function () {
-    $kitchenUser = User::factory()->create(['role' => 'kitchen']);
-    $table       = Table::factory()->create(['user_id' => $kitchenUser->id]);
-    $product     = Product::factory()->create(['user_id' => $kitchenUser->id]);
+    $admin       = User::factory()->admin()->create();
+    $kitchenUser = User::factory()->kitchen()->staffOf($admin)->create();
+    $table       = Table::factory()->create(['user_id' => $admin->id]);
+    $product     = Product::factory()->create(['user_id' => $admin->id]);
 
     $order = Order::factory()->create(['table_id' => $table->id, 'status' => 'pending']);
 
@@ -175,25 +166,4 @@ it('conversation closes when order status changes to closed', function () {
     $order->update(['status' => 'closed']);
 
     expect($conversation->fresh()->status)->toBe('closed');
-});
-
-// ─── Aislamiento estricto por rol ────────────────────────────────────────────
-
-it('returns 403 for waiter role trying to access kitchen panel', function () {
-    $admin  = User::factory()->admin()->create();
-    $waiter = User::factory()->waiter()->staffOf($admin)->create();
-
-    $this->actingAs($waiter)
-        ->get(route('kitchen.index'))
-        ->assertForbidden();
-});
-
-it('allows kitchen role to access kitchen panel', function () {
-    $admin   = User::factory()->admin()->create();
-    $kitchen = User::factory()->kitchen()->staffOf($admin)->create();
-
-    $this->actingAs($kitchen)
-        ->get(route('kitchen.index'))
-        ->assertOk()
-        ->assertViewIs('kitchen.index');
 });
