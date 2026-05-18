@@ -20,6 +20,8 @@
     x-data="tableMap()"
     x-init="init()"
     @mouseup.window="if(isRotating||isRotatingZone){}"
+    @keydown.ctrl.z.window.prevent="undo()"
+    @keydown.ctrl.y.window.prevent="redo()"
 >
 
     {{-- ══════════════════════════════════════════════════════
@@ -69,7 +71,7 @@
 
         <div class="flex items-center gap-3 flex-wrap">
             {{-- ── Control de tamaño del lienzo — solo admin ──────────────── --}}
-            <div x-show="!readonly" class="flex items-center gap-2">
+            <div x-show="!readonly && editMode" class="flex items-center gap-2">
                 <span class="text-xs font-medium text-gray-500 dark:text-gray-400 hidden sm:block"
                       aria-hidden="true">Plano:</span>
 
@@ -79,7 +81,7 @@
                      role="group"
                      aria-label="Tamaño del lienzo del plano">
                     <button type="button"
-                            @click="setCanvasSize(1200, 800)"
+                            @click="requestCanvasSize(1200, 800, 'S')"
                             :aria-pressed="(floorCanvasSizes[currentFloor] ?? {width:floorWidth,height:floorHeight}).width === 1200 && (floorCanvasSizes[currentFloor] ?? {width:floorWidth,height:floorHeight}).height === 800"
                             :class="(floorCanvasSizes[currentFloor] ?? {width:floorWidth,height:floorHeight}).width === 1200 && (floorCanvasSizes[currentFloor] ?? {width:floorWidth,height:floorHeight}).height === 800
                                 ? 'bg-indigo-600 text-white'
@@ -88,7 +90,7 @@
                                    transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-400"
                             aria-label="Lienzo pequeño: 1200 × 800 px">S</button>
                     <button type="button"
-                            @click="setCanvasSize(1600, 1000)"
+                            @click="requestCanvasSize(1600, 1000, 'M')"
                             :aria-pressed="(floorCanvasSizes[currentFloor] ?? {width:floorWidth,height:floorHeight}).width === 1600 && (floorCanvasSizes[currentFloor] ?? {width:floorWidth,height:floorHeight}).height === 1000"
                             :class="(floorCanvasSizes[currentFloor] ?? {width:floorWidth,height:floorHeight}).width === 1600 && (floorCanvasSizes[currentFloor] ?? {width:floorWidth,height:floorHeight}).height === 1000
                                 ? 'bg-indigo-600 text-white'
@@ -97,7 +99,7 @@
                                    transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-400"
                             aria-label="Lienzo mediano: 1600 × 1000 px">M</button>
                     <button type="button"
-                            @click="setCanvasSize(2000, 1200)"
+                            @click="requestCanvasSize(2000, 1200, 'L')"
                             :aria-pressed="(floorCanvasSizes[currentFloor] ?? {width:floorWidth,height:floorHeight}).width === 2000 && (floorCanvasSizes[currentFloor] ?? {width:floorWidth,height:floorHeight}).height === 1200"
                             :class="(floorCanvasSizes[currentFloor] ?? {width:floorWidth,height:floorHeight}).width === 2000 && (floorCanvasSizes[currentFloor] ?? {width:floorWidth,height:floorHeight}).height === 1200
                                 ? 'bg-indigo-600 text-white'
@@ -106,7 +108,7 @@
                                    transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-400"
                             aria-label="Lienzo grande: 2000 × 1200 px">L</button>
                     <button type="button"
-                            @click="setCanvasSize(2400, 1500)"
+                            @click="requestCanvasSize(2400, 1500, 'XL')"
                             :aria-pressed="(floorCanvasSizes[currentFloor] ?? {width:floorWidth,height:floorHeight}).width === 2400 && (floorCanvasSizes[currentFloor] ?? {width:floorWidth,height:floorHeight}).height === 1500"
                             :class="(floorCanvasSizes[currentFloor] ?? {width:floorWidth,height:floorHeight}).width === 2400 && (floorCanvasSizes[currentFloor] ?? {width:floorWidth,height:floorHeight}).height === 1500
                                 ? 'bg-indigo-600 text-white'
@@ -116,12 +118,45 @@
                             aria-label="Lienzo extra grande: 2400 × 1500 px">XL</button>
                 </div>
 
+                {{-- Botones Deshacer / Rehacer --}}
+                <div class="flex items-center gap-1">
+                    <button type="button"
+                            @click="undo()"
+                            :disabled="undoStack.length === 0"
+                            :class="undoStack.length === 0
+                                ? 'opacity-40 cursor-not-allowed'
+                                : 'hover:bg-gray-100 dark:hover:bg-gray-600'"
+                            class="p-1.5 rounded-lg text-gray-500 dark:text-gray-400 transition-colors
+                                   focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                            aria-label="Deshacer último cambio (Ctrl+Z)"
+                            title="Deshacer (Ctrl+Z)">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3"/>
+                        </svg>
+                    </button>
+                    <button type="button"
+                            @click="redo()"
+                            :disabled="redoStack.length === 0"
+                            :class="redoStack.length === 0
+                                ? 'opacity-40 cursor-not-allowed'
+                                : 'hover:bg-gray-100 dark:hover:bg-gray-600'"
+                            class="p-1.5 rounded-lg text-gray-500 dark:text-gray-400 transition-colors
+                                   focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                            aria-label="Rehacer cambio (Ctrl+Y)"
+                            title="Rehacer (Ctrl+Y)">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 15l6-6m0 0l-6-6m6 6H9a6 6 0 000 12h3"/>
+                        </svg>
+                    </button>
+                </div>
+
                 {{-- Zoom slider (solo visual, sin persistencia en BD) --}}
                 <div class="hidden sm:flex items-center gap-1.5">
                     <label for="canvas-zoom" class="sr-only">Zoom del plano</label>
                     <input id="canvas-zoom"
                            type="range"
                            min="0.5"
+                           @mousedown="pushUndo()"
                            max="1"
                            step="0.05"
                            x-model.number="canvasZoom"
@@ -141,85 +176,105 @@
                 </div>
             </div>
 
-            {{-- ── Toggle + selector de plantas — solo admin ──────────────── --}}
+            {{-- ── Toggle Plantas — solo en modo edición ──────────────────── --}}
+            <template x-if="!readonly && editMode">
+                <label class="flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-400 cursor-pointer select-none"
+                       id="floors-toggle-desc">
+                    <button type="button"
+                            role="switch"
+                            :aria-checked="floorsEnabled"
+                            @click="toggleFloorsEnabled(!floorsEnabled)"
+                            aria-describedby="floors-toggle-desc"
+                            :class="floorsEnabled ? 'bg-indigo-600' : 'bg-gray-300 dark:bg-gray-600'"
+                            class="relative inline-flex w-9 h-5 rounded-full transition-colors
+                                   focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-1">
+                        <span :class="floorsEnabled ? 'translate-x-4' : 'translate-x-0.5'"
+                              class="inline-block w-4 h-4 mt-0.5 bg-white rounded-full shadow transition-transform">
+                        </span>
+                    </button>
+                    Plantas
+                </label>
+            </template>
+
+            {{-- ── Selector de plantas — visible en vista y edición ────────── --}}
+            <template x-if="!readonly && floorsEnabled">
+                <div class="flex items-center gap-1"
+                     role="group"
+                     aria-label="Selector de planta">
+
+                    {{-- Botón por cada planta --}}
+                    <template x-for="n in floorCount" :key="n">
+                        <button type="button"
+                                @click="switchFloor(n)"
+                                :aria-pressed="currentView === 'floor' && currentFloor === n"
+                                :aria-label="`Planta ${n}`"
+                                :class="currentView === 'floor' && currentFloor === n
+                                    ? 'bg-indigo-600 text-white'
+                                    : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'"
+                                class="px-2.5 py-1.5 rounded text-xs font-semibold border border-gray-200 dark:border-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-400"
+                                x-text="`P${n}`">
+                        </button>
+                    </template>
+
+                    {{-- Botón Vista General — solo cuando hay más de una planta --}}
+                    <button type="button"
+                            x-show="floorCount > 1"
+                            @click="switchView('general')"
+                            :aria-pressed="currentView === 'general'"
+                            :class="currentView === 'general'
+                                ? 'bg-indigo-600 text-white'
+                                : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'"
+                            class="px-2.5 py-1.5 rounded text-xs font-semibold border border-gray-200 dark:border-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-400">
+                        General
+                    </button>
+
+                    {{-- Añadir/Eliminar planta — solo en modo edición --}}
+                    <button type="button"
+                            x-show="editMode && floorCount < 5"
+                            @click="addFloor()"
+                            aria-label="Añadir planta"
+                            class="px-2 py-1.5 rounded text-xs font-semibold
+                                   bg-green-500 hover:bg-green-600 text-white
+                                   transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-green-400">
+                        + P
+                    </button>
+                    <button type="button"
+                            x-show="editMode && floorCount > 1"
+                            @click="confirmDeleteFloor(floorCount)"
+                            :aria-label="`Eliminar Planta ${floorCount}`"
+                            class="px-2 py-1.5 rounded text-xs font-semibold
+                                   bg-red-500 hover:bg-red-600 text-white
+                                   transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-red-400">
+                        − P<span x-text="floorCount"></span>
+                    </button>
+                </div>
+            </template>
+
+            {{-- Botón Editar / Confirmar — solo propietario --}}
             <template x-if="!readonly">
                 <div class="flex items-center gap-2">
-                    {{-- Toggle activar/desactivar sistema de plantas --}}
-                    <label class="flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-400 cursor-pointer select-none"
-                           id="floors-toggle-desc">
-                        <button type="button"
-                                role="switch"
-                                :aria-checked="floorsEnabled"
-                                @click="toggleFloorsEnabled(!floorsEnabled)"
-                                aria-describedby="floors-toggle-desc"
-                                :class="floorsEnabled
-                                    ? 'bg-indigo-600'
-                                    : 'bg-gray-300 dark:bg-gray-600'"
-                                class="relative inline-flex w-9 h-5 rounded-full transition-colors
-                                       focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-1">
-                            <span :class="floorsEnabled ? 'translate-x-4' : 'translate-x-0.5'"
-                                  class="inline-block w-4 h-4 mt-0.5 bg-white rounded-full shadow transition-transform">
-                            </span>
-                        </button>
-                        Plantas
-                    </label>
-
-                    {{-- Selector de plantas — solo si floorsEnabled --}}
-                    <template x-if="floorsEnabled">
-                        <div class="flex items-center gap-1"
-                             role="group"
-                             aria-label="Selector de planta">
-
-                            {{-- Botón por cada planta --}}
-                            <template x-for="n in floorCount" :key="n">
-                                <button type="button"
-                                        @click="switchFloor(n)"
-                                        :aria-pressed="currentView === 'floor' && currentFloor === n"
-                                        :aria-label="`Planta ${n}`"
-                                        :class="currentView === 'floor' && currentFloor === n
-                                            ? 'bg-indigo-600 text-white'
-                                            : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'"
-                                        class="px-2.5 py-1.5 rounded text-xs font-semibold border border-gray-200 dark:border-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-400"
-                                        x-text="`P${n}`">
-                                </button>
-                            </template>
-
-                            {{-- Botón Vista General --}}
-                            <button type="button"
-                                    @click="switchView('general')"
-                                    :aria-pressed="currentView === 'general'"
-                                    :class="currentView === 'general'
-                                        ? 'bg-indigo-600 text-white'
-                                        : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'"
-                                    class="px-2.5 py-1.5 rounded text-xs font-semibold border border-gray-200 dark:border-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-400">
-                                General
-                            </button>
-
-                            {{-- Añadir planta --}}
-                            <button type="button"
-                                    x-show="floorCount < 5"
-                                    @click="addFloor()"
-                                    aria-label="Añadir planta"
-                                    class="px-2 py-1.5 rounded text-xs font-semibold border border-gray-200 dark:border-gray-600
-                                           bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300
-                                           hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors
-                                           focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-400">
-                                + P
-                            </button>
-
-                            {{-- Eliminar última planta --}}
-                            <button type="button"
-                                    x-show="floorCount > 1"
-                                    @click="confirmDeleteFloor(floorCount)"
-                                    :aria-label="`Eliminar Planta ${floorCount}`"
-                                    class="px-2 py-1.5 rounded text-xs font-semibold border border-red-300 dark:border-red-700
-                                           bg-white dark:bg-gray-700 text-red-500 dark:text-red-400
-                                           hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors
-                                           focus:outline-none focus:ring-2 focus:ring-inset focus:ring-red-400">
-                                − P<span x-text="floorCount"></span>
-                            </button>
-                        </div>
-                    </template>
+                    <button type="button"
+                            x-show="!editMode"
+                            @click="editMode = true; switchFloor(currentFloor)"
+                            class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-white
+                                   bg-amber-500 hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 transition-colors"
+                            aria-label="Entrar en modo edición del mapa">
+                        <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z"/>
+                        </svg>
+                        Editar mapa
+                    </button>
+                    <button type="button"
+                            x-show="editMode"
+                            @click="exitEditMode()"
+                            class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-white
+                                   bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors"
+                            aria-label="Confirmar cambios y salir del modo edición">
+                        <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/>
+                        </svg>
+                        Guardar
+                    </button>
                 </div>
             </template>
 
@@ -241,7 +296,7 @@
     <div class="flex flex-1 overflow-hidden">
 
         {{-- ── PALETA LATERAL — solo visible para admin ─────── --}}
-        <aside x-show="!readonly"
+        <aside x-show="!readonly && editMode"
                class="flex-shrink-0 w-44 bg-white dark:bg-gray-800
                       border-r border-gray-200 dark:border-gray-700
                       flex flex-col p-3 gap-4 overflow-y-auto">
@@ -378,44 +433,73 @@
         </aside>
 
         {{-- ── CANVAS ───────────────────────────────────────── --}}
-        <main id="main-content" class="flex-1 overflow-auto p-4 relative">
+        <main id="main-content"
+              class="flex-1 p-4 relative"
+              :class="(editMode && currentView !== 'general') ? 'overflow-auto' : 'overflow-hidden flex items-center justify-center'">
+
+            {{-- Mensaje inferior modo vista — fuera del canvas para no escalar con él --}}
+            <div x-show="!readonly && !editMode"
+                 class="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium
+                             bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300
+                             border border-amber-300 dark:border-amber-600 shadow-sm whitespace-nowrap">
+                    Pulsa "Editar mapa" para mover o modificar estructuras
+                </span>
+            </div>
+
+            {{-- Banner vista general — fuera del canvas para no escalar con él --}}
+            <div x-show="floorsEnabled && currentView === 'general'"
+                 aria-live="polite"
+                 class="absolute top-3 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium
+                             bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300
+                             border border-indigo-200 dark:border-indigo-700 shadow-sm whitespace-nowrap">
+                    Vista general — todas las plantas visibles · interacción desactivada
+                </span>
+            </div>
+
+            {{-- Badge planta activa — fuera del canvas para no escalar con él --}}
+            <div x-show="floorsEnabled && currentView === 'floor'"
+                 aria-live="polite"
+                 class="absolute top-3 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium
+                             bg-gray-100 dark:bg-gray-700/80 text-gray-600 dark:text-gray-300
+                             border border-gray-200 dark:border-gray-600 shadow-sm whitespace-nowrap">
+                    <svg aria-hidden="true" class="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 21h18M3 10h18M3 7l9-4 9 4M4 10v11M20 10v11M8 10v11M16 10v11M12 10v11"/>
+                    </svg>
+                    Planta <span x-text="currentFloor"></span>
+                    <template x-if="!editMode">
+                        <span class="text-gray-400 dark:text-gray-500">· solo vista</span>
+                    </template>
+                </span>
+            </div>
+
             <div
                 x-ref="canvas"
                 class="relative bg-white dark:bg-gray-800 rounded-xl shadow-inner
                        border-2 border-dashed border-gray-200 dark:border-gray-700"
-                :style="`width:${floorWidth}px; height:${floorHeight}px; min-width:100%;
-                         transform:scale(${canvasZoom}); transform-origin:top left;`"
+                :style="(editMode && currentView !== 'general')
+                    ? `width:${floorWidth}px; height:${floorHeight}px; transform:scale(${canvasZoom}); transform-origin:top left; margin-bottom:${-floorHeight*(1-canvasZoom)}px; margin-right:${-floorWidth*(1-canvasZoom)}px;`
+                    : `width:${floorWidth}px; height:${floorHeight}px; transform:scale(${canvasZoom}); transform-origin:center center; flex-shrink:0;`"
                 aria-label="Plano del restaurante"
-                @click="if (canvasZoom === 1) { editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null; selectedId = null; }"
+                :class="(editMode && currentView !== 'general' && !isPanning) ? 'cursor-grab' : ''"
+                @mousedown.self="startPan($event)"
+                @click="editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null; selectedId = null;"
             >
-                {{-- Overlay de zoom: bloquea edición cuando canvasZoom < 1 --}}
-                <div x-show="canvasZoom < 1"
-                     x-transition:enter="transition ease-out duration-150"
-                     x-transition:enter-start="opacity-0"
-                     x-transition:enter-end="opacity-100"
-                     class="absolute inset-0 z-40 rounded-xl cursor-not-allowed select-none"
-                     role="status"
-                     aria-live="polite">
-                    <div class="absolute bottom-4 left-1/2 -translate-x-1/2
-                                bg-amber-50 dark:bg-amber-900/80
-                                border border-amber-300 dark:border-amber-600
-                                text-amber-800 dark:text-amber-300
-                                text-sm font-medium px-4 py-2 rounded-full shadow-md
-                                whitespace-nowrap pointer-events-none">
-                        Ajusta el zoom al 100% para editar el plano
-                    </div>
+
+                {{-- Overlay modo visualización: bloquea interacción cuando no se está editando --}}
+                <div x-show="!readonly && !editMode"
+                     class="absolute inset-0 z-[90] rounded-xl cursor-default select-none"
+                     aria-hidden="true">
                 </div>
 
-                {{-- Banner vista general --}}
+                {{-- Overlay vista general: bloquea toda interacción con estructuras --}}
                 <div x-show="floorsEnabled && currentView === 'general'"
-                     aria-live="polite"
-                     class="absolute top-2 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
-                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium
-                                 bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300
-                                 border border-indigo-200 dark:border-indigo-700 shadow-sm">
-                        Vista general — todas las plantas visibles · colisión desactivada
-                    </span>
+                     class="absolute inset-0 z-[100] rounded-xl cursor-default select-none"
+                     aria-hidden="true">
                 </div>
+
 
                 {{-- Cuadrícula decorativa --}}
                 <svg class="absolute inset-0 w-full h-full pointer-events-none opacity-30 dark:opacity-10"
@@ -769,7 +853,7 @@
 
                             {{-- Botón editar forma — solo admin --}}
                             <button type="button"
-                                    x-show="!readonly && !(isRotating && rotatingId === table.id)"
+                                    x-show="!readonly && editMode && !(isRotating && rotatingId === table.id)"
                                     @click.stop="if (editingTableId === table.id) { editingTableId = null; editingTable = null; _editBtnEl = null; } else { editingTableId = table.id; editingTable = table; _editBtnEl = $el; editPanelPos = panelPosFromBtn($el, 220); editingZoneId = null; editingZone = null; _zoneBtnEl = null; }"
                                     class="absolute -top-2.5 -right-16
                                            w-6 h-6 rounded-full bg-gray-600 dark:bg-gray-500 text-white
@@ -802,7 +886,7 @@
 
                             {{-- Botón eliminar — solo admin --}}
                             <button type="button"
-                                    x-show="!readonly && !(isRotating && rotatingId === table.id)"
+                                    x-show="!readonly && editMode && !(isRotating && rotatingId === table.id)"
                                     @click.stop="deleteTable(table)"
                                     class="absolute -top-2.5 -right-2.5
                                            w-6 h-6 rounded-full bg-red-500 text-white
@@ -819,7 +903,7 @@
                         </div>
 
                         {{-- Handle de rotación — solo admin --}}
-                        <div x-show="!readonly" class="rotation-handle absolute -top-9 left-1/2 -translate-x-1/2
+                        <div x-show="!readonly && editMode" class="rotation-handle absolute -top-9 left-1/2 -translate-x-1/2
                                     flex flex-col items-center gap-0
                                     transition-opacity z-10"
                              :class="selectedId === table.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'"
@@ -842,7 +926,7 @@
                         </div>
 
                         {{-- Handle de redimensionado — solo admin --}}
-                        <div x-show="!readonly"
+                        <div x-show="!readonly && editMode"
                              class="resize-handle absolute bottom-0 right-0
                                     w-4 h-4 cursor-se-resize transition-opacity"
                              :class="selectedId === table.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'"
@@ -857,12 +941,12 @@
                 </template>
 
                 {{-- Indicador de zona de soltar --}}
-                <div x-show="isDraggingFromPalette"
+                <div x-show="isDraggingFromPalette || isDraggingZone"
                      class="absolute inset-0 rounded-xl border-4 border-dashed border-indigo-400
                             bg-indigo-50/30 dark:bg-indigo-900/20 pointer-events-none
                             flex items-center justify-center">
                     <p class="text-indigo-500 font-semibold text-lg"
-                       x-text="currentDragShape === 'bar' ? 'Suelta aquí para colocar la barra' : currentDragShape === 'stool' ? 'Suelta aquí para colocar el taburete' : 'Suelta aquí para crear la mesa'"></p>
+                       x-text="isDraggingZone ? 'Suelta aquí para crear la zona' : currentDragShape === 'bar' ? 'Suelta aquí para colocar la barra' : currentDragShape === 'stool' ? 'Suelta aquí para colocar el taburete' : 'Suelta aquí para crear la mesa'"></p>
                 </div>
                 {{-- Panel de edición de zona — absolute dentro del canvas, coordenadas en espacio del canvas --}}
                 <div x-show="editingZoneId !== null && editingZone !== null"
@@ -1222,6 +1306,80 @@
     </div>
 </div>
 
+{{-- Modal de confirmación de cambio de tamaño del plano --}}
+<div x-data
+     x-show="$store.sizeModal.show"
+     x-transition:enter="transition ease-out duration-200"
+     x-transition:enter-start="opacity-0"
+     x-transition:enter-end="opacity-100"
+     x-transition:leave="transition ease-in duration-150"
+     x-transition:leave-end="opacity-0"
+     class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+     aria-modal="true"
+     role="alertdialog"
+     aria-labelledby="size-modal-title"
+     aria-describedby="size-modal-desc"
+     @keydown.escape.window="$store.sizeModal.resolve(false)">
+
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-md mx-4"
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0 scale-95"
+         x-transition:enter-end="opacity-100 scale-100"
+         @click.stop>
+
+        {{-- Icono de precaución --}}
+        <div class="flex items-center justify-center w-12 h-12 mx-auto mb-4
+                    rounded-full bg-amber-100 dark:bg-amber-900/30">
+            <svg class="w-6 h-6 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/>
+            </svg>
+        </div>
+
+        <h2 id="size-modal-title"
+            class="text-lg font-bold text-center text-gray-900 dark:text-white mb-3">
+            Cambiar tamaño del plano a <span x-text="$store.sizeModal.label" class="text-amber-600 dark:text-amber-400"></span>
+        </h2>
+
+        <div id="size-modal-desc" class="text-sm text-gray-600 dark:text-gray-400 space-y-2 mb-6">
+            <template x-if="$store.sizeModal.isShrink">
+                <div class="space-y-2">
+                    <p>Estás reduciendo el tamaño del plano. Ten en cuenta lo siguiente:</p>
+                    <ul class="list-disc list-inside space-y-1 text-gray-500 dark:text-gray-400">
+                        <li>Las estructuras que queden fuera del nuevo borde serán <span class="font-semibold text-amber-600 dark:text-amber-400">desplazadas automáticamente</span> hacia dentro del plano.</li>
+                        <li>El diseño actual puede verse <span class="font-semibold text-amber-600 dark:text-amber-400">alterado</span> si hay mesas, barras o zonas cerca de los bordes.</li>
+                        <li>Puedes usar <kbd class="px-1 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-xs font-mono">Ctrl+Z</kbd> para deshacer si el resultado no es el esperado.</li>
+                    </ul>
+                </div>
+            </template>
+            <template x-if="!$store.sizeModal.isShrink">
+                <p>El plano se ampliará al tamaño <span class="font-semibold" x-text="$store.sizeModal.label"></span>. Las estructuras existentes no se moverán.</p>
+            </template>
+        </div>
+
+        <div class="flex gap-3">
+            <button type="button"
+                    @click="$store.sizeModal.resolve(false)"
+                    class="flex-1 px-4 py-2 rounded-xl text-sm font-medium
+                           text-gray-700 dark:text-gray-200
+                           bg-gray-100 dark:bg-gray-700
+                           hover:bg-gray-200 dark:hover:bg-gray-600
+                           focus:outline-none focus:ring-2 focus:ring-gray-400
+                           transition-colors">
+                Cancelar
+            </button>
+            <button type="button"
+                    @click="$store.sizeModal.resolve(true)"
+                    x-init="$watch('$store.sizeModal.show', v => v && $nextTick(() => $el.focus()))"
+                    class="flex-1 px-4 py-2 rounded-xl text-sm font-medium text-white
+                           bg-amber-500 hover:bg-amber-600
+                           focus:outline-none focus:ring-2 focus:ring-amber-400
+                           transition-colors">
+                Cambiar tamaño
+            </button>
+        </div>
+    </div>
+</div>
+
 {{-- Ghost element — sigue al cursor mientras se arrastra desde la paleta --}}
 <div id="palette-ghost"
      class="fixed pointer-events-none z-50 hidden opacity-70
@@ -1359,6 +1517,27 @@ document.addEventListener('alpine:init', () => {
         },
     });
 
+    // ── Store para el modal de confirmación de cambio de tamaño ─────────────
+    Alpine.store('sizeModal', {
+        show:     false,
+        label:    '',
+        isShrink: false,
+        _resolve: null,
+
+        prompt(label, isShrink) {
+            this.label    = label;
+            this.isShrink = isShrink;
+            this.show     = true;
+            return new Promise(resolve => { this._resolve = resolve; });
+        },
+
+        resolve(confirmed) {
+            this.show     = false;
+            this._resolve?.(confirmed);
+            this._resolve = null;
+        },
+    });
+
     // ── Componente principal del mapa ─────────────────────────────────────────
     Alpine.data('tableMap', () => ({
         tables:                @json($tables),
@@ -1372,6 +1551,7 @@ document.addEventListener('alpine:init', () => {
         currentFloor:          1,
         currentView:           'floor',
         readonly:              {{ $readonly ? 'true' : 'false' }},
+        editMode:              false,
         canvasZoom:            1,
         isDraggingFromPalette: false,
         currentDragShape:      null,
@@ -1394,17 +1574,11 @@ document.addEventListener('alpine:init', () => {
         zoneColor:             '#6366f1',
         toast:                 { show: false, msg: '', error: false, _timer: null },
         rotTooltip:            { show: false, x: 0, y: 0, deg: 0 },
+        undoStack:             [],
+        redoStack:             [],
+        isPanning:             false,
 
         init() {
-            // El tamaño del canvas viene de BD (floorWidth/floorHeight).
-            // Solo el zoom es local (visual), keyed por usuario para evitar mezcla entre cuentas.
-            const lsZoom   = 'zampa:mapZoom:user:{{ auth()->id() }}';
-            const savedZoom = parseFloat(localStorage.getItem(lsZoom));
-            if (!isNaN(savedZoom) && savedZoom >= 0.5 && savedZoom <= 1) {
-                this.canvasZoom = savedZoom;
-            }
-            this.$watch('canvasZoom', val => localStorage.setItem(lsZoom, val));
-
             this.$nextTick(() => {
                 if (!this.readonly) {
                     this.initTableInteract();
@@ -1412,6 +1586,7 @@ document.addEventListener('alpine:init', () => {
                     this.initPaletteInteract();
                     this.clampAllToCanvas();
                 }
+                this._applyOverviewZoom();
             });
 
 
@@ -1422,7 +1597,9 @@ document.addEventListener('alpine:init', () => {
 
         // Devuelve los límites de posición válidos para un item considerando su rotación.
         // position_x/y pueden ser negativos en elementos más altos que anchos rotados 90°.
-        canvasBounds(item) {
+        canvasBounds(item, w, h) {
+            const canvasW = w ?? this.floorWidth;
+            const canvasH = h ?? this.floorHeight;
             const rad   = (item.rotation ?? 0) * Math.PI / 180;
             const cos   = Math.abs(Math.cos(rad));
             const sin   = Math.abs(Math.sin(rad));
@@ -1432,16 +1609,23 @@ document.addEventListener('alpine:init', () => {
             const halfH = hw * sin + hh * cos;
             return {
                 minX: halfW - hw,
-                maxX: this.floorWidth  - hw - halfW,
+                maxX: canvasW - hw - halfW,
                 minY: halfH - hh,
-                maxY: this.floorHeight - hh - halfH,
+                maxY: canvasH - hh - halfH,
             };
+        },
+
+        // Devuelve el tamaño del canvas de la planta de un item.
+        sizeForItem(item) {
+            const floor = this.floorsEnabled ? (item.floor ?? 1) : 1;
+            return this.floorCanvasSizes[floor] ?? { width: this.floorWidth, height: this.floorHeight };
         },
 
         // Recupera estructuras y zonas que hayan quedado fuera del canvas y persiste la corrección.
         async clampAllToCanvas() {
             for (const item of [...this.tables, ...this.elements]) {
-                const { minX, maxX, minY, maxY } = this.canvasBounds(item);
+                const { width: w, height: h } = this.sizeForItem(item);
+                const { minX, maxX, minY, maxY } = this.canvasBounds(item, w, h);
                 const cx = Math.max(minX, Math.min(maxX, item.position_x));
                 const cy = Math.max(minY, Math.min(maxY, item.position_y));
                 if (cx !== item.position_x || cy !== item.position_y) {
@@ -1449,8 +1633,9 @@ document.addEventListener('alpine:init', () => {
                 }
             }
             for (const zone of this.zones) {
-                const maxX = Math.max(0, this.floorWidth  - zone.width);
-                const maxY = Math.max(0, this.floorHeight - zone.height);
+                const { width: w, height: h } = this.sizeForItem(zone);
+                const maxX = Math.max(0, w - zone.width);
+                const maxY = Math.max(0, h - zone.height);
                 const cx   = Math.max(0, Math.min(maxX, zone.position_x));
                 const cy   = Math.max(0, Math.min(maxY, zone.position_y));
                 if (cx !== zone.position_x || cy !== zone.position_y) {
@@ -1479,8 +1664,20 @@ document.addEventListener('alpine:init', () => {
             } catch {}
         },
 
+        // ── Solicitar cambio de tamaño con confirmación previa ───────────────
+        async requestCanvasSize(w, h, label) {
+            const cur      = this.floorCanvasSizes[this.floorsEnabled ? this.currentFloor : 1]
+                             ?? { width: this.floorWidth, height: this.floorHeight };
+            if (w === cur.width && h === cur.height) return;
+            const isShrink = w < cur.width || h < cur.height;
+            const confirmed = await Alpine.store('sizeModal').prompt(label, isShrink);
+            if (!confirmed) return;
+            this.setCanvasSize(w, h);
+        },
+
         // ── Cambiar tamaño del lienzo y persistir en BD ───────────────────────
         async setCanvasSize(w, h) {
+            this.pushUndo();
             const floor    = this.floorsEnabled ? this.currentFloor : 1;
             const prevW    = this.floorWidth;
             const prevH    = this.floorHeight;
@@ -1489,6 +1686,34 @@ document.addEventListener('alpine:init', () => {
             this.floorWidth  = w;
             this.floorHeight = h;
             this.floorCanvasSizes[floor] = { width: w, height: h };
+
+            // Clamp visual inmediato: empuja estructuras al borde sin esperar al servidor
+            const snapshots = [];
+            if (w < prevW || h < prevH) {
+                for (const item of [...this.tables, ...this.elements]) {
+                    const { width: sw, height: sh } = this.sizeForItem(item);
+                    const { minX, maxX, minY, maxY } = this.canvasBounds(item, sw, sh);
+                    const cx = Math.max(minX, Math.min(maxX, item.position_x));
+                    const cy = Math.max(minY, Math.min(maxY, item.position_y));
+                    if (cx !== item.position_x || cy !== item.position_y) {
+                        snapshots.push({ item, prevX: item.position_x, prevY: item.position_y });
+                        item.position_x = cx;
+                        item.position_y = cy;
+                    }
+                }
+                for (const zone of this.zones) {
+                    const { width: sw, height: sh } = this.sizeForItem(zone);
+                    const maxX = Math.max(0, sw - zone.width);
+                    const maxY = Math.max(0, sh - zone.height);
+                    const cx   = Math.max(0, Math.min(maxX, zone.position_x));
+                    const cy   = Math.max(0, Math.min(maxY, zone.position_y));
+                    if (cx !== zone.position_x || cy !== zone.position_y) {
+                        snapshots.push({ item: zone, prevX: zone.position_x, prevY: zone.position_y, isZone: true });
+                        zone.position_x = cx;
+                        zone.position_y = cy;
+                    }
+                }
+            }
 
             try {
                 const res = await fetch('{{ route("tables.canvas.update") }}', {
@@ -1507,15 +1732,31 @@ document.addEventListener('alpine:init', () => {
                     this.floorWidth  = prevW;
                     this.floorHeight = prevH;
                     this.floorCanvasSizes[floor] = prevSize;
+                    for (const { item, prevX, prevY } of snapshots) {
+                        item.position_x = prevX;
+                        item.position_y = prevY;
+                    }
                     this.showToast(json.message ?? 'Error al guardar el tamaño.', true);
                     return;
                 }
 
                 this.showToast(`Plano ${w} × ${h} px guardado.`);
+                // Persistir en BD las posiciones ya aplicadas visualmente
+                for (const { item, isZone } of snapshots) {
+                    if (isZone) {
+                        await this.persistZonePosition(item.id, item.position_x, item.position_y);
+                    } else {
+                        await this.persistPosition(item.id, item.position_x, item.position_y, item.width, item.height);
+                    }
+                }
             } catch {
                 this.floorWidth  = prevW;
                 this.floorHeight = prevH;
                 this.floorCanvasSizes[floor] = prevSize;
+                for (const { item, prevX, prevY } of snapshots) {
+                    item.position_x = prevX;
+                    item.position_y = prevY;
+                }
                 this.showToast('Error de red al guardar el tamaño.', true);
             }
         },
@@ -1627,6 +1868,113 @@ document.addEventListener('alpine:init', () => {
                    this.elements.filter(sameFloor).some(e => this.overlaps(item, e));
         },
 
+        // ── Historial de cambios (Undo) ───────────────────────────────────────
+        snapshot() {
+            return {
+                floorWidth:       this.floorWidth,
+                floorHeight:      this.floorHeight,
+                floorCanvasSizes: JSON.parse(JSON.stringify(this.floorCanvasSizes)),
+                canvasZoom:       this.canvasZoom,
+                tables:   this.tables.map(t  => ({ id: t.id,  position_x: t.position_x,  position_y: t.position_y,  width: t.width,  height: t.height,  rotation: t.rotation  ?? 0 })),
+                elements: this.elements.map(e => ({ id: e.id,  position_x: e.position_x,  position_y: e.position_y,  width: e.width,  height: e.height,  rotation: e.rotation  ?? 0 })),
+                zones:    this.zones.map(z    => ({ id: z.id,  position_x: z.position_x,  position_y: z.position_y,  width: z.width,  height: z.height,  rotation: z.rotation  ?? 0, color: z.color })),
+            };
+        },
+
+        pushUndo() {
+            this.undoStack.push(this.snapshot());
+            if (this.undoStack.length > 20) this.undoStack.shift();
+            this.redoStack = [];
+        },
+
+        async undo() {
+            if (!this.undoStack.length) return;
+            this.redoStack.push(this.snapshot());
+            if (this.redoStack.length > 20) this.redoStack.shift();
+            await this._applySnapshot(this.undoStack.pop());
+        },
+
+        async redo() {
+            if (!this.redoStack.length) return;
+            this.undoStack.push(this.snapshot());
+            if (this.undoStack.length > 20) this.undoStack.shift();
+            await this._applySnapshot(this.redoStack.pop());
+        },
+
+        async _applySnapshot(snap) {
+            const floor = this.floorsEnabled ? this.currentFloor : 1;
+
+            const canvasSizeChanged =
+                snap.floorWidth  !== this.floorWidth  ||
+                snap.floorHeight !== this.floorHeight  ||
+                JSON.stringify(snap.floorCanvasSizes) !== JSON.stringify(this.floorCanvasSizes);
+
+            this.canvasZoom       = snap.canvasZoom;
+            this.floorWidth       = snap.floorWidth;
+            this.floorHeight      = snap.floorHeight;
+            this.floorCanvasSizes = snap.floorCanvasSizes;
+
+            const toPersistItems = [];
+            const toPersistZones = [];
+
+            for (const s of snap.tables) {
+                const t = this.tables.find(t => t.id === s.id);
+                if (!t) continue;
+                if (t.position_x !== s.position_x || t.position_y !== s.position_y ||
+                    t.width !== s.width || t.height !== s.height || (t.rotation ?? 0) !== s.rotation) {
+                    t.position_x = s.position_x; t.position_y = s.position_y;
+                    t.width      = s.width;       t.height     = s.height;
+                    t.rotation   = s.rotation;
+                    toPersistItems.push(t);
+                }
+            }
+            for (const s of snap.elements) {
+                const e = this.elements.find(e => e.id === s.id);
+                if (!e) continue;
+                if (e.position_x !== s.position_x || e.position_y !== s.position_y ||
+                    e.width !== s.width || e.height !== s.height || (e.rotation ?? 0) !== s.rotation) {
+                    e.position_x = s.position_x; e.position_y = s.position_y;
+                    e.width      = s.width;       e.height     = s.height;
+                    e.rotation   = s.rotation;
+                    toPersistItems.push(e);
+                }
+            }
+            for (const s of snap.zones) {
+                const z = this.zones.find(z => z.id === s.id);
+                if (!z) continue;
+                if (z.position_x !== s.position_x || z.position_y !== s.position_y ||
+                    z.width !== s.width || z.height !== s.height ||
+                    (z.rotation ?? 0) !== s.rotation || z.color !== s.color) {
+                    z.position_x = s.position_x; z.position_y = s.position_y;
+                    z.width      = s.width;       z.height     = s.height;
+                    z.rotation   = s.rotation;    z.color      = s.color;
+                    toPersistZones.push(z);
+                }
+            }
+
+            if (canvasSizeChanged) {
+                try {
+                    await fetch('{{ route("tables.canvas.update") }}', {
+                        method:  'PATCH',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 'Accept': 'application/json' },
+                        body: JSON.stringify({ floor_width: snap.floorWidth, floor_height: snap.floorHeight, floor }),
+                    });
+                } catch {}
+            }
+            for (const item of toPersistItems) {
+                await this.persistPosition(item.id, item.position_x, item.position_y, item.width, item.height);
+            }
+            for (const z of toPersistZones) {
+                try {
+                    await fetch(`/zonas/${z.id}`, {
+                        method:  'PATCH',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 'Accept': 'application/json' },
+                        body: JSON.stringify({ position_x: z.position_x, position_y: z.position_y, width: z.width, height: z.height, rotation: z.rotation }),
+                    });
+                } catch {}
+            }
+        },
+
         // ── Interactividad de mesas existentes ────────────────────────────────
         initTableInteract() {
             interact('.table-item').unset();
@@ -1638,6 +1986,9 @@ document.addEventListener('alpine:init', () => {
                     autoScroll: true,
                     listeners: {
                         start: (event) => {
+                            if (this.floorsEnabled && this.currentView === 'general') { event.interaction.stop(); return; }
+                            if (!this.editMode) { event.interaction.stop(); return; }
+                            this.pushUndo();
                             const el   = event.target;
                             const id   = parseInt(el.dataset.tableId);
                             const item = this.tables.find(t => t.id === id) ?? this.elements.find(e => e.id === id);
@@ -1657,8 +2008,8 @@ document.addEventListener('alpine:init', () => {
                             const { minX, maxX, minY, maxY } = item
                                 ? this.canvasBounds(item)
                                 : { minX: 0, maxX: this.floorWidth - 100, minY: 0, maxY: this.floorHeight - 100 };
-                            const propX = Math.max(minX, Math.min(maxX, Math.round(curX + event.dx)));
-                            const propY = Math.max(minY, Math.min(maxY, Math.round(curY + event.dy)));
+                            const propX = Math.max(minX, Math.min(maxX, Math.round(curX + event.dx / this.canvasZoom)));
+                            const propY = Math.max(minY, Math.min(maxY, Math.round(curY + event.dy / this.canvasZoom)));
 
                             if (!item) {
                                 el.style.left = `${propX}px`;
@@ -1728,6 +2079,8 @@ document.addEventListener('alpine:init', () => {
 
         // ── Drag nativo de zona: actualiza zone.position_x/y reactivamente ───
         startZoneDrag(event, zone) {
+            if (!this.editMode) return;
+            this.pushUndo();
             const canvasEl  = this.$refs.canvas;
             const startMX   = event.clientX;
             const startMY   = event.clientY;
@@ -1741,8 +2094,8 @@ document.addEventListener('alpine:init', () => {
             const onMove = (e) => {
                 const maxX = Math.max(0, this.floorWidth  - zone.width);
                 const maxY = Math.max(0, this.floorHeight - zone.height);
-                zone.position_x = Math.max(0, Math.min(maxX, Math.round(startPx + (e.clientX - startMX))));
-                zone.position_y = Math.max(0, Math.min(maxY, Math.round(startPy + (e.clientY - startMY))));
+                zone.position_x = Math.max(0, Math.min(maxX, Math.round(startPx + (e.clientX - startMX) / this.canvasZoom)));
+                zone.position_y = Math.max(0, Math.min(maxY, Math.round(startPy + (e.clientY - startMY) / this.canvasZoom)));
             };
 
             const onUp = async () => {
@@ -1759,9 +2112,11 @@ document.addEventListener('alpine:init', () => {
 
         // ── Rotación libre de zona arrastrando el handle ─────────────────────
         startZoneRotation(event, zone) {
+            if (!this.editMode) return;
+            this.pushUndo();
             const canvasRect = this.$refs.canvas.getBoundingClientRect();
-            const centerX    = canvasRect.left + zone.position_x + zone.width  / 2;
-            const centerY    = canvasRect.top  + zone.position_y + zone.height / 2;
+            const centerX    = canvasRect.left + (zone.position_x + zone.width  / 2) * this.canvasZoom;
+            const centerY    = canvasRect.top  + (zone.position_y + zone.height / 2) * this.canvasZoom;
 
             this.closeEditPanels();
             this.isRotating            = true;
@@ -1796,6 +2151,9 @@ document.addEventListener('alpine:init', () => {
 
         // ── Drag nativo de elemento especial (barra/taburete) ────────────────
         startElementDrag(event, element) {
+            if (this.floorsEnabled && this.currentView === 'general') return;
+            if (!this.editMode) return;
+            this.pushUndo();
             const startPx = element.position_x;
             const startPy = element.position_y;
             const startMX = event.clientX;
@@ -1811,8 +2169,8 @@ document.addEventListener('alpine:init', () => {
             const onMove = (e) => {
                 const { minX, maxX, minY, maxY } = this.canvasBounds(element);
 
-                const propX = Math.max(minX, Math.min(maxX, Math.round(startPx + (e.clientX - startMX))));
-                const propY = Math.max(minY, Math.min(maxY, Math.round(startPy + (e.clientY - startMY))));
+                const propX = Math.max(minX, Math.min(maxX, Math.round(startPx + (e.clientX - startMX) / this.canvasZoom)));
+                const propY = Math.max(minY, Math.min(maxY, Math.round(startPy + (e.clientY - startMY) / this.canvasZoom)));
 
                 if (startedColliding) {
                     element.position_x = propX;
@@ -1862,12 +2220,7 @@ document.addEventListener('alpine:init', () => {
                 inertia: false,
                 listeners: {
                     start: (event) => {
-                        if (this.canvasZoom < 1) {
-                            event.interaction.stop();
-                            this.showToast('Ajusta el zoom al 100% para añadir mesas.', true);
-                            return;
-                        }
-
+                        if (this.floorsEnabled && this.currentView === 'general') { event.interaction.stop(); return; }
                         if (this.tables.length >= {{ $maxTables }}) {
                             this.showToast(`Límite de {{ $maxTables }} mesas alcanzado.`, true);
                             return;
@@ -1938,12 +2291,7 @@ document.addEventListener('alpine:init', () => {
                 inertia: false,
                 listeners: {
                     start: (event) => {
-                        if (this.canvasZoom < 1) {
-                            event.interaction.stop();
-                            this.showToast('Ajusta el zoom al 100% para añadir elementos.', true);
-                            return;
-                        }
-
+                        if (this.floorsEnabled && this.currentView === 'general') { event.interaction.stop(); return; }
                         const shape = event.target.dataset.shape;
                         const dropW = parseInt(event.target.dataset.width)  || 80;
                         const dropH = parseInt(event.target.dataset.height) || 50;
@@ -2001,12 +2349,7 @@ document.addEventListener('alpine:init', () => {
                 inertia: false,
                 listeners: {
                     start: (event) => {
-                        if (this.canvasZoom < 1) {
-                            event.interaction.stop();
-                            this.showToast('Ajusta el zoom al 100% para añadir zonas.', true);
-                            return;
-                        }
-
+                        if (this.floorsEnabled && this.currentView === 'general') { event.interaction.stop(); return; }
                         const w = parseInt(event.target.dataset.width)  || 300;
                         const h = parseInt(event.target.dataset.height) || 200;
                         ghost.style.width        = `${w}px`;
@@ -2224,6 +2567,8 @@ document.addEventListener('alpine:init', () => {
 
         // ── Resize de zona ────────────────────────────────────────────────────
         startZoneResize(event, zone) {
+            if (!this.editMode) return;
+            this.pushUndo();
             const startMX = event.clientX;
             const startMY = event.clientY;
             const startW  = zone.width;
@@ -2299,6 +2644,9 @@ document.addEventListener('alpine:init', () => {
 
         // ── Resize libre en espacio local del elemento rotado ────────────────
         startResize(event, table) {
+            if (this.floorsEnabled && this.currentView === 'general') return;
+            if (!this.editMode) return;
+            this.pushUndo();
             const θRad    = (table.rotation ?? 0) * Math.PI / 180;
             const cosθ    = Math.cos(θRad);
             const sinθ    = Math.sin(θRad);
@@ -2314,8 +2662,8 @@ document.addEventListener('alpine:init', () => {
             document.body.style.cursor = 'se-resize';
 
             const onMove = (e) => {
-                const dx = e.clientX - startMX;
-                const dy = e.clientY - startMY;
+                const dx = (e.clientX - startMX) / this.canvasZoom;
+                const dy = (e.clientY - startMY) / this.canvasZoom;
 
                 // Proyectar delta de pantalla al espacio local del elemento (rotación inversa)
                 const localDX =  dx * cosθ + dy * sinθ;
@@ -2491,12 +2839,15 @@ document.addEventListener('alpine:init', () => {
 
         // ── Rotación libre arrastrando el handle (estilo Canva) ───────────────
         startRotation(event, table) {
+            if (this.floorsEnabled && this.currentView === 'general') return;
+            if (!this.editMode) return;
+            this.pushUndo();
             this.closeEditPanels();
             this.rotatingId     = table.id;
 
             const canvasRect = this.$refs.canvas.getBoundingClientRect();
-            const centerX    = canvasRect.left + table.position_x + table.width  / 2;
-            const centerY    = canvasRect.top  + table.position_y + table.height / 2;
+            const centerX    = canvasRect.left + (table.position_x + table.width  / 2) * this.canvasZoom;
+            const centerY    = canvasRect.top  + (table.position_y + table.height / 2) * this.canvasZoom;
 
             this.isRotating            = true;
             this.rotTooltip.show       = true;
@@ -2538,6 +2889,33 @@ document.addEventListener('alpine:init', () => {
             document.addEventListener('mouseup',   onUp);
         },
 
+        startPan(event) {
+            if (!this.editMode || this.currentView === 'general') return;
+            if (event.button !== 0) return;
+            const main = this.$refs.canvas?.parentElement;
+            if (!main) return;
+            this.isPanning = true;
+            const startX   = event.clientX;
+            const startY   = event.clientY;
+            const scrollX  = main.scrollLeft;
+            const scrollY  = main.scrollTop;
+            document.body.style.cursor = 'grabbing';
+
+            const onMove = (e) => {
+                if (!this.isPanning) return;
+                main.scrollLeft = scrollX - (e.clientX - startX);
+                main.scrollTop  = scrollY - (e.clientY - startY);
+            };
+            const onUp = () => {
+                this.isPanning             = false;
+                document.body.style.cursor = '';
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('mouseup',   onUp);
+            };
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup',   onUp);
+        },
+
         closeEditPanels() {
             this.editingTableId = null;
             this.editingTable   = null;
@@ -2545,6 +2923,18 @@ document.addEventListener('alpine:init', () => {
             this.editingZoneId  = null;
             this.editingZone    = null;
             this._zoneBtnEl     = null;
+        },
+
+        exitEditMode() {
+            this.editMode  = false;
+            this.closeEditPanels();
+            this.selectedId = null;
+            this.hoveredId  = null;
+            Alpine.store('qrModal').close();
+            Alpine.store('tableModal').cancel();
+            Alpine.store('deleteModal').resolve(false);
+            Alpine.store('sizeModal').resolve(false);
+            this._applyOverviewZoom();
         },
 
         isActive(id) {
@@ -2595,6 +2985,11 @@ document.addEventListener('alpine:init', () => {
                 this.floorWidth  = size.width;
                 this.floorHeight = size.height;
             }
+            if (this.editMode) {
+                this.canvasZoom = 1;
+            } else {
+                this._applyOverviewZoom();
+            }
             this.editingTableId = null;
             this.editingTable   = null;
             this._editBtnEl     = null;
@@ -2604,20 +2999,37 @@ document.addEventListener('alpine:init', () => {
         },
 
         switchView(view) {
-            this.currentView    = view;
-            if (view === 'general' && this.floorsEnabled) {
-                const sizes = Object.values(this.floorCanvasSizes);
-                if (sizes.length) {
-                    this.floorWidth  = Math.max(...sizes.map(s => s.width));
-                    this.floorHeight = Math.max(...sizes.map(s => s.height));
+            this.currentView = view;
+            if (view === 'general') {
+                if (this.floorsEnabled) {
+                    const sizes = Object.values(this.floorCanvasSizes);
+                    if (sizes.length) {
+                        this.floorWidth  = Math.max(...sizes.map(s => s.width));
+                        this.floorHeight = Math.max(...sizes.map(s => s.height));
+                    }
                 }
+                this.$nextTick(() => this._applyOverviewZoom());
             }
-            this.editingTableId = null;
-            this.editingTable   = null;
-            this._editBtnEl     = null;
-            this.editingZoneId  = null;
-            this.editingZone    = null;
-            this._zoneBtnEl     = null;
+            this.closeEditPanels();
+            this.selectedId = null;
+            this.hoveredId  = null;
+            Alpine.store('qrModal').close();
+            Alpine.store('tableModal').cancel();
+            Alpine.store('deleteModal').resolve(false);
+            Alpine.store('sizeModal').resolve(false);
+        },
+
+        // Calcula y aplica zoom para que el canvas quepa en pantalla (modo vista general).
+        _applyOverviewZoom() {
+            const headerH = document.querySelector('header')?.offsetHeight ?? 65;
+            const availW  = window.innerWidth  - 48;
+            const availH  = window.innerHeight - headerH - 48;
+            const scaleX  = availW  / this.floorWidth;
+            const scaleY  = availH  / this.floorHeight;
+            this.canvasZoom = Math.max(0.5, Math.min(1, Math.min(scaleX, scaleY)));
+            // Resetear scroll del contenedor para que el canvas aparezca centrado correctamente
+            const main = this.$refs.canvas?.parentElement;
+            if (main) { main.scrollTop = 0; main.scrollLeft = 0; }
         },
 
         // ── Mover zona a otra planta ─────────────────────────────────────────
@@ -2746,6 +3158,7 @@ document.addEventListener('alpine:init', () => {
                 }
                 this.tables   = this.tables.filter(t => (t.floor ?? 1) !== floor);
                 this.elements = this.elements.filter(e => (e.floor ?? 1) !== floor);
+                this.zones    = this.zones.filter(z => (z.floor ?? 1) !== floor);
                 this.floorCount = floor - 1;
                 if (this.currentFloor >= floor) this.switchFloor(floor - 1);
                 this.$nextTick(() => {
