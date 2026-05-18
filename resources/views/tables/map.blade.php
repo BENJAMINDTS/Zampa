@@ -424,12 +424,12 @@
         {{-- ── CANVAS ───────────────────────────────────────── --}}
         <main id="main-content"
               class="flex-1 p-4 relative"
-              :class="editMode ? 'overflow-auto' : 'overflow-hidden flex items-center justify-center'">
+              :class="(editMode && currentView !== 'general') ? 'overflow-auto' : 'overflow-hidden flex items-center justify-center'">
             <div
                 x-ref="canvas"
                 class="relative bg-white dark:bg-gray-800 rounded-xl shadow-inner
                        border-2 border-dashed border-gray-200 dark:border-gray-700"
-                :style="editMode
+                :style="(editMode && currentView !== 'general')
                     ? `width:${floorWidth}px; height:${floorHeight}px; transform:scale(${canvasZoom}); transform-origin:top left; margin-bottom:${-floorHeight*(1-canvasZoom)}px; margin-right:${-floorWidth*(1-canvasZoom)}px;`
                     : `width:${floorWidth}px; height:${floorHeight}px; transform:scale(${canvasZoom}); transform-origin:center center; flex-shrink:0;`"
                 aria-label="Plano del restaurante"
