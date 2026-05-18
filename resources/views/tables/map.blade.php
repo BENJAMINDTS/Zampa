@@ -483,6 +483,8 @@
                     ? `width:${floorWidth}px; height:${floorHeight}px; transform:scale(${canvasZoom}); transform-origin:top left; margin-bottom:${-floorHeight*(1-canvasZoom)}px; margin-right:${-floorWidth*(1-canvasZoom)}px;`
                     : `width:${floorWidth}px; height:${floorHeight}px; transform:scale(${canvasZoom}); transform-origin:center center; flex-shrink:0;`"
                 aria-label="Plano del restaurante"
+                :class="(editMode && currentView !== 'general' && !isPanning) ? 'cursor-grab' : ''"
+                @mousedown.self="startPan($event)"
                 @click="editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null; selectedId = null;"
             >
 
@@ -1574,6 +1576,7 @@ document.addEventListener('alpine:init', () => {
         rotTooltip:            { show: false, x: 0, y: 0, deg: 0 },
         undoStack:             [],
         redoStack:             [],
+        isPanning:             false,
 
         init() {
             this.$nextTick(() => {
@@ -2882,6 +2885,33 @@ document.addEventListener('alpine:init', () => {
                 await this.persistPosition(table.id, table.position_x, table.position_y, table.width, table.height);
             };
 
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup',   onUp);
+        },
+
+        startPan(event) {
+            if (!this.editMode || this.currentView === 'general') return;
+            if (event.button !== 0) return;
+            const main = this.$refs.canvas?.parentElement;
+            if (!main) return;
+            this.isPanning = true;
+            const startX   = event.clientX;
+            const startY   = event.clientY;
+            const scrollX  = main.scrollLeft;
+            const scrollY  = main.scrollTop;
+            document.body.style.cursor = 'grabbing';
+
+            const onMove = (e) => {
+                if (!this.isPanning) return;
+                main.scrollLeft = scrollX - (e.clientX - startX);
+                main.scrollTop  = scrollY - (e.clientY - startY);
+            };
+            const onUp = () => {
+                this.isPanning             = false;
+                document.body.style.cursor = '';
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('mouseup',   onUp);
+            };
             document.addEventListener('mousemove', onMove);
             document.addEventListener('mouseup',   onUp);
         },
