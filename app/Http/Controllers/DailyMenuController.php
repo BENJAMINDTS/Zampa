@@ -38,7 +38,15 @@ class DailyMenuController extends Controller
             ->withCount('sections')
             ->orderByRaw("CASE WHEN specific_date IS NOT NULL THEN 0 ELSE 1 END")
             ->orderBy('specific_date')
-            ->orderByRaw("FIELD(day_of_week, 'monday','tuesday','wednesday','thursday','friday','saturday','sunday')")
+            ->orderByRaw("CASE day_of_week
+                WHEN 'monday'    THEN 1
+                WHEN 'tuesday'   THEN 2
+                WHEN 'wednesday' THEN 3
+                WHEN 'thursday'  THEN 4
+                WHEN 'friday'    THEN 5
+                WHEN 'saturday'  THEN 6
+                WHEN 'sunday'    THEN 7
+                ELSE 8 END")
             ->paginate(15);
 
         $weekDays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
@@ -115,7 +123,7 @@ class DailyMenuController extends Controller
 
         if (!empty($validated['specific_date'])) {
             $exists = DailyMenu::where('user_id', $ownerId)
-                ->where('specific_date', $validated['specific_date'])
+                ->whereDate('specific_date', $validated['specific_date'])
                 ->where('is_active', true)
                 ->exists();
 
@@ -187,7 +195,7 @@ class DailyMenuController extends Controller
 
         if (!empty($validated['specific_date'])) {
             $exists = DailyMenu::where('user_id', $ownerId)
-                ->where('specific_date', $validated['specific_date'])
+                ->whereDate('specific_date', $validated['specific_date'])
                 ->where('is_active', true)
                 ->where('id', '!=', $dailyMenu->id)
                 ->exists();
