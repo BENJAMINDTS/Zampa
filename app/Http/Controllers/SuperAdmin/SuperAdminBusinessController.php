@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 /**
@@ -85,6 +86,49 @@ class SuperAdminBusinessController extends Controller
 
         return redirect()->route('superadmin.businesses.index')
             ->with('success', 'Negocio creado correctamente.');
+    }
+
+    /**
+     * Muestra el formulario de edición de un negocio existente.
+     *
+     * @param  User  $business
+     * @return View
+     */
+    public function edit(User $business): View
+    {
+        abort_if($business->role !== 'admin', 403, 'Acceso denegado.');
+
+        $plans = Plan::orderBy('price')->get();
+
+        return view('superadmin.businesses.edit', compact('business', 'plans'));
+    }
+
+    /**
+     * Actualiza los datos de un negocio existente.
+     *
+     * No permite cambiar la contraseña desde esta vista.
+     *
+     * @param  Request  $request
+     * @param  User     $business
+     * @return RedirectResponse
+     */
+    public function update(Request $request, User $business): RedirectResponse
+    {
+        abort_if($business->role !== 'admin', 403, 'Acceso denegado.');
+
+        $validated = $request->validate([
+            'business_name' => ['required', 'string', 'max:255'],
+            'email'         => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($business->id)],
+            'plan_id'       => ['required', 'exists:plans,id'],
+            'address'       => ['nullable', 'string', 'max:500'],
+            'lat'           => ['nullable', 'numeric', 'between:-90,90'],
+            'lng'           => ['nullable', 'numeric', 'between:-180,180'],
+        ]);
+
+        $business->update($validated);
+
+        return redirect()->route('superadmin.businesses.index')
+            ->with('success', "Negocio «{$business->business_name}» actualizado correctamente.");
     }
 
     /**
