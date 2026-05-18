@@ -387,7 +387,7 @@
                 @click="if (canvasZoom === 1) { editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null; selectedId = null; }"
             >
                 {{-- Overlay de zoom: bloquea edición cuando canvasZoom < 1 --}}
-                <div x-show="canvasZoom < 1"
+                <div x-show="canvasZoom < 1 && !(floorsEnabled && currentView === 'general')"
                      x-transition:enter="transition ease-out duration-150"
                      x-transition:enter-start="opacity-0"
                      x-transition:enter-end="opacity-100"
@@ -2598,6 +2598,7 @@ document.addEventListener('alpine:init', () => {
         switchFloor(n) {
             this.currentFloor   = n;
             this.currentView    = 'floor';
+            this.canvasZoom     = 1;
             const size = this.floorCanvasSizes[n];
             if (size) {
                 this.floorWidth  = size.width;
@@ -2619,6 +2620,14 @@ document.addEventListener('alpine:init', () => {
                     this.floorWidth  = Math.max(...sizes.map(s => s.width));
                     this.floorHeight = Math.max(...sizes.map(s => s.height));
                 }
+                this.$nextTick(() => {
+                    const container = this.$refs.canvas?.parentElement;
+                    if (container) {
+                        const scaleX = (container.clientWidth  - 32) / this.floorWidth;
+                        const scaleY = (container.clientHeight - 32) / this.floorHeight;
+                        this.canvasZoom = Math.max(0.5, Math.min(1, Math.min(scaleX, scaleY)));
+                    }
+                });
             }
             this.editingTableId = null;
             this.editingTable   = null;
