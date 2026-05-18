@@ -80,7 +80,7 @@
                      role="group"
                      aria-label="Tamaño del lienzo del plano">
                     <button type="button"
-                            @click="setCanvasSize(1200, 800)"
+                            @click="requestCanvasSize(1200, 800, 'S')"
                             :aria-pressed="(floorCanvasSizes[currentFloor] ?? {width:floorWidth,height:floorHeight}).width === 1200 && (floorCanvasSizes[currentFloor] ?? {width:floorWidth,height:floorHeight}).height === 800"
                             :class="(floorCanvasSizes[currentFloor] ?? {width:floorWidth,height:floorHeight}).width === 1200 && (floorCanvasSizes[currentFloor] ?? {width:floorWidth,height:floorHeight}).height === 800
                                 ? 'bg-indigo-600 text-white'
@@ -89,7 +89,7 @@
                                    transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-400"
                             aria-label="Lienzo pequeño: 1200 × 800 px">S</button>
                     <button type="button"
-                            @click="setCanvasSize(1600, 1000)"
+                            @click="requestCanvasSize(1600, 1000, 'M')"
                             :aria-pressed="(floorCanvasSizes[currentFloor] ?? {width:floorWidth,height:floorHeight}).width === 1600 && (floorCanvasSizes[currentFloor] ?? {width:floorWidth,height:floorHeight}).height === 1000"
                             :class="(floorCanvasSizes[currentFloor] ?? {width:floorWidth,height:floorHeight}).width === 1600 && (floorCanvasSizes[currentFloor] ?? {width:floorWidth,height:floorHeight}).height === 1000
                                 ? 'bg-indigo-600 text-white'
@@ -98,7 +98,7 @@
                                    transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-400"
                             aria-label="Lienzo mediano: 1600 × 1000 px">M</button>
                     <button type="button"
-                            @click="setCanvasSize(2000, 1200)"
+                            @click="requestCanvasSize(2000, 1200, 'L')"
                             :aria-pressed="(floorCanvasSizes[currentFloor] ?? {width:floorWidth,height:floorHeight}).width === 2000 && (floorCanvasSizes[currentFloor] ?? {width:floorWidth,height:floorHeight}).height === 1200"
                             :class="(floorCanvasSizes[currentFloor] ?? {width:floorWidth,height:floorHeight}).width === 2000 && (floorCanvasSizes[currentFloor] ?? {width:floorWidth,height:floorHeight}).height === 1200
                                 ? 'bg-indigo-600 text-white'
@@ -107,7 +107,7 @@
                                    transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-400"
                             aria-label="Lienzo grande: 2000 × 1200 px">L</button>
                     <button type="button"
-                            @click="setCanvasSize(2400, 1500)"
+                            @click="requestCanvasSize(2400, 1500, 'XL')"
                             :aria-pressed="(floorCanvasSizes[currentFloor] ?? {width:floorWidth,height:floorHeight}).width === 2400 && (floorCanvasSizes[currentFloor] ?? {width:floorWidth,height:floorHeight}).height === 1500"
                             :class="(floorCanvasSizes[currentFloor] ?? {width:floorWidth,height:floorHeight}).width === 2400 && (floorCanvasSizes[currentFloor] ?? {width:floorWidth,height:floorHeight}).height === 1500
                                 ? 'bg-indigo-600 text-white'
@@ -1282,6 +1282,80 @@
     </div>
 </div>
 
+{{-- Modal de confirmación de cambio de tamaño del plano --}}
+<div x-data
+     x-show="$store.sizeModal.show"
+     x-transition:enter="transition ease-out duration-200"
+     x-transition:enter-start="opacity-0"
+     x-transition:enter-end="opacity-100"
+     x-transition:leave="transition ease-in duration-150"
+     x-transition:leave-end="opacity-0"
+     class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+     aria-modal="true"
+     role="alertdialog"
+     aria-labelledby="size-modal-title"
+     aria-describedby="size-modal-desc"
+     @keydown.escape.window="$store.sizeModal.resolve(false)">
+
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-md mx-4"
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0 scale-95"
+         x-transition:enter-end="opacity-100 scale-100"
+         @click.stop>
+
+        {{-- Icono de precaución --}}
+        <div class="flex items-center justify-center w-12 h-12 mx-auto mb-4
+                    rounded-full bg-amber-100 dark:bg-amber-900/30">
+            <svg class="w-6 h-6 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/>
+            </svg>
+        </div>
+
+        <h2 id="size-modal-title"
+            class="text-lg font-bold text-center text-gray-900 dark:text-white mb-3">
+            Cambiar tamaño del plano a <span x-text="$store.sizeModal.label" class="text-amber-600 dark:text-amber-400"></span>
+        </h2>
+
+        <div id="size-modal-desc" class="text-sm text-gray-600 dark:text-gray-400 space-y-2 mb-6">
+            <template x-if="$store.sizeModal.isShrink">
+                <div class="space-y-2">
+                    <p>Estás reduciendo el tamaño del plano. Ten en cuenta lo siguiente:</p>
+                    <ul class="list-disc list-inside space-y-1 text-gray-500 dark:text-gray-400">
+                        <li>Las estructuras que queden fuera del nuevo borde serán <span class="font-semibold text-amber-600 dark:text-amber-400">desplazadas automáticamente</span> hacia dentro del plano.</li>
+                        <li>El diseño actual puede verse <span class="font-semibold text-amber-600 dark:text-amber-400">alterado</span> si hay mesas, barras o zonas cerca de los bordes.</li>
+                        <li>Puedes usar <kbd class="px-1 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-xs font-mono">Ctrl+Z</kbd> para deshacer si el resultado no es el esperado.</li>
+                    </ul>
+                </div>
+            </template>
+            <template x-if="!$store.sizeModal.isShrink">
+                <p>El plano se ampliará al tamaño <span class="font-semibold" x-text="$store.sizeModal.label"></span>. Las estructuras existentes no se moverán.</p>
+            </template>
+        </div>
+
+        <div class="flex gap-3">
+            <button type="button"
+                    @click="$store.sizeModal.resolve(false)"
+                    class="flex-1 px-4 py-2 rounded-xl text-sm font-medium
+                           text-gray-700 dark:text-gray-200
+                           bg-gray-100 dark:bg-gray-700
+                           hover:bg-gray-200 dark:hover:bg-gray-600
+                           focus:outline-none focus:ring-2 focus:ring-gray-400
+                           transition-colors">
+                Cancelar
+            </button>
+            <button type="button"
+                    @click="$store.sizeModal.resolve(true)"
+                    x-init="$watch('$store.sizeModal.show', v => v && $nextTick(() => $el.focus()))"
+                    class="flex-1 px-4 py-2 rounded-xl text-sm font-medium text-white
+                           bg-amber-500 hover:bg-amber-600
+                           focus:outline-none focus:ring-2 focus:ring-amber-400
+                           transition-colors">
+                Cambiar tamaño
+            </button>
+        </div>
+    </div>
+</div>
+
 {{-- Ghost element — sigue al cursor mientras se arrastra desde la paleta --}}
 <div id="palette-ghost"
      class="fixed pointer-events-none z-50 hidden opacity-70
@@ -1419,6 +1493,27 @@ document.addEventListener('alpine:init', () => {
         },
     });
 
+    // ── Store para el modal de confirmación de cambio de tamaño ─────────────
+    Alpine.store('sizeModal', {
+        show:     false,
+        label:    '',
+        isShrink: false,
+        _resolve: null,
+
+        prompt(label, isShrink) {
+            this.label    = label;
+            this.isShrink = isShrink;
+            this.show     = true;
+            return new Promise(resolve => { this._resolve = resolve; });
+        },
+
+        resolve(confirmed) {
+            this.show     = false;
+            this._resolve?.(confirmed);
+            this._resolve = null;
+        },
+    });
+
     // ── Componente principal del mapa ─────────────────────────────────────────
     Alpine.data('tableMap', () => ({
         tables:                @json($tables),
@@ -1541,6 +1636,17 @@ document.addEventListener('alpine:init', () => {
                     }
                 });
             } catch {}
+        },
+
+        // ── Solicitar cambio de tamaño con confirmación previa ───────────────
+        async requestCanvasSize(w, h, label) {
+            const cur      = this.floorCanvasSizes[this.floorsEnabled ? this.currentFloor : 1]
+                             ?? { width: this.floorWidth, height: this.floorHeight };
+            if (w === cur.width && h === cur.height) return;
+            const isShrink = w < cur.width || h < cur.height;
+            const confirmed = await Alpine.store('sizeModal').prompt(label, isShrink);
+            if (!confirmed) return;
+            this.setCanvasSize(w, h);
         },
 
         // ── Cambiar tamaño del lienzo y persistir en BD ───────────────────────
