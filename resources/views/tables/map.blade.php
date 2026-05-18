@@ -199,8 +199,9 @@
                         </button>
                     </template>
 
-                    {{-- Botón Vista General --}}
+                    {{-- Botón Vista General — solo cuando hay más de una planta --}}
                     <button type="button"
+                            x-show="floorCount > 1"
                             @click="switchView('general')"
                             :aria-pressed="currentView === 'general'"
                             :class="currentView === 'general'
