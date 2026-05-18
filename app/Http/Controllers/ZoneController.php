@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Auth;
  * Solo accesible para el gerente (admin). Todas las operaciones son AJAX/JSON.
  *
  * @author AyrtonAlania
+ * @author BenjaminDTS
  */
 class ZoneController extends Controller
 {
@@ -57,7 +58,7 @@ class ZoneController extends Controller
      */
     public function update(Request $request, Zone $zone): JsonResponse
     {
-        abort_if($zone->user_id !== Auth::id(), 403, 'Acceso denegado.');
+        abort_if($zone->user_id !== Auth::user()->ownerUserId(), 403, 'Acceso denegado.');
 
         $data = $request->validate([
             'name'       => 'sometimes|string|max:50',
@@ -87,7 +88,7 @@ class ZoneController extends Controller
      */
     public function destroy(Zone $zone): JsonResponse
     {
-        abort_if($zone->user_id !== Auth::id(), 403, 'Acceso denegado.');
+        abort_if($zone->user_id !== Auth::user()->ownerUserId(), 403, 'Acceso denegado.');
 
         $name = $zone->name;
         $zone->delete();
