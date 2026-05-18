@@ -1,4 +1,5 @@
 {{-- @author SebastianBCF --}}
+{{-- @author Ayrtonalania --}}
 {{-- Dialog de exclusividad: se muestra cuando el usuario tiene ítems en el carrito
      y quiere abrir el menú del día. Hereda el scope Alpine del banner (sin x-data propio). --}}
 
