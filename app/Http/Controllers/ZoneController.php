@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Auth;
  *
  * @author AyrtonAlania
  * @author BenjaminDTS
+ * @author SebastianBCF
  */
 class ZoneController extends Controller
 {
@@ -27,13 +28,16 @@ class ZoneController extends Controller
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'name'       => 'required|string|max:50',
-            'color'      => ['required', 'string', 'regex:/^#[0-9a-fA-F]{3,6}$/'],
-            'position_x' => 'required|integer|min:0',
-            'position_y' => 'required|integer|min:0',
-            'width'      => 'required|integer|min:80|max:2000',
-            'height'     => 'required|integer|min:60|max:1500',
-            'floor'      => 'sometimes|integer|min:1|max:5',
+            'name'          => 'required|string|max:50',
+            'color'         => ['required', 'string', 'regex:/^#[0-9a-fA-F]{3,6}$/'],
+            'position_x'    => 'required|integer|min:0',
+            'position_y'    => 'required|integer|min:0',
+            'width'         => 'required|integer|min:80|max:2000',
+            'height'        => 'required|integer|min:60|max:1500',
+            'floor'         => 'sometimes|integer|min:1|max:5',
+            'vertices'      => 'sometimes|nullable|array|min:3',
+            'vertices.*.x'  => 'required_with:vertices|numeric',
+            'vertices.*.y'  => 'required_with:vertices|numeric',
         ]);
 
         $zone = Zone::create([
@@ -61,14 +65,17 @@ class ZoneController extends Controller
         abort_if($zone->user_id !== Auth::user()->ownerUserId(), 403, 'Acceso denegado.');
 
         $data = $request->validate([
-            'name'       => 'sometimes|string|max:50',
-            'color'      => ['sometimes', 'string', 'regex:/^#[0-9a-fA-F]{3,6}$/'],
-            'position_x' => 'sometimes|integer|min:0',
-            'position_y' => 'sometimes|integer|min:0',
-            'width'      => 'sometimes|integer|min:80|max:2000',
-            'height'     => 'sometimes|integer|min:60|max:1500',
-            'rotation'   => 'sometimes|integer|min:0|max:359',
-            'floor'      => 'sometimes|integer|min:1|max:5',
+            'name'          => 'sometimes|string|max:50',
+            'color'         => ['sometimes', 'string', 'regex:/^#[0-9a-fA-F]{3,6}$/'],
+            'position_x'    => 'sometimes|integer|min:0',
+            'position_y'    => 'sometimes|integer|min:0',
+            'width'         => 'sometimes|integer|min:80|max:2000',
+            'height'        => 'sometimes|integer|min:60|max:1500',
+            'rotation'      => 'sometimes|integer|min:0|max:359',
+            'floor'         => 'sometimes|integer|min:1|max:5',
+            'vertices'      => 'sometimes|nullable|array|min:3',
+            'vertices.*.x'  => 'required_with:vertices|numeric',
+            'vertices.*.y'  => 'required_with:vertices|numeric',
         ]);
 
         $zone->update($data);
