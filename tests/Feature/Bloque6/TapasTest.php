@@ -1091,7 +1091,7 @@ it('allows deleting Tapas category when tapas_disabled', function () {
          ->delete(route('categories.destroy', $tapasCategory))
          ->assertRedirect(route('categories.index'));
 
-    $this->assertDatabaseMissing('categories', ['id' => $tapasCategory->id]);
+    $this->assertSoftDeleted('categories', ['id' => $tapasCategory->id]);
 });
 
 it('tapas category products are not shown in main menu listing when tapas enabled', function () {
