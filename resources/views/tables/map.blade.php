@@ -381,7 +381,7 @@
                 x-ref="canvas"
                 class="relative bg-white dark:bg-gray-800 rounded-xl shadow-inner
                        border-2 border-dashed border-gray-200 dark:border-gray-700"
-                :style="`width:${floorWidth}px; height:${floorHeight}px; min-width:100%;
+                :style="`width:${floorWidth}px; height:${floorHeight}px;
                          transform:scale(${canvasZoom}); transform-origin:top left;`"
                 aria-label="Plano del restaurante"
                 @click="if (canvasZoom === 1) { editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null; selectedId = null; }"
