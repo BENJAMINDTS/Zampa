@@ -28,9 +28,12 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property int      $position_y       Coordenada Y en el plano
  * @property int      $width            Ancho de la mesa (px)
  * @property int      $height           Alto de la mesa (px)
- * @property int      $floor            Planta en la que se encuentra la mesa (1–5)
- * @property bool     $is_service_point Si genera QR y acepta pedidos
+ * @property int        $floor            Planta en la que se encuentra la mesa (1–5)
+ * @property bool       $is_service_point Si genera QR y acepta pedidos
+ * @property array|null $vertices         Vértices poligonales (solo barra); null = forma predefinida
+ * @property string     $orderStatus      Estado derivado del pedido activo (virtual, no en BD)
  * @author AyrtonAlania
+ * @author SebastianBCF
  */
 class Table extends Model
 {
@@ -50,11 +53,13 @@ class Table extends Model
         'rotation',
         'floor',
         'is_service_point',
+        'vertices',
     ];
 
     protected $casts = [
         'floor'            => 'integer',
         'is_service_point' => 'boolean',
+        'vertices'         => 'array',
     ];
 
     /**
@@ -98,6 +103,29 @@ class Table extends Model
         return $this->hasOne(Order::class)
             ->where('status', '!=', 'closed')
             ->latestOfMany();
+    }
+
+    /**
+     * Estado derivado del pedido activo para el mapa visual.
+     * Requiere que la relación activeOrder esté eager-loaded para evitar N+1.
+     *
+     * @return string  'free' | 'occupied' | 'ready' | 'payment_pending'
+     */
+    public function getOrderStatusAttribute(): string
+    {
+        $order = $this->activeOrder;
+
+        if (! $order) {
+            return 'free';
+        }
+        if ($order->bill_requested) {
+            return 'payment_pending';
+        }
+        if ($order->notification_ready) {
+            return 'ready';
+        }
+
+        return 'occupied';
     }
 
     /**
