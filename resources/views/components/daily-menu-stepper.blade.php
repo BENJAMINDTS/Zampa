@@ -1,4 +1,5 @@
 {{-- @author SebastianBCF --}}
+{{-- @author Ayrtonalania --}}
 {{-- Stepper modal del menú del día.
      Sin x-data propio: hereda todo el scope Alpine del banner.
      Se usa con: <x-daily-menu-stepper :hash="$hash" x-show="open" @close.window="close()" /> --}}
@@ -235,15 +236,15 @@
 
                     {{-- Horarios estimados por ronda --}}
                     <div class="mt-4 pt-4 border-t border-blue-800/40"
-                         x-show="Object.keys(timings).length > 1">
+                         x-show="timingRules.length > 1">
                         <p class="text-blue-400 text-xs font-semibold uppercase tracking-wider mb-2">
                             Horarios estimados
                         </p>
-                        <template x-for="rule in menuData?.timing_rules ?? []" :key="rule.round_number">
+                        <template x-for="rule in timingRules" :key="rule.round">
                             <div class="flex items-center justify-between text-xs text-blue-300 mb-1.5">
-                                <span x-text="`Ronda ${rule.round_number}`"></span>
+                                <span x-text="`Ronda ${rule.round}`"></span>
                                 <span class="font-semibold text-blue-100"
-                                      x-text="horasEstimadas[rule.round_number] ?? '--:--'"></span>
+                                      x-text="horasEstimadas[rule.round] ?? '--:--'"></span>
                             </div>
                         </template>
                     </div>

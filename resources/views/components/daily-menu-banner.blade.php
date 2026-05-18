@@ -1,4 +1,5 @@
 {{-- @author SebastianBCF --}}
+{{-- @author Ayrtonalania --}}
 {{-- Banner del Menú del Día en la carta digital pública.
      Se inserta al inicio del <main> de la carta, antes de las categorías. --}}
 @props(['hash'])
@@ -15,7 +16,6 @@ window.dailyMenuBanner = function (hash) {
         drink:         'Bebida',
         bread:         'Pan',
     };
-    const OPTIONAL_TYPES = ['dessert', 'coffee', 'drink', 'bread'];
 
     return {
         hash,
@@ -35,6 +35,7 @@ window.dailyMenuBanner = function (hash) {
         enviado:       false,
         errorMsg:      null,
         intentoAvanzar: false,
+        timingRules:   [],
 
         /* ── Computed ───────────────────────────────────────────────── */
         get pasoActualObj() {
@@ -115,46 +116,83 @@ window.dailyMenuBanner = function (hash) {
 
         /* ── Construcción del stepper ───────────────────────────────── */
         _buildFromData(data) {
-            const rules  = data.timing_rules ?? [];
-            const pasos  = [];
-            const timings = {};
+            const sections = data.sections ?? [];
+            const pasos    = [];
+            const timings  = {};
 
-            rules.forEach((rule, idx) => {
-                const roundSecs = (data.sections ?? []).filter(
-                    s => rule.section_types.includes(s.type)
-                );
-                roundSecs.forEach(section => {
+            // Agrupar secciones por round_number de su timing_rule embebida.
+            // La API no devuelve un array timing_rules raíz; cada sección
+            // lleva su regla embebida como section.timing_rule.
+            const byRound = new Map();
+            const noRound = [];
+
+            sections.forEach(section => {
+                const rn = section.timing_rule?.round_number ?? null;
+                if (rn !== null) {
+                    if (!byRound.has(rn)) {
+                        byRound.set(rn, {
+                            round:    rn,
+                            minDelay: section.timing_rule.estimated_prep_minutes,
+                            sections: [],
+                        });
+                        timings[rn] = section.timing_rule.default_delay_minutes;
+                    }
+                    byRound.get(rn).sections.push(section);
+                } else {
+                    noRound.push(section);
+                }
+            });
+
+            const rounds = [...byRound.values()].sort((a, b) => a.round - b.round);
+
+            // Secciones sin regla de timing van primero
+            noRound.forEach(section => {
+                pasos.push({
+                    tipo:      'seleccion',
+                    sectionId: section.id,
+                    label:     SECTION_LABELS[section.type] ?? section.type,
+                    required:  section.is_required,
+                    round:     null,
+                    section,
+                });
+            });
+
+            // Secciones con timing, intercaladas con pasos de timing
+            rounds.forEach((group, idx) => {
+                group.sections.forEach(section => {
                     pasos.push({
                         tipo:      'seleccion',
                         sectionId: section.id,
                         label:     SECTION_LABELS[section.type] ?? section.type,
-                        required:  !OPTIONAL_TYPES.includes(section.type),
-                        round:     rule.round_number,
+                        required:  section.is_required,
+                        round:     group.round,
                         section,
                     });
                 });
-                timings[rule.round_number] = rule.default_delay_minutes;
 
-                if (idx < rules.length - 1) {
-                    const nextRule = rules[idx + 1];
-                    const nextSec  = (data.sections ?? []).find(
-                        s => nextRule.section_types.includes(s.type)
-                    );
-                    const nextName = nextSec
+                if (idx < rounds.length - 1) {
+                    const nextGroup = rounds[idx + 1];
+                    const nextSec   = nextGroup.sections[0];
+                    const nextName  = nextSec
                         ? (SECTION_LABELS[nextSec.type] ?? nextSec.type).toLowerCase()
                         : 'el siguiente plato';
                     pasos.push({
                         tipo:     'timing',
-                        round:    nextRule.round_number,
+                        round:    nextGroup.round,
                         label:    `¿Cuándo quieres ${nextName}?`,
-                        minDelay: nextRule.estimated_prep_minutes,
+                        minDelay: nextGroup.minDelay,
                     });
                 }
             });
 
             pasos.push({ tipo: 'confirmacion', label: 'Confirmar pedido' });
-            this.pasos   = pasos;
-            this.timings = timings;
+            this.pasos       = pasos;
+            this.timings     = timings;
+            this.timingRules = rounds;
+        },
+
+        sectionLabel(type) {
+            return SECTION_LABELS[type] ?? type;
         },
 
         /* ── Navegación del stepper ─────────────────────────────────── */
@@ -237,7 +275,7 @@ window.dailyMenuBanner = function (hash) {
                             product_id: sel.product_id,
                             quantity:   1,
                         })),
-                    timing_preferences: Object.entries(this.timings).map(([round, delay]) => ({
+                    timing_overrides: Object.entries(this.timings).map(([round, delay]) => ({
                         round:         parseInt(round),
                         delay_minutes: delay,
                     })),
@@ -309,7 +347,7 @@ window.dailyMenuBanner = function (hash) {
                               :key="section.id">
                         <span class="text-xs px-2 py-0.5 rounded-full
                                      bg-white/10 text-blue-100">
-                            <span x-text="section.type_label"></span>
+                            <span x-text="sectionLabel(section.type)"></span>
                             <span x-show="section.is_free"
                                   class="text-yellow-300"> · incluido</span>
                         </span>

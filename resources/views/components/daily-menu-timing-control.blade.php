@@ -1,4 +1,5 @@
 {{-- @author SebastianBCF --}}
+{{-- @author Ayrtonalania --}}
 {{-- Control de timing [−] X min [+] para el stepper del menú del día.
      Sin x-data propio: hereda el scope Alpine del banner (pasoActualObj, timings, horasEstimadas). --}}
 
@@ -37,7 +38,7 @@
         <div class="text-center min-w-[80px]"
              role="spinbutton"
              :aria-valuemin="pasoActualObj?.minDelay"
-             aria-valuemax="120"
+             :aria-valuemax="120"
              :aria-valuenow="timings[pasoActualObj?.round]"
              :aria-valuetext="timings[pasoActualObj?.round] + ' minutos'">
             <span class="text-5xl font-bold text-white"
