@@ -404,14 +404,20 @@
                     </div>
                 </div>
 
+                {{-- Overlay vista general: bloquea toda interacción con estructuras --}}
+                <div x-show="floorsEnabled && currentView === 'general'"
+                     class="absolute inset-0 z-[100] rounded-xl cursor-default select-none"
+                     aria-hidden="true">
+                </div>
+
                 {{-- Banner vista general --}}
                 <div x-show="floorsEnabled && currentView === 'general'"
                      aria-live="polite"
-                     class="absolute top-2 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
+                     class="absolute top-2 left-1/2 -translate-x-1/2 z-[110] pointer-events-none">
                     <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium
                                  bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300
                                  border border-indigo-200 dark:border-indigo-700 shadow-sm">
-                        Vista general — todas las plantas visibles · colisión desactivada
+                        Vista general — todas las plantas visibles · interacción con estructuras desactivada
                     </span>
                 </div>
 
@@ -1636,6 +1642,7 @@ document.addEventListener('alpine:init', () => {
                     autoScroll: true,
                     listeners: {
                         start: (event) => {
+                            if (this.floorsEnabled && this.currentView === 'general') { event.interaction.stop(); return; }
                             const el   = event.target;
                             const id   = parseInt(el.dataset.tableId);
                             const item = this.tables.find(t => t.id === id) ?? this.elements.find(e => e.id === id);
@@ -1794,6 +1801,7 @@ document.addEventListener('alpine:init', () => {
 
         // ── Drag nativo de elemento especial (barra/taburete) ────────────────
         startElementDrag(event, element) {
+            if (this.floorsEnabled && this.currentView === 'general') return;
             const startPx = element.position_x;
             const startPy = element.position_y;
             const startMX = event.clientX;
@@ -2297,6 +2305,7 @@ document.addEventListener('alpine:init', () => {
 
         // ── Resize libre en espacio local del elemento rotado ────────────────
         startResize(event, table) {
+            if (this.floorsEnabled && this.currentView === 'general') return;
             const θRad    = (table.rotation ?? 0) * Math.PI / 180;
             const cosθ    = Math.cos(θRad);
             const sinθ    = Math.sin(θRad);
@@ -2489,6 +2498,7 @@ document.addEventListener('alpine:init', () => {
 
         // ── Rotación libre arrastrando el handle (estilo Canva) ───────────────
         startRotation(event, table) {
+            if (this.floorsEnabled && this.currentView === 'general') return;
             this.closeEditPanels();
             this.rotatingId     = table.id;
 
