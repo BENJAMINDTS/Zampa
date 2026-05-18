@@ -1411,7 +1411,9 @@ document.addEventListener('alpine:init', () => {
 
         // Devuelve los límites de posición válidos para un item considerando su rotación.
         // position_x/y pueden ser negativos en elementos más altos que anchos rotados 90°.
-        canvasBounds(item) {
+        canvasBounds(item, w, h) {
+            const canvasW = w ?? this.floorWidth;
+            const canvasH = h ?? this.floorHeight;
             const rad   = (item.rotation ?? 0) * Math.PI / 180;
             const cos   = Math.abs(Math.cos(rad));
             const sin   = Math.abs(Math.sin(rad));
@@ -1421,16 +1423,23 @@ document.addEventListener('alpine:init', () => {
             const halfH = hw * sin + hh * cos;
             return {
                 minX: halfW - hw,
-                maxX: this.floorWidth  - hw - halfW,
+                maxX: canvasW - hw - halfW,
                 minY: halfH - hh,
-                maxY: this.floorHeight - hh - halfH,
+                maxY: canvasH - hh - halfH,
             };
+        },
+
+        // Devuelve el tamaño del canvas de la planta de un item.
+        sizeForItem(item) {
+            const floor = this.floorsEnabled ? (item.floor ?? 1) : 1;
+            return this.floorCanvasSizes[floor] ?? { width: this.floorWidth, height: this.floorHeight };
         },
 
         // Recupera estructuras y zonas que hayan quedado fuera del canvas y persiste la corrección.
         async clampAllToCanvas() {
             for (const item of [...this.tables, ...this.elements]) {
-                const { minX, maxX, minY, maxY } = this.canvasBounds(item);
+                const { width: w, height: h } = this.sizeForItem(item);
+                const { minX, maxX, minY, maxY } = this.canvasBounds(item, w, h);
                 const cx = Math.max(minX, Math.min(maxX, item.position_x));
                 const cy = Math.max(minY, Math.min(maxY, item.position_y));
                 if (cx !== item.position_x || cy !== item.position_y) {
@@ -1438,8 +1447,9 @@ document.addEventListener('alpine:init', () => {
                 }
             }
             for (const zone of this.zones) {
-                const maxX = Math.max(0, this.floorWidth  - zone.width);
-                const maxY = Math.max(0, this.floorHeight - zone.height);
+                const { width: w, height: h } = this.sizeForItem(zone);
+                const maxX = Math.max(0, w - zone.width);
+                const maxY = Math.max(0, h - zone.height);
                 const cx   = Math.max(0, Math.min(maxX, zone.position_x));
                 const cy   = Math.max(0, Math.min(maxY, zone.position_y));
                 if (cx !== zone.position_x || cy !== zone.position_y) {
@@ -1501,6 +1511,7 @@ document.addEventListener('alpine:init', () => {
                 }
 
                 this.showToast(`Plano ${w} × ${h} px guardado.`);
+                if (w < prevW || h < prevH) await this.clampAllToCanvas();
             } catch {
                 this.floorWidth  = prevW;
                 this.floorHeight = prevH;
