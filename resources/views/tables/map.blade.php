@@ -2954,6 +2954,7 @@ document.addEventListener('alpine:init', () => {
                 }
                 this.tables   = this.tables.filter(t => (t.floor ?? 1) !== floor);
                 this.elements = this.elements.filter(e => (e.floor ?? 1) !== floor);
+                this.zones    = this.zones.filter(z => (z.floor ?? 1) !== floor);
                 this.floorCount = floor - 1;
                 if (this.currentFloor >= floor) this.switchFloor(floor - 1);
                 this.$nextTick(() => {
