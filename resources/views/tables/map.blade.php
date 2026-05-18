@@ -2834,6 +2834,9 @@ document.addEventListener('alpine:init', () => {
             const scaleX  = availW  / this.floorWidth;
             const scaleY  = availH  / this.floorHeight;
             this.canvasZoom = Math.max(0.5, Math.min(1, Math.min(scaleX, scaleY)));
+            // Resetear scroll del contenedor para que el canvas aparezca centrado correctamente
+            const main = this.$refs.canvas?.parentElement;
+            if (main) { main.scrollTop = 0; main.scrollLeft = 0; }
         },
 
         // ── Mover zona a otra planta ─────────────────────────────────────────
