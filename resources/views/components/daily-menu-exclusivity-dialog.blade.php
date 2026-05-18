@@ -9,7 +9,7 @@
     aria-labelledby="exclusivity-title"
     aria-describedby="exclusivity-desc"
     x-show="showExclusivityWarning"
-    @keydown.escape.window="if (showExclusivityWarning) showExclusivityWarning = false"
+    @keydown.escape.window="if (showExclusivityWarning) { showExclusivityWarning = false; $nextTick(() => $refs.openButton?.focus()); }"
     @keydown.tab.window="
         if (!showExclusivityWarning || !$el.contains(document.activeElement)) return;
         $event.preventDefault();
