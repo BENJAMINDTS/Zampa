@@ -1,4 +1,5 @@
 {{-- @author SebastianBCF --}}
+{{-- @author Ayrtonalania --}}
 {{-- Control de timing [−] X min [+] para el stepper del menú del día.
      Sin x-data propio: hereda el scope Alpine del banner (pasoActualObj, timings, horasEstimadas). --}}
 
