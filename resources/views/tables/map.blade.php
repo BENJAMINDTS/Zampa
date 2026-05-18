@@ -244,7 +244,7 @@
                 <div class="flex items-center gap-2">
                     <button type="button"
                             x-show="!editMode"
-                            @click="editMode = true"
+                            @click="editMode = true; switchFloor(currentFloor)"
                             class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-white
                                    bg-amber-500 hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 transition-colors"
                             aria-label="Entrar en modo edición del mapa">
@@ -255,7 +255,7 @@
                     </button>
                     <button type="button"
                             x-show="editMode"
-                            @click="editMode = false"
+                            @click="editMode = false; switchView('general')"
                             class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-white
                                    bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors"
                             aria-label="Confirmar cambios y salir del modo edición">
@@ -1418,7 +1418,7 @@ document.addEventListener('alpine:init', () => {
         floorCount:            {{ $floorCount }},
         floorCanvasSizes:      @json($floorCanvasSizes),
         currentFloor:          1,
-        currentView:           'floor',
+        currentView:           'general',
         readonly:              {{ $readonly ? 'true' : 'false' }},
         editMode:              false,
         canvasZoom:            1,
@@ -1446,21 +1446,26 @@ document.addEventListener('alpine:init', () => {
         undoStack:             [],
 
         init() {
-            // El tamaño del canvas viene de BD (floorWidth/floorHeight).
-            // Solo el zoom es local (visual), keyed por usuario para evitar mezcla entre cuentas.
-            const lsZoom   = 'zampa:mapZoom:user:{{ auth()->id() }}';
-            const savedZoom = parseFloat(localStorage.getItem(lsZoom));
-            if (!isNaN(savedZoom) && savedZoom >= 0.5 && savedZoom <= 1) {
-                this.canvasZoom = savedZoom;
-            }
-            this.$watch('canvasZoom', val => localStorage.setItem(lsZoom, val));
-
             this.$nextTick(() => {
                 if (!this.readonly) {
                     this.initTableInteract();
                     this.initZoneInteract();
                     this.initPaletteInteract();
                     this.clampAllToCanvas();
+                }
+                // Vista inicial: general con zoom auto-fit al canvas completo
+                if (this.floorsEnabled) {
+                    const sizes = Object.values(this.floorCanvasSizes);
+                    if (sizes.length) {
+                        this.floorWidth  = Math.max(...sizes.map(s => s.width));
+                        this.floorHeight = Math.max(...sizes.map(s => s.height));
+                    }
+                }
+                const container = this.$refs.canvas?.parentElement;
+                if (container) {
+                    const scaleX = (container.clientWidth  - 32) / this.floorWidth;
+                    const scaleY = (container.clientHeight - 32) / this.floorHeight;
+                    this.canvasZoom = Math.max(0.5, Math.min(1, Math.min(scaleX, scaleY)));
                 }
             });
 
@@ -2807,11 +2812,13 @@ document.addEventListener('alpine:init', () => {
 
         switchView(view) {
             this.currentView    = view;
-            if (view === 'general' && this.floorsEnabled) {
-                const sizes = Object.values(this.floorCanvasSizes);
-                if (sizes.length) {
-                    this.floorWidth  = Math.max(...sizes.map(s => s.width));
-                    this.floorHeight = Math.max(...sizes.map(s => s.height));
+            if (view === 'general') {
+                if (this.floorsEnabled) {
+                    const sizes = Object.values(this.floorCanvasSizes);
+                    if (sizes.length) {
+                        this.floorWidth  = Math.max(...sizes.map(s => s.width));
+                        this.floorHeight = Math.max(...sizes.map(s => s.height));
+                    }
                 }
                 this.$nextTick(() => {
                     const container = this.$refs.canvas?.parentElement;
