@@ -460,6 +460,23 @@
                     </span>
                 </div>
 
+                {{-- Badge planta activa --}}
+                <div x-show="floorsEnabled && currentView === 'floor'"
+                     aria-live="polite"
+                     class="absolute top-2 left-1/2 -translate-x-1/2 z-[110] pointer-events-none">
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium
+                                 bg-gray-100 dark:bg-gray-700/80 text-gray-600 dark:text-gray-300
+                                 border border-gray-200 dark:border-gray-600 shadow-sm">
+                        <svg aria-hidden="true" class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 21h18M3 10h18M3 7l9-4 9 4M4 10v11M20 10v11M8 10v11M16 10v11M12 10v11"/>
+                        </svg>
+                        Planta <span x-text="currentFloor"></span>
+                        <template x-if="!editMode">
+                            <span class="text-gray-400 dark:text-gray-500">· solo vista</span>
+                        </template>
+                    </span>
+                </div>
+
                 {{-- Cuadrícula decorativa --}}
                 <svg class="absolute inset-0 w-full h-full pointer-events-none opacity-30 dark:opacity-10"
                      xmlns="http://www.w3.org/2000/svg">
