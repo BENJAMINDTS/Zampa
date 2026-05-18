@@ -22,8 +22,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int    $position_y  Coordenada Y en el plano
  * @property int    $width       Ancho en px
  * @property int    $height      Alto en px
- * @property int    $rotation    Rotación en grados
+ * @property int        $rotation    Rotación en grados
+ * @property array|null $vertices    Vértices del polígono personalizado; null = rectángulo
  * @author AyrtonAlania
+ * @author SebastianBCF
  */
 class Zone extends Model
 {
@@ -39,6 +41,11 @@ class Zone extends Model
         'height',
         'rotation',
         'floor',
+        'vertices',
+    ];
+
+    protected $casts = [
+        'vertices' => 'array',
     ];
 
     /**
