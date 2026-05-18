@@ -1489,6 +1489,34 @@ document.addEventListener('alpine:init', () => {
             this.floorHeight = h;
             this.floorCanvasSizes[floor] = { width: w, height: h };
 
+            // Clamp visual inmediato: empuja estructuras al borde sin esperar al servidor
+            const snapshots = [];
+            if (w < prevW || h < prevH) {
+                for (const item of [...this.tables, ...this.elements]) {
+                    const { width: sw, height: sh } = this.sizeForItem(item);
+                    const { minX, maxX, minY, maxY } = this.canvasBounds(item, sw, sh);
+                    const cx = Math.max(minX, Math.min(maxX, item.position_x));
+                    const cy = Math.max(minY, Math.min(maxY, item.position_y));
+                    if (cx !== item.position_x || cy !== item.position_y) {
+                        snapshots.push({ item, prevX: item.position_x, prevY: item.position_y });
+                        item.position_x = cx;
+                        item.position_y = cy;
+                    }
+                }
+                for (const zone of this.zones) {
+                    const { width: sw, height: sh } = this.sizeForItem(zone);
+                    const maxX = Math.max(0, sw - zone.width);
+                    const maxY = Math.max(0, sh - zone.height);
+                    const cx   = Math.max(0, Math.min(maxX, zone.position_x));
+                    const cy   = Math.max(0, Math.min(maxY, zone.position_y));
+                    if (cx !== zone.position_x || cy !== zone.position_y) {
+                        snapshots.push({ item: zone, prevX: zone.position_x, prevY: zone.position_y, isZone: true });
+                        zone.position_x = cx;
+                        zone.position_y = cy;
+                    }
+                }
+            }
+
             try {
                 const res = await fetch('{{ route("tables.canvas.update") }}', {
                     method:  'PATCH',
@@ -1506,16 +1534,31 @@ document.addEventListener('alpine:init', () => {
                     this.floorWidth  = prevW;
                     this.floorHeight = prevH;
                     this.floorCanvasSizes[floor] = prevSize;
+                    for (const { item, prevX, prevY } of snapshots) {
+                        item.position_x = prevX;
+                        item.position_y = prevY;
+                    }
                     this.showToast(json.message ?? 'Error al guardar el tamaño.', true);
                     return;
                 }
 
                 this.showToast(`Plano ${w} × ${h} px guardado.`);
-                if (w < prevW || h < prevH) await this.clampAllToCanvas();
+                // Persistir en BD las posiciones ya aplicadas visualmente
+                for (const { item, isZone } of snapshots) {
+                    if (isZone) {
+                        await this.persistZonePosition(item.id, item.position_x, item.position_y);
+                    } else {
+                        await this.persistPosition(item.id, item.position_x, item.position_y, item.width, item.height);
+                    }
+                }
             } catch {
                 this.floorWidth  = prevW;
                 this.floorHeight = prevH;
                 this.floorCanvasSizes[floor] = prevSize;
+                for (const { item, prevX, prevY } of snapshots) {
+                    item.position_x = prevX;
+                    item.position_y = prevY;
+                }
                 this.showToast('Error de red al guardar el tamaño.', true);
             }
         },
