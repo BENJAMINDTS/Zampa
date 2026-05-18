@@ -62,13 +62,28 @@ class TableController extends Controller
                            ->orderBy('name')
                            ->get();
         $zones       = Zone::where('user_id', $ownerId)->orderBy('name')->get();
-        $owner       = Auth::user()->isAdmin() ? Auth::user() : Auth::user()->admin;
-        $maxTables   = $owner?->plan?->max_tables ?? 10;
-        $floorWidth  = $owner?->floor_width  ?? 1200;
-        $floorHeight = $owner?->floor_height ?? 800;
-        $readonly    = ! Auth::user()->isAdmin();
+        $owner         = Auth::user()->isAdmin() ? Auth::user() : Auth::user()->admin;
+        $maxTables     = $owner?->plan?->max_tables ?? 10;
+        $floorWidth    = $owner?->floor_width    ?? 1200;
+        $floorHeight   = $owner?->floor_height   ?? 800;
+        $floorCount    = $owner?->floor_count    ?? 1;
+        $floorsEnabled = $owner?->floors_enabled ?? false;
+        $readonly      = ! Auth::user()->isAdmin();
 
-        return view('tables.map', compact('tables', 'elements', 'zones', 'maxTables', 'floorWidth', 'floorHeight', 'readonly'));
+        $savedSizes       = $owner?->floor_canvas_sizes ?? [];
+        $floorCanvasSizes = [];
+        for ($f = 1; $f <= $floorCount; $f++) {
+            $floorCanvasSizes[$f] = [
+                'width'  => $savedSizes[$f]['width']  ?? $floorWidth,
+                'height' => $savedSizes[$f]['height'] ?? $floorHeight,
+            ];
+        }
+
+        return view('tables.map', compact(
+            'tables', 'elements', 'zones', 'maxTables',
+            'floorWidth', 'floorHeight', 'floorCount', 'floorsEnabled',
+            'floorCanvasSizes', 'readonly'
+        ));
     }
 
     /**
@@ -107,13 +122,84 @@ class TableController extends Controller
         $data = $request->validate([
             'floor_width'  => 'required|integer|min:800|max:3000',
             'floor_height' => 'required|integer|min:600|max:2000',
+            'floor'        => 'sometimes|integer|min:1|max:5',
+        ]);
+
+        $user  = Auth::user();
+        $floor = $data['floor'] ?? 1;
+
+        $sizes          = $user->floor_canvas_sizes ?? [];
+        $sizes[$floor]  = ['width' => $data['floor_width'], 'height' => $data['floor_height']];
+
+        $updatePayload = ['floor_canvas_sizes' => $sizes];
+
+        if ($floor === 1) {
+            $updatePayload['floor_width']  = $data['floor_width'];
+            $updatePayload['floor_height'] = $data['floor_height'];
+        }
+
+        $user->update($updatePayload);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Dimensiones del plano guardadas.',
+        ]);
+    }
+
+    /**
+     * Actualiza la configuración de plantas del restaurante (número de plantas y toggle).
+     *
+     * @param  Request  $request
+     * @return JsonResponse
+     */
+    public function updateFloorSettings(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'floor_count'    => 'sometimes|integer|min:1|max:5',
+            'floors_enabled' => 'sometimes|boolean',
         ]);
 
         Auth::user()->update($data);
 
         return response()->json([
             'success' => true,
-            'message' => 'Dimensiones del plano guardadas.',
+            'message' => 'Configuración de plantas guardada.',
+        ]);
+    }
+
+    /**
+     * Elimina la última planta y todas las estructuras que contiene.
+     *
+     * @param  int  $floor
+     * @return JsonResponse
+     */
+    public function destroyFloor(int $floor): JsonResponse
+    {
+        $user = Auth::user();
+
+        if ($floor < 2 || $floor > ($user->floor_count ?? 1)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Planta no válida.',
+            ], 422);
+        }
+
+        $ownerId = $user->ownerUserId();
+
+        Table::where('user_id', $ownerId)->where('floor', $floor)->delete();
+        Zone::where('user_id', $ownerId)->where('floor', $floor)->delete();
+
+        $newCount = $floor - 1;
+        $sizes    = $user->floor_canvas_sizes ?? [];
+        unset($sizes[$floor]);
+        $user->update([
+            'floor_count'        => $newCount,
+            'floor_canvas_sizes' => $sizes,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => "Planta {$floor} eliminada.",
         ]);
     }
 
@@ -126,19 +212,28 @@ class TableController extends Controller
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'name'             => 'required|string|max:50',
+            'name'             => 'nullable|string|max:50',
             'shape'            => 'required|in:square,round,rectangle,bar,stool',
             'position_x'       => 'required|integer|min:0',
             'position_y'       => 'required|integer|min:0',
             'width'            => 'required|integer|min:40|max:800',
             'height'           => 'required|integer|min:40|max:400',
             'is_service_point' => 'sometimes|boolean',
+            'floor'            => 'sometimes|integer|min:1|max:5',
             'zone_id'          => ['sometimes', 'nullable', Rule::exists('zones', 'id')->where('user_id', Auth::id())],
         ]);
 
         $isServicePoint = in_array($data['shape'], ['bar', 'stool'])
             ? false
             : ($data['is_service_point'] ?? true);
+
+        if (in_array($data['shape'], ['bar', 'stool'])) {
+            $data['name'] = $data['shape'] === 'bar' ? 'Barra' : 'Taburete';
+        } elseif (empty($data['name'])) {
+            $user = Auth::user();
+            $user->increment('next_table_number');
+            $data['name'] = (string) $user->next_table_number;
+        }
 
         if ($isServicePoint) {
             $count     = Table::where('user_id', Auth::id())->servicePoints()->count();
@@ -160,10 +255,16 @@ class TableController extends Controller
             'is_service_point' => $isServicePoint,
         ]);
 
+        $message = match ($table->shape) {
+            'bar'   => 'Barra colocada en el plano.',
+            'stool' => 'Taburete colocado en el plano.',
+            default => "Mesa \"{$table->name}\" creada.",
+        };
+
         return response()->json([
             'success' => true,
             'data'    => $table,
-            'message' => "Mesa \"{$table->name}\" creada.",
+            'message' => $message,
         ], 201);
     }
 
@@ -220,6 +321,37 @@ class TableController extends Controller
     }
 
     /**
+     * Asigna o desvincula la zona de una mesa.
+     *
+     * @param  Request  $request
+     * @param  Table    $table
+     * @return JsonResponse
+     */
+    public function updateZone(Request $request, Table $table): JsonResponse
+    {
+        abort_if($table->user_id !== Auth::id(), 403, 'Acceso denegado.');
+
+        $data = $request->validate([
+            'zone_id' => ['nullable', Rule::exists('zones', 'id')->where('user_id', Auth::id())],
+        ]);
+
+        $table->update($data);
+
+        if ($data['zone_id']) {
+            $zoneName = Zone::find($data['zone_id'])?->name ?? 'desconocida';
+            $message  = "Zona \"{$zoneName}\" asignada a \"{$table->name}\".";
+        } else {
+            $message = "Zona eliminada de \"{$table->name}\".";
+        }
+
+        return response()->json([
+            'success' => true,
+            'data'    => $table,
+            'message' => $message,
+        ]);
+    }
+
+    /**
      * Actualiza la forma visual de una mesa existente en el mapa.
      *
      * @param  Request  $request
@@ -252,6 +384,36 @@ class TableController extends Controller
     }
 
     /**
+     * Mueve una mesa o elemento a una planta diferente.
+     *
+     * @param  Request  $request
+     * @param  Table    $table
+     * @return JsonResponse
+     */
+    public function updateFloor(Request $request, Table $table): JsonResponse
+    {
+        abort_if($table->user_id !== Auth::id(), 403, 'Acceso denegado.');
+
+        $data = $request->validate([
+            'floor' => 'required|integer|min:1|max:5',
+        ]);
+
+        $table->update($data);
+
+        $label = match ($table->shape) {
+            'bar'   => 'Barra',
+            'stool' => 'Taburete',
+            default => "Mesa \"{$table->name}\"",
+        };
+
+        return response()->json([
+            'success' => true,
+            'data'    => $table,
+            'message' => "{$label} movida a Planta {$table->floor}.",
+        ]);
+    }
+
+    /**
      * Elimina una mesa del mapa y de la base de datos.
      *
      * @param  Table  $table
@@ -261,12 +423,19 @@ class TableController extends Controller
     {
         abort_if($table->user_id !== Auth::id(), 403, 'Acceso denegado.');
 
-        $name = $table->name;
+        $name  = $table->name;
+        $shape = $table->shape;
         $table->delete();
+
+        $message = match ($shape) {
+            'bar'   => 'Barra eliminada del plano.',
+            'stool' => 'Taburete eliminado del plano.',
+            default => "Mesa \"{$name}\" eliminada.",
+        };
 
         return response()->json([
             'success' => true,
-            'message' => "Mesa \"{$name}\" eliminada.",
+            'message' => $message,
         ]);
     }
 

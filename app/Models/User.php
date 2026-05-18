@@ -36,6 +36,8 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property float|null  $lng            Longitud del negocio
  * @property int         $floor_width    Ancho del canvas del plano (px)
  * @property int         $floor_height   Alto del canvas del plano (px)
+ * @property int         $floor_count    Número de plantas activas del local (1–5)
+ * @property bool        $floors_enabled Si el sistema de plantas está activo
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property \Illuminate\Support\Carbon|null $deleted_at
@@ -67,6 +69,9 @@ class User extends Authenticatable
         'lng',
         'floor_width',
         'floor_height',
+        'floor_count',
+        'floors_enabled',
+        'floor_canvas_sizes',
     ];
 
     /**
@@ -92,6 +97,9 @@ class User extends Authenticatable
             'active'            => 'boolean',
             'is_waiter'         => 'boolean',
             'is_kitchen'        => 'boolean',
+            'floor_count'        => 'integer',
+            'floors_enabled'     => 'boolean',
+            'floor_canvas_sizes' => 'array',
         ];
     }
 

@@ -63,9 +63,13 @@ Route::middleware(['auth', 'business.active'])->group(function () {
         // Mapa visual de mesas (Bloques 8.1 y 8.3) — solo admin puede editar
         Route::post('/mesas', [TableController::class, 'store'])->name('tables.store');
         Route::patch('/mesas/mapa/canvas', [TableController::class, 'updateCanvas'])->name('tables.canvas.update');
+        Route::patch('/mesas/mapa/plantas/config', [TableController::class, 'updateFloorSettings'])->name('tables.floor-settings');
+        Route::delete('/mesas/mapa/plantas/{floor}', [TableController::class, 'destroyFloor'])->name('tables.floor-destroy');
         Route::patch('/mesas/{table}/posicion', [TableController::class, 'updatePosition'])->name('tables.updatePosition');
         Route::patch('/mesas/{table}/forma', [TableController::class, 'updateShape'])->name('tables.updateShape');
         Route::patch('/mesas/{table}/nombre', [TableController::class, 'updateName'])->name('tables.updateName');
+        Route::patch('/mesas/{table}/zona', [TableController::class, 'updateZone'])->name('tables.updateZone');
+        Route::patch('/mesas/{table}/planta', [TableController::class, 'updateFloor'])->name('tables.update-floor');
         Route::delete('/mesas/{table}', [TableController::class, 'destroy'])->name('tables.destroy');
 
         // Gestión de zonas del plano — solo admin
