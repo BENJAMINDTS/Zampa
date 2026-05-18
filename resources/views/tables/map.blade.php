@@ -200,10 +200,9 @@
                                     x-show="floorCount < 5"
                                     @click="addFloor()"
                                     aria-label="Añadir planta"
-                                    class="px-2 py-1.5 rounded text-xs font-semibold border border-gray-200 dark:border-gray-600
-                                           bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300
-                                           hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors
-                                           focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-400">
+                                    class="px-2 py-1.5 rounded text-xs font-semibold
+                                           bg-green-500 hover:bg-green-600 text-white
+                                           transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-green-400">
                                 + P
                             </button>
 
@@ -212,10 +211,9 @@
                                     x-show="floorCount > 1"
                                     @click="confirmDeleteFloor(floorCount)"
                                     :aria-label="`Eliminar Planta ${floorCount}`"
-                                    class="px-2 py-1.5 rounded text-xs font-semibold border border-red-300 dark:border-red-700
-                                           bg-white dark:bg-gray-700 text-red-500 dark:text-red-400
-                                           hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors
-                                           focus:outline-none focus:ring-2 focus:ring-inset focus:ring-red-400">
+                                    class="px-2 py-1.5 rounded text-xs font-semibold
+                                           bg-red-500 hover:bg-red-600 text-white
+                                           transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-red-400">
                                 − P<span x-text="floorCount"></span>
                             </button>
                         </div>
