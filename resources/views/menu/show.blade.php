@@ -2792,6 +2792,9 @@
         {{-- ── Contenido principal ──────────────────────────────────── --}}
         <main id="main-content" class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-10">
 
+            {{-- ── Menú del Día ──────────────────────────────────────── --}}
+            <x-daily-menu-banner :hash="$table->unique_hash" />
+
             {{-- ── Banner cocina cerrada ──────────────────────────────── --}}
             @if(!$kitchenOpen)
             <div role="status"
