@@ -209,7 +209,7 @@ it('deletes a category owned by the user', function () {
         ->delete(route('categories.destroy', $category))
         ->assertRedirect(route('categories.index'));
 
-    $this->assertDatabaseMissing('categories', ['id' => $category->id]);
+    $this->assertSoftDeleted('categories', ['id' => $category->id]);
 });
 
 it('returns 403 when user tries to delete another users category', function () {
