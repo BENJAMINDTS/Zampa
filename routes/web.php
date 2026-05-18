@@ -156,7 +156,7 @@ Route::middleware(['auth', 'role.superadmin'])
 
     // Gestión de negocios (Bloque 13.4)
     Route::resource('businesses', SuperAdminBusinessController::class)
-         ->only(['index', 'create', 'store', 'destroy']);
+         ->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
     Route::patch('businesses/{business}/toggle', [SuperAdminBusinessController::class, 'toggle'])
          ->name('businesses.toggle');
 
