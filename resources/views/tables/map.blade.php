@@ -21,6 +21,7 @@
     x-init="init()"
     @mouseup.window="if(isRotating||isRotatingZone){}"
     @keydown.ctrl.z.window.prevent="undo()"
+    @keydown.ctrl.y.window.prevent="redo()"
 >
 
     {{-- ══════════════════════════════════════════════════════
@@ -117,21 +118,37 @@
                             aria-label="Lienzo extra grande: 2400 × 1500 px">XL</button>
                 </div>
 
-                {{-- Botón Deshacer --}}
-                <button type="button"
-                        @click="undo()"
-                        :disabled="undoStack.length === 0"
-                        :class="undoStack.length === 0
-                            ? 'opacity-40 cursor-not-allowed'
-                            : 'hover:bg-gray-100 dark:hover:bg-gray-600'"
-                        class="p-1.5 rounded-lg text-gray-500 dark:text-gray-400 transition-colors
-                               focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                        aria-label="Deshacer último cambio (Ctrl+Z)"
-                        title="Deshacer (Ctrl+Z)">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3"/>
-                    </svg>
-                </button>
+                {{-- Botones Deshacer / Rehacer --}}
+                <div class="flex items-center gap-1">
+                    <button type="button"
+                            @click="undo()"
+                            :disabled="undoStack.length === 0"
+                            :class="undoStack.length === 0
+                                ? 'opacity-40 cursor-not-allowed'
+                                : 'hover:bg-gray-100 dark:hover:bg-gray-600'"
+                            class="p-1.5 rounded-lg text-gray-500 dark:text-gray-400 transition-colors
+                                   focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                            aria-label="Deshacer último cambio (Ctrl+Z)"
+                            title="Deshacer (Ctrl+Z)">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3"/>
+                        </svg>
+                    </button>
+                    <button type="button"
+                            @click="redo()"
+                            :disabled="redoStack.length === 0"
+                            :class="redoStack.length === 0
+                                ? 'opacity-40 cursor-not-allowed'
+                                : 'hover:bg-gray-100 dark:hover:bg-gray-600'"
+                            class="p-1.5 rounded-lg text-gray-500 dark:text-gray-400 transition-colors
+                                   focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                            aria-label="Rehacer cambio (Ctrl+Y)"
+                            title="Rehacer (Ctrl+Y)">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 15l6-6m0 0l-6-6m6 6H9a6 6 0 000 12h3"/>
+                        </svg>
+                    </button>
+                </div>
 
                 {{-- Zoom slider (solo visual, sin persistencia en BD) --}}
                 <div class="hidden sm:flex items-center gap-1.5">
@@ -256,7 +273,7 @@
                         <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/>
                         </svg>
-                        Confirmar
+                        Guardar
                     </button>
                 </div>
             </template>
@@ -419,6 +436,45 @@
         <main id="main-content"
               class="flex-1 p-4 relative"
               :class="(editMode && currentView !== 'general') ? 'overflow-auto' : 'overflow-hidden flex items-center justify-center'">
+
+            {{-- Mensaje inferior modo vista — fuera del canvas para no escalar con él --}}
+            <div x-show="!readonly && !editMode"
+                 class="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium
+                             bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300
+                             border border-amber-300 dark:border-amber-600 shadow-sm whitespace-nowrap">
+                    Pulsa "Editar mapa" para mover o modificar estructuras
+                </span>
+            </div>
+
+            {{-- Banner vista general — fuera del canvas para no escalar con él --}}
+            <div x-show="floorsEnabled && currentView === 'general'"
+                 aria-live="polite"
+                 class="absolute top-3 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium
+                             bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300
+                             border border-indigo-200 dark:border-indigo-700 shadow-sm whitespace-nowrap">
+                    Vista general — todas las plantas visibles · interacción desactivada
+                </span>
+            </div>
+
+            {{-- Badge planta activa — fuera del canvas para no escalar con él --}}
+            <div x-show="floorsEnabled && currentView === 'floor'"
+                 aria-live="polite"
+                 class="absolute top-3 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium
+                             bg-gray-100 dark:bg-gray-700/80 text-gray-600 dark:text-gray-300
+                             border border-gray-200 dark:border-gray-600 shadow-sm whitespace-nowrap">
+                    <svg aria-hidden="true" class="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 21h18M3 10h18M3 7l9-4 9 4M4 10v11M20 10v11M8 10v11M16 10v11M12 10v11"/>
+                    </svg>
+                    Planta <span x-text="currentFloor"></span>
+                    <template x-if="!editMode">
+                        <span class="text-gray-400 dark:text-gray-500">· solo vista</span>
+                    </template>
+                </span>
+            </div>
+
             <div
                 x-ref="canvas"
                 class="relative bg-white dark:bg-gray-800 rounded-xl shadow-inner
@@ -434,13 +490,6 @@
                 <div x-show="!readonly && !editMode"
                      class="absolute inset-0 z-[90] rounded-xl cursor-default select-none"
                      aria-hidden="true">
-                    <div class="absolute bottom-4 left-1/2 -translate-x-1/2 pointer-events-none">
-                        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium
-                                     bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300
-                                     border border-amber-300 dark:border-amber-600 shadow-sm">
-                            Pulsa "Editar mapa" para mover o modificar estructuras
-                        </span>
-                    </div>
                 </div>
 
                 {{-- Overlay vista general: bloquea toda interacción con estructuras --}}
@@ -449,33 +498,6 @@
                      aria-hidden="true">
                 </div>
 
-                {{-- Banner vista general --}}
-                <div x-show="floorsEnabled && currentView === 'general'"
-                     aria-live="polite"
-                     class="absolute top-2 left-1/2 -translate-x-1/2 z-[110] pointer-events-none">
-                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium
-                                 bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300
-                                 border border-indigo-200 dark:border-indigo-700 shadow-sm">
-                        Vista general — todas las plantas visibles · interacción con estructuras desactivada
-                    </span>
-                </div>
-
-                {{-- Badge planta activa --}}
-                <div x-show="floorsEnabled && currentView === 'floor'"
-                     aria-live="polite"
-                     class="absolute top-2 left-1/2 -translate-x-1/2 z-[110] pointer-events-none">
-                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium
-                                 bg-gray-100 dark:bg-gray-700/80 text-gray-600 dark:text-gray-300
-                                 border border-gray-200 dark:border-gray-600 shadow-sm">
-                        <svg aria-hidden="true" class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 21h18M3 10h18M3 7l9-4 9 4M4 10v11M20 10v11M8 10v11M16 10v11M12 10v11"/>
-                        </svg>
-                        Planta <span x-text="currentFloor"></span>
-                        <template x-if="!editMode">
-                            <span class="text-gray-400 dark:text-gray-500">· solo vista</span>
-                        </template>
-                    </span>
-                </div>
 
                 {{-- Cuadrícula decorativa --}}
                 <svg class="absolute inset-0 w-full h-full pointer-events-none opacity-30 dark:opacity-10"
@@ -1551,6 +1573,7 @@ document.addEventListener('alpine:init', () => {
         toast:                 { show: false, msg: '', error: false, _timer: null },
         rotTooltip:            { show: false, x: 0, y: 0, deg: 0 },
         undoStack:             [],
+        redoStack:             [],
 
         init() {
             this.$nextTick(() => {
@@ -1858,69 +1881,80 @@ document.addEventListener('alpine:init', () => {
         pushUndo() {
             this.undoStack.push(this.snapshot());
             if (this.undoStack.length > 20) this.undoStack.shift();
+            this.redoStack = [];
         },
 
         async undo() {
             if (!this.undoStack.length) return;
-            const prev  = this.undoStack.pop();
+            this.redoStack.push(this.snapshot());
+            if (this.redoStack.length > 20) this.redoStack.shift();
+            await this._applySnapshot(this.undoStack.pop());
+        },
+
+        async redo() {
+            if (!this.redoStack.length) return;
+            this.undoStack.push(this.snapshot());
+            if (this.undoStack.length > 20) this.undoStack.shift();
+            await this._applySnapshot(this.redoStack.pop());
+        },
+
+        async _applySnapshot(snap) {
             const floor = this.floorsEnabled ? this.currentFloor : 1;
 
             const canvasSizeChanged =
-                prev.floorWidth  !== this.floorWidth  ||
-                prev.floorHeight !== this.floorHeight  ||
-                JSON.stringify(prev.floorCanvasSizes) !== JSON.stringify(this.floorCanvasSizes);
+                snap.floorWidth  !== this.floorWidth  ||
+                snap.floorHeight !== this.floorHeight  ||
+                JSON.stringify(snap.floorCanvasSizes) !== JSON.stringify(this.floorCanvasSizes);
 
-            // Restaurar estado reactivo inmediatamente
-            this.canvasZoom       = prev.canvasZoom;
-            this.floorWidth       = prev.floorWidth;
-            this.floorHeight      = prev.floorHeight;
-            this.floorCanvasSizes = prev.floorCanvasSizes;
+            this.canvasZoom       = snap.canvasZoom;
+            this.floorWidth       = snap.floorWidth;
+            this.floorHeight      = snap.floorHeight;
+            this.floorCanvasSizes = snap.floorCanvasSizes;
 
             const toPersistItems = [];
             const toPersistZones = [];
 
-            for (const snap of prev.tables) {
-                const t = this.tables.find(t => t.id === snap.id);
+            for (const s of snap.tables) {
+                const t = this.tables.find(t => t.id === s.id);
                 if (!t) continue;
-                if (t.position_x !== snap.position_x || t.position_y !== snap.position_y ||
-                    t.width !== snap.width || t.height !== snap.height || (t.rotation ?? 0) !== snap.rotation) {
-                    t.position_x = snap.position_x; t.position_y = snap.position_y;
-                    t.width      = snap.width;       t.height     = snap.height;
-                    t.rotation   = snap.rotation;
+                if (t.position_x !== s.position_x || t.position_y !== s.position_y ||
+                    t.width !== s.width || t.height !== s.height || (t.rotation ?? 0) !== s.rotation) {
+                    t.position_x = s.position_x; t.position_y = s.position_y;
+                    t.width      = s.width;       t.height     = s.height;
+                    t.rotation   = s.rotation;
                     toPersistItems.push(t);
                 }
             }
-            for (const snap of prev.elements) {
-                const e = this.elements.find(e => e.id === snap.id);
+            for (const s of snap.elements) {
+                const e = this.elements.find(e => e.id === s.id);
                 if (!e) continue;
-                if (e.position_x !== snap.position_x || e.position_y !== snap.position_y ||
-                    e.width !== snap.width || e.height !== snap.height || (e.rotation ?? 0) !== snap.rotation) {
-                    e.position_x = snap.position_x; e.position_y = snap.position_y;
-                    e.width      = snap.width;       e.height     = snap.height;
-                    e.rotation   = snap.rotation;
+                if (e.position_x !== s.position_x || e.position_y !== s.position_y ||
+                    e.width !== s.width || e.height !== s.height || (e.rotation ?? 0) !== s.rotation) {
+                    e.position_x = s.position_x; e.position_y = s.position_y;
+                    e.width      = s.width;       e.height     = s.height;
+                    e.rotation   = s.rotation;
                     toPersistItems.push(e);
                 }
             }
-            for (const snap of prev.zones) {
-                const z = this.zones.find(z => z.id === snap.id);
+            for (const s of snap.zones) {
+                const z = this.zones.find(z => z.id === s.id);
                 if (!z) continue;
-                if (z.position_x !== snap.position_x || z.position_y !== snap.position_y ||
-                    z.width !== snap.width || z.height !== snap.height ||
-                    (z.rotation ?? 0) !== snap.rotation || z.color !== snap.color) {
-                    z.position_x = snap.position_x; z.position_y = snap.position_y;
-                    z.width      = snap.width;       z.height     = snap.height;
-                    z.rotation   = snap.rotation;    z.color      = snap.color;
+                if (z.position_x !== s.position_x || z.position_y !== s.position_y ||
+                    z.width !== s.width || z.height !== s.height ||
+                    (z.rotation ?? 0) !== s.rotation || z.color !== s.color) {
+                    z.position_x = s.position_x; z.position_y = s.position_y;
+                    z.width      = s.width;       z.height     = s.height;
+                    z.rotation   = s.rotation;    z.color      = s.color;
                     toPersistZones.push(z);
                 }
             }
 
-            // Persistir en BD
             if (canvasSizeChanged) {
                 try {
                     await fetch('{{ route("tables.canvas.update") }}', {
                         method:  'PATCH',
                         headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 'Accept': 'application/json' },
-                        body: JSON.stringify({ floor_width: prev.floorWidth, floor_height: prev.floorHeight, floor }),
+                        body: JSON.stringify({ floor_width: snap.floorWidth, floor_height: snap.floorHeight, floor }),
                     });
                 } catch {}
             }
@@ -2183,6 +2217,7 @@ document.addEventListener('alpine:init', () => {
                 inertia: false,
                 listeners: {
                     start: (event) => {
+                        if (this.floorsEnabled && this.currentView === 'general') { event.interaction.stop(); return; }
                         if (this.tables.length >= {{ $maxTables }}) {
                             this.showToast(`Límite de {{ $maxTables }} mesas alcanzado.`, true);
                             return;
@@ -2253,6 +2288,7 @@ document.addEventListener('alpine:init', () => {
                 inertia: false,
                 listeners: {
                     start: (event) => {
+                        if (this.floorsEnabled && this.currentView === 'general') { event.interaction.stop(); return; }
                         const shape = event.target.dataset.shape;
                         const dropW = parseInt(event.target.dataset.width)  || 80;
                         const dropH = parseInt(event.target.dataset.height) || 50;
@@ -2310,6 +2346,7 @@ document.addEventListener('alpine:init', () => {
                 inertia: false,
                 listeners: {
                     start: (event) => {
+                        if (this.floorsEnabled && this.currentView === 'general') { event.interaction.stop(); return; }
                         const w = parseInt(event.target.dataset.width)  || 300;
                         const h = parseInt(event.target.dataset.height) || 200;
                         ghost.style.width        = `${w}px`;
