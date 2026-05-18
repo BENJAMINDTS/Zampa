@@ -422,15 +422,16 @@
         </aside>
 
         {{-- ── CANVAS ───────────────────────────────────────── --}}
-        <main id="main-content" class="flex-1 overflow-auto p-4 relative">
+        <main id="main-content"
+              class="flex-1 p-4 relative"
+              :class="editMode ? 'overflow-auto' : 'overflow-hidden flex items-center justify-center'">
             <div
                 x-ref="canvas"
                 class="relative bg-white dark:bg-gray-800 rounded-xl shadow-inner
                        border-2 border-dashed border-gray-200 dark:border-gray-700"
-                :style="`width:${floorWidth}px; height:${floorHeight}px;
-                         transform:scale(${canvasZoom}); transform-origin:top left;
-                         margin-bottom:${-floorHeight*(1-canvasZoom)}px;
-                         margin-right:${-floorWidth*(1-canvasZoom)}px;`"
+                :style="editMode
+                    ? `width:${floorWidth}px; height:${floorHeight}px; transform:scale(${canvasZoom}); transform-origin:top left; margin-bottom:${-floorHeight*(1-canvasZoom)}px; margin-right:${-floorWidth*(1-canvasZoom)}px;`
+                    : `width:${floorWidth}px; height:${floorHeight}px; transform:scale(${canvasZoom}); transform-origin:center center; flex-shrink:0;`"
                 aria-label="Plano del restaurante"
                 @click="editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null; selectedId = null;"
             >
@@ -1461,12 +1462,7 @@ document.addEventListener('alpine:init', () => {
                         this.floorHeight = Math.max(...sizes.map(s => s.height));
                     }
                 }
-                const container = this.$refs.canvas?.parentElement;
-                if (container) {
-                    const scaleX = (container.clientWidth  - 32) / this.floorWidth;
-                    const scaleY = (container.clientHeight - 32) / this.floorHeight;
-                    this.canvasZoom = Math.max(0.5, Math.min(1, Math.min(scaleX, scaleY)));
-                }
+                this._applyOverviewZoom();
             });
 
 
@@ -2820,14 +2816,7 @@ document.addEventListener('alpine:init', () => {
                         this.floorHeight = Math.max(...sizes.map(s => s.height));
                     }
                 }
-                this.$nextTick(() => {
-                    const container = this.$refs.canvas?.parentElement;
-                    if (container) {
-                        const scaleX = (container.clientWidth  - 32) / this.floorWidth;
-                        const scaleY = (container.clientHeight - 32) / this.floorHeight;
-                        this.canvasZoom = Math.max(0.5, Math.min(1, Math.min(scaleX, scaleY)));
-                    }
-                });
+                this.$nextTick(() => this._applyOverviewZoom());
             }
             this.editingTableId = null;
             this.editingTable   = null;
@@ -2835,6 +2824,16 @@ document.addEventListener('alpine:init', () => {
             this.editingZoneId  = null;
             this.editingZone    = null;
             this._zoneBtnEl     = null;
+        },
+
+        // Calcula y aplica zoom para que el canvas quepa en pantalla (modo vista general).
+        _applyOverviewZoom() {
+            const headerH = document.querySelector('header')?.offsetHeight ?? 65;
+            const availW  = window.innerWidth  - 48;
+            const availH  = window.innerHeight - headerH - 48;
+            const scaleX  = availW  / this.floorWidth;
+            const scaleY  = availH  / this.floorHeight;
+            this.canvasZoom = Math.max(0.5, Math.min(1, Math.min(scaleX, scaleY)));
         },
 
         // ── Mover zona a otra planta ─────────────────────────────────────────
