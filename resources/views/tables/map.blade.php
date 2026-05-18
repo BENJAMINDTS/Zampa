@@ -266,7 +266,7 @@
                     </button>
                     <button type="button"
                             x-show="editMode"
-                            @click="editMode = false; _applyOverviewZoom()"
+                            @click="exitEditMode()"
                             class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-white
                                    bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors"
                             aria-label="Confirmar cambios y salir del modo edición">
@@ -2895,6 +2895,18 @@ document.addEventListener('alpine:init', () => {
             this._zoneBtnEl     = null;
         },
 
+        exitEditMode() {
+            this.editMode  = false;
+            this.closeEditPanels();
+            this.selectedId = null;
+            this.hoveredId  = null;
+            Alpine.store('qrModal').close();
+            Alpine.store('tableModal').cancel();
+            Alpine.store('deleteModal').resolve(false);
+            Alpine.store('sizeModal').resolve(false);
+            this._applyOverviewZoom();
+        },
+
         isActive(id) {
             return this.selectedId     === id
                 || this.rotatingId     === id
@@ -2957,7 +2969,7 @@ document.addEventListener('alpine:init', () => {
         },
 
         switchView(view) {
-            this.currentView    = view;
+            this.currentView = view;
             if (view === 'general') {
                 if (this.floorsEnabled) {
                     const sizes = Object.values(this.floorCanvasSizes);
@@ -2968,12 +2980,13 @@ document.addEventListener('alpine:init', () => {
                 }
                 this.$nextTick(() => this._applyOverviewZoom());
             }
-            this.editingTableId = null;
-            this.editingTable   = null;
-            this._editBtnEl     = null;
-            this.editingZoneId  = null;
-            this.editingZone    = null;
-            this._zoneBtnEl     = null;
+            this.closeEditPanels();
+            this.selectedId = null;
+            this.hoveredId  = null;
+            Alpine.store('qrModal').close();
+            Alpine.store('tableModal').cancel();
+            Alpine.store('deleteModal').resolve(false);
+            Alpine.store('sizeModal').resolve(false);
         },
 
         // Calcula y aplica zoom para que el canvas quepa en pantalla (modo vista general).
