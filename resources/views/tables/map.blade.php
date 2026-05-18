@@ -2777,11 +2777,15 @@ document.addEventListener('alpine:init', () => {
         switchFloor(n) {
             this.currentFloor   = n;
             this.currentView    = 'floor';
-            this.canvasZoom     = 1;
             const size = this.floorCanvasSizes[n];
             if (size) {
                 this.floorWidth  = size.width;
                 this.floorHeight = size.height;
+            }
+            if (this.editMode) {
+                this.canvasZoom = 1;
+            } else {
+                this._applyOverviewZoom();
             }
             this.editingTableId = null;
             this.editingTable   = null;
