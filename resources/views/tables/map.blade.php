@@ -70,6 +70,23 @@
         </div>
 
         <div class="flex items-center gap-3 flex-wrap">
+            {{-- ── Leyenda de estados de mesas ──────────────────────────────── --}}
+            <div class="hidden sm:flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400"
+                 aria-label="Leyenda de estados de mesas">
+                <span class="flex items-center gap-1">
+                    <span class="w-2.5 h-2.5 rounded-full bg-green-400 inline-block"></span> Libre
+                </span>
+                <span class="flex items-center gap-1">
+                    <span class="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block"></span> Ocupada
+                </span>
+                <span class="flex items-center gap-1">
+                    <span class="w-2.5 h-2.5 rounded-full bg-green-600 inline-block"></span> Lista
+                </span>
+                <span class="flex items-center gap-1">
+                    <span class="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block"></span> Cobro
+                </span>
+            </div>
+
             {{-- ── Control de tamaño del lienzo — solo admin ──────────────── --}}
             <div x-show="!readonly && editMode" class="flex items-center gap-2">
                 <span class="text-xs font-medium text-gray-500 dark:text-gray-400 hidden sm:block"
@@ -536,11 +553,50 @@
                         @click.stop="selectedId = selectedId === zone.id ? null : zone.id; editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null;"
                         @mousedown.prevent.self="startZoneDrag($event, zone)"
                     >
+                        {{-- Polígono SVG (activo cuando zone.vertices tiene datos) --}}
+                        <svg x-show="zone.vertices && zone.vertices.length >= 3"
+                             class="absolute inset-0 pointer-events-none overflow-visible"
+                             :width="zone.width"
+                             :height="zone.height"
+                             aria-hidden="true">
+                            <polygon :points="vertexPoints(zone)"
+                                     :fill="`${zone.color}22`"
+                                     :stroke="zone.color"
+                                     stroke-width="2"
+                                     fill-rule="evenodd"/>
+                        </svg>
+
+                        {{-- Handles de vértices (edición en modo edit + zona seleccionada) --}}
+                        <template x-if="!readonly && editMode && selectedId === zone.id && zone.vertices && zone.vertices.length >= 3">
+                            <div class="absolute inset-0 pointer-events-none">
+                                <template x-for="(v, idx) in zone.vertices" :key="idx">
+                                    <div class="absolute w-3 h-3 rounded-full border-2 bg-white pointer-events-auto cursor-move z-10 shadow"
+                                         :style="`left:${v.x - 6}px; top:${v.y - 6}px; border-color:${zone.color};`"
+                                         @mousedown.stop.prevent="startVertexDrag($event, zone, idx)"
+                                         :aria-label="`Vértice ${idx + 1} de la zona`">
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+
                         {{-- Etiqueta de zona --}}
                         <span class="absolute bottom-1 left-1 text-xs font-semibold px-1.5 py-0.5 rounded pointer-events-none"
                               :style="`color:${zone.color}; background:rgba(255,255,255,0.85);`"
                               x-text="zone.name">
                         </span>
+
+                        {{-- Botón "Convertir a polígono" (solo en modo edit, sin vértices aún) --}}
+                        <button type="button"
+                                x-show="!readonly && editMode && selectedId === zone.id && (!zone.vertices || zone.vertices.length < 3)"
+                                @click.stop="initPolygonVertices(zone)"
+                                class="absolute top-1 left-1/2 -translate-x-1/2
+                                       px-2 py-0.5 text-xs font-semibold rounded
+                                       bg-white/90 shadow border pointer-events-auto
+                                       hover:bg-white transition-colors"
+                                :style="`color:${zone.color}; border-color:${zone.color};`"
+                                :aria-label="`Convertir zona ${zone.name} a polígono personalizado`">
+                            ⬡ Polígono
+                        </button>
 
                         {{-- Botón editar zona --}}
                         <button type="button"
@@ -636,6 +692,44 @@
                                     shadow-md cursor-grab active:cursor-grabbing
                                     transition-shadow hover:shadow-lg"
                              :class="{'zampa-selected': isActive(bar.id)}">
+
+                            {{-- Polígono SVG de la barra --}}
+                            <svg x-show="bar.vertices && bar.vertices.length >= 3"
+                                 class="absolute inset-0 pointer-events-none overflow-visible"
+                                 :width="bar.width"
+                                 :height="bar.height"
+                                 aria-hidden="true">
+                                <polygon :points="vertexPoints(bar)"
+                                         fill="rgba(251,191,36,0.2)"
+                                         stroke="#f59e0b"
+                                         stroke-width="2"
+                                         fill-rule="evenodd"/>
+                            </svg>
+
+                            {{-- Handles de vértices de la barra --}}
+                            <template x-if="!readonly && editMode && selectedId === bar.id && bar.vertices && bar.vertices.length >= 3">
+                                <div class="absolute inset-0 pointer-events-none">
+                                    <template x-for="(v, idx) in bar.vertices" :key="idx">
+                                        <div class="absolute w-3 h-3 rounded-full border-2 border-amber-500 bg-white pointer-events-auto cursor-move z-10 shadow"
+                                             :style="`left:${v.x - 6}px; top:${v.y - 6}px;`"
+                                             @mousedown.stop.prevent="startBarVertexDrag($event, bar, idx)"
+                                             :aria-label="`Vértice ${idx + 1} de la barra`">
+                                        </div>
+                                    </template>
+                                </div>
+                            </template>
+
+                            {{-- Botón "Convertir a polígono" para la barra --}}
+                            <button type="button"
+                                    x-show="!readonly && editMode && selectedId === bar.id && (!bar.vertices || bar.vertices.length < 3)"
+                                    @click.stop="initBarPolygonVertices(bar)"
+                                    class="absolute top-1 left-1/2 -translate-x-1/2
+                                           px-2 py-0.5 text-xs font-semibold rounded
+                                           bg-white/90 shadow border border-amber-400 text-amber-700
+                                           pointer-events-auto hover:bg-amber-50 transition-colors"
+                                    aria-label="Convertir barra a polígono personalizado">
+                                ⬡ Polígono
+                            </button>
 
                             <span class="text-xs font-semibold text-amber-800 dark:text-amber-300
                                          text-center px-1 leading-tight pointer-events-none"
@@ -801,54 +895,75 @@
                         @click.stop="selectedId = selectedId === table.id ? null : table.id; editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null;"
                         :aria-label="`Mesa ${table.name}`"
                     >
-                        {{-- Fondo de la mesa --}}
+                        {{-- Fondo de la mesa (color según estado del pedido) --}}
                         <div class="w-full h-full relative flex items-center justify-center
-                                    bg-indigo-100 dark:bg-indigo-900
-                                    border-2 border-indigo-300 dark:border-indigo-600
-                                    shadow-md cursor-grab active:cursor-grabbing
-                                    transition-shadow hover:shadow-lg"
+                                    border-2 shadow-md cursor-grab active:cursor-grabbing
+                                    transition-all duration-300 hover:shadow-lg"
                              :class="{
                                 'rounded-full':    table.shape === 'round',
                                 'rounded-xl':      table.shape === 'square',
                                 'rounded-lg':      table.shape === 'rectangle',
                                 'zampa-selected':  isActive(table.id),
+                                'bg-indigo-100 dark:bg-indigo-900 border-indigo-300 dark:border-indigo-600':
+                                    !table.orderStatus || table.orderStatus === 'free',
+                                'bg-amber-100 dark:bg-amber-900/60 border-amber-400 dark:border-amber-500':
+                                    table.orderStatus === 'occupied',
+                                'bg-green-100 dark:bg-green-900/60 border-green-500 dark:border-green-400 animate-pulse':
+                                    table.orderStatus === 'ready',
+                                'bg-blue-100 dark:bg-blue-900/60 border-blue-400 dark:border-blue-500':
+                                    table.orderStatus === 'payment_pending',
                              }"
-                             :style="zoneFor(table) ? `border-color: ${zoneFor(table).color}` : null">
+                             :style="zoneFor(table) && (!table.orderStatus || table.orderStatus === 'free') ? `border-color: ${zoneFor(table).color}` : null">
 
                             {{-- Nombre --}}
-                            <span class="text-xs font-semibold text-indigo-700 dark:text-indigo-300
-                                         text-center px-1 leading-tight pointer-events-none"
+                            <span class="text-xs font-semibold text-center px-1 leading-tight pointer-events-none"
+                                  :class="{
+                                      'text-indigo-700 dark:text-indigo-300': !table.orderStatus || table.orderStatus === 'free',
+                                      'text-amber-800 dark:text-amber-200':  table.orderStatus === 'occupied',
+                                      'text-green-800 dark:text-green-200':  table.orderStatus === 'ready',
+                                      'text-blue-800  dark:text-blue-200':   table.orderStatus === 'payment_pending',
+                                  }"
                                   x-text="table.name">
                             </span>
 
-                            {{-- Badge estado: libre/ocupada --}}
+                            {{-- Badge de estado con icono --}}
                             <span class="absolute top-1 left-1 w-2 h-2 rounded-full"
-                                  :class="table.status === 'occupied' ? 'bg-red-500' : 'bg-green-400'"
-                                  :title="table.status === 'occupied' ? 'Ocupada' : 'Libre'">
+                                  :class="{
+                                      'bg-green-400':  !table.orderStatus || table.orderStatus === 'free',
+                                      'bg-amber-500':  table.orderStatus === 'occupied',
+                                      'bg-green-600':  table.orderStatus === 'ready',
+                                      'bg-blue-500':   table.orderStatus === 'payment_pending',
+                                  }"
+                                  :title="{
+                                      'free':            'Libre',
+                                      'occupied':        'Ocupada',
+                                      'ready':           'Listo para servir',
+                                      'payment_pending': 'Pendiente de pago',
+                                  }[table.orderStatus] ?? 'Libre'">
                             </span>
 
-                            {{-- Badge solicitud de cuenta en efectivo --}}
-                            <span x-show="table.bill_requested && table.requested_payment_method === 'cash'"
+                            {{-- Badge: listo para servir --}}
+                            <span x-show="table.orderStatus === 'ready'"
                                   class="absolute bottom-1 right-1
                                          flex items-center justify-center
                                          w-5 h-5 rounded-full
-                                         bg-amber-500 text-white text-xs font-bold
+                                         bg-green-600 text-white text-xs font-bold
+                                         shadow-md"
+                                  title="Listo para servir"
+                                  aria-label="Mesa lista para servir">
+                                ✓
+                            </span>
+
+                            {{-- Badge: solicitud de cuenta --}}
+                            <span x-show="table.orderStatus === 'payment_pending'"
+                                  class="absolute bottom-1 right-1
+                                         flex items-center justify-center
+                                         w-5 h-5 rounded-full
+                                         bg-blue-500 text-white text-xs font-bold
                                          shadow-md animate-pulse"
-                                  title="Solicita cuenta en efectivo"
-                                  aria-label="Mesa solicita cuenta en efectivo">
+                                  title="Solicita la cuenta"
+                                  aria-label="Mesa solicita la cuenta">
                                 €
-                            </span>
-
-                            {{-- Badge solicitud de cuenta con tarjeta --}}
-                            <span x-show="table.bill_requested && table.requested_payment_method === 'card'"
-                                  class="absolute bottom-1 right-1
-                                         flex items-center justify-center
-                                         w-5 h-5 rounded-full
-                                         bg-emerald-500 text-white text-xs font-bold
-                                         shadow-md animate-pulse"
-                                  title="Solicita cuenta con tarjeta"
-                                  aria-label="Mesa solicita cuenta con tarjeta">
-                                ♦
                             </span>
 
                             {{-- Botón editar forma — solo admin --}}
@@ -1590,9 +1705,9 @@ document.addEventListener('alpine:init', () => {
             });
 
 
-            // Polling de estados: actualiza ocupación y solicitudes de cuenta cada 5 s.
+            // Polling de estados: actualiza orderStatus de cada mesa cada 25 s.
             this.pollStatuses();
-            setInterval(() => this.pollStatuses(), 5000);
+            setInterval(() => this.pollStatuses(), 25000);
         },
 
         // Devuelve los límites de posición válidos para un item considerando su rotación.
@@ -1648,18 +1763,14 @@ document.addEventListener('alpine:init', () => {
 
         async pollStatuses() {
             try {
-                const res  = await fetch('{{ route("tables.map.statuses") }}', {
+                const res = await fetch('{{ route("tables.map.statuses") }}', {
                     headers: { Accept: 'application/json' },
                 });
                 if (!res.ok) return;
                 const data = await res.json();
                 data.forEach(s => {
                     const t = this.tables.find(t => t.id === s.id);
-                    if (t) {
-                        t.status                   = s.status;
-                        t.bill_requested           = s.bill_requested;
-                        t.requested_payment_method = s.requested_payment_method;
-                    }
+                    if (t) t.orderStatus = s.orderStatus;
                 });
             } catch {}
         },
@@ -1846,6 +1957,16 @@ document.addEventListener('alpine:init', () => {
             if (aRound) return this.circleObbOverlaps(a, b);
             if (bRound) return this.circleObbOverlaps(b, a);
             return this.obbOverlaps(a, b);
+        },
+
+        // Devuelve true si una zona colisiona con otra zona del mismo plano.
+        // Zona sobre mesa: PERMITIDO. Solo zona ↔ zona está prohibido.
+        hasZoneCollision(zone) {
+            if (this.floorsEnabled && this.currentView === 'general') return false;
+            const selfId    = zone.id ?? null;
+            const zoneFloor = this.floorsEnabled ? (zone.floor ?? this.currentFloor) : null;
+            const sameFloor = (z) => !this.floorsEnabled || (z.floor ?? 1) === (zoneFloor ?? 1);
+            return this.zones.filter(sameFloor).some(z => z.id !== selfId && this.obbOverlaps(zone, z));
         },
 
         // Devuelve true si el item colisiona con elementos prohibidos.
@@ -2081,21 +2202,41 @@ document.addEventListener('alpine:init', () => {
         startZoneDrag(event, zone) {
             if (!this.editMode) return;
             this.pushUndo();
-            const canvasEl  = this.$refs.canvas;
-            const startMX   = event.clientX;
-            const startMY   = event.clientY;
-            const startPx   = zone.position_x;
-            const startPy   = zone.position_y;
+            const startMX = event.clientX;
+            const startMY = event.clientY;
+            const startPx = zone.position_x;
+            const startPy = zone.position_y;
 
             this.closeEditPanels();
             this.draggingId            = zone.id;
             document.body.style.cursor = 'grabbing';
 
+            let startedColliding = this.hasZoneCollision(zone);
+
             const onMove = (e) => {
-                const maxX = Math.max(0, this.floorWidth  - zone.width);
-                const maxY = Math.max(0, this.floorHeight - zone.height);
-                zone.position_x = Math.max(0, Math.min(maxX, Math.round(startPx + (e.clientX - startMX) / this.canvasZoom)));
-                zone.position_y = Math.max(0, Math.min(maxY, Math.round(startPy + (e.clientY - startMY) / this.canvasZoom)));
+                const maxX  = Math.max(0, this.floorWidth  - zone.width);
+                const maxY  = Math.max(0, this.floorHeight - zone.height);
+                const propX = Math.max(0, Math.min(maxX, Math.round(startPx + (e.clientX - startMX) / this.canvasZoom)));
+                const propY = Math.max(0, Math.min(maxY, Math.round(startPy + (e.clientY - startMY) / this.canvasZoom)));
+
+                const testXY = { ...zone, position_x: propX, position_y: propY };
+                const testX  = { ...zone, position_x: propX, position_y: zone.position_y };
+                const testY  = { ...zone, position_x: zone.position_x, position_y: propY };
+
+                if (startedColliding) {
+                    zone.position_x = propX;
+                    zone.position_y = propY;
+                    if (!this.hasZoneCollision(zone)) startedColliding = false;
+                    return;
+                }
+
+                if (!this.hasZoneCollision(testXY)) {
+                    zone.position_x = propX; zone.position_y = propY;
+                } else if (!this.hasZoneCollision(testX)) {
+                    zone.position_x = propX;
+                } else if (!this.hasZoneCollision(testY)) {
+                    zone.position_y = propY;
+                }
             };
 
             const onUp = async () => {
@@ -2103,6 +2244,9 @@ document.addEventListener('alpine:init', () => {
                 document.removeEventListener('mouseup',   onUp);
                 this.draggingId            = null;
                 document.body.style.cursor = '';
+                if (this.hasZoneCollision(zone)) {
+                    this.showToast('No se puede colocar aquí: la zona colisiona con otra zona.', true);
+                }
                 await this.persistZonePosition(zone.id, zone.position_x, zone.position_y);
             };
 
@@ -2124,12 +2268,21 @@ document.addEventListener('alpine:init', () => {
             this.rotTooltip.show       = true;
             document.body.style.cursor = "url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2720%27 height=%2720%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27M21 2v6h-6%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M3 12a9 9 0 0 1 15-6.7L21 8%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M3 22v-6h6%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M21 12a9 9 0 0 1-15 6.7L3 16%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M21 2v6h-6%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M3 12a9 9 0 0 1 15-6.7L21 8%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M3 22v-6h6%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M21 12a9 9 0 0 1-15 6.7L3 16%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3C/svg%3E') 10 10, grabbing";
 
+            let lastValidRotation = zone.rotation ?? 0;
+
             const onMove = (e) => {
-                const dx    = e.clientX - centerX;
-                const dy    = e.clientY - centerY;
-                let   angle = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
+                const dx       = e.clientX - centerX;
+                const dy       = e.clientY - centerY;
+                let   angle    = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
                 angle = ((angle % 360) + 360) % 360;
-                zone.rotation       = Math.round(angle);
+                const proposed = Math.round(angle);
+                const testItem = { ...zone, rotation: proposed };
+                if (!this.hasZoneCollision(testItem)) {
+                    zone.rotation     = proposed;
+                    lastValidRotation = proposed;
+                } else {
+                    zone.rotation = lastValidRotation;
+                }
                 this.rotTooltip.x   = e.clientX;
                 this.rotTooltip.y   = e.clientY;
                 this.rotTooltip.deg = zone.rotation;
@@ -2388,6 +2541,11 @@ document.addEventListener('alpine:init', () => {
                         const name = await Alpine.store('tableModal').prompt('zone');
                         if (!name) return;
 
+                        const candidate = { position_x: dropX, position_y: dropY, width: dropW, height: dropH, rotation: 0, id: null, floor: this.floorsEnabled ? this.currentFloor : 1 };
+                        if (this.hasZoneCollision(candidate)) {
+                            this.showToast('No se puede colocar aquí: la zona colisiona con otra zona.', true);
+                            return;
+                        }
                         await this.createZone(name, this.zoneColor, dropX, dropY, dropW, dropH);
                     },
                 },
@@ -2565,6 +2723,114 @@ document.addEventListener('alpine:init', () => {
             }
         },
 
+        // ── Polígonos: devuelve string de puntos SVG para la zona/barra ─────────
+        vertexPoints(item) {
+            if (!item.vertices || item.vertices.length < 3) return '';
+            return item.vertices.map(v => `${v.x},${v.y}`).join(' ');
+        },
+
+        // ── Drag de vértice de zona ───────────────────────────────────────────
+        startVertexDrag(event, zone, idx) {
+            if (!this.editMode) return;
+            event.stopPropagation();
+            this.pushUndo();
+            const startMX = event.clientX;
+            const startMY = event.clientY;
+            const startVX = zone.vertices[idx].x;
+            const startVY = zone.vertices[idx].y;
+
+            const onMove = (e) => {
+                zone.vertices[idx].x = Math.round(startVX + (e.clientX - startMX) / this.canvasZoom);
+                zone.vertices[idx].y = Math.round(startVY + (e.clientY - startMY) / this.canvasZoom);
+            };
+
+            const onUp = async () => {
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('mouseup',   onUp);
+                await this.persistZoneVertices(zone.id, zone.vertices);
+            };
+
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup',   onUp);
+        },
+
+        // ── Drag de vértice de barra ──────────────────────────────────────────
+        startBarVertexDrag(event, element, idx) {
+            if (!this.editMode) return;
+            event.stopPropagation();
+            this.pushUndo();
+            const startMX = event.clientX;
+            const startMY = event.clientY;
+            const startVX = element.vertices[idx].x;
+            const startVY = element.vertices[idx].y;
+
+            const onMove = (e) => {
+                element.vertices[idx].x = Math.round(startVX + (e.clientX - startMX) / this.canvasZoom);
+                element.vertices[idx].y = Math.round(startVY + (e.clientY - startMY) / this.canvasZoom);
+            };
+
+            const onUp = async () => {
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('mouseup',   onUp);
+                await this.persistBarVertices(element.id, element.vertices);
+            };
+
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup',   onUp);
+        },
+
+        // ── AJAX: persistir vértices de zona ──────────────────────────────────
+        async persistZoneVertices(id, vertices) {
+            try {
+                const res = await fetch(`/zonas/${id}`, {
+                    method:  'PATCH',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 'Accept': 'application/json' },
+                    body: JSON.stringify({ vertices }),
+                });
+                if (!res.ok) this.showToast('Error al guardar los vértices.', true);
+            } catch {
+                this.showToast('Error de red.', true);
+            }
+        },
+
+        // ── AJAX: persistir vértices de barra ─────────────────────────────────
+        async persistBarVertices(id, vertices) {
+            try {
+                const res = await fetch(`/mesas/${id}/vertices`, {
+                    method:  'PATCH',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 'Accept': 'application/json' },
+                    body: JSON.stringify({ vertices }),
+                });
+                if (!res.ok) this.showToast('Error al guardar los vértices de la barra.', true);
+            } catch {
+                this.showToast('Error de red.', true);
+            }
+        },
+
+        // ── Inicializar vértices de polígono (4 esquinas del rectángulo) ──────
+        initPolygonVertices(zone) {
+            if (zone.vertices && zone.vertices.length >= 3) return;
+            zone.vertices = [
+                { x: 0,           y: 0            },
+                { x: zone.width,  y: 0            },
+                { x: zone.width,  y: zone.height  },
+                { x: 0,           y: zone.height  },
+            ];
+            this.persistZoneVertices(zone.id, zone.vertices);
+        },
+
+        // ── Inicializar vértices de barra ─────────────────────────────────────
+        initBarPolygonVertices(element) {
+            if (element.vertices && element.vertices.length >= 3) return;
+            element.vertices = [
+                { x: 0,              y: 0               },
+                { x: element.width,  y: 0               },
+                { x: element.width,  y: element.height  },
+                { x: 0,              y: element.height  },
+            ];
+            this.persistBarVertices(element.id, element.vertices);
+        },
+
         // ── Resize de zona ────────────────────────────────────────────────────
         startZoneResize(event, zone) {
             if (!this.editMode) return;
@@ -2578,10 +2844,22 @@ document.addEventListener('alpine:init', () => {
             document.body.style.cursor = 'se-resize';
 
             const onMove = (e) => {
-                const maxW  = Math.max(80, this.floorWidth  - zone.position_x);
-                const maxH  = Math.max(60, this.floorHeight - zone.position_y);
-                zone.width  = Math.min(maxW, Math.max(80, startW + (e.clientX - startMX)));
-                zone.height = Math.min(maxH, Math.max(60, startH + (e.clientY - startMY)));
+                const maxW   = Math.max(80, this.floorWidth  - zone.position_x);
+                const maxH   = Math.max(60, this.floorHeight - zone.position_y);
+                const newW   = Math.min(maxW, Math.max(80, startW + (e.clientX - startMX) / this.canvasZoom));
+                const newH   = Math.min(maxH, Math.max(60, startH + (e.clientY - startMY) / this.canvasZoom));
+                const testWH = { ...zone, width: Math.round(newW), height: Math.round(newH) };
+                const testW  = { ...zone, width: Math.round(newW) };
+                const testH  = { ...zone, height: Math.round(newH) };
+
+                if (!this.hasZoneCollision(testWH)) {
+                    zone.width  = Math.round(newW);
+                    zone.height = Math.round(newH);
+                } else if (!this.hasZoneCollision(testW)) {
+                    zone.width  = Math.round(newW);
+                } else if (!this.hasZoneCollision(testH)) {
+                    zone.height = Math.round(newH);
+                }
             };
 
             const onUp = async () => {
