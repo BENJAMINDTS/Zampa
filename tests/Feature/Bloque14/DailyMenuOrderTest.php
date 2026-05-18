@@ -217,29 +217,3 @@ it('creates order items with queued status', function () {
     $item = OrderItem::where('order_id', $this->order->id)->first();
     expect($item->status)->toBe('queued');
 });
-
-// ─── Timing calculation ──────────────────────────────────────────────────────
-
-it('delay is zero when client delay equals estimated prep time', function () {
-    $clientDelay   = 10;
-    $estimatedPrep = 10;
-    $delaySeconds  = max(0, ($clientDelay - $estimatedPrep) * 60);
-
-    expect($delaySeconds)->toBe(0);
-});
-
-it('delay is zero when client delay is less than estimated prep time', function () {
-    $clientDelay   = 5;
-    $estimatedPrep = 10;
-    $delaySeconds  = max(0, ($clientDelay - $estimatedPrep) * 60);
-
-    expect($delaySeconds)->toBe(0);
-});
-
-it('delay is positive when client delay exceeds estimated prep time', function () {
-    $clientDelay   = 30;
-    $estimatedPrep = 10;
-    $delaySeconds  = max(0, ($clientDelay - $estimatedPrep) * 60);
-
-    expect($delaySeconds)->toBe(1200);
-});

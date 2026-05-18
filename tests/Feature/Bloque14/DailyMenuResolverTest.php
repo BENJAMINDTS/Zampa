@@ -74,7 +74,7 @@ it('specific_date takes priority over day_of_week', function () {
     expect($result->id)->toBe($byDate->id);
 });
 
-it('returns null when specific_date menu is inactive even if day_of_week matches', function () {
+it('falls back to day_of_week menu when specific_date menu is inactive', function () {
     $today    = strtolower(now()->englishDayOfWeek);
     $todayDate = today()->toDateString();
 

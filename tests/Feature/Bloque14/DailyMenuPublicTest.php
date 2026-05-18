@@ -323,6 +323,8 @@ it('returns 422 when timing override is below the estimated prep time', function
     ])->assertStatus(422);
 });
 
+// Note: lockForUpdate() is a no-op on SQLite, so this test verifies the count
+// threshold logic only. The race-condition guard is exercised only on MySQL/MariaDB.
 it('returns 409 when the menu is sold out', function () {
     ['menu' => $menu, 'section' => $section, 'product' => $product] = buildTodayMenu($this->user->id);
     $menu->update(['max_per_day' => 1]);
