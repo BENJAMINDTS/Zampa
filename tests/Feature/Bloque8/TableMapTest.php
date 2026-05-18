@@ -2,6 +2,7 @@
 
 /**
  * @author AyrtonAlania
+ * @author SebastianBCF
  */
 
 use App\Models\Plan;
@@ -652,4 +653,454 @@ it('showQr returns different svg content for tables with different hashes', func
                  ->content();
 
     expect($svgA)->not->toBe($svgB);
+});
+
+// ─── Estados de mesas — polling de orderStatus ────────────────────────────────
+
+it('mapStatuses endpoint returns orderStatus for each table', function () {
+    $table = Table::factory()->for($this->admin)->create(['status' => 'free']);
+
+    $this->actingAs($this->admin)
+         ->getJson(route('tables.map.statuses'))
+         ->assertOk()
+         ->assertJsonFragment(['id' => $table->id, 'orderStatus' => 'free']);
+});
+
+it('mapStatuses returns free when table has no active order', function () {
+    $table = Table::factory()->for($this->admin)->create();
+
+    $response = $this->actingAs($this->admin)
+                     ->getJson(route('tables.map.statuses'));
+
+    $status = collect($response->json())->firstWhere('id', $table->id);
+    expect($status['orderStatus'])->toBe('free');
+});
+
+it('mapStatuses returns occupied when table has an active order', function () {
+    $table = Table::factory()->for($this->admin)->create();
+    \App\Models\Order::factory()->create([
+        'table_id'         => $table->id,
+        'status'           => 'pending',
+        'bill_requested'   => false,
+        'notification_ready' => false,
+    ]);
+
+    $response = $this->actingAs($this->admin)
+                     ->getJson(route('tables.map.statuses'));
+
+    $status = collect($response->json())->firstWhere('id', $table->id);
+    expect($status['orderStatus'])->toBe('occupied');
+});
+
+it('mapStatuses returns ready when notification_ready is true', function () {
+    $table = Table::factory()->for($this->admin)->create();
+    \App\Models\Order::factory()->create([
+        'table_id'           => $table->id,
+        'status'             => 'pending',
+        'bill_requested'     => false,
+        'notification_ready' => true,
+    ]);
+
+    $response = $this->actingAs($this->admin)
+                     ->getJson(route('tables.map.statuses'));
+
+    $status = collect($response->json())->firstWhere('id', $table->id);
+    expect($status['orderStatus'])->toBe('ready');
+});
+
+it('mapStatuses returns payment_pending when bill_requested is true', function () {
+    $table = Table::factory()->for($this->admin)->create();
+    \App\Models\Order::factory()->create([
+        'table_id'       => $table->id,
+        'status'         => 'pending',
+        'bill_requested' => true,
+    ]);
+
+    $response = $this->actingAs($this->admin)
+                     ->getJson(route('tables.map.statuses'));
+
+    $status = collect($response->json())->firstWhere('id', $table->id);
+    expect($status['orderStatus'])->toBe('payment_pending');
+});
+
+it('mapStatuses only returns tables belonging to the authenticated restaurant', function () {
+    $ownTable   = Table::factory()->for($this->admin)->create();
+    $otherTable = Table::factory()->for($this->other)->create();
+
+    $response = $this->actingAs($this->admin)
+                     ->getJson(route('tables.map.statuses'));
+
+    $ids = collect($response->json())->pluck('id');
+    expect($ids)->toContain($ownTable->id)
+                ->not->toContain($otherTable->id);
+});
+
+// ─── Numeración automática por gap-fill ───────────────────────────────────────
+
+it('auto-assigns number 1 when no tables exist', function () {
+    $response = $this->actingAs($this->admin)
+                     ->postJson(route('tables.store'), [
+                         'shape'      => 'square',
+                         'position_x' => 0,
+                         'position_y' => 0,
+                         'width'      => 100,
+                         'height'     => 100,
+                     ])
+                     ->assertCreated();
+
+    expect($response->json('data.name'))->toBe('1');
+});
+
+it('auto-assigns the next sequential number when no gaps', function () {
+    Table::factory()->for($this->admin)->create(['name' => '1']);
+    Table::factory()->for($this->admin)->create(['name' => '2']);
+
+    $response = $this->actingAs($this->admin)
+                     ->postJson(route('tables.store'), [
+                         'shape'      => 'square',
+                         'position_x' => 0,
+                         'position_y' => 0,
+                         'width'      => 100,
+                         'height'     => 100,
+                     ])
+                     ->assertCreated();
+
+    expect($response->json('data.name'))->toBe('3');
+});
+
+it('auto-assigns the first gap in the numeric sequence', function () {
+    Table::factory()->for($this->admin)->create(['name' => '1']);
+    Table::factory()->for($this->admin)->create(['name' => '3']);
+
+    $response = $this->actingAs($this->admin)
+                     ->postJson(route('tables.store'), [
+                         'shape'      => 'square',
+                         'position_x' => 0,
+                         'position_y' => 0,
+                         'width'      => 100,
+                         'height'     => 100,
+                     ])
+                     ->assertCreated();
+
+    expect($response->json('data.name'))->toBe('2');
+});
+
+it('named table keeps its explicit name and does not get auto-numbered', function () {
+    $response = $this->actingAs($this->admin)
+                     ->postJson(route('tables.store'), [
+                         'name'       => 'Terraza 1',
+                         'shape'      => 'square',
+                         'position_x' => 0,
+                         'position_y' => 0,
+                         'width'      => 100,
+                         'height'     => 100,
+                     ])
+                     ->assertCreated();
+
+    expect($response->json('data.name'))->toBe('Terraza 1');
+});
+
+// ─── Vértices poligonales para zonas ─────────────────────────────────────────
+
+it('zone can be created with polygon vertices', function () {
+    $vertices = [
+        ['x' => 0,   'y' => 0],
+        ['x' => 200, 'y' => 0],
+        ['x' => 250, 'y' => 100],
+        ['x' => 0,   'y' => 100],
+    ];
+
+    $this->actingAs($this->admin)
+         ->postJson(route('zones.store'), [
+             'name'       => 'Zona L',
+             'color'      => '#6366f1',
+             'position_x' => 50,
+             'position_y' => 50,
+             'width'      => 300,
+             'height'     => 200,
+             'vertices'   => $vertices,
+         ])
+         ->assertCreated()
+         ->assertJsonPath('success', true);
+
+    $zone = \App\Models\Zone::where('name', 'Zona L')->first();
+    expect($zone->vertices)->toBeArray()->toHaveCount(4);
+});
+
+it('zone can be updated with new polygon vertices', function () {
+    $zone = \App\Models\Zone::factory()->for($this->admin)->create();
+
+    $vertices = [
+        ['x' => 0,   'y' => 0],
+        ['x' => 300, 'y' => 0],
+        ['x' => 300, 'y' => 200],
+    ];
+
+    $this->actingAs($this->admin)
+         ->patchJson(route('zones.update', $zone), [
+             'vertices' => $vertices,
+         ])
+         ->assertOk()
+         ->assertJsonPath('success', true);
+
+    expect($zone->fresh()->vertices)->toHaveCount(3);
+});
+
+it('zone vertices are nullable (rectangle fallback)', function () {
+    $zone = \App\Models\Zone::factory()->for($this->admin)->create(['vertices' => null]);
+
+    expect($zone->vertices)->toBeNull();
+});
+
+it('zone vertices require at least 3 points', function () {
+    $this->actingAs($this->admin)
+         ->postJson(route('zones.store'), [
+             'name'       => 'Zona corta',
+             'color'      => '#6366f1',
+             'position_x' => 0,
+             'position_y' => 0,
+             'width'      => 200,
+             'height'     => 100,
+             'vertices'   => [['x' => 0, 'y' => 0], ['x' => 100, 'y' => 0]],
+         ])
+         ->assertUnprocessable();
+});
+
+// ─── Vértices poligonales para la barra ──────────────────────────────────────
+
+it('bar element can save polygon vertices via updateVertices', function () {
+    $bar = Table::factory()->for($this->admin)->create([
+        'shape'            => 'bar',
+        'is_service_point' => false,
+        'name'             => 'Barra',
+    ]);
+
+    $vertices = [
+        ['x' => 0,   'y' => 0],
+        ['x' => 200, 'y' => 0],
+        ['x' => 200, 'y' => 60],
+        ['x' => 0,   'y' => 60],
+    ];
+
+    $this->actingAs($this->admin)
+         ->patchJson(route('tables.updateVertices', $bar), [
+             'vertices' => $vertices,
+         ])
+         ->assertOk()
+         ->assertJsonPath('success', true);
+
+    expect($bar->fresh()->vertices)->toHaveCount(4);
+});
+
+it('updateVertices returns 403 for bar belonging to another admin', function () {
+    $bar = Table::factory()->for($this->other)->create([
+        'shape'            => 'bar',
+        'is_service_point' => false,
+    ]);
+
+    $this->actingAs($this->admin)
+         ->patchJson(route('tables.updateVertices', $bar), [
+             'vertices' => [['x' => 0, 'y' => 0], ['x' => 100, 'y' => 0], ['x' => 100, 'y' => 60]],
+         ])
+         ->assertForbidden();
+});
+
+it('updateVertices accepts null to reset polygon', function () {
+    $bar = Table::factory()->for($this->admin)->create([
+        'shape'            => 'bar',
+        'is_service_point' => false,
+        'vertices'         => [['x' => 0, 'y' => 0], ['x' => 100, 'y' => 0], ['x' => 100, 'y' => 60]],
+    ]);
+
+    $this->actingAs($this->admin)
+         ->patchJson(route('tables.updateVertices', $bar), [
+             'vertices' => null,
+         ])
+         ->assertOk();
+
+    expect($bar->fresh()->vertices)->toBeNull();
+});
+
+// ─── Elementos decorativos (barra y taburete) ─────────────────────────────────
+
+it('bar element is created with is_service_point false', function () {
+    $this->actingAs($this->admin)
+         ->postJson(route('tables.store'), [
+             'shape'      => 'bar',
+             'position_x' => 0,
+             'position_y' => 0,
+             'width'      => 200,
+             'height'     => 60,
+         ])
+         ->assertCreated();
+
+    $bar = Table::where('shape', 'bar')->where('user_id', $this->admin->id)->first();
+    expect($bar->is_service_point)->toBeFalse();
+});
+
+it('stool element is created with is_service_point false', function () {
+    $this->actingAs($this->admin)
+         ->postJson(route('tables.store'), [
+             'shape'      => 'stool',
+             'position_x' => 0,
+             'position_y' => 0,
+             'width'      => 50,
+             'height'     => 50,
+         ])
+         ->assertCreated();
+
+    $stool = Table::where('shape', 'stool')->where('user_id', $this->admin->id)->first();
+    expect($stool->is_service_point)->toBeFalse();
+});
+
+it('bar element does not appear in public menu table lookup', function () {
+    $bar = Table::factory()->for($this->admin)->create([
+        'shape'            => 'bar',
+        'is_service_point' => false,
+        'name'             => 'Barra',
+    ]);
+
+    $this->get(route('menu.show', $bar->unique_hash))
+         ->assertNotFound();
+});
+
+it('decorative element does not count towards plan table limit', function () {
+    Table::factory()->for($this->admin)->count(5)->create();
+
+    $this->actingAs($this->admin)
+         ->postJson(route('tables.store'), [
+             'shape'      => 'bar',
+             'position_x' => 0,
+             'position_y' => 0,
+             'width'      => 200,
+             'height'     => 60,
+         ])
+         ->assertCreated();
+});
+
+it('bar element is auto-named Barra', function () {
+    $response = $this->actingAs($this->admin)
+                     ->postJson(route('tables.store'), [
+                         'shape'      => 'bar',
+                         'position_x' => 0,
+                         'position_y' => 0,
+                         'width'      => 200,
+                         'height'     => 60,
+                     ])
+                     ->assertCreated();
+
+    expect($response->json('data.name'))->toBe('Barra');
+});
+
+it('stool element is auto-named Taburete', function () {
+    $response = $this->actingAs($this->admin)
+                     ->postJson(route('tables.store'), [
+                         'shape'      => 'stool',
+                         'position_x' => 0,
+                         'position_y' => 0,
+                         'width'      => 50,
+                         'height'     => 50,
+                     ])
+                     ->assertCreated();
+
+    expect($response->json('data.name'))->toBe('Taburete');
+});
+
+// ─── Formas de mesa — solo formas predefinidas ────────────────────────────────
+
+it('table shape must be one of the predefined values', function () {
+    foreach (['square', 'round', 'rectangle', 'bar', 'stool'] as $shape) {
+        $this->actingAs($this->admin)
+             ->postJson(route('tables.store'), [
+                 'name'       => "Mesa {$shape}",
+                 'shape'      => $shape,
+                 'position_x' => 0,
+                 'position_y' => 0,
+                 'width'      => 100,
+                 'height'     => 100,
+             ])
+             ->assertStatus(201);
+    }
+});
+
+it('table cannot be created with a custom polygon shape value', function () {
+    $this->actingAs($this->admin)
+         ->postJson(route('tables.store'), [
+             'name'       => 'Mesa Custom',
+             'shape'      => 'hexagon',
+             'position_x' => 0,
+             'position_y' => 0,
+             'width'      => 100,
+             'height'     => 100,
+         ])
+         ->assertUnprocessable();
+});
+
+it('updateShape rejects non-predefined shape values', function () {
+    $table = Table::factory()->for($this->admin)->create();
+
+    $this->actingAs($this->admin)
+         ->patchJson(route('tables.updateShape', $table), ['shape' => 'star'])
+         ->assertUnprocessable();
+});
+
+// ─── orderStatus accessor en el modelo ───────────────────────────────────────
+
+it('orderStatus is free when table has no active order', function () {
+    $table = Table::factory()->for($this->admin)->create();
+    $table->load('activeOrder');
+
+    expect($table->orderStatus)->toBe('free');
+});
+
+it('orderStatus is occupied when table has an active order without alerts', function () {
+    $table = Table::factory()->for($this->admin)->create();
+    \App\Models\Order::factory()->create([
+        'table_id'           => $table->id,
+        'status'             => 'pending',
+        'bill_requested'     => false,
+        'notification_ready' => false,
+    ]);
+    $table->load('activeOrder');
+
+    expect($table->orderStatus)->toBe('occupied');
+});
+
+it('orderStatus is ready when notification_ready is true', function () {
+    $table = Table::factory()->for($this->admin)->create();
+    \App\Models\Order::factory()->create([
+        'table_id'           => $table->id,
+        'status'             => 'pending',
+        'bill_requested'     => false,
+        'notification_ready' => true,
+    ]);
+    $table->load('activeOrder');
+
+    expect($table->orderStatus)->toBe('ready');
+});
+
+it('orderStatus is payment_pending when bill_requested is true', function () {
+    $table = Table::factory()->for($this->admin)->create();
+    \App\Models\Order::factory()->create([
+        'table_id'       => $table->id,
+        'status'         => 'pending',
+        'bill_requested' => true,
+    ]);
+    $table->load('activeOrder');
+
+    expect($table->orderStatus)->toBe('payment_pending');
+});
+
+it('map view includes orderStatus for each table', function () {
+    $table = Table::factory()->for($this->admin)->create();
+
+    $this->actingAs($this->admin)
+         ->get(route('tables.map'))
+         ->assertOk();
+
+    // orderStatus se computa en el controlador y se pasa a la vista
+    $response = $this->actingAs($this->admin)->get(route('tables.map'));
+    $tables   = $response->viewData('tables');
+
+    expect($tables->first()->orderStatus)->toBe('free');
 });
