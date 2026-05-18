@@ -248,7 +248,7 @@
                     </button>
                     <button type="button"
                             x-show="editMode"
-                            @click="editMode = false; $nextTick(() => _applyOverviewZoom())"
+                            @click="editMode = false; _applyOverviewZoom()"
                             class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-white
                                    bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors"
                             aria-label="Confirmar cambios y salir del modo edición">
