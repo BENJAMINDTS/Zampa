@@ -295,7 +295,7 @@ it('deletes a product and removes its image from storage', function () {
         ->delete(route('products.destroy', $product))
         ->assertRedirect(route('products.index'));
 
-    $this->assertDatabaseMissing('products', ['id' => $product->id]);
+    $this->assertSoftDeleted('products', ['id' => $product->id]);
 });
 
 it('returns 403 when user tries to delete another users product', function () {

@@ -24,6 +24,7 @@ use SimpleSoftwareIO\QrCode\Facades\QrCode;
  *
  * @author AyrtonAlania
  * @author SebastianBCF
+ * @author BenjaminDTS
  */
 class TableController extends Controller
 {
@@ -277,7 +278,7 @@ class TableController extends Controller
      */
     public function updatePosition(Request $request, Table $table): JsonResponse
     {
-        abort_if($table->user_id !== Auth::id(), 403, 'Acceso denegado.');
+        abort_if($table->user_id !== Auth::user()->ownerUserId(), 403, 'Acceso denegado.');
 
         $data = $request->validate([
             'position_x' => 'required|integer|min:-3000',
@@ -305,7 +306,7 @@ class TableController extends Controller
      */
     public function updateName(Request $request, Table $table): JsonResponse
     {
-        abort_if($table->user_id !== Auth::id(), 403, 'Acceso denegado.');
+        abort_if($table->user_id !== Auth::user()->ownerUserId(), 403, 'Acceso denegado.');
 
         $data = $request->validate([
             'name' => 'required|string|max:50',
@@ -329,7 +330,7 @@ class TableController extends Controller
      */
     public function updateZone(Request $request, Table $table): JsonResponse
     {
-        abort_if($table->user_id !== Auth::id(), 403, 'Acceso denegado.');
+        abort_if($table->user_id !== Auth::user()->ownerUserId(), 403, 'Acceso denegado.');
 
         $data = $request->validate([
             'zone_id' => ['nullable', Rule::exists('zones', 'id')->where('user_id', Auth::id())],
@@ -360,7 +361,7 @@ class TableController extends Controller
      */
     public function updateShape(Request $request, Table $table): JsonResponse
     {
-        abort_if($table->user_id !== Auth::id(), 403, 'Acceso denegado.');
+        abort_if($table->user_id !== Auth::user()->ownerUserId(), 403, 'Acceso denegado.');
 
         $data = $request->validate([
             'shape' => 'required|in:square,round,rectangle,bar,stool',
@@ -392,7 +393,7 @@ class TableController extends Controller
      */
     public function updateFloor(Request $request, Table $table): JsonResponse
     {
-        abort_if($table->user_id !== Auth::id(), 403, 'Acceso denegado.');
+        abort_if($table->user_id !== Auth::user()->ownerUserId(), 403, 'Acceso denegado.');
 
         $data = $request->validate([
             'floor' => 'required|integer|min:1|max:5',
@@ -421,7 +422,7 @@ class TableController extends Controller
      */
     public function destroy(Table $table): JsonResponse
     {
-        abort_if($table->user_id !== Auth::id(), 403, 'Acceso denegado.');
+        abort_if($table->user_id !== Auth::user()->ownerUserId(), 403, 'Acceso denegado.');
 
         $name  = $table->name;
         $shape = $table->shape;
@@ -447,7 +448,7 @@ class TableController extends Controller
      */
     public function showQr(Table $table): Response
     {
-        abort_if($table->user_id !== Auth::id(), 403, 'Acceso denegado.');
+        abort_if($table->user_id !== Auth::user()->ownerUserId(), 403, 'Acceso denegado.');
 
         $url = route('menu.show', $table->unique_hash);
         $svg = QrCode::format('svg')
@@ -466,7 +467,7 @@ class TableController extends Controller
      */
     public function downloadQr(Table $table): Response
     {
-        abort_if($table->user_id !== Auth::id(), 403, 'Acceso denegado.');
+        abort_if($table->user_id !== Auth::user()->ownerUserId(), 403, 'Acceso denegado.');
 
         $url      = route('menu.show', $table->unique_hash);
         $svg      = QrCode::format('svg')
@@ -490,7 +491,7 @@ class TableController extends Controller
      */
     public function regenerateHash(Table $table): RedirectResponse
     {
-        abort_if($table->user_id !== Auth::id(), 403, 'Acceso denegado.');
+        abort_if($table->user_id !== Auth::user()->ownerUserId(), 403, 'Acceso denegado.');
 
         $table->update(['unique_hash' => Str::uuid()->toString()]);
 

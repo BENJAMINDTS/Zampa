@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * Class Category
@@ -14,10 +15,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * Define a qué impresora debe enviarse (Bar o Cocina).
  *
  * @property string $destination  'kitchen' o 'bar'
+ * @author BenjaminDTS
  */
 class Category extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = ['user_id', 'name', 'destination'];
 
