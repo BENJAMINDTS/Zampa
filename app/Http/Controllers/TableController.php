@@ -49,12 +49,16 @@ class TableController extends Controller
      */
     public function map(): View
     {
-        $ownerId     = Auth::user()->ownerUserId();
-        $tables      = Table::where('user_id', $ownerId)
-                           ->servicePoints()
-                           ->whereNotIn('shape', ['bar', 'stool'])
-                           ->orderBy('name')
-                           ->get();
+        $ownerId = Auth::user()->ownerUserId();
+        $tables  = Table::where('user_id', $ownerId)
+                       ->servicePoints()
+                       ->whereNotIn('shape', ['bar', 'stool'])
+                       ->with(['activeOrder:id,table_id,bill_requested,notification_ready'])
+                       ->orderBy('name')
+                       ->get()
+                       ->each(function (Table $t): void {
+                           $t->append('orderStatus');
+                       });
         $elements    = Table::where('user_id', $ownerId)
                            ->where(function ($q) {
                                $q->where('is_service_point', false)
@@ -100,13 +104,11 @@ class TableController extends Controller
         $ownerId  = Auth::user()->ownerUserId();
         $statuses = Table::where('user_id', $ownerId)
             ->servicePoints()
-            ->with(['activeOrder:id,table_id,bill_requested,requested_payment_method'])
+            ->with(['activeOrder:id,table_id,bill_requested,notification_ready'])
             ->get(['id', 'status'])
             ->map(fn (Table $t) => [
-                'id'                       => $t->id,
-                'status'                   => $t->status,
-                'bill_requested'           => (bool) ($t->activeOrder?->bill_requested ?? false),
-                'requested_payment_method' => $t->activeOrder?->requested_payment_method,
+                'id'          => $t->id,
+                'orderStatus' => $t->orderStatus,
             ]);
 
         return response()->json($statuses);
@@ -231,9 +233,25 @@ class TableController extends Controller
         if (in_array($data['shape'], ['bar', 'stool'])) {
             $data['name'] = $data['shape'] === 'bar' ? 'Barra' : 'Taburete';
         } elseif (empty($data['name'])) {
-            $user = Auth::user();
-            $user->increment('next_table_number');
-            $data['name'] = (string) $user->next_table_number;
+            $usedNumbers = Table::where('user_id', Auth::id())
+                ->servicePoints()
+                ->pluck('name')
+                ->filter(fn ($n) => ctype_digit((string) $n) && (int) $n > 0)
+                ->map(fn ($n) => (int) $n)
+                ->sort()
+                ->values();
+
+            $next = 1;
+            foreach ($usedNumbers as $num) {
+                if ($num > $next) {
+                    break;
+                }
+                if ($num === $next) {
+                    $next++;
+                }
+            }
+
+            $data['name'] = (string) $next;
         }
 
         if ($isServicePoint) {
@@ -381,6 +399,33 @@ class TableController extends Controller
             'success' => true,
             'data'    => $table,
             'message' => "Forma de \"{$table->name}\" cambiada a {$label}.",
+        ]);
+    }
+
+    /**
+     * Persiste los vértices poligonales de un elemento de tipo barra.
+     * Solo aplicable a elementos con shape='bar'; ignorado para mesas normales.
+     *
+     * @param  Request  $request
+     * @param  Table    $table
+     * @return JsonResponse
+     */
+    public function updateVertices(Request $request, Table $table): JsonResponse
+    {
+        abort_if($table->user_id !== Auth::user()->ownerUserId(), 403, 'Acceso denegado.');
+
+        $data = $request->validate([
+            'vertices'      => 'nullable|array|min:3',
+            'vertices.*.x'  => 'required_with:vertices|numeric',
+            'vertices.*.y'  => 'required_with:vertices|numeric',
+        ]);
+
+        $table->update(['vertices' => $data['vertices'] ?? null]);
+
+        return response()->json([
+            'success' => true,
+            'data'    => $table,
+            'message' => 'Vértices del elemento guardados.',
         ]);
     }
 
