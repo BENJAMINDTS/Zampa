@@ -20,6 +20,7 @@
     x-data="tableMap()"
     x-init="init()"
     @mouseup.window="if(isRotating||isRotatingZone){}"
+    @keydown.ctrl.z.window.prevent="undo()"
 >
 
     {{-- ══════════════════════════════════════════════════════
@@ -116,12 +117,29 @@
                             aria-label="Lienzo extra grande: 2400 × 1500 px">XL</button>
                 </div>
 
+                {{-- Botón Deshacer --}}
+                <button type="button"
+                        @click="undo()"
+                        :disabled="undoStack.length === 0"
+                        :class="undoStack.length === 0
+                            ? 'opacity-40 cursor-not-allowed'
+                            : 'hover:bg-gray-100 dark:hover:bg-gray-600'"
+                        class="p-1.5 rounded-lg text-gray-500 dark:text-gray-400 transition-colors
+                               focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                        aria-label="Deshacer último cambio (Ctrl+Z)"
+                        title="Deshacer (Ctrl+Z)">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3"/>
+                    </svg>
+                </button>
+
                 {{-- Zoom slider (solo visual, sin persistencia en BD) --}}
                 <div class="hidden sm:flex items-center gap-1.5">
                     <label for="canvas-zoom" class="sr-only">Zoom del plano</label>
                     <input id="canvas-zoom"
                            type="range"
                            min="0.5"
+                           @mousedown="pushUndo()"
                            max="1"
                            step="0.05"
                            x-model.number="canvasZoom"
@@ -1383,6 +1401,7 @@ document.addEventListener('alpine:init', () => {
         zoneColor:             '#6366f1',
         toast:                 { show: false, msg: '', error: false, _timer: null },
         rotTooltip:            { show: false, x: 0, y: 0, deg: 0 },
+        undoStack:             [],
 
         init() {
             // El tamaño del canvas viene de BD (floorWidth/floorHeight).
@@ -1480,6 +1499,7 @@ document.addEventListener('alpine:init', () => {
 
         // ── Cambiar tamaño del lienzo y persistir en BD ───────────────────────
         async setCanvasSize(w, h) {
+            this.pushUndo();
             const floor    = this.floorsEnabled ? this.currentFloor : 1;
             const prevW    = this.floorWidth;
             const prevH    = this.floorHeight;
@@ -1670,6 +1690,102 @@ document.addEventListener('alpine:init', () => {
                    this.elements.filter(sameFloor).some(e => this.overlaps(item, e));
         },
 
+        // ── Historial de cambios (Undo) ───────────────────────────────────────
+        snapshot() {
+            return {
+                floorWidth:       this.floorWidth,
+                floorHeight:      this.floorHeight,
+                floorCanvasSizes: JSON.parse(JSON.stringify(this.floorCanvasSizes)),
+                canvasZoom:       this.canvasZoom,
+                tables:   this.tables.map(t  => ({ id: t.id,  position_x: t.position_x,  position_y: t.position_y,  width: t.width,  height: t.height,  rotation: t.rotation  ?? 0 })),
+                elements: this.elements.map(e => ({ id: e.id,  position_x: e.position_x,  position_y: e.position_y,  width: e.width,  height: e.height,  rotation: e.rotation  ?? 0 })),
+                zones:    this.zones.map(z    => ({ id: z.id,  position_x: z.position_x,  position_y: z.position_y,  width: z.width,  height: z.height,  rotation: z.rotation  ?? 0, color: z.color })),
+            };
+        },
+
+        pushUndo() {
+            this.undoStack.push(this.snapshot());
+            if (this.undoStack.length > 20) this.undoStack.shift();
+        },
+
+        async undo() {
+            if (!this.undoStack.length) return;
+            const prev  = this.undoStack.pop();
+            const floor = this.floorsEnabled ? this.currentFloor : 1;
+
+            const canvasSizeChanged =
+                prev.floorWidth  !== this.floorWidth  ||
+                prev.floorHeight !== this.floorHeight  ||
+                JSON.stringify(prev.floorCanvasSizes) !== JSON.stringify(this.floorCanvasSizes);
+
+            // Restaurar estado reactivo inmediatamente
+            this.canvasZoom       = prev.canvasZoom;
+            this.floorWidth       = prev.floorWidth;
+            this.floorHeight      = prev.floorHeight;
+            this.floorCanvasSizes = prev.floorCanvasSizes;
+
+            const toPersistItems = [];
+            const toPersistZones = [];
+
+            for (const snap of prev.tables) {
+                const t = this.tables.find(t => t.id === snap.id);
+                if (!t) continue;
+                if (t.position_x !== snap.position_x || t.position_y !== snap.position_y ||
+                    t.width !== snap.width || t.height !== snap.height || (t.rotation ?? 0) !== snap.rotation) {
+                    t.position_x = snap.position_x; t.position_y = snap.position_y;
+                    t.width      = snap.width;       t.height     = snap.height;
+                    t.rotation   = snap.rotation;
+                    toPersistItems.push(t);
+                }
+            }
+            for (const snap of prev.elements) {
+                const e = this.elements.find(e => e.id === snap.id);
+                if (!e) continue;
+                if (e.position_x !== snap.position_x || e.position_y !== snap.position_y ||
+                    e.width !== snap.width || e.height !== snap.height || (e.rotation ?? 0) !== snap.rotation) {
+                    e.position_x = snap.position_x; e.position_y = snap.position_y;
+                    e.width      = snap.width;       e.height     = snap.height;
+                    e.rotation   = snap.rotation;
+                    toPersistItems.push(e);
+                }
+            }
+            for (const snap of prev.zones) {
+                const z = this.zones.find(z => z.id === snap.id);
+                if (!z) continue;
+                if (z.position_x !== snap.position_x || z.position_y !== snap.position_y ||
+                    z.width !== snap.width || z.height !== snap.height ||
+                    (z.rotation ?? 0) !== snap.rotation || z.color !== snap.color) {
+                    z.position_x = snap.position_x; z.position_y = snap.position_y;
+                    z.width      = snap.width;       z.height     = snap.height;
+                    z.rotation   = snap.rotation;    z.color      = snap.color;
+                    toPersistZones.push(z);
+                }
+            }
+
+            // Persistir en BD
+            if (canvasSizeChanged) {
+                try {
+                    await fetch('{{ route("tables.canvas.update") }}', {
+                        method:  'PATCH',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 'Accept': 'application/json' },
+                        body: JSON.stringify({ floor_width: prev.floorWidth, floor_height: prev.floorHeight, floor }),
+                    });
+                } catch {}
+            }
+            for (const item of toPersistItems) {
+                await this.persistPosition(item.id, item.position_x, item.position_y, item.width, item.height);
+            }
+            for (const z of toPersistZones) {
+                try {
+                    await fetch(`/zonas/${z.id}`, {
+                        method:  'PATCH',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 'Accept': 'application/json' },
+                        body: JSON.stringify({ position_x: z.position_x, position_y: z.position_y, width: z.width, height: z.height, rotation: z.rotation }),
+                    });
+                } catch {}
+            }
+        },
+
         // ── Interactividad de mesas existentes ────────────────────────────────
         initTableInteract() {
             interact('.table-item').unset();
@@ -1682,6 +1798,7 @@ document.addEventListener('alpine:init', () => {
                     listeners: {
                         start: (event) => {
                             if (this.floorsEnabled && this.currentView === 'general') { event.interaction.stop(); return; }
+                            this.pushUndo();
                             const el   = event.target;
                             const id   = parseInt(el.dataset.tableId);
                             const item = this.tables.find(t => t.id === id) ?? this.elements.find(e => e.id === id);
@@ -1772,6 +1889,7 @@ document.addEventListener('alpine:init', () => {
 
         // ── Drag nativo de zona: actualiza zone.position_x/y reactivamente ───
         startZoneDrag(event, zone) {
+            this.pushUndo();
             const canvasEl  = this.$refs.canvas;
             const startMX   = event.clientX;
             const startMY   = event.clientY;
@@ -1803,6 +1921,7 @@ document.addEventListener('alpine:init', () => {
 
         // ── Rotación libre de zona arrastrando el handle ─────────────────────
         startZoneRotation(event, zone) {
+            this.pushUndo();
             const canvasRect = this.$refs.canvas.getBoundingClientRect();
             const centerX    = canvasRect.left + (zone.position_x + zone.width  / 2) * this.canvasZoom;
             const centerY    = canvasRect.top  + (zone.position_y + zone.height / 2) * this.canvasZoom;
@@ -1841,6 +1960,7 @@ document.addEventListener('alpine:init', () => {
         // ── Drag nativo de elemento especial (barra/taburete) ────────────────
         startElementDrag(event, element) {
             if (this.floorsEnabled && this.currentView === 'general') return;
+            this.pushUndo();
             const startPx = element.position_x;
             const startPy = element.position_y;
             const startMX = event.clientX;
@@ -2251,6 +2371,7 @@ document.addEventListener('alpine:init', () => {
 
         // ── Resize de zona ────────────────────────────────────────────────────
         startZoneResize(event, zone) {
+            this.pushUndo();
             const startMX = event.clientX;
             const startMY = event.clientY;
             const startW  = zone.width;
@@ -2327,6 +2448,7 @@ document.addEventListener('alpine:init', () => {
         // ── Resize libre en espacio local del elemento rotado ────────────────
         startResize(event, table) {
             if (this.floorsEnabled && this.currentView === 'general') return;
+            this.pushUndo();
             const θRad    = (table.rotation ?? 0) * Math.PI / 180;
             const cosθ    = Math.cos(θRad);
             const sinθ    = Math.sin(θRad);
@@ -2520,6 +2642,7 @@ document.addEventListener('alpine:init', () => {
         // ── Rotación libre arrastrando el handle (estilo Canva) ───────────────
         startRotation(event, table) {
             if (this.floorsEnabled && this.currentView === 'general') return;
+            this.pushUndo();
             this.closeEditPanels();
             this.rotatingId     = table.id;
 
