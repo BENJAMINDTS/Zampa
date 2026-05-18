@@ -53,7 +53,7 @@ class TableController extends Controller
         $tables  = Table::where('user_id', $ownerId)
                        ->servicePoints()
                        ->whereNotIn('shape', ['bar', 'stool'])
-                       ->with(['activeOrder:id,table_id,bill_requested,notification_ready'])
+                       ->with('activeOrder')
                        ->orderBy('name')
                        ->get()
                        ->each(function (Table $t): void {
@@ -99,13 +99,13 @@ class TableController extends Controller
      */
     public function mapStatuses(): JsonResponse
     {
-        abort_if(! Auth::user()->canAccessBar(), 403, 'Acceso denegado.');
+        abort_if(! Auth::user()->isAdmin() && ! Auth::user()->canAccessBar(), 403, 'Acceso denegado.');
 
         $ownerId  = Auth::user()->ownerUserId();
         $statuses = Table::where('user_id', $ownerId)
             ->servicePoints()
-            ->with(['activeOrder:id,table_id,bill_requested,notification_ready'])
-            ->get(['id', 'status'])
+            ->with('activeOrder')
+            ->get(['tables.id', 'tables.status'])
             ->map(fn (Table $t) => [
                 'id'          => $t->id,
                 'orderStatus' => $t->orderStatus,
