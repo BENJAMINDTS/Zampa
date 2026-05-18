@@ -70,7 +70,7 @@
 
         <div class="flex items-center gap-3 flex-wrap">
             {{-- ── Control de tamaño del lienzo — solo admin ──────────────── --}}
-            <div x-show="!readonly" class="flex items-center gap-2">
+            <div x-show="!readonly && editMode" class="flex items-center gap-2">
                 <span class="text-xs font-medium text-gray-500 dark:text-gray-400 hidden sm:block"
                       aria-hidden="true">Plano:</span>
 
@@ -160,7 +160,7 @@
             </div>
 
             {{-- ── Toggle + selector de plantas — solo admin ──────────────── --}}
-            <template x-if="!readonly">
+            <template x-if="!readonly && editMode">
                 <div class="flex items-center gap-2">
                     {{-- Toggle activar/desactivar sistema de plantas --}}
                     <label class="flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-400 cursor-pointer select-none"
@@ -239,6 +239,34 @@
                 </div>
             </template>
 
+            {{-- Botón Editar / Confirmar — solo propietario --}}
+            <template x-if="!readonly">
+                <div class="flex items-center gap-2">
+                    <button type="button"
+                            x-show="!editMode"
+                            @click="editMode = true"
+                            class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-white
+                                   bg-amber-500 hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 transition-colors"
+                            aria-label="Entrar en modo edición del mapa">
+                        <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z"/>
+                        </svg>
+                        Editar mapa
+                    </button>
+                    <button type="button"
+                            x-show="editMode"
+                            @click="editMode = false"
+                            class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-white
+                                   bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors"
+                            aria-label="Confirmar cambios y salir del modo edición">
+                        <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/>
+                        </svg>
+                        Confirmar
+                    </button>
+                </div>
+            </template>
+
             <a href="{{ route('tables.index') }}"
                class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-white
                       bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors"
@@ -257,7 +285,7 @@
     <div class="flex flex-1 overflow-hidden">
 
         {{-- ── PALETA LATERAL — solo visible para admin ─────── --}}
-        <aside x-show="!readonly"
+        <aside x-show="!readonly && editMode"
                class="flex-shrink-0 w-44 bg-white dark:bg-gray-800
                       border-r border-gray-200 dark:border-gray-700
                       flex flex-col p-3 gap-4 overflow-y-auto">
@@ -406,6 +434,19 @@
                 aria-label="Plano del restaurante"
                 @click="editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null; selectedId = null;"
             >
+
+                {{-- Overlay modo visualización: bloquea interacción cuando no se está editando --}}
+                <div x-show="!readonly && !editMode"
+                     class="absolute inset-0 z-[90] rounded-xl cursor-default select-none"
+                     aria-hidden="true">
+                    <div class="absolute bottom-4 left-1/2 -translate-x-1/2 pointer-events-none">
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium
+                                     bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300
+                                     border border-amber-300 dark:border-amber-600 shadow-sm">
+                            Pulsa "Editar mapa" para mover o modificar estructuras
+                        </span>
+                    </div>
+                </div>
 
                 {{-- Overlay vista general: bloquea toda interacción con estructuras --}}
                 <div x-show="floorsEnabled && currentView === 'general'"
@@ -776,7 +817,7 @@
 
                             {{-- Botón editar forma — solo admin --}}
                             <button type="button"
-                                    x-show="!readonly && !(isRotating && rotatingId === table.id)"
+                                    x-show="!readonly && editMode && !(isRotating && rotatingId === table.id)"
                                     @click.stop="if (editingTableId === table.id) { editingTableId = null; editingTable = null; _editBtnEl = null; } else { editingTableId = table.id; editingTable = table; _editBtnEl = $el; editPanelPos = panelPosFromBtn($el, 220); editingZoneId = null; editingZone = null; _zoneBtnEl = null; }"
                                     class="absolute -top-2.5 -right-16
                                            w-6 h-6 rounded-full bg-gray-600 dark:bg-gray-500 text-white
@@ -809,7 +850,7 @@
 
                             {{-- Botón eliminar — solo admin --}}
                             <button type="button"
-                                    x-show="!readonly && !(isRotating && rotatingId === table.id)"
+                                    x-show="!readonly && editMode && !(isRotating && rotatingId === table.id)"
                                     @click.stop="deleteTable(table)"
                                     class="absolute -top-2.5 -right-2.5
                                            w-6 h-6 rounded-full bg-red-500 text-white
@@ -826,7 +867,7 @@
                         </div>
 
                         {{-- Handle de rotación — solo admin --}}
-                        <div x-show="!readonly" class="rotation-handle absolute -top-9 left-1/2 -translate-x-1/2
+                        <div x-show="!readonly && editMode" class="rotation-handle absolute -top-9 left-1/2 -translate-x-1/2
                                     flex flex-col items-center gap-0
                                     transition-opacity z-10"
                              :class="selectedId === table.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'"
@@ -849,7 +890,7 @@
                         </div>
 
                         {{-- Handle de redimensionado — solo admin --}}
-                        <div x-show="!readonly"
+                        <div x-show="!readonly && editMode"
                              class="resize-handle absolute bottom-0 right-0
                                     w-4 h-4 cursor-se-resize transition-opacity"
                              :class="selectedId === table.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'"
@@ -1379,6 +1420,7 @@ document.addEventListener('alpine:init', () => {
         currentFloor:          1,
         currentView:           'floor',
         readonly:              {{ $readonly ? 'true' : 'false' }},
+        editMode:              false,
         canvasZoom:            1,
         isDraggingFromPalette: false,
         currentDragShape:      null,
@@ -1798,6 +1840,7 @@ document.addEventListener('alpine:init', () => {
                     listeners: {
                         start: (event) => {
                             if (this.floorsEnabled && this.currentView === 'general') { event.interaction.stop(); return; }
+                            if (!this.editMode) { event.interaction.stop(); return; }
                             this.pushUndo();
                             const el   = event.target;
                             const id   = parseInt(el.dataset.tableId);
@@ -1889,6 +1932,7 @@ document.addEventListener('alpine:init', () => {
 
         // ── Drag nativo de zona: actualiza zone.position_x/y reactivamente ───
         startZoneDrag(event, zone) {
+            if (!this.editMode) return;
             this.pushUndo();
             const canvasEl  = this.$refs.canvas;
             const startMX   = event.clientX;
@@ -1921,6 +1965,7 @@ document.addEventListener('alpine:init', () => {
 
         // ── Rotación libre de zona arrastrando el handle ─────────────────────
         startZoneRotation(event, zone) {
+            if (!this.editMode) return;
             this.pushUndo();
             const canvasRect = this.$refs.canvas.getBoundingClientRect();
             const centerX    = canvasRect.left + (zone.position_x + zone.width  / 2) * this.canvasZoom;
@@ -1960,6 +2005,7 @@ document.addEventListener('alpine:init', () => {
         // ── Drag nativo de elemento especial (barra/taburete) ────────────────
         startElementDrag(event, element) {
             if (this.floorsEnabled && this.currentView === 'general') return;
+            if (!this.editMode) return;
             this.pushUndo();
             const startPx = element.position_x;
             const startPy = element.position_y;
@@ -2371,6 +2417,7 @@ document.addEventListener('alpine:init', () => {
 
         // ── Resize de zona ────────────────────────────────────────────────────
         startZoneResize(event, zone) {
+            if (!this.editMode) return;
             this.pushUndo();
             const startMX = event.clientX;
             const startMY = event.clientY;
@@ -2448,6 +2495,7 @@ document.addEventListener('alpine:init', () => {
         // ── Resize libre en espacio local del elemento rotado ────────────────
         startResize(event, table) {
             if (this.floorsEnabled && this.currentView === 'general') return;
+            if (!this.editMode) return;
             this.pushUndo();
             const θRad    = (table.rotation ?? 0) * Math.PI / 180;
             const cosθ    = Math.cos(θRad);
@@ -2642,6 +2690,7 @@ document.addEventListener('alpine:init', () => {
         // ── Rotación libre arrastrando el handle (estilo Canva) ───────────────
         startRotation(event, table) {
             if (this.floorsEnabled && this.currentView === 'general') return;
+            if (!this.editMode) return;
             this.pushUndo();
             this.closeEditPanels();
             this.rotatingId     = table.id;
