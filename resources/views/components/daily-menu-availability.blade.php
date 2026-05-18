@@ -1,4 +1,5 @@
 {{-- @author SebastianBCF --}}
+{{-- @author Ayrtonalania --}}
 {{-- Indicador de disponibilidad del menú del día.
      Se renderiza dentro del banner (sin x-data propio), hereda el scope Alpine del banner. --}}
 
