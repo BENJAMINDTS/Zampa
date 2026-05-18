@@ -159,83 +159,76 @@
                 </div>
             </div>
 
-            {{-- ── Toggle + selector de plantas — solo admin ──────────────── --}}
+            {{-- ── Toggle Plantas — solo en modo edición ──────────────────── --}}
             <template x-if="!readonly && editMode">
-                <div class="flex items-center gap-2">
-                    {{-- Toggle activar/desactivar sistema de plantas --}}
-                    <label class="flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-400 cursor-pointer select-none"
-                           id="floors-toggle-desc">
+                <label class="flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-400 cursor-pointer select-none"
+                       id="floors-toggle-desc">
+                    <button type="button"
+                            role="switch"
+                            :aria-checked="floorsEnabled"
+                            @click="toggleFloorsEnabled(!floorsEnabled)"
+                            aria-describedby="floors-toggle-desc"
+                            :class="floorsEnabled ? 'bg-indigo-600' : 'bg-gray-300 dark:bg-gray-600'"
+                            class="relative inline-flex w-9 h-5 rounded-full transition-colors
+                                   focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-1">
+                        <span :class="floorsEnabled ? 'translate-x-4' : 'translate-x-0.5'"
+                              class="inline-block w-4 h-4 mt-0.5 bg-white rounded-full shadow transition-transform">
+                        </span>
+                    </button>
+                    Plantas
+                </label>
+            </template>
+
+            {{-- ── Selector de plantas — visible en vista y edición ────────── --}}
+            <template x-if="!readonly && floorsEnabled">
+                <div class="flex items-center gap-1"
+                     role="group"
+                     aria-label="Selector de planta">
+
+                    {{-- Botón por cada planta --}}
+                    <template x-for="n in floorCount" :key="n">
                         <button type="button"
-                                role="switch"
-                                :aria-checked="floorsEnabled"
-                                @click="toggleFloorsEnabled(!floorsEnabled)"
-                                aria-describedby="floors-toggle-desc"
-                                :class="floorsEnabled
-                                    ? 'bg-indigo-600'
-                                    : 'bg-gray-300 dark:bg-gray-600'"
-                                class="relative inline-flex w-9 h-5 rounded-full transition-colors
-                                       focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-1">
-                            <span :class="floorsEnabled ? 'translate-x-4' : 'translate-x-0.5'"
-                                  class="inline-block w-4 h-4 mt-0.5 bg-white rounded-full shadow transition-transform">
-                            </span>
+                                @click="switchFloor(n)"
+                                :aria-pressed="currentView === 'floor' && currentFloor === n"
+                                :aria-label="`Planta ${n}`"
+                                :class="currentView === 'floor' && currentFloor === n
+                                    ? 'bg-indigo-600 text-white'
+                                    : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'"
+                                class="px-2.5 py-1.5 rounded text-xs font-semibold border border-gray-200 dark:border-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-400"
+                                x-text="`P${n}`">
                         </button>
-                        Plantas
-                    </label>
-
-                    {{-- Selector de plantas — solo si floorsEnabled --}}
-                    <template x-if="floorsEnabled">
-                        <div class="flex items-center gap-1"
-                             role="group"
-                             aria-label="Selector de planta">
-
-                            {{-- Botón por cada planta --}}
-                            <template x-for="n in floorCount" :key="n">
-                                <button type="button"
-                                        @click="switchFloor(n)"
-                                        :aria-pressed="currentView === 'floor' && currentFloor === n"
-                                        :aria-label="`Planta ${n}`"
-                                        :class="currentView === 'floor' && currentFloor === n
-                                            ? 'bg-indigo-600 text-white'
-                                            : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'"
-                                        class="px-2.5 py-1.5 rounded text-xs font-semibold border border-gray-200 dark:border-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-400"
-                                        x-text="`P${n}`">
-                                </button>
-                            </template>
-
-                            {{-- Botón Vista General --}}
-                            <button type="button"
-                                    @click="switchView('general')"
-                                    :aria-pressed="currentView === 'general'"
-                                    :class="currentView === 'general'
-                                        ? 'bg-indigo-600 text-white'
-                                        : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'"
-                                    class="px-2.5 py-1.5 rounded text-xs font-semibold border border-gray-200 dark:border-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-400">
-                                General
-                            </button>
-
-                            {{-- Añadir planta --}}
-                            <button type="button"
-                                    x-show="floorCount < 5"
-                                    @click="addFloor()"
-                                    aria-label="Añadir planta"
-                                    class="px-2 py-1.5 rounded text-xs font-semibold
-                                           bg-green-500 hover:bg-green-600 text-white
-                                           transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-green-400">
-                                + P
-                            </button>
-
-                            {{-- Eliminar última planta --}}
-                            <button type="button"
-                                    x-show="floorCount > 1"
-                                    @click="confirmDeleteFloor(floorCount)"
-                                    :aria-label="`Eliminar Planta ${floorCount}`"
-                                    class="px-2 py-1.5 rounded text-xs font-semibold
-                                           bg-red-500 hover:bg-red-600 text-white
-                                           transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-red-400">
-                                − P<span x-text="floorCount"></span>
-                            </button>
-                        </div>
                     </template>
+
+                    {{-- Botón Vista General --}}
+                    <button type="button"
+                            @click="switchView('general')"
+                            :aria-pressed="currentView === 'general'"
+                            :class="currentView === 'general'
+                                ? 'bg-indigo-600 text-white'
+                                : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'"
+                            class="px-2.5 py-1.5 rounded text-xs font-semibold border border-gray-200 dark:border-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-400">
+                        General
+                    </button>
+
+                    {{-- Añadir/Eliminar planta — solo en modo edición --}}
+                    <button type="button"
+                            x-show="editMode && floorCount < 5"
+                            @click="addFloor()"
+                            aria-label="Añadir planta"
+                            class="px-2 py-1.5 rounded text-xs font-semibold
+                                   bg-green-500 hover:bg-green-600 text-white
+                                   transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-green-400">
+                        + P
+                    </button>
+                    <button type="button"
+                            x-show="editMode && floorCount > 1"
+                            @click="confirmDeleteFloor(floorCount)"
+                            :aria-label="`Eliminar Planta ${floorCount}`"
+                            class="px-2 py-1.5 rounded text-xs font-semibold
+                                   bg-red-500 hover:bg-red-600 text-white
+                                   transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-red-400">
+                        − P<span x-text="floorCount"></span>
+                    </button>
                 </div>
             </template>
 
@@ -255,7 +248,7 @@
                     </button>
                     <button type="button"
                             x-show="editMode"
-                            @click="editMode = false; switchView('general')"
+                            @click="editMode = false; $nextTick(() => _applyOverviewZoom())"
                             class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-white
                                    bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors"
                             aria-label="Confirmar cambios y salir del modo edición">
@@ -1419,7 +1412,7 @@ document.addEventListener('alpine:init', () => {
         floorCount:            {{ $floorCount }},
         floorCanvasSizes:      @json($floorCanvasSizes),
         currentFloor:          1,
-        currentView:           'general',
+        currentView:           'floor',
         readonly:              {{ $readonly ? 'true' : 'false' }},
         editMode:              false,
         canvasZoom:            1,
@@ -1453,14 +1446,6 @@ document.addEventListener('alpine:init', () => {
                     this.initZoneInteract();
                     this.initPaletteInteract();
                     this.clampAllToCanvas();
-                }
-                // Vista inicial: general con zoom auto-fit al canvas completo
-                if (this.floorsEnabled) {
-                    const sizes = Object.values(this.floorCanvasSizes);
-                    if (sizes.length) {
-                        this.floorWidth  = Math.max(...sizes.map(s => s.width));
-                        this.floorHeight = Math.max(...sizes.map(s => s.height));
-                    }
                 }
                 this._applyOverviewZoom();
             });
