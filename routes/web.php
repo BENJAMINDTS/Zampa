@@ -70,6 +70,7 @@ Route::middleware(['auth', 'business.active'])->group(function () {
         Route::patch('/mesas/{table}/nombre', [TableController::class, 'updateName'])->name('tables.updateName');
         Route::patch('/mesas/{table}/zona', [TableController::class, 'updateZone'])->name('tables.updateZone');
         Route::patch('/mesas/{table}/planta', [TableController::class, 'updateFloor'])->name('tables.update-floor');
+        Route::patch('/mesas/{table}/vertices', [TableController::class, 'updateVertices'])->name('tables.updateVertices');
         Route::delete('/mesas/{table}', [TableController::class, 'destroy'])->name('tables.destroy');
 
         // Gestión de zonas del plano — solo admin
