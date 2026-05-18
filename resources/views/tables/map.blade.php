@@ -864,12 +864,12 @@
                 </template>
 
                 {{-- Indicador de zona de soltar --}}
-                <div x-show="isDraggingFromPalette"
+                <div x-show="isDraggingFromPalette || isDraggingZone"
                      class="absolute inset-0 rounded-xl border-4 border-dashed border-indigo-400
                             bg-indigo-50/30 dark:bg-indigo-900/20 pointer-events-none
                             flex items-center justify-center">
                     <p class="text-indigo-500 font-semibold text-lg"
-                       x-text="currentDragShape === 'bar' ? 'Suelta aquí para colocar la barra' : currentDragShape === 'stool' ? 'Suelta aquí para colocar el taburete' : 'Suelta aquí para crear la mesa'"></p>
+                       x-text="isDraggingZone ? 'Suelta aquí para crear la zona' : currentDragShape === 'bar' ? 'Suelta aquí para colocar la barra' : currentDragShape === 'stool' ? 'Suelta aquí para colocar el taburete' : 'Suelta aquí para crear la mesa'"></p>
                 </div>
                 {{-- Panel de edición de zona — absolute dentro del canvas, coordenadas en espacio del canvas --}}
                 <div x-show="editingZoneId !== null && editingZone !== null"
