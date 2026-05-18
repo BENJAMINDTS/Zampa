@@ -3,6 +3,7 @@
 /**
  * @author AyrtonAlania
  * @author SebastianBCF
+ * @author BenjaminDTS
  */
 
 use App\Models\Plan;
@@ -333,4 +334,112 @@ it('returns 403 when trying to delete a non-admin user', function () {
     $this->actingAs($this->superadmin)
          ->delete(route('superadmin.businesses.destroy', $waiter))
          ->assertForbidden();
+});
+
+// ──────────────────────────────────────────────
+// EDIT / UPDATE
+// ──────────────────────────────────────────────
+
+it('superadmin can view edit form for a business', function () {
+    $this->actingAs($this->superadmin)
+         ->get(route('superadmin.businesses.edit', $this->admin))
+         ->assertOk()
+         ->assertViewIs('superadmin.businesses.edit')
+         ->assertViewHas('business', $this->admin)
+         ->assertViewHas('plans');
+});
+
+it('superadmin can update business name', function () {
+    $this->actingAs($this->superadmin)
+         ->put(route('superadmin.businesses.update', $this->admin), [
+             'business_name' => 'Nuevo Nombre SA',
+             'email'         => $this->admin->email,
+             'plan_id'       => $this->plan->id,
+         ])
+         ->assertRedirect(route('superadmin.businesses.index'))
+         ->assertSessionHas('success');
+
+    expect($this->admin->fresh()->business_name)->toBe('Nuevo Nombre SA');
+});
+
+it('superadmin can change business plan', function () {
+    $newPlan = Plan::factory()->create();
+
+    $this->actingAs($this->superadmin)
+         ->put(route('superadmin.businesses.update', $this->admin), [
+             'business_name' => $this->admin->business_name,
+             'email'         => $this->admin->email,
+             'plan_id'       => $newPlan->id,
+         ])
+         ->assertRedirect(route('superadmin.businesses.index'));
+
+    expect($this->admin->fresh()->plan_id)->toBe($newPlan->id);
+});
+
+it('superadmin can update business coordinates', function () {
+    $this->actingAs($this->superadmin)
+         ->put(route('superadmin.businesses.update', $this->admin), [
+             'business_name' => $this->admin->business_name,
+             'email'         => $this->admin->email,
+             'plan_id'       => $this->plan->id,
+             'lat'           => 41.3851,
+             'lng'           => 2.1734,
+         ])
+         ->assertRedirect(route('superadmin.businesses.index'));
+
+    expect((float) $this->admin->fresh()->lat)->toBe(41.3851)
+        ->and((float) $this->admin->fresh()->lng)->toBe(2.1734);
+});
+
+it('fails to update with duplicate email', function () {
+    $other = User::factory()->admin()->withBusiness()->create(['plan_id' => $this->plan->id]);
+
+    $this->actingAs($this->superadmin)
+         ->put(route('superadmin.businesses.update', $this->admin), [
+             'business_name' => $this->admin->business_name,
+             'email'         => $other->email,
+             'plan_id'       => $this->plan->id,
+         ])
+         ->assertSessionHasErrors('email');
+});
+
+it('update ignores unique constraint for the same business email', function () {
+    $this->actingAs($this->superadmin)
+         ->put(route('superadmin.businesses.update', $this->admin), [
+             'business_name' => 'Nombre Actualizado',
+             'email'         => $this->admin->email,
+             'plan_id'       => $this->plan->id,
+         ])
+         ->assertRedirect(route('superadmin.businesses.index'))
+         ->assertSessionHas('success');
+
+    expect($this->admin->fresh()->business_name)->toBe('Nombre Actualizado');
+});
+
+it('returns 403 for admin trying to edit a business', function () {
+    $this->actingAs($this->admin)
+         ->get(route('superadmin.businesses.edit', $this->admin))
+         ->assertForbidden();
+});
+
+it('cannot edit a user that is not an admin', function () {
+    $waiter = User::factory()->create(['role' => 'waiter']);
+
+    $this->actingAs($this->superadmin)
+         ->get(route('superadmin.businesses.edit', $waiter))
+         ->assertForbidden();
+});
+
+it('update does not change the password', function () {
+    $originalHash = $this->admin->password;
+
+    $this->actingAs($this->superadmin)
+         ->put(route('superadmin.businesses.update', $this->admin), [
+             'business_name' => 'Nombre Sin Cambio de Pass',
+             'email'         => $this->admin->email,
+             'plan_id'       => $this->plan->id,
+         ])
+         ->assertRedirect(route('superadmin.businesses.index'));
+
+    expect($this->admin->fresh()->password)->toBe($originalHash);
 });
