@@ -386,25 +386,8 @@
                          margin-bottom:${-floorHeight*(1-canvasZoom)}px;
                          margin-right:${-floorWidth*(1-canvasZoom)}px;`"
                 aria-label="Plano del restaurante"
-                @click="if (canvasZoom === 1) { editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null; selectedId = null; }"
+                @click="editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null; selectedId = null;"
             >
-                {{-- Overlay de zoom: bloquea edición cuando canvasZoom < 1 --}}
-                <div x-show="canvasZoom < 1 && !(floorsEnabled && currentView === 'general')"
-                     x-transition:enter="transition ease-out duration-150"
-                     x-transition:enter-start="opacity-0"
-                     x-transition:enter-end="opacity-100"
-                     class="absolute inset-0 z-40 rounded-xl cursor-not-allowed select-none"
-                     role="status"
-                     aria-live="polite">
-                    <div class="absolute bottom-4 left-1/2 -translate-x-1/2
-                                bg-amber-50 dark:bg-amber-900/80
-                                border border-amber-300 dark:border-amber-600
-                                text-amber-800 dark:text-amber-300
-                                text-sm font-medium px-4 py-2 rounded-full shadow-md
-                                whitespace-nowrap pointer-events-none">
-                        Ajusta el zoom al 100% para editar el plano
-                    </div>
-                </div>
 
                 {{-- Overlay vista general: bloquea toda interacción con estructuras --}}
                 <div x-show="floorsEnabled && currentView === 'general'"
@@ -1664,8 +1647,8 @@ document.addEventListener('alpine:init', () => {
                             const { minX, maxX, minY, maxY } = item
                                 ? this.canvasBounds(item)
                                 : { minX: 0, maxX: this.floorWidth - 100, minY: 0, maxY: this.floorHeight - 100 };
-                            const propX = Math.max(minX, Math.min(maxX, Math.round(curX + event.dx)));
-                            const propY = Math.max(minY, Math.min(maxY, Math.round(curY + event.dy)));
+                            const propX = Math.max(minX, Math.min(maxX, Math.round(curX + event.dx / this.canvasZoom)));
+                            const propY = Math.max(minY, Math.min(maxY, Math.round(curY + event.dy / this.canvasZoom)));
 
                             if (!item) {
                                 el.style.left = `${propX}px`;
@@ -1748,8 +1731,8 @@ document.addEventListener('alpine:init', () => {
             const onMove = (e) => {
                 const maxX = Math.max(0, this.floorWidth  - zone.width);
                 const maxY = Math.max(0, this.floorHeight - zone.height);
-                zone.position_x = Math.max(0, Math.min(maxX, Math.round(startPx + (e.clientX - startMX))));
-                zone.position_y = Math.max(0, Math.min(maxY, Math.round(startPy + (e.clientY - startMY))));
+                zone.position_x = Math.max(0, Math.min(maxX, Math.round(startPx + (e.clientX - startMX) / this.canvasZoom)));
+                zone.position_y = Math.max(0, Math.min(maxY, Math.round(startPy + (e.clientY - startMY) / this.canvasZoom)));
             };
 
             const onUp = async () => {
@@ -1767,8 +1750,8 @@ document.addEventListener('alpine:init', () => {
         // ── Rotación libre de zona arrastrando el handle ─────────────────────
         startZoneRotation(event, zone) {
             const canvasRect = this.$refs.canvas.getBoundingClientRect();
-            const centerX    = canvasRect.left + zone.position_x + zone.width  / 2;
-            const centerY    = canvasRect.top  + zone.position_y + zone.height / 2;
+            const centerX    = canvasRect.left + (zone.position_x + zone.width  / 2) * this.canvasZoom;
+            const centerY    = canvasRect.top  + (zone.position_y + zone.height / 2) * this.canvasZoom;
 
             this.closeEditPanels();
             this.isRotating            = true;
@@ -1819,8 +1802,8 @@ document.addEventListener('alpine:init', () => {
             const onMove = (e) => {
                 const { minX, maxX, minY, maxY } = this.canvasBounds(element);
 
-                const propX = Math.max(minX, Math.min(maxX, Math.round(startPx + (e.clientX - startMX))));
-                const propY = Math.max(minY, Math.min(maxY, Math.round(startPy + (e.clientY - startMY))));
+                const propX = Math.max(minX, Math.min(maxX, Math.round(startPx + (e.clientX - startMX) / this.canvasZoom)));
+                const propY = Math.max(minY, Math.min(maxY, Math.round(startPy + (e.clientY - startMY) / this.canvasZoom)));
 
                 if (startedColliding) {
                     element.position_x = propX;
@@ -1870,12 +1853,6 @@ document.addEventListener('alpine:init', () => {
                 inertia: false,
                 listeners: {
                     start: (event) => {
-                        if (this.canvasZoom < 1) {
-                            event.interaction.stop();
-                            this.showToast('Ajusta el zoom al 100% para añadir mesas.', true);
-                            return;
-                        }
-
                         if (this.tables.length >= {{ $maxTables }}) {
                             this.showToast(`Límite de {{ $maxTables }} mesas alcanzado.`, true);
                             return;
@@ -1946,12 +1923,6 @@ document.addEventListener('alpine:init', () => {
                 inertia: false,
                 listeners: {
                     start: (event) => {
-                        if (this.canvasZoom < 1) {
-                            event.interaction.stop();
-                            this.showToast('Ajusta el zoom al 100% para añadir elementos.', true);
-                            return;
-                        }
-
                         const shape = event.target.dataset.shape;
                         const dropW = parseInt(event.target.dataset.width)  || 80;
                         const dropH = parseInt(event.target.dataset.height) || 50;
@@ -2009,12 +1980,6 @@ document.addEventListener('alpine:init', () => {
                 inertia: false,
                 listeners: {
                     start: (event) => {
-                        if (this.canvasZoom < 1) {
-                            event.interaction.stop();
-                            this.showToast('Ajusta el zoom al 100% para añadir zonas.', true);
-                            return;
-                        }
-
                         const w = parseInt(event.target.dataset.width)  || 300;
                         const h = parseInt(event.target.dataset.height) || 200;
                         ghost.style.width        = `${w}px`;
@@ -2323,8 +2288,8 @@ document.addEventListener('alpine:init', () => {
             document.body.style.cursor = 'se-resize';
 
             const onMove = (e) => {
-                const dx = e.clientX - startMX;
-                const dy = e.clientY - startMY;
+                const dx = (e.clientX - startMX) / this.canvasZoom;
+                const dy = (e.clientY - startMY) / this.canvasZoom;
 
                 // Proyectar delta de pantalla al espacio local del elemento (rotación inversa)
                 const localDX =  dx * cosθ + dy * sinθ;
@@ -2505,8 +2470,8 @@ document.addEventListener('alpine:init', () => {
             this.rotatingId     = table.id;
 
             const canvasRect = this.$refs.canvas.getBoundingClientRect();
-            const centerX    = canvasRect.left + table.position_x + table.width  / 2;
-            const centerY    = canvasRect.top  + table.position_y + table.height / 2;
+            const centerX    = canvasRect.left + (table.position_x + table.width  / 2) * this.canvasZoom;
+            const centerY    = canvasRect.top  + (table.position_y + table.height / 2) * this.canvasZoom;
 
             this.isRotating            = true;
             this.rotTooltip.show       = true;
