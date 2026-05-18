@@ -186,7 +186,7 @@ it('deletes an ingredient owned by the user', function () {
         ->delete(route('ingredients.destroy', $ingredient))
         ->assertRedirect(route('ingredients.index'));
 
-    $this->assertDatabaseMissing('ingredients', ['id' => $ingredient->id]);
+    $this->assertSoftDeleted('ingredients', ['id' => $ingredient->id]);
 });
 
 it('returns 403 when user tries to delete another users ingredient', function () {
