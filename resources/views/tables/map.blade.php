@@ -71,21 +71,21 @@
 
         <div class="flex items-center gap-3 flex-wrap">
             {{-- ── Leyenda de estados de mesas ──────────────────────────────── --}}
-            <div class="hidden sm:flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400"
-                 aria-label="Leyenda de estados de mesas">
-                <span class="flex items-center gap-1">
-                    <span class="w-2.5 h-2.5 rounded-full bg-green-400 inline-block"></span> Libre
-                </span>
-                <span class="flex items-center gap-1">
-                    <span class="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block"></span> Ocupada
-                </span>
-                <span class="flex items-center gap-1">
-                    <span class="w-2.5 h-2.5 rounded-full bg-green-600 inline-block"></span> Lista
-                </span>
-                <span class="flex items-center gap-1">
-                    <span class="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block"></span> Cobro
-                </span>
-            </div>
+            <ul class="hidden sm:flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 list-none"
+                aria-label="Leyenda de estados de mesas">
+                <li class="flex items-center gap-1">
+                    <span class="w-2.5 h-2.5 rounded-full bg-green-400 inline-block" aria-hidden="true"></span> Libre
+                </li>
+                <li class="flex items-center gap-1">
+                    <span class="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block" aria-hidden="true"></span> Ocupada
+                </li>
+                <li class="flex items-center gap-1">
+                    <span class="w-2.5 h-2.5 rounded-full bg-green-600 inline-block" aria-hidden="true"></span> Lista
+                </li>
+                <li class="flex items-center gap-1">
+                    <span class="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block" aria-hidden="true"></span> Cobro
+                </li>
+            </ul>
 
             {{-- ── Control de tamaño del lienzo — solo admin ──────────────── --}}
             <div x-show="!readonly && editMode" class="flex items-center gap-2">
@@ -499,7 +499,8 @@
                 :style="(editMode && currentView !== 'general')
                     ? `width:${floorWidth}px; height:${floorHeight}px; transform:scale(${canvasZoom}); transform-origin:top left; margin-bottom:${-floorHeight*(1-canvasZoom)}px; margin-right:${-floorWidth*(1-canvasZoom)}px;`
                     : `width:${floorWidth}px; height:${floorHeight}px; transform:scale(${canvasZoom}); transform-origin:center center; flex-shrink:0;`"
-                aria-label="Plano del restaurante"
+                role="application"
+                aria-label="Plano interactivo del restaurante. En modo edición: Tab navega entre elementos, Supr elimina el seleccionado, Ctrl+Z deshace, Ctrl+Y rehace."
                 :class="(editMode && currentView !== 'general' && !isPanning) ? 'cursor-grab' : ''"
                 @mousedown.self="startPan($event)"
                 @click="editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null; selectedId = null;"
@@ -540,41 +541,61 @@
                             top:${zone.position_y}px;
                             width:${zone.width}px;
                             height:${zone.height}px;
-                            background-color:${zone.color}22;
-                            border:2px solid ${zone.color};
+                            background-color:${zone.vertices && zone.vertices.length >= 3 ? 'transparent' : zone.color+'22'};
+                            border:${zone.vertices && zone.vertices.length >= 3 ? 'none' : '2px solid '+zone.color};
                             z-index:${hoveredId === zone.id || selectedId === zone.id || editingZoneId === zone.id ? 8 : 2};
-                            pointer-events:all;
+                            pointer-events:${zone.vertices && zone.vertices.length >= 3 ? 'none' : 'all'};
                             transform:rotate(${zone.rotation ?? 0}deg);
                             transform-origin:center;
                         `"
                         :aria-label="`Zona ${zone.name}`"
-                        @mouseenter="hoveredId = zone.id"
-                        @mouseleave="hoveredId = null"
-                        @click.stop="selectedId = selectedId === zone.id ? null : zone.id; editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null;"
-                        @mousedown.prevent.self="startZoneDrag($event, zone)"
+                        @mouseenter="if (!(zone.vertices && zone.vertices.length >= 3)) hoveredId = zone.id"
+                        @mouseleave="if (!(zone.vertices && zone.vertices.length >= 3)) hoveredId = null"
+                        @click.stop="if (!(zone.vertices && zone.vertices.length >= 3)) { selectedId = selectedId === zone.id ? null : zone.id; editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null; }"
+                        @mousedown.prevent.self="if (!(zone.vertices && zone.vertices.length >= 3)) startZoneDrag($event, zone)"
                     >
-                        {{-- Polígono SVG (activo cuando zone.vertices tiene datos) --}}
+                        {{-- Polígono SVG: en modo polígono recibe eventos y maneja drag/select --}}
                         <svg x-show="zone.vertices && zone.vertices.length >= 3"
-                             class="absolute inset-0 pointer-events-none overflow-visible"
+                             :class="zone.vertices && zone.vertices.length >= 3 ? 'absolute inset-0 overflow-visible' : 'absolute inset-0 pointer-events-none overflow-visible'"
+                             :style="zone.vertices && zone.vertices.length >= 3 ? 'cursor:grab;' : ''"
                              :width="zone.width"
                              :height="zone.height"
-                             aria-hidden="true">
+                             aria-hidden="true"
+                             @mouseenter.stop="if (zone.vertices && zone.vertices.length >= 3) hoveredId = zone.id"
+                             @mouseleave.stop="if (zone.vertices && zone.vertices.length >= 3) hoveredId = null"
+                             @click.stop="if (zone.vertices && zone.vertices.length >= 3) { selectedId = selectedId === zone.id ? null : zone.id; editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null; }"
+                             @mousedown.prevent.stop="if (zone.vertices && zone.vertices.length >= 3) startZoneDrag($event, zone)">
                             <polygon :points="vertexPoints(zone)"
                                      :fill="`${zone.color}22`"
                                      :stroke="zone.color"
                                      stroke-width="2"
-                                     fill-rule="evenodd"/>
+                                     fill-rule="evenodd"
+                                     style="pointer-events:painted;"/>
                         </svg>
 
                         {{-- Handles de vértices (edición en modo edit + zona seleccionada) --}}
                         <template x-if="!readonly && editMode && selectedId === zone.id && zone.vertices && zone.vertices.length >= 3">
                             <div class="absolute inset-0 pointer-events-none">
                                 <template x-for="(v, idx) in zone.vertices" :key="idx">
-                                    <div class="absolute w-3 h-3 rounded-full border-2 bg-white pointer-events-auto cursor-move z-10 shadow"
-                                         :style="`left:${v.x - 6}px; top:${v.y - 6}px; border-color:${zone.color};`"
-                                         @mousedown.stop.prevent="startVertexDrag($event, zone, idx)"
-                                         :aria-label="`Vértice ${idx + 1} de la zona`">
+                                    <div class="absolute" :style="`left:${v.x - 6}px; top:${v.y - 6}px;`">
+                                        <div class="w-3 h-3 rounded-full border-2 bg-white pointer-events-auto cursor-move z-10 shadow"
+                                             :style="`border-color:${zone.color};`"
+                                             @mousedown.stop.prevent="startVertexDrag($event, zone, idx)"
+                                             :aria-label="`Vértice ${idx + 1} de la zona`">
+                                        </div>
+                                        <div x-show="zone.vertices.length > 3"
+                                             class="absolute -top-2 -right-2 w-3.5 h-3.5 rounded-full bg-red-500 text-white flex items-center justify-center leading-none pointer-events-auto cursor-pointer shadow text-[9px] font-bold select-none"
+                                             style="z-index:11;"
+                                             @click.stop.prevent="removeZoneVertex(zone, idx)"
+                                             :aria-label="`Eliminar vértice ${idx + 1} de la zona`">×</div>
                                     </div>
+                                </template>
+                                {{-- Botones "+" en el punto medio de cada arista para añadir vértices --}}
+                                <template x-for="(v, idx) in zone.vertices" :key="`e${idx}`">
+                                    <div class="absolute w-4 h-4 rounded-full bg-white border pointer-events-auto cursor-pointer z-9 shadow flex items-center justify-center text-xs font-bold leading-none select-none"
+                                         :style="`left:${((v.x + zone.vertices[(idx+1)%zone.vertices.length].x)/2)-8}px; top:${((v.y + zone.vertices[(idx+1)%zone.vertices.length].y)/2)-8}px; border-color:${zone.color}; color:${zone.color};`"
+                                         @click.stop.prevent="addZoneVertex(zone, idx)"
+                                         :aria-label="`Añadir vértice en arista ${idx + 1}`">+</div>
                                 </template>
                             </div>
                         </template>
@@ -607,6 +628,7 @@
                                        hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-400
                                        shadow-md"
                                 :class="selectedId === zone.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'"
+                                :tabindex="selectedId === zone.id || hoveredId === zone.id ? 0 : -1"
                                 :aria-label="`Editar zona ${zone.name}`"
                                 :aria-expanded="editingZoneId === zone.id">
                             <svg aria-hidden="true" class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
@@ -623,6 +645,7 @@
                                        hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-400
                                        shadow-md"
                                 :class="selectedId === zone.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'"
+                                :tabindex="selectedId === zone.id || hoveredId === zone.id ? 0 : -1"
                                 :aria-label="`Eliminar zona ${zone.name}`">
                             <svg aria-hidden="true" class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
@@ -710,11 +733,24 @@
                             <template x-if="!readonly && editMode && selectedId === bar.id && bar.vertices && bar.vertices.length >= 3">
                                 <div class="absolute inset-0 pointer-events-none">
                                     <template x-for="(v, idx) in bar.vertices" :key="idx">
-                                        <div class="absolute w-3 h-3 rounded-full border-2 border-amber-500 bg-white pointer-events-auto cursor-move z-10 shadow"
-                                             :style="`left:${v.x - 6}px; top:${v.y - 6}px;`"
-                                             @mousedown.stop.prevent="startBarVertexDrag($event, bar, idx)"
-                                             :aria-label="`Vértice ${idx + 1} de la barra`">
+                                        <div class="absolute" :style="`left:${v.x - 6}px; top:${v.y - 6}px;`">
+                                            <div class="w-3 h-3 rounded-full border-2 border-amber-500 bg-white pointer-events-auto cursor-move z-10 shadow"
+                                                 @mousedown.stop.prevent="startBarVertexDrag($event, bar, idx)"
+                                                 :aria-label="`Vértice ${idx + 1} de la barra`">
+                                            </div>
+                                            <div x-show="bar.vertices.length > 3"
+                                                 class="absolute -top-2 -right-2 w-3.5 h-3.5 rounded-full bg-red-500 text-white flex items-center justify-center leading-none pointer-events-auto cursor-pointer shadow text-[9px] font-bold select-none"
+                                                 style="z-index:11;"
+                                                 @click.stop.prevent="removeBarVertex(bar, idx)"
+                                                 :aria-label="`Eliminar vértice ${idx + 1} de la barra`">×</div>
                                         </div>
+                                    </template>
+                                    {{-- Botones "+" en el punto medio de cada arista para añadir vértices --}}
+                                    <template x-for="(v, idx) in bar.vertices" :key="`e${idx}`">
+                                        <div class="absolute w-4 h-4 rounded-full bg-white border border-amber-500 pointer-events-auto cursor-pointer z-9 shadow flex items-center justify-center text-xs font-bold leading-none select-none text-amber-600"
+                                             :style="`left:${((v.x + bar.vertices[(idx+1)%bar.vertices.length].x)/2)-8}px; top:${((v.y + bar.vertices[(idx+1)%bar.vertices.length].y)/2)-8}px;`"
+                                             @click.stop.prevent="addBarVertex(bar, idx)"
+                                             :aria-label="`Añadir vértice en arista ${idx + 1}`">+</div>
                                     </template>
                                 </div>
                             </template>
@@ -736,7 +772,7 @@
                                   x-text="bar.name">
                             </span>
 
-                            <span class="absolute top-1 left-1 text-xs text-amber-600 dark:text-amber-400 pointer-events-none leading-none">🍺</span>
+                            <span class="absolute top-1 left-1 text-xs text-amber-600 dark:text-amber-400 pointer-events-none leading-none" aria-hidden="true">🍺</span>
 
                             {{-- Botón eliminar --}}
                             <button type="button"
@@ -748,6 +784,7 @@
                                            hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-400
                                            shadow-md"
                                     :class="selectedId === bar.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'"
+                                    :tabindex="selectedId === bar.id || hoveredId === bar.id ? 0 : -1"
                                     :aria-label="`Eliminar ${bar.name}`">
                                 <svg aria-hidden="true" class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
@@ -821,7 +858,7 @@
                                   x-text="stool.name">
                             </span>
 
-                            <span class="absolute top-1 left-1 text-xs text-amber-600 dark:text-amber-400 pointer-events-none leading-none">●</span>
+                            <span class="absolute top-1 left-1 text-xs text-amber-600 dark:text-amber-400 pointer-events-none leading-none" aria-hidden="true">●</span>
 
                             {{-- Botón eliminar --}}
                             <button type="button"
@@ -834,6 +871,7 @@
                                            hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-400
                                            shadow-md"
                                     :class="selectedId === stool.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'"
+                                    :tabindex="selectedId === stool.id || hoveredId === stool.id ? 0 : -1"
                                     :aria-label="`Eliminar ${stool.name}`">
                                 <svg aria-hidden="true" class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
@@ -928,18 +966,19 @@
 
                             {{-- Badge de estado con icono --}}
                             <span class="absolute top-1 left-1 w-2 h-2 rounded-full"
+                                  role="img"
                                   :class="{
                                       'bg-green-400':  !table.orderStatus || table.orderStatus === 'free',
                                       'bg-amber-500':  table.orderStatus === 'occupied',
                                       'bg-green-600':  table.orderStatus === 'ready',
                                       'bg-blue-500':   table.orderStatus === 'payment_pending',
                                   }"
-                                  :title="{
-                                      'free':            'Libre',
-                                      'occupied':        'Ocupada',
-                                      'ready':           'Listo para servir',
-                                      'payment_pending': 'Pendiente de pago',
-                                  }[table.orderStatus] ?? 'Libre'">
+                                  :aria-label="{
+                                      'free':            'Estado: Libre',
+                                      'occupied':        'Estado: Ocupada',
+                                      'ready':           'Estado: Lista para servir',
+                                      'payment_pending': 'Estado: Pendiente de pago',
+                                  }[table.orderStatus] ?? 'Estado: Libre'">
                             </span>
 
                             {{-- Badge: listo para servir --}}
@@ -976,6 +1015,7 @@
                                            hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-400
                                            shadow-md"
                                     :class="selectedId === table.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'"
+                                    :tabindex="selectedId === table.id || hoveredId === table.id ? 0 : -1"
                                     :aria-label="`Editar forma de mesa ${table.name}`"
                                     :aria-expanded="editingTableId === table.id">
                                 <svg aria-hidden="true" class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
@@ -993,6 +1033,7 @@
                                            hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-400
                                            shadow-md"
                                     :class="selectedId === table.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'"
+                                    :tabindex="selectedId === table.id || hoveredId === table.id ? 0 : -1"
                                     :aria-label="`Ver QR de la mesa ${table.name}`">
                                 <svg aria-hidden="true" class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
                                     <path d="M3 3h7v7H3V3zm2 2v3h3V5H5zm9-2h7v7h-7V3zm2 2v3h3V5h-3zM3 14h7v7H3v-7zm2 2v3h3v-3H5zm11.5-2a.5.5 0 01.5.5v1h1.5a.5.5 0 010 1H17v1.5a.5.5 0 01-1 0V17h-1.5a.5.5 0 010-1H16v-1.5a.5.5 0 01.5-.5zm3 3a.5.5 0 01.5.5V21h-2.5a.5.5 0 010-1H21v-1.5a.5.5 0 01.5-.5z"/>
@@ -1009,6 +1050,7 @@
                                            hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-400
                                            shadow-md"
                                     :class="selectedId === table.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'"
+                                    :tabindex="selectedId === table.id || hoveredId === table.id ? 0 : -1"
                                     :aria-label="`Eliminar mesa ${table.name}`">
                                 <svg aria-hidden="true" class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
@@ -1068,12 +1110,14 @@
                      x-transition:enter="transition ease-out duration-150"
                      x-transition:enter-start="opacity-0 scale-95"
                      x-transition:enter-end="opacity-100 scale-100"
+                     x-effect="if (editingZoneId !== null) $nextTick(() => $el.querySelector('input, select, button')?.focus())"
                      @click.stop
-                     @keydown.escape.window="editingZoneId = null; editingZone = null; _zoneBtnEl = null"
+                     @keydown.escape.window="_zoneBtnEl?.focus(); editingZoneId = null; editingZone = null; _zoneBtnEl = null"
                      class="absolute z-[200] bg-white dark:bg-gray-800 rounded-xl shadow-xl
                             border border-gray-200 dark:border-gray-700 p-3 min-w-[200px]"
                      :style="`left:${editZonePanelPos.x}px; top:${editZonePanelPos.y}px`"
                      role="dialog"
+                     aria-modal="true"
                      :aria-label="editingZone ? `Editar zona ${editingZone.name}` : 'Editar zona'">
 
                     <template x-if="editingZone">
@@ -1131,12 +1175,14 @@
                      x-transition:enter="transition ease-out duration-150"
                      x-transition:enter-start="opacity-0 scale-95"
                      x-transition:enter-end="opacity-100 scale-100"
+                     x-effect="if (editingTableId !== null) $nextTick(() => $el.querySelector('input, select, button')?.focus())"
                      @click.stop
-                     @keydown.escape.window="editingTableId = null; editingTable = null; _editBtnEl = null"
+                     @keydown.escape.window="_editBtnEl?.focus(); editingTableId = null; editingTable = null; _editBtnEl = null"
                      class="absolute z-[200] bg-white dark:bg-gray-800 rounded-xl shadow-xl
                             border border-gray-200 dark:border-gray-700 p-3 min-w-[200px]"
                      :style="`left:${editPanelPos.x}px; top:${editPanelPos.y}px`"
                      role="dialog"
+                     aria-modal="true"
                      :aria-label="editingTable ? `Editar mesa ${editingTable.name}` : 'Editar mesa'">
 
                     <template x-if="editingTable">
@@ -1959,6 +2005,60 @@ document.addEventListener('alpine:init', () => {
             return this.obbOverlaps(a, b);
         },
 
+        // Vértices locales de zona → coordenadas mundo (con rotación del div).
+        polygonWorldCorners(zone) {
+            if (!zone.vertices || zone.vertices.length < 3) return this.rectCorners(zone);
+            const rad = (zone.rotation ?? 0) * Math.PI / 180;
+            const cos = Math.cos(rad), sin = Math.sin(rad);
+            const cx  = zone.position_x + zone.width  / 2;
+            const cy  = zone.position_y + zone.height / 2;
+            return zone.vertices.map(v => {
+                const wx = zone.position_x + v.x - cx;
+                const wy = zone.position_y + v.y - cy;
+                return { x: cx + wx * cos - wy * sin, y: cy + wx * sin + wy * cos };
+            });
+        },
+
+        // Intersección de segmentos (p1→p2) ∩ (p3→p4).
+        segmentsIntersect(p1, p2, p3, p4) {
+            const dx1 = p2.x - p1.x, dy1 = p2.y - p1.y;
+            const dx2 = p4.x - p3.x, dy2 = p4.y - p3.y;
+            const cross = dx1 * dy2 - dy1 * dx2;
+            if (Math.abs(cross) < 1e-10) return false;
+            const t = ((p3.x - p1.x) * dy2 - (p3.y - p1.y) * dx2) / cross;
+            const u = ((p3.x - p1.x) * dy1 - (p3.y - p1.y) * dx1) / cross;
+            return t >= 0 && t <= 1 && u >= 0 && u <= 1;
+        },
+
+        // Punto dentro de polígono arbitrario (ray-casting, funciona con cóncavos).
+        pointInPolygon(pt, poly) {
+            let inside = false;
+            const n = poly.length;
+            for (let i = 0, j = n - 1; i < n; j = i++) {
+                const xi = poly[i].x, yi = poly[i].y;
+                const xj = poly[j].x, yj = poly[j].y;
+                if (((yi > pt.y) !== (yj > pt.y)) &&
+                    (pt.x < (xj - xi) * (pt.y - yi) / (yj - yi) + xi)) {
+                    inside = !inside;
+                }
+            }
+            return inside;
+        },
+
+        // Solapamiento entre dos polígonos arbitrarios (convexos O cóncavos).
+        // Detecta: aristas que se cruzan + un polígono contenido dentro del otro.
+        polygonOverlaps(polyA, polyB) {
+            const na = polyA.length, nb = polyB.length;
+            for (let i = 0; i < na; i++) {
+                for (let j = 0; j < nb; j++) {
+                    if (this.segmentsIntersect(polyA[i], polyA[(i + 1) % na], polyB[j], polyB[(j + 1) % nb])) return true;
+                }
+            }
+            if (this.pointInPolygon(polyA[0], polyB)) return true;
+            if (this.pointInPolygon(polyB[0], polyA)) return true;
+            return false;
+        },
+
         // Devuelve true si una zona colisiona con otra zona del mismo plano.
         // Zona sobre mesa: PERMITIDO. Solo zona ↔ zona está prohibido.
         hasZoneCollision(zone) {
@@ -1966,7 +2066,11 @@ document.addEventListener('alpine:init', () => {
             const selfId    = zone.id ?? null;
             const zoneFloor = this.floorsEnabled ? (zone.floor ?? this.currentFloor) : null;
             const sameFloor = (z) => !this.floorsEnabled || (z.floor ?? 1) === (zoneFloor ?? 1);
-            return this.zones.filter(sameFloor).some(z => z.id !== selfId && this.obbOverlaps(zone, z));
+            const cornersA  = this.polygonWorldCorners(zone);
+            return this.zones.filter(sameFloor).some(z => {
+                if (z.id === selfId) return false;
+                return this.polygonOverlaps(cornersA, this.polygonWorldCorners(z));
+            });
         },
 
         // Devuelve true si el item colisiona con elementos prohibidos.
@@ -1997,8 +2101,8 @@ document.addEventListener('alpine:init', () => {
                 floorCanvasSizes: JSON.parse(JSON.stringify(this.floorCanvasSizes)),
                 canvasZoom:       this.canvasZoom,
                 tables:   this.tables.map(t  => ({ id: t.id,  position_x: t.position_x,  position_y: t.position_y,  width: t.width,  height: t.height,  rotation: t.rotation  ?? 0 })),
-                elements: this.elements.map(e => ({ id: e.id,  position_x: e.position_x,  position_y: e.position_y,  width: e.width,  height: e.height,  rotation: e.rotation  ?? 0 })),
-                zones:    this.zones.map(z    => ({ id: z.id,  position_x: z.position_x,  position_y: z.position_y,  width: z.width,  height: z.height,  rotation: z.rotation  ?? 0, color: z.color })),
+                elements: this.elements.map(e => ({ id: e.id,  position_x: e.position_x,  position_y: e.position_y,  width: e.width,  height: e.height,  rotation: e.rotation  ?? 0, vertices: e.vertices ? JSON.parse(JSON.stringify(e.vertices)) : null })),
+                zones:    this.zones.map(z    => ({ id: z.id,  position_x: z.position_x,  position_y: z.position_y,  width: z.width,  height: z.height,  rotation: z.rotation  ?? 0, color: z.color, vertices: z.vertices ? JSON.parse(JSON.stringify(z.vertices)) : null })),
             };
         },
 
@@ -2052,24 +2156,30 @@ document.addEventListener('alpine:init', () => {
             for (const s of snap.elements) {
                 const e = this.elements.find(e => e.id === s.id);
                 if (!e) continue;
-                if (e.position_x !== s.position_x || e.position_y !== s.position_y ||
-                    e.width !== s.width || e.height !== s.height || (e.rotation ?? 0) !== s.rotation) {
+                const posChg  = e.position_x !== s.position_x || e.position_y !== s.position_y ||
+                                e.width !== s.width || e.height !== s.height || (e.rotation ?? 0) !== s.rotation;
+                const vertChg = JSON.stringify(e.vertices ?? null) !== JSON.stringify(s.vertices ?? null);
+                if (posChg || vertChg) {
                     e.position_x = s.position_x; e.position_y = s.position_y;
                     e.width      = s.width;       e.height     = s.height;
                     e.rotation   = s.rotation;
-                    toPersistItems.push(e);
+                    if (vertChg) e.vertices = s.vertices ? JSON.parse(JSON.stringify(s.vertices)) : null;
+                    toPersistItems.push({ item: e, vertChg });
                 }
             }
             for (const s of snap.zones) {
                 const z = this.zones.find(z => z.id === s.id);
                 if (!z) continue;
-                if (z.position_x !== s.position_x || z.position_y !== s.position_y ||
-                    z.width !== s.width || z.height !== s.height ||
-                    (z.rotation ?? 0) !== s.rotation || z.color !== s.color) {
+                const posChg  = z.position_x !== s.position_x || z.position_y !== s.position_y ||
+                                z.width !== s.width || z.height !== s.height ||
+                                (z.rotation ?? 0) !== s.rotation || z.color !== s.color;
+                const vertChg = JSON.stringify(z.vertices ?? null) !== JSON.stringify(s.vertices ?? null);
+                if (posChg || vertChg) {
                     z.position_x = s.position_x; z.position_y = s.position_y;
                     z.width      = s.width;       z.height     = s.height;
                     z.rotation   = s.rotation;    z.color      = s.color;
-                    toPersistZones.push(z);
+                    if (vertChg) z.vertices = s.vertices ? JSON.parse(JSON.stringify(s.vertices)) : null;
+                    toPersistZones.push({ zone: z, vertChg });
                 }
             }
 
@@ -2082,10 +2192,11 @@ document.addEventListener('alpine:init', () => {
                     });
                 } catch {}
             }
-            for (const item of toPersistItems) {
+            for (const { item, vertChg } of toPersistItems) {
                 await this.persistPosition(item.id, item.position_x, item.position_y, item.width, item.height);
+                if (vertChg && item.vertices) await this.persistBarVertices(item.id, item.vertices);
             }
-            for (const z of toPersistZones) {
+            for (const { zone: z, vertChg } of toPersistZones) {
                 try {
                     await fetch(`/zonas/${z.id}`, {
                         method:  'PATCH',
@@ -2093,6 +2204,7 @@ document.addEventListener('alpine:init', () => {
                         body: JSON.stringify({ position_x: z.position_x, position_y: z.position_y, width: z.width, height: z.height, rotation: z.rotation }),
                     });
                 } catch {}
+                if (vertChg) await this.persistZoneVertices(z.id, z.vertices ?? []);
             }
         },
 
@@ -2198,7 +2310,7 @@ document.addEventListener('alpine:init', () => {
             this.$nextTick(() => this.initZoneInteract());
         },
 
-        // ── Drag nativo de zona: actualiza zone.position_x/y reactivamente ───
+        // ── Drag nativo de zona: DOM directo + RAF throttle + corners precalculados ─
         startZoneDrag(event, zone) {
             if (!this.editMode) return;
             this.pushUndo();
@@ -2206,48 +2318,47 @@ document.addEventListener('alpine:init', () => {
             const startMY = event.clientY;
             const startPx = zone.position_x;
             const startPy = zone.position_y;
+            const zoneEl  = this.$refs.canvas.querySelector(`[data-zone-id="${zone.id}"]`);
 
             this.closeEditPanels();
             this.draggingId            = zone.id;
             document.body.style.cursor = 'grabbing';
 
-            let startedColliding = this.hasZoneCollision(zone);
+            let curX = startPx, curY = startPy;
+            let latestMX = event.clientX, latestMY = event.clientY;
+            let rafPending = false;
+
+            const processFrame = () => {
+                rafPending = false;
+                const maxX = Math.max(0, this.floorWidth  - zone.width);
+                const maxY = Math.max(0, this.floorHeight - zone.height);
+                curX = Math.max(0, Math.min(maxX, startPx + (latestMX - startMX) / this.canvasZoom));
+                curY = Math.max(0, Math.min(maxY, startPy + (latestMY - startMY) / this.canvasZoom));
+                if (zoneEl) { zoneEl.style.left = `${curX}px`; zoneEl.style.top = `${curY}px`; }
+            };
 
             const onMove = (e) => {
-                const maxX  = Math.max(0, this.floorWidth  - zone.width);
-                const maxY  = Math.max(0, this.floorHeight - zone.height);
-                const propX = Math.max(0, Math.min(maxX, Math.round(startPx + (e.clientX - startMX) / this.canvasZoom)));
-                const propY = Math.max(0, Math.min(maxY, Math.round(startPy + (e.clientY - startMY) / this.canvasZoom)));
-
-                const testXY = { ...zone, position_x: propX, position_y: propY };
-                const testX  = { ...zone, position_x: propX, position_y: zone.position_y };
-                const testY  = { ...zone, position_x: zone.position_x, position_y: propY };
-
-                if (startedColliding) {
-                    zone.position_x = propX;
-                    zone.position_y = propY;
-                    if (!this.hasZoneCollision(zone)) startedColliding = false;
-                    return;
-                }
-
-                if (!this.hasZoneCollision(testXY)) {
-                    zone.position_x = propX; zone.position_y = propY;
-                } else if (!this.hasZoneCollision(testX)) {
-                    zone.position_x = propX;
-                } else if (!this.hasZoneCollision(testY)) {
-                    zone.position_y = propY;
-                }
+                latestMX = e.clientX; latestMY = e.clientY;
+                if (!rafPending) { rafPending = true; requestAnimationFrame(processFrame); }
             };
 
             const onUp = async () => {
                 document.removeEventListener('mousemove', onMove);
                 document.removeEventListener('mouseup',   onUp);
-                this.draggingId            = null;
                 document.body.style.cursor = '';
+                curX = Math.round(curX); curY = Math.round(curY);
+                zone.position_x = curX;
+                zone.position_y = curY;
+                this.draggingId = null;
                 if (this.hasZoneCollision(zone)) {
                     this.showToast('No se puede colocar aquí: la zona colisiona con otra zona.', true);
+                    this.undoStack.pop();
+                    zone.position_x = startPx;
+                    zone.position_y = startPy;
+                    if (zoneEl) { zoneEl.style.left = `${startPx}px`; zoneEl.style.top = `${startPy}px`; }
+                    return;
                 }
-                await this.persistZonePosition(zone.id, zone.position_x, zone.position_y);
+                await this.persistZonePosition(zone.id, curX, curY);
             };
 
             document.addEventListener('mousemove', onMove);
@@ -2738,15 +2849,29 @@ document.addEventListener('alpine:init', () => {
             const startMY = event.clientY;
             const startVX = zone.vertices[idx].x;
             const startVY = zone.vertices[idx].y;
+            const handle  = event.currentTarget;
+            const zoneEl  = handle.closest('[data-zone-id]');
+            const svgPoly = zoneEl?.querySelector('polygon');
+
+            let newX = startVX, newY = startVY;
 
             const onMove = (e) => {
-                zone.vertices[idx].x = Math.round(startVX + (e.clientX - startMX) / this.canvasZoom);
-                zone.vertices[idx].y = Math.round(startVY + (e.clientY - startMY) / this.canvasZoom);
+                newX = startVX + (e.clientX - startMX) / this.canvasZoom;
+                newY = startVY + (e.clientY - startMY) / this.canvasZoom;
+                handle.style.left = `${newX - 6}px`;
+                handle.style.top  = `${newY - 6}px`;
+                if (svgPoly) {
+                    svgPoly.setAttribute('points',
+                        zone.vertices.map((v, i) => i === idx ? `${newX},${newY}` : `${v.x},${v.y}`).join(' ')
+                    );
+                }
             };
 
             const onUp = async () => {
                 document.removeEventListener('mousemove', onMove);
                 document.removeEventListener('mouseup',   onUp);
+                zone.vertices[idx].x = newX;
+                zone.vertices[idx].y = newY;
                 await this.persistZoneVertices(zone.id, zone.vertices);
             };
 
@@ -2763,15 +2888,29 @@ document.addEventListener('alpine:init', () => {
             const startMY = event.clientY;
             const startVX = element.vertices[idx].x;
             const startVY = element.vertices[idx].y;
+            const handle  = event.currentTarget;
+            const barEl   = handle.closest('[data-table-id]');
+            const svgPoly = barEl?.querySelector('polygon');
+
+            let newX = startVX, newY = startVY;
 
             const onMove = (e) => {
-                element.vertices[idx].x = Math.round(startVX + (e.clientX - startMX) / this.canvasZoom);
-                element.vertices[idx].y = Math.round(startVY + (e.clientY - startMY) / this.canvasZoom);
+                newX = startVX + (e.clientX - startMX) / this.canvasZoom;
+                newY = startVY + (e.clientY - startMY) / this.canvasZoom;
+                handle.style.left = `${newX - 6}px`;
+                handle.style.top  = `${newY - 6}px`;
+                if (svgPoly) {
+                    svgPoly.setAttribute('points',
+                        element.vertices.map((v, i) => i === idx ? `${newX},${newY}` : `${v.x},${v.y}`).join(' ')
+                    );
+                }
             };
 
             const onUp = async () => {
                 document.removeEventListener('mousemove', onMove);
                 document.removeEventListener('mouseup',   onUp);
+                element.vertices[idx].x = newX;
+                element.vertices[idx].y = newY;
                 await this.persistBarVertices(element.id, element.vertices);
             };
 
@@ -2828,6 +2967,39 @@ document.addEventListener('alpine:init', () => {
                 { x: element.width,  y: element.height  },
                 { x: 0,              y: element.height  },
             ];
+            this.persistBarVertices(element.id, element.vertices);
+        },
+
+        // ── Añadir vértice en el punto medio de una arista ────────────────────
+        addZoneVertex(zone, edgeStartIdx) {
+            this.pushUndo();
+            const n = zone.vertices.length;
+            const a = zone.vertices[edgeStartIdx];
+            const b = zone.vertices[(edgeStartIdx + 1) % n];
+            zone.vertices.splice(edgeStartIdx + 1, 0, { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
+            this.persistZoneVertices(zone.id, zone.vertices);
+        },
+
+        addBarVertex(element, edgeStartIdx) {
+            this.pushUndo();
+            const n = element.vertices.length;
+            const a = element.vertices[edgeStartIdx];
+            const b = element.vertices[(edgeStartIdx + 1) % n];
+            element.vertices.splice(edgeStartIdx + 1, 0, { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
+            this.persistBarVertices(element.id, element.vertices);
+        },
+
+        removeZoneVertex(zone, idx) {
+            if (zone.vertices.length <= 3) return;
+            this.pushUndo();
+            zone.vertices.splice(idx, 1);
+            this.persistZoneVertices(zone.id, zone.vertices);
+        },
+
+        removeBarVertex(element, idx) {
+            if (element.vertices.length <= 3) return;
+            this.pushUndo();
+            element.vertices.splice(idx, 1);
             this.persistBarVertices(element.id, element.vertices);
         },
 
