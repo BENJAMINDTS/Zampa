@@ -47,7 +47,7 @@ window.dailyMenuBanner = function (hash) {
             if (!paso) return false;
             if (paso.tipo === 'timing') return true;
             if (paso.tipo === 'seleccion') {
-                return !paso.required || !!this.selections[paso.sectionId];
+                return !paso.required || (this.selections[paso.sectionId]?.length ?? 0) > 0;
             }
             return true;
         },
@@ -197,16 +197,24 @@ window.dailyMenuBanner = function (hash) {
 
         /* ── Navegación del stepper ─────────────────────────────────── */
         siguiente() {
-            this.intentoAvanzar = true;
-            if (!this.puedeAvanzar) return;
-            this.intentoAvanzar = false;
+            const paso = this.pasoActualObj;
+            if (!paso) return;
+
+            if (paso.tipo === 'seleccion') {
+                this.intentoAvanzar = true;
+                if (paso.required && !this.selections[paso.sectionId]) return;
+                this.intentoAvanzar = false;
+            }
+
             this.pasoActual = Math.min(this.pasoActual + 1, this.pasos.length - 1);
-            this.$nextTick(() => {
-                const el = this.$el.querySelector(
+
+            setTimeout(() => {
+                const stepper = document.getElementById('daily-menu-stepper');
+                const el = stepper && stepper.querySelector(
                     '[data-step-content] button:not([disabled]), [data-step-content] input:not([disabled])'
                 );
                 if (el) el.focus();
-            });
+            }, 50);
         },
 
         anterior() {
@@ -219,11 +227,31 @@ window.dailyMenuBanner = function (hash) {
         },
 
         /* ── Selecciones ────────────────────────────────────────────── */
-        selectProduct(sectionId, productId, productName) {
-            this.selections = {
-                ...this.selections,
-                [sectionId]: { product_id: productId, product_name: productName },
-            };
+        selectProduct(sectionId, productId, productName, maxQty) {
+            const max     = maxQty ?? 1;
+            const current = this.selections[sectionId] ?? [];
+            const idx     = current.findIndex(s => s.product_id === productId);
+
+            if (max === 1) {
+                // Comportamiento radio: reemplaza o deselecciona
+                this.selections = {
+                    ...this.selections,
+                    [sectionId]: idx !== -1 ? [] : [{ product_id: productId, product_name: productName }],
+                };
+            } else {
+                // Comportamiento checkbox: toggle hasta el máximo
+                if (idx !== -1) {
+                    this.selections = {
+                        ...this.selections,
+                        [sectionId]: current.filter(s => s.product_id !== productId),
+                    };
+                } else if (current.length < max) {
+                    this.selections = {
+                        ...this.selections,
+                        [sectionId]: [...current, { product_id: productId, product_name: productName }],
+                    };
+                }
+            }
         },
 
         skipSection(sectionId) {
@@ -255,12 +283,16 @@ window.dailyMenuBanner = function (hash) {
         /* ── Confirmación ───────────────────────────────────────────── */
         confirmationSelections() {
             if (!this.menuData) return [];
-            return (this.menuData.sections ?? [])
-                .filter(s => this.selections[s.id])
-                .map(s => ({
-                    section_label: SECTION_LABELS[s.type] ?? s.type,
-                    product_name:  this.selections[s.id].product_name,
-                }));
+            const result = [];
+            (this.menuData.sections ?? []).forEach(s => {
+                (this.selections[s.id] ?? []).forEach(sel => {
+                    result.push({
+                        section_label: SECTION_LABELS[s.type] ?? s.type,
+                        product_name:  sel.product_name,
+                    });
+                });
+            });
+            return result;
         },
 
         async submitOrder() {
@@ -269,16 +301,23 @@ window.dailyMenuBanner = function (hash) {
             try {
                 const body = {
                     selections: Object.entries(this.selections)
-                        .filter(([, v]) => v)
-                        .map(([sectionId, sel]) => ({
-                            section_id: parseInt(sectionId),
-                            product_id: sel.product_id,
-                            quantity:   1,
-                        })),
-                    timing_overrides: Object.entries(this.timings).map(([round, delay]) => ({
-                        round:         parseInt(round),
-                        delay_minutes: delay,
-                    })),
+                        .filter(([, v]) => v?.length > 0)
+                        .flatMap(([sectionId, sels]) =>
+                            sels.map(sel => ({
+                                section_id: parseInt(sectionId),
+                                product_id: sel.product_id,
+                                quantity:   1,
+                            }))
+                        ),
+                    timing_overrides: (() => {
+                        const firstRound = this.timingRules.length > 0 ? this.timingRules[0].round : null;
+                        return Object.entries(this.timings)
+                            .filter(([round]) => parseInt(round) !== firstRound)
+                            .map(([round, delay]) => ({
+                                round:         parseInt(round),
+                                delay_minutes: delay,
+                            }));
+                    })(),
                 };
                 const res = await fetch(`/api/v1/menu/${hash}/daily-menu/order`, {
                     method:  'POST',

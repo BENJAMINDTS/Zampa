@@ -14,7 +14,7 @@
     @keydown.tab.window="
         if (!open || !$el.contains(document.activeElement)) return;
         $event.preventDefault();
-        const focusable = [...$el.querySelectorAll('button:not([disabled]),[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex=\'-1\'])')];
+        const focusable = [...$el.querySelectorAll('button:not([disabled]),[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex=\'-1\'])')].filter(el => el.offsetParent !== null);
         if (!focusable.length) return;
         const idx = focusable.indexOf(document.activeElement);
         focusable[$event.shiftKey
@@ -133,8 +133,16 @@
                 {{-- Paso de selección de producto --}}
                 <div x-show="pasoActualObj?.tipo === 'seleccion'">
 
-                    <h3 class="text-white font-bold text-lg mb-4"
-                        x-text="pasoActualObj?.label"></h3>
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-white font-bold text-lg"
+                            x-text="pasoActualObj?.label"></h3>
+                        <template x-if="(pasoActualObj?.section?.max_quantity ?? 1) > 1">
+                            <span class="text-xs text-blue-300 bg-blue-900/40 border border-blue-700/50 px-2.5 py-1 rounded-full"
+                                  aria-live="polite">
+                                <span x-text="(selections[pasoActualObj?.sectionId] ?? []).length"></span>/<span x-text="pasoActualObj?.section?.max_quantity"></span> elegidos
+                            </span>
+                        </template>
+                    </div>
 
                     <div class="space-y-2" role="list">
                         <template x-for="product in pasoActualObj?.section?.products ?? []"
@@ -142,12 +150,14 @@
                             <button
                                 type="button"
                                 role="listitem"
-                                @click="selectProduct(pasoActualObj.sectionId, product.id, product.name)"
-                                :aria-pressed="selections[pasoActualObj?.sectionId]?.product_id === product.id"
+                                @click="selectProduct(pasoActualObj.sectionId, product.id, product.name, pasoActualObj.section?.max_quantity ?? 1)"
+                                :aria-pressed="(selections[pasoActualObj?.sectionId] ?? []).some(s => s.product_id === product.id)"
+                                :disabled="!(selections[pasoActualObj?.sectionId] ?? []).some(s => s.product_id === product.id) && (selections[pasoActualObj?.sectionId] ?? []).length >= (pasoActualObj?.section?.max_quantity ?? 1)"
                                 :class="{
                                     'w-full text-left p-3 rounded-xl border-2 transition-all duration-150': true,
-                                    'border-[#2E50B0] bg-[#2E50B0]/20': selections[pasoActualObj?.sectionId]?.product_id === product.id,
-                                    'border-blue-800/40 bg-white/5 hover:border-blue-600/60 hover:bg-white/10': selections[pasoActualObj?.sectionId]?.product_id !== product.id
+                                    'border-[#2E50B0] bg-[#2E50B0]/20': (selections[pasoActualObj?.sectionId] ?? []).some(s => s.product_id === product.id),
+                                    'border-blue-800/40 bg-white/5 hover:border-blue-600/60 hover:bg-white/10': !(selections[pasoActualObj?.sectionId] ?? []).some(s => s.product_id === product.id),
+                                    'opacity-40 cursor-not-allowed': !(selections[pasoActualObj?.sectionId] ?? []).some(s => s.product_id === product.id) && (selections[pasoActualObj?.sectionId] ?? []).length >= (pasoActualObj?.section?.max_quantity ?? 1)
                                 }"
                             >
                                 <div class="flex items-start justify-between gap-3">
@@ -170,7 +180,7 @@
                                             </span>
                                         </template>
                                         <span
-                                            x-show="selections[pasoActualObj?.sectionId]?.product_id === product.id"
+                                            x-show="(selections[pasoActualObj?.sectionId] ?? []).some(s => s.product_id === product.id)"
                                             class="w-5 h-5 rounded-full bg-[#2E50B0]
                                                    flex items-center justify-center
                                                    text-white text-xs font-bold flex-shrink-0"
@@ -184,7 +194,7 @@
 
                     {{-- Alerta si obligatorio y no seleccionó --}}
                     <div
-                        x-show="intentoAvanzar && pasoActualObj?.required && !selections[pasoActualObj?.sectionId]"
+                        x-show="intentoAvanzar && pasoActualObj?.required && !((selections[pasoActualObj?.sectionId] ?? []).length > 0)"
                         role="alert"
                         class="mt-3 flex items-center gap-2 text-red-400 text-xs
                                bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2"
@@ -296,15 +306,24 @@
                 {{-- Siguiente (pasos de selección y timing) --}}
                 <button
                     type="button"
-                    x-show="pasoActualObj?.tipo !== 'confirmacion'"
-                    @click="siguiente()"
-                    :disabled="pasoActualObj?.required && !selections[pasoActualObj?.sectionId] && pasoActualObj?.tipo === 'seleccion'"
-                    :aria-disabled="pasoActualObj?.required && !selections[pasoActualObj?.sectionId] && pasoActualObj?.tipo === 'seleccion'"
+                    x-show="pasos[pasoActual]?.tipo !== 'confirmacion'"
+                    @click="
+                        const _p = pasos[pasoActual];
+                        if (!_p) return;
+                        if (_p.tipo === 'seleccion' && _p.required && !((selections[_p.sectionId] ?? []).length > 0)) {
+                            intentoAvanzar = true;
+                            return;
+                        }
+                        intentoAvanzar = false;
+                        if (pasoActual + 1 < pasos.length) pasoActual = pasoActual + 1;
+                    "
+                    :disabled="pasos[pasoActual]?.tipo === 'seleccion' && pasos[pasoActual]?.required && !((selections[pasos[pasoActual]?.sectionId] ?? []).length > 0)"
+                    :aria-disabled="pasos[pasoActual]?.tipo === 'seleccion' && pasos[pasoActual]?.required && !((selections[pasos[pasoActual]?.sectionId] ?? []).length > 0)"
                     :aria-label="`Ir al paso siguiente: ${pasos[pasoActual + 1]?.label ?? ''}`"
                     :class="{
                         'px-5 py-2.5 rounded-lg text-sm font-semibold transition-all min-h-[44px]': true,
-                        'bg-[#2E50B0] text-white hover:bg-[#3660CC] focus:outline-none focus:ring-2 focus:ring-blue-400': puedeAvanzar,
-                        'bg-white/10 text-white/40 cursor-not-allowed': !puedeAvanzar
+                        'bg-[#2E50B0] text-white hover:bg-[#3660CC] focus:outline-none focus:ring-2 focus:ring-blue-400': !(pasos[pasoActual]?.tipo === 'seleccion' && pasos[pasoActual]?.required && !((selections[pasos[pasoActual]?.sectionId] ?? []).length > 0)),
+                        'bg-white/10 text-white/40 cursor-not-allowed': pasos[pasoActual]?.tipo === 'seleccion' && pasos[pasoActual]?.required && !((selections[pasos[pasoActual]?.sectionId] ?? []).length > 0)
                     }"
                 >
                     Siguiente →

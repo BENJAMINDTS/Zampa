@@ -292,6 +292,33 @@ class DailyMenuController extends Controller
     }
 
     /**
+     * Actualiza la configuración de una sección del menú del día.
+     *
+     * @param  Request          $request
+     * @param  DailyMenu        $dailyMenu
+     * @param  DailyMenuSection $section
+     * @return RedirectResponse
+     */
+    public function updateSection(Request $request, DailyMenu $dailyMenu, DailyMenuSection $section): RedirectResponse
+    {
+        abort_if($dailyMenu->user_id !== Auth::user()->ownerUserId(), 403, 'Acceso denegado.');
+        abort_if($section->daily_menu_id !== $dailyMenu->id, 403, 'Acceso denegado.');
+
+        $validated = $request->validate([
+            'max_quantity' => 'required|integer|min:1',
+        ]);
+
+        $validated['is_required'] = $request->boolean('is_required');
+        $validated['is_free']     = $request->boolean('is_free');
+
+        $section->update($validated);
+
+        return redirect()
+            ->route('daily-menus.sections', $dailyMenu)
+            ->with('success', 'Sección actualizada correctamente.');
+    }
+
+    /**
      * Elimina una sección del menú del día.
      *
      * @param  DailyMenu        $dailyMenu

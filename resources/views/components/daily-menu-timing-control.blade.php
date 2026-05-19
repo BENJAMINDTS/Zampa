@@ -22,7 +22,7 @@
             :aria-disabled="timings[pasoActualObj?.round] <= pasoActualObj?.minDelay"
             :aria-label="`Reducir tiempo de la ronda ${pasoActualObj?.round}`"
             :class="{
-                'w-12 h-12 rounded-full flex items-center justify-center border-2 border-blue-600/60 text-blue-300 transition-colors': true,
+                'w-12 h-12 rounded-full flex items-center justify-center border-2 border-blue-600/60 text-blue-300 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-[#0E1A38]': true,
                 'hover:bg-blue-800/50 hover:text-white': timings[pasoActualObj?.round] > pasoActualObj?.minDelay,
                 'opacity-35 cursor-not-allowed': timings[pasoActualObj?.round] <= pasoActualObj?.minDelay
             }"
@@ -34,13 +34,20 @@
             </svg>
         </button>
 
-        {{-- Valor actual --}}
+        {{-- Valor actual — spinbutton con soporte de teclado (↑ ↓ Home End) --}}
         <div class="text-center min-w-[80px]"
              role="spinbutton"
+             tabindex="0"
              :aria-valuemin="pasoActualObj?.minDelay"
              :aria-valuemax="120"
              :aria-valuenow="timings[pasoActualObj?.round]"
-             :aria-valuetext="timings[pasoActualObj?.round] + ' minutos'">
+             :aria-valuetext="timings[pasoActualObj?.round] + ' minutos'"
+             :aria-label="`Tiempo para la ronda ${pasoActualObj?.round}`"
+             @keydown.arrow-up.prevent="incrementTiming(pasoActualObj.round)"
+             @keydown.arrow-down.prevent="decrementTiming(pasoActualObj.round, pasoActualObj.minDelay)"
+             @keydown.home.prevent="timings = { ...timings, [pasoActualObj.round]: pasoActualObj.minDelay }"
+             @keydown.end.prevent="timings = { ...timings, [pasoActualObj.round]: 120 }"
+             class="focus:outline-none focus:ring-2 focus:ring-blue-400 rounded-lg">
             <span class="text-5xl font-bold text-white"
                   x-text="timings[pasoActualObj?.round]">
             </span>
@@ -55,7 +62,7 @@
             :aria-disabled="timings[pasoActualObj?.round] >= 120"
             :aria-label="`Aumentar tiempo de la ronda ${pasoActualObj?.round}`"
             :class="{
-                'w-12 h-12 rounded-full flex items-center justify-center border-2 border-blue-600/60 text-blue-300 transition-colors': true,
+                'w-12 h-12 rounded-full flex items-center justify-center border-2 border-blue-600/60 text-blue-300 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-[#0E1A38]': true,
                 'hover:bg-blue-800/50 hover:text-white': timings[pasoActualObj?.round] < 120,
                 'opacity-35 cursor-not-allowed': timings[pasoActualObj?.round] >= 120
             }"

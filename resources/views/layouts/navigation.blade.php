@@ -1,7 +1,7 @@
 {{-- @author SebastianBCF --}}
 <nav x-data="{ open: false }" class="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700">
     @php
-        $cartaActive   = request()->routeIs('categories.*', 'ingredients.*', 'products.*');
+        $cartaActive   = request()->routeIs('categories.*', 'ingredients.*', 'products.*', 'daily-menus.*');
         $localActive   = request()->routeIs('tables.*', 'zones.*', 'staff.*');
         $negocioActive = request()->routeIs('tapas.*', 'manager.*');
     @endphp
@@ -66,6 +66,9 @@
                                 </x-dropdown-link>
                                 <x-dropdown-link role="menuitem" :href="route('products.index')" :active="request()->routeIs('products.*')">
                                     {{ __('Productos') }}
+                                </x-dropdown-link>
+                                <x-dropdown-link role="menuitem" :href="route('daily-menus.index')" :active="request()->routeIs('daily-menus.*')">
+                                    {{ __('Menú del Día') }}
                                 </x-dropdown-link>
                             </div>
                         </div>
@@ -265,6 +268,9 @@
                 </x-responsive-nav-link>
                 <x-responsive-nav-link :href="route('products.index')" :active="request()->routeIs('products.*')">
                     {{ __('Productos') }}
+                </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('daily-menus.index')" :active="request()->routeIs('daily-menus.*')">
+                    {{ __('Menú del Día') }}
                 </x-responsive-nav-link>
 
                 <h3 class="px-3 pt-3 pb-1 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500" role="presentation">{{ __('Local') }}</h3>
