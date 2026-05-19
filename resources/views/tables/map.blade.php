@@ -22,6 +22,7 @@
     @mouseup.window="if(isRotating||isRotatingZone){}"
     @keydown.ctrl.z.window.prevent="undo()"
     @keydown.ctrl.y.window.prevent="redo()"
+    @keydown.window="handleKb($event)"
 >
 
     {{-- ══════════════════════════════════════════════════════
@@ -500,7 +501,7 @@
                     ? `width:${floorWidth}px; height:${floorHeight}px; transform:scale(${canvasZoom}); transform-origin:top left; margin-bottom:${-floorHeight*(1-canvasZoom)}px; margin-right:${-floorWidth*(1-canvasZoom)}px;`
                     : `width:${floorWidth}px; height:${floorHeight}px; transform:scale(${canvasZoom}); transform-origin:center center; flex-shrink:0;`"
                 role="application"
-                aria-label="Plano interactivo del restaurante. En modo edición: Tab navega entre elementos, Supr elimina el seleccionado, Ctrl+Z deshace, Ctrl+Y rehace."
+                aria-label="Plano interactivo del restaurante. En modo edición: Tab navega entre elementos, Intro o Espacio selecciona, Flechas mueven (Mayús+Flechas mueve 1 px), Alt+Flechas redimensiona, [ y ] rotan (Mayús para 1°), Supr elimina, Ctrl+Z deshace, Ctrl+Y rehace. En vértices de polígono: Tab navega entre vértices, Flechas mueven el vértice activo."
                 :class="(editMode && currentView !== 'general' && !isPanning) ? 'cursor-grab' : ''"
                 @mousedown.self="startPan($event)"
                 @click="editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null; selectedId = null;"
@@ -536,6 +537,8 @@
                         :data-zone-id="zone.id"
                         class="zone-item absolute group select-none touch-none cursor-grab"
                         :class="{'zampa-selected': isActive(zone.id)}"
+                        tabindex="0"
+                        @keydown.enter.space.prevent.stop="selectedId = selectedId === zone.id ? null : zone.id; editingTableId=null; editingTable=null; editingZoneId=null; editingZone=null;"
                         :style="`
                             left:${zone.position_x}px;
                             top:${zone.position_y}px;
@@ -578,8 +581,11 @@
                             <div class="absolute inset-0 pointer-events-none">
                                 <template x-for="(v, idx) in zone.vertices" :key="idx">
                                     <div class="absolute" :style="`left:${v.x - 6}px; top:${v.y - 6}px;`">
-                                        <div class="w-3 h-3 rounded-full border-2 bg-white pointer-events-auto cursor-move z-10 shadow"
+                                        <div class="w-3 h-3 rounded-full border-2 bg-white pointer-events-auto cursor-move z-10 shadow focus:outline-none focus:ring-2 focus:ring-indigo-400"
                                              :style="`border-color:${zone.color};`"
+                                             tabindex="0"
+                                             @focus="focusedVertexIdx = idx"
+                                             @blur="if (focusedVertexIdx === idx) focusedVertexIdx = null"
                                              @mousedown.stop.prevent="startVertexDrag($event, zone, idx)"
                                              :aria-label="`Vértice ${idx + 1} de la zona`">
                                         </div>
@@ -698,6 +704,8 @@
                     <div
                         :data-table-id="bar.id"
                         class="table-item absolute group select-none touch-none"
+                        tabindex="0"
+                        @keydown.enter.space.prevent.stop="selectedId = selectedId === bar.id ? null : bar.id; editingTableId=null; editingTable=null; editingZoneId=null; editingZone=null;"
                         :style="`left:${bar.position_x}px; top:${bar.position_y}px;
                                  width:${bar.width}px; height:${bar.height}px;
                                  transform:rotate(${bar.rotation ?? 0}deg);
@@ -734,7 +742,10 @@
                                 <div class="absolute inset-0 pointer-events-none">
                                     <template x-for="(v, idx) in bar.vertices" :key="idx">
                                         <div class="absolute" :style="`left:${v.x - 6}px; top:${v.y - 6}px;`">
-                                            <div class="w-3 h-3 rounded-full border-2 border-amber-500 bg-white pointer-events-auto cursor-move z-10 shadow"
+                                            <div class="w-3 h-3 rounded-full border-2 border-amber-500 bg-white pointer-events-auto cursor-move z-10 shadow focus:outline-none focus:ring-2 focus:ring-amber-400"
+                                                 tabindex="0"
+                                                 @focus="focusedVertexIdx = idx"
+                                                 @blur="if (focusedVertexIdx === idx) focusedVertexIdx = null"
                                                  @mousedown.stop.prevent="startBarVertexDrag($event, bar, idx)"
                                                  :aria-label="`Vértice ${idx + 1} de la barra`">
                                             </div>
@@ -834,6 +845,8 @@
                     <div
                         :data-table-id="stool.id"
                         class="element-item absolute group select-none touch-none"
+                        tabindex="0"
+                        @keydown.enter.space.prevent.stop="selectedId = selectedId === stool.id ? null : stool.id; editingTableId=null; editingTable=null; editingZoneId=null; editingZone=null;"
                         :style="`left:${stool.position_x}px; top:${stool.position_y}px;
                                  width:${stool.width}px; height:${stool.height}px;
                                  transform:rotate(${stool.rotation ?? 0}deg);
@@ -921,6 +934,8 @@
                     <div
                         :data-table-id="table.id"
                         class="table-item absolute group select-none touch-none"
+                        tabindex="0"
+                        @keydown.enter.space.prevent.stop="selectedId = selectedId === table.id ? null : table.id; editingTableId=null; editingTable=null; editingZoneId=null; editingZone=null;"
                         :style="`left:${table.position_x}px; top:${table.position_y}px;
                                  width:${table.width}px; height:${table.height}px;
                                  transform: rotate(${table.rotation ?? 0}deg);
@@ -1738,6 +1753,7 @@ document.addEventListener('alpine:init', () => {
         undoStack:             [],
         redoStack:             [],
         isPanning:             false,
+        focusedVertexIdx:      null,
 
         init() {
             this.$nextTick(() => {
@@ -3678,6 +3694,149 @@ document.addEventListener('alpine:init', () => {
                 this.showToast(json.message);
             } catch {
                 this.showToast('Error de red al eliminar la mesa.', true);
+            }
+        },
+
+        // ── Teclado: helpers ──────────────────────────────────────────────────
+        _isTyping() {
+            const tag = document.activeElement?.tagName;
+            return tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA'
+                || document.activeElement?.isContentEditable;
+        },
+
+        getSelectedItem() {
+            if (!this.selectedId) return null;
+            return this.tables.find(t => t.id === this.selectedId)
+                ?? this.elements.find(e => e.id === this.selectedId)
+                ?? this.zones.find(z => z.id === this.selectedId)
+                ?? null;
+        },
+
+        // ── Teclado: mover elemento seleccionado ─────────────────────────────
+        async kbMove(dx, dy) {
+            const item = this.getSelectedItem();
+            if (!item) return;
+            this.pushUndo();
+            const { width: cw, height: ch } = this.sizeForItem(item);
+            item.position_x = Math.max(0, Math.min(item.position_x + dx, cw - item.width));
+            item.position_y = Math.max(0, Math.min(item.position_y + dy, ch - item.height));
+            if (this.zones.some(z => z.id === item.id)) {
+                await this.persistZonePosition(item.id, item.position_x, item.position_y);
+            } else {
+                await this.persistPosition(item.id, item.position_x, item.position_y, item.width, item.height);
+            }
+        },
+
+        // ── Teclado: rotar elemento seleccionado ─────────────────────────────
+        async kbRotate(delta) {
+            const item = this.getSelectedItem();
+            if (!item) return;
+            this.pushUndo();
+            item.rotation = ((item.rotation ?? 0) + delta + 360) % 360;
+            if (this.zones.some(z => z.id === item.id)) {
+                await this.persistZoneRotation(item.id, item.rotation);
+            } else {
+                await this.persistPosition(item.id, item.position_x, item.position_y, item.width, item.height);
+            }
+        },
+
+        // ── Teclado: redimensionar elemento seleccionado ─────────────────────
+        async kbResize(dw, dh) {
+            const item = this.getSelectedItem();
+            if (!item) return;
+            this.pushUndo();
+            const { width: cw, height: ch } = this.sizeForItem(item);
+            item.width  = Math.max(40, Math.min(item.width  + dw, cw - item.position_x));
+            item.height = Math.max(40, Math.min(item.height + dh, ch - item.position_y));
+            if (this.zones.some(z => z.id === item.id)) {
+                try {
+                    await fetch(`/zonas/${item.id}`, {
+                        method:  'PATCH',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 'Accept': 'application/json' },
+                        body: JSON.stringify({ position_x: item.position_x, position_y: item.position_y, width: item.width, height: item.height }),
+                    });
+                } catch { this.showToast('Error al guardar dimensiones.', true); }
+            } else {
+                await this.persistPosition(item.id, item.position_x, item.position_y, item.width, item.height);
+            }
+        },
+
+        // ── Teclado: eliminar elemento seleccionado ───────────────────────────
+        async kbDelete() {
+            const item = this.getSelectedItem();
+            if (!item) return;
+            const isTable = this.tables.some(t => t.id === item.id);
+            const isZone  = this.zones.some(z => z.id === item.id);
+            if (isTable)     await this.deleteTable(item);
+            else if (isZone) await this.deleteZone(item);
+            else             await this.deleteElement(item);
+            this.selectedId = null;
+        },
+
+        // ── Teclado: mover vértice enfocado ──────────────────────────────────
+        async kbMoveVertex(dx, dy) {
+            if (this.focusedVertexIdx === null) return;
+            const item = this.getSelectedItem();
+            if (!item?.vertices) return;
+            const v = item.vertices[this.focusedVertexIdx];
+            if (!v) return;
+            this.pushUndo();
+            v.x = Math.max(0, Math.min(v.x + dx, item.width));
+            v.y = Math.max(0, Math.min(v.y + dy, item.height));
+            if (this.zones.some(z => z.id === item.id)) {
+                await this.persistZoneVertices(item.id, item.vertices);
+            } else {
+                await this.persistBarVertices(item.id, item.vertices);
+            }
+        },
+
+        // ── Teclado: manejador principal ─────────────────────────────────────
+        handleKb(event) {
+            if (this.readonly || !this.editMode) return;
+            if (this._isTyping()) return;
+            if (!this.selectedId) return;
+
+            const step  = event.shiftKey ? 1 : 10;
+            const rStep = event.shiftKey ? 1 : 5;
+
+            // Modo vértice: flechas mueven el vértice enfocado
+            if (this.focusedVertexIdx !== null) {
+                const vStep = event.shiftKey ? 1 : 5;
+                switch (event.key) {
+                    case 'ArrowUp':    event.preventDefault(); this.kbMoveVertex(0, -vStep); break;
+                    case 'ArrowDown':  event.preventDefault(); this.kbMoveVertex(0,  vStep); break;
+                    case 'ArrowLeft':  event.preventDefault(); this.kbMoveVertex(-vStep, 0); break;
+                    case 'ArrowRight': event.preventDefault(); this.kbMoveVertex( vStep, 0); break;
+                    case 'Escape':     this.focusedVertexIdx = null;                          break;
+                }
+                return;
+            }
+
+            // Alt+Flechas = redimensionar
+            if (event.altKey) {
+                switch (event.key) {
+                    case 'ArrowRight': event.preventDefault(); this.kbResize( step,    0); break;
+                    case 'ArrowLeft':  event.preventDefault(); this.kbResize(-step,    0); break;
+                    case 'ArrowDown':  event.preventDefault(); this.kbResize(0,     step); break;
+                    case 'ArrowUp':    event.preventDefault(); this.kbResize(0,    -step); break;
+                }
+                return;
+            }
+
+            switch (event.key) {
+                case 'ArrowUp':    event.preventDefault(); this.kbMove(0, -step);  break;
+                case 'ArrowDown':  event.preventDefault(); this.kbMove(0,  step);  break;
+                case 'ArrowLeft':  event.preventDefault(); this.kbMove(-step, 0);  break;
+                case 'ArrowRight': event.preventDefault(); this.kbMove( step, 0);  break;
+                case '[':          event.preventDefault(); this.kbRotate(-rStep);   break;
+                case ']':          event.preventDefault(); this.kbRotate( rStep);   break;
+                case 'Delete':
+                case 'Backspace':  event.preventDefault(); this.kbDelete();         break;
+                case 'Escape':
+                    this.selectedId       = null;
+                    this.focusedVertexIdx = null;
+                    this.closeEditPanels();
+                    break;
             }
         },
     }));
