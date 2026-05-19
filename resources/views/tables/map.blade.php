@@ -538,6 +538,7 @@
                         class="zone-item absolute group select-none touch-none cursor-grab"
                         :class="{'zampa-selected': isActive(zone.id)}"
                         tabindex="0"
+                        @focus="selectedId = zone.id; editingTableId=null; editingTable=null; editingZoneId=null; editingZone=null;"
                         @keydown.enter.space.prevent.stop="selectedId = selectedId === zone.id ? null : zone.id; editingTableId=null; editingTable=null; editingZoneId=null; editingZone=null;"
                         :style="`
                             left:${zone.position_x}px;
@@ -705,6 +706,7 @@
                         :data-table-id="bar.id"
                         class="table-item absolute group select-none touch-none"
                         tabindex="0"
+                        @focus="selectedId = bar.id; editingTableId=null; editingTable=null; editingZoneId=null; editingZone=null;"
                         @keydown.enter.space.prevent.stop="selectedId = selectedId === bar.id ? null : bar.id; editingTableId=null; editingTable=null; editingZoneId=null; editingZone=null;"
                         :style="`left:${bar.position_x}px; top:${bar.position_y}px;
                                  width:${bar.width}px; height:${bar.height}px;
@@ -846,6 +848,7 @@
                         :data-table-id="stool.id"
                         class="element-item absolute group select-none touch-none"
                         tabindex="0"
+                        @focus="selectedId = stool.id; editingTableId=null; editingTable=null; editingZoneId=null; editingZone=null;"
                         @keydown.enter.space.prevent.stop="selectedId = selectedId === stool.id ? null : stool.id; editingTableId=null; editingTable=null; editingZoneId=null; editingZone=null;"
                         :style="`left:${stool.position_x}px; top:${stool.position_y}px;
                                  width:${stool.width}px; height:${stool.height}px;
@@ -935,6 +938,7 @@
                         :data-table-id="table.id"
                         class="table-item absolute group select-none touch-none"
                         tabindex="0"
+                        @focus="selectedId = table.id; editingTableId=null; editingTable=null; editingZoneId=null; editingZone=null;"
                         @keydown.enter.space.prevent.stop="selectedId = selectedId === table.id ? null : table.id; editingTableId=null; editingTable=null; editingZoneId=null; editingZone=null;"
                         :style="`left:${table.position_x}px; top:${table.position_y}px;
                                  width:${table.width}px; height:${table.height}px;
@@ -3792,9 +3796,19 @@ document.addEventListener('alpine:init', () => {
 
         // ── Teclado: manejador principal ─────────────────────────────────────
         handleKb(event) {
-            if (this.readonly || !this.editMode) return;
             if (this._isTyping()) return;
-            if (!this.selectedId) return;
+
+            const isArrow = event.key === 'ArrowUp' || event.key === 'ArrowDown'
+                         || event.key === 'ArrowLeft' || event.key === 'ArrowRight';
+
+            // Bloquear scroll del canvas siempre que haya algo seleccionado,
+            // independientemente de editMode — el scroll ocurriría de otro modo.
+            if (isArrow && this.selectedId) {
+                event.preventDefault();
+            }
+
+            // Las operaciones de edición solo aplican en modo edición
+            if (this.readonly || !this.editMode || !this.selectedId) return;
 
             const step  = event.shiftKey ? 1 : 10;
             const rStep = event.shiftKey ? 1 : 5;
@@ -3803,11 +3817,11 @@ document.addEventListener('alpine:init', () => {
             if (this.focusedVertexIdx !== null) {
                 const vStep = event.shiftKey ? 1 : 5;
                 switch (event.key) {
-                    case 'ArrowUp':    event.preventDefault(); this.kbMoveVertex(0, -vStep); break;
-                    case 'ArrowDown':  event.preventDefault(); this.kbMoveVertex(0,  vStep); break;
-                    case 'ArrowLeft':  event.preventDefault(); this.kbMoveVertex(-vStep, 0); break;
-                    case 'ArrowRight': event.preventDefault(); this.kbMoveVertex( vStep, 0); break;
-                    case 'Escape':     this.focusedVertexIdx = null;                          break;
+                    case 'ArrowUp':    this.kbMoveVertex(0, -vStep); break;
+                    case 'ArrowDown':  this.kbMoveVertex(0,  vStep); break;
+                    case 'ArrowLeft':  this.kbMoveVertex(-vStep, 0); break;
+                    case 'ArrowRight': this.kbMoveVertex( vStep, 0); break;
+                    case 'Escape':     this.focusedVertexIdx = null; break;
                 }
                 return;
             }
@@ -3815,23 +3829,23 @@ document.addEventListener('alpine:init', () => {
             // Alt+Flechas = redimensionar
             if (event.altKey) {
                 switch (event.key) {
-                    case 'ArrowRight': event.preventDefault(); this.kbResize( step,    0); break;
-                    case 'ArrowLeft':  event.preventDefault(); this.kbResize(-step,    0); break;
-                    case 'ArrowDown':  event.preventDefault(); this.kbResize(0,     step); break;
-                    case 'ArrowUp':    event.preventDefault(); this.kbResize(0,    -step); break;
+                    case 'ArrowRight': this.kbResize( step,    0); break;
+                    case 'ArrowLeft':  this.kbResize(-step,    0); break;
+                    case 'ArrowDown':  this.kbResize(0,     step); break;
+                    case 'ArrowUp':    this.kbResize(0,    -step); break;
                 }
                 return;
             }
 
             switch (event.key) {
-                case 'ArrowUp':    event.preventDefault(); this.kbMove(0, -step);  break;
-                case 'ArrowDown':  event.preventDefault(); this.kbMove(0,  step);  break;
-                case 'ArrowLeft':  event.preventDefault(); this.kbMove(-step, 0);  break;
-                case 'ArrowRight': event.preventDefault(); this.kbMove( step, 0);  break;
-                case '[':          event.preventDefault(); this.kbRotate(-rStep);   break;
-                case ']':          event.preventDefault(); this.kbRotate( rStep);   break;
+                case 'ArrowUp':    this.kbMove(0, -step);  break;
+                case 'ArrowDown':  this.kbMove(0,  step);  break;
+                case 'ArrowLeft':  this.kbMove(-step, 0);  break;
+                case 'ArrowRight': this.kbMove( step, 0);  break;
+                case '[':          event.preventDefault(); this.kbRotate(-rStep); break;
+                case ']':          event.preventDefault(); this.kbRotate( rStep); break;
                 case 'Delete':
-                case 'Backspace':  event.preventDefault(); this.kbDelete();         break;
+                case 'Backspace':  event.preventDefault(); this.kbDelete();       break;
                 case 'Escape':
                     this.selectedId       = null;
                     this.focusedVertexIdx = null;
