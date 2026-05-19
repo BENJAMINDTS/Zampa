@@ -14,7 +14,7 @@
     @keydown.tab.window="
         if (!open || !$el.contains(document.activeElement)) return;
         $event.preventDefault();
-        const focusable = [...$el.querySelectorAll('button:not([disabled]),[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex=\'-1\'])')];
+        const focusable = [...$el.querySelectorAll('button:not([disabled]),[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex=\'-1\'])')].filter(el => el.offsetParent !== null);
         if (!focusable.length) return;
         const idx = focusable.indexOf(document.activeElement);
         focusable[$event.shiftKey
@@ -296,15 +296,24 @@
                 {{-- Siguiente (pasos de selección y timing) --}}
                 <button
                     type="button"
-                    x-show="pasoActualObj?.tipo !== 'confirmacion'"
-                    @click="siguiente()"
-                    :disabled="pasoActualObj?.required && !selections[pasoActualObj?.sectionId] && pasoActualObj?.tipo === 'seleccion'"
-                    :aria-disabled="pasoActualObj?.required && !selections[pasoActualObj?.sectionId] && pasoActualObj?.tipo === 'seleccion'"
+                    x-show="pasos[pasoActual]?.tipo !== 'confirmacion'"
+                    @click="
+                        const _p = pasos[pasoActual];
+                        if (!_p) return;
+                        if (_p.tipo === 'seleccion' && _p.required && !selections[_p.sectionId]) {
+                            intentoAvanzar = true;
+                            return;
+                        }
+                        intentoAvanzar = false;
+                        if (pasoActual + 1 < pasos.length) pasoActual = pasoActual + 1;
+                    "
+                    :disabled="pasos[pasoActual]?.tipo === 'seleccion' && pasos[pasoActual]?.required && !selections[pasos[pasoActual]?.sectionId]"
+                    :aria-disabled="pasos[pasoActual]?.tipo === 'seleccion' && pasos[pasoActual]?.required && !selections[pasos[pasoActual]?.sectionId]"
                     :aria-label="`Ir al paso siguiente: ${pasos[pasoActual + 1]?.label ?? ''}`"
                     :class="{
                         'px-5 py-2.5 rounded-lg text-sm font-semibold transition-all min-h-[44px]': true,
-                        'bg-[#2E50B0] text-white hover:bg-[#3660CC] focus:outline-none focus:ring-2 focus:ring-blue-400': puedeAvanzar,
-                        'bg-white/10 text-white/40 cursor-not-allowed': !puedeAvanzar
+                        'bg-[#2E50B0] text-white hover:bg-[#3660CC] focus:outline-none focus:ring-2 focus:ring-blue-400': !(pasos[pasoActual]?.tipo === 'seleccion' && pasos[pasoActual]?.required && !selections[pasos[pasoActual]?.sectionId]),
+                        'bg-white/10 text-white/40 cursor-not-allowed': pasos[pasoActual]?.tipo === 'seleccion' && pasos[pasoActual]?.required && !selections[pasos[pasoActual]?.sectionId]
                     }"
                 >
                     Siguiente →
