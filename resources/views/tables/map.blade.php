@@ -92,7 +92,7 @@ kbd {
             </div>
         </div>
 
-        <div class="flex items-center gap-3 flex-wrap">
+        <div class="flex items-center gap-3">
             {{-- ── Leyenda de estados de mesas ──────────────────────────────── --}}
             <ul class="hidden sm:flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 list-none"
                 aria-label="Leyenda de estados de mesas">
@@ -236,60 +236,6 @@ kbd {
                 </label>
             </template>
 
-            {{-- ── Selector de plantas — visible en vista y edición ────────── --}}
-            <template x-if="!readonly && floorsEnabled">
-                <div class="flex items-center gap-1"
-                     role="group"
-                     aria-label="Selector de planta">
-
-                    {{-- Botón por cada planta --}}
-                    <template x-for="n in floorCount" :key="n">
-                        <button type="button"
-                                @click="switchFloor(n)"
-                                :aria-pressed="currentView === 'floor' && currentFloor === n"
-                                :aria-label="`Planta ${n}`"
-                                :class="currentView === 'floor' && currentFloor === n
-                                    ? 'bg-indigo-600 text-white'
-                                    : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'"
-                                class="px-2.5 py-1.5 rounded text-xs font-semibold border border-gray-200 dark:border-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-400"
-                                x-text="`P${n}`">
-                        </button>
-                    </template>
-
-                    {{-- Botón Vista General — solo cuando hay más de una planta --}}
-                    <button type="button"
-                            x-show="floorCount > 1"
-                            @click="switchView('general')"
-                            :aria-pressed="currentView === 'general'"
-                            :class="currentView === 'general'
-                                ? 'bg-indigo-600 text-white'
-                                : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'"
-                            class="px-2.5 py-1.5 rounded text-xs font-semibold border border-gray-200 dark:border-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-400">
-                        General
-                    </button>
-
-                    {{-- Añadir/Eliminar planta — solo en modo edición --}}
-                    <button type="button"
-                            x-show="editMode && floorCount < 5"
-                            @click="addFloor()"
-                            aria-label="Añadir planta"
-                            class="px-2 py-1.5 rounded text-xs font-semibold
-                                   bg-green-500 hover:bg-green-600 text-white
-                                   transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-green-400">
-                        + P
-                    </button>
-                    <button type="button"
-                            x-show="editMode && floorCount > 1"
-                            @click="confirmDeleteFloor(floorCount)"
-                            :aria-label="`Eliminar Planta ${floorCount}`"
-                            class="px-2 py-1.5 rounded text-xs font-semibold
-                                   bg-red-500 hover:bg-red-600 text-white
-                                   transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-red-400">
-                        − P<span x-text="floorCount"></span>
-                    </button>
-                </div>
-            </template>
-
             {{-- Botón Editar / Confirmar — solo propietario --}}
             <template x-if="!readonly">
                 <div class="flex items-center gap-2">
@@ -320,7 +266,7 @@ kbd {
 
             {{-- Botón de ayuda de atajos de teclado --}}
             <button type="button"
-                    @click="showHelp = true"
+                    @click="$store.helpModal.show = true"
                     class="flex items-center justify-center w-7 h-7 rounded-full border-2
                            border-gray-300 dark:border-gray-500
                            text-gray-500 dark:text-gray-400 text-sm font-bold
@@ -342,6 +288,80 @@ kbd {
             </a>
         </div>
     </header>
+
+    {{-- ══════════════════════════════════════════════════════
+         BARRA DE PLANTAS — aparece bajo el topbar cuando floorsEnabled
+    ══════════════════════════════════════════════════════ --}}
+    <nav x-show="floorsEnabled"
+         x-transition:enter="transition ease-out duration-150"
+         x-transition:enter-start="opacity-0 -translate-y-1"
+         x-transition:enter-end="opacity-100 translate-y-0"
+         x-transition:leave="transition ease-in duration-100"
+         x-transition:leave-start="opacity-100 translate-y-0"
+         x-transition:leave-end="opacity-0 -translate-y-1"
+         class="flex-shrink-0 flex items-center gap-1.5 px-4 sm:px-6 py-1.5
+                bg-gray-50 dark:bg-gray-800/60 border-b border-gray-200 dark:border-gray-700"
+         aria-label="Selector de planta">
+
+        <span class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider pr-1"
+              aria-hidden="true">Planta</span>
+
+        {{-- Botón por cada planta --}}
+        <template x-for="n in floorCount" :key="n">
+            <button type="button"
+                    @click="switchFloor(n)"
+                    :aria-pressed="currentView === 'floor' && currentFloor === n"
+                    :aria-label="`Ir a Planta ${n}`"
+                    :class="currentView === 'floor' && currentFloor === n
+                        ? 'bg-indigo-600 text-white border-indigo-600'
+                        : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600'"
+                    class="px-2.5 py-1 rounded text-xs font-semibold border transition-colors
+                           focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-400"
+                    x-text="`P${n}`">
+            </button>
+        </template>
+
+        {{-- Vista General — solo cuando hay más de una planta --}}
+        <button type="button"
+                x-show="floorCount > 1"
+                @click="switchView('general')"
+                :aria-pressed="currentView === 'general'"
+                :class="currentView === 'general'
+                    ? 'bg-indigo-600 text-white border-indigo-600'
+                    : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600'"
+                class="px-2.5 py-1 rounded text-xs font-semibold border transition-colors
+                       focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-400"
+                aria-label="Vista general de todas las plantas">
+            General
+        </button>
+
+        {{-- Separador visual antes de acciones --}}
+        <span x-show="editMode"
+              class="w-px h-4 bg-gray-300 dark:bg-gray-600 mx-0.5"
+              aria-hidden="true"></span>
+
+        {{-- Añadir planta — solo en modo edición --}}
+        <button type="button"
+                x-show="editMode && floorCount < 5"
+                @click="addFloor()"
+                aria-label="Añadir planta"
+                class="px-2 py-1 rounded text-xs font-semibold
+                       bg-green-500 hover:bg-green-600 text-white border border-green-500
+                       transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-green-400">
+            + P
+        </button>
+
+        {{-- Eliminar planta — solo en modo edición --}}
+        <button type="button"
+                x-show="editMode && floorCount > 1"
+                @click="confirmDeleteFloor(floorCount)"
+                :aria-label="`Eliminar Planta ${floorCount}`"
+                class="px-2 py-1 rounded text-xs font-semibold
+                       bg-red-500 hover:bg-red-600 text-white border border-red-500
+                       transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-red-400">
+            − P<span x-text="floorCount"></span>
+        </button>
+    </nav>
 
     {{-- ══════════════════════════════════════════════════════
          BODY — Paleta + Canvas
@@ -571,7 +591,7 @@ kbd {
                     <div
                         :data-zone-id="zone.id"
                         class="zone-item absolute group select-none touch-none cursor-grab"
-                        :class="{'zampa-selected': isActive(zone.id)}"
+                        :class="{'zampa-selected': isActive(zone.id) && (!zone.vertices || zone.vertices.length < 3)}"
                         tabindex="0"
                         @focus="selectedId = zone.id; editingTableId=null; editingTable=null; editingZoneId=null; editingZone=null;"
                         @keydown.enter.space.prevent.stop="selectedId = selectedId === zone.id ? null : zone.id; editingTableId=null; editingTable=null; editingZoneId=null; editingZone=null;"
@@ -596,7 +616,7 @@ kbd {
                         {{-- Polígono SVG: en modo polígono recibe eventos y maneja drag/select --}}
                         <svg x-show="zone.vertices && zone.vertices.length >= 3"
                              :class="zone.vertices && zone.vertices.length >= 3 ? 'absolute inset-0 overflow-visible' : 'absolute inset-0 pointer-events-none overflow-visible'"
-                             :style="zone.vertices && zone.vertices.length >= 3 ? 'cursor:grab;' : ''"
+                             :style="`cursor:${zone.vertices && zone.vertices.length >= 3 ? 'grab' : 'default'};`"
                              :width="zone.width"
                              :height="zone.height"
                              aria-hidden="true"
@@ -606,8 +626,9 @@ kbd {
                              @mousedown.prevent.stop="if (zone.vertices && zone.vertices.length >= 3) startZoneDrag($event, zone)">
                             <polygon :points="vertexPoints(zone)"
                                      :fill="`${zone.color}22`"
-                                     :stroke="zone.color"
-                                     stroke-width="2"
+                                     :stroke="isActive(zone.id) ? '#6366f1' : zone.color"
+                                     :stroke-width="isActive(zone.id) ? '3' : '2'"
+                                     :stroke-dasharray="isActive(zone.id) ? '8 4' : 'none'"
                                      fill-rule="evenodd"
                                      style="pointer-events:painted;"/>
                         </svg>
@@ -727,8 +748,9 @@ kbd {
                             <div class="w-px h-3" :style="`background-color:${zone.color};`"></div>
                         </div>
 
-                        {{-- Handle de redimensionado de zona --}}
-                        <div class="zone-resize-handle absolute bottom-0 right-0
+                        {{-- Handle de redimensionado de zona — solo edit mode, solo rect --}}
+                        <div x-show="!readonly && editMode && (!zone.vertices || zone.vertices.length < 3)"
+                             class="zone-resize-handle absolute bottom-0 right-0
                                     w-4 h-4 cursor-se-resize transition-opacity"
                              :class="selectedId === zone.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'"
                              @mousedown.stop.prevent="startZoneResize($event, zone)"
@@ -1673,24 +1695,26 @@ kbd {
             </button>
         </div>
     </div>
+</div>
 
-    {{-- ══════════════════════════════════════════════════════
-         MODAL — Atajos de teclado
-    ══════════════════════════════════════════════════════ --}}
-    <div x-show="showHelp"
-         x-transition:enter="transition ease-out duration-200"
-         x-transition:enter-start="opacity-0"
-         x-transition:enter-end="opacity-100"
-         x-transition:leave="transition ease-in duration-150"
-         x-transition:leave-start="opacity-100"
-         x-transition:leave-end="opacity-0"
-         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
-         role="dialog"
-         aria-modal="true"
-         aria-labelledby="help-modal-title"
-         @click.self="showHelp = false"
-         @keydown.escape.window="if (showHelp) { showHelp = false; $event.stopPropagation(); }"
-         x-effect="if (showHelp) $nextTick(() => $refs.helpClose?.focus())">
+{{-- ══════════════════════════════════════════════════════
+     MODAL — Atajos de teclado
+══════════════════════════════════════════════════════ --}}
+<div x-data
+     x-show="$store.helpModal.show"
+     x-transition:enter="transition ease-out duration-200"
+     x-transition:enter-start="opacity-0"
+     x-transition:enter-end="opacity-100"
+     x-transition:leave="transition ease-in duration-150"
+     x-transition:leave-start="opacity-100"
+     x-transition:leave-end="opacity-0"
+     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="help-modal-title"
+     @click.self="$store.helpModal.show = false"
+     @keydown.escape.window="if ($store.helpModal.show) { $store.helpModal.show = false; $event.stopPropagation(); }"
+     x-effect="if ($store.helpModal.show) $nextTick(() => $refs.helpClose?.focus())">
 
         <div class="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto
                     bg-white dark:bg-gray-800 rounded-2xl shadow-2xl">
@@ -1708,7 +1732,7 @@ kbd {
                 </h2>
                 <button type="button"
                         x-ref="helpClose"
-                        @click="showHelp = false"
+                        @click="$store.helpModal.show = false"
                         class="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200
                                hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors
                                focus:outline-none focus:ring-2 focus:ring-indigo-400"
@@ -1858,13 +1882,14 @@ kbd {
         </div>
     </div>
 
-</div>
-
 {{-- interact.js CDN --}}
 <script src="https://cdn.jsdelivr.net/npm/interactjs@1.10.27/dist/interact.min.js"></script>
 
 <script>
 document.addEventListener('alpine:init', () => {
+
+    // ── Store para el modal de atajos de teclado ─────────────────────────────
+    Alpine.store('helpModal', { show: false });
 
     // ── Store para el modal de nombre de nueva mesa ───────────────────────────
     Alpine.store('tableModal', {
@@ -1990,7 +2015,6 @@ document.addEventListener('alpine:init', () => {
         redoStack:             [],
         isPanning:             false,
         focusedVertexIdx:      null,
-        showHelp:              false,
 
         init() {
             this.$nextTick(() => {
@@ -4050,7 +4074,7 @@ document.addEventListener('alpine:init', () => {
 
             if (event.key === '?') {
                 event.preventDefault();
-                this.showHelp = !this.showHelp;
+                this.$store.helpModal.show = !this.$store.helpModal.show;
                 return;
             }
 
