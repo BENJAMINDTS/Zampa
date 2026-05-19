@@ -38,6 +38,8 @@
         </a>
       </div>
 
+      <x-toast />
+
       {{-- ── Formulario ───────────────────────────────────────────── --}}
       <form action="{{ route('daily-menus.update', $dailyMenu) }}" method="POST" novalidate>
         @csrf
