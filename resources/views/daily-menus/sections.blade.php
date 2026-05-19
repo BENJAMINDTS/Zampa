@@ -139,34 +139,39 @@
                 {{-- Sync de productos --}}
                 <form action="{{ route('daily-menus.sync-products', [$dailyMenu, $section]) }}" method="POST">
                   @csrf
-                  <div class="mb-3">
-                    <label for="products_{{ $section->id }}"
-                           class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  @php
+                    $assignedProductIds = $section->products->pluck('id')->toArray();
+                    $grouped = $products->groupBy(fn($p) => $p->category?->name ?? 'Sin categoría');
+                  @endphp
+                  <fieldset>
+                    <legend class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Productos disponibles en esta sección
-                    </label>
-                    <select id="products_{{ $section->id }}" name="product_ids[]"
-                            multiple size="6"
-                            aria-label="Seleccionar productos para {{ $sectionLabels[$type] }}"
-                            class="w-full border border-gray-300 dark:border-gray-600 rounded-md px-2 py-1 text-sm
-                                   dark:bg-gray-700 dark:text-gray-100">
-                      @php
-                        $assignedProductIds = $section->products->pluck('id')->toArray();
-                        $grouped = $products->groupBy(fn($p) => $p->category?->name ?? 'Sin categoría');
-                      @endphp
+                    </legend>
+                    <div class="border border-gray-200 dark:border-gray-600 rounded-md divide-y divide-gray-100 dark:divide-gray-700
+                                max-h-56 overflow-y-auto">
                       @foreach($grouped as $categoryName => $categoryProducts)
-                        <optgroup label="{{ $categoryName }}">
-                          @foreach($categoryProducts as $product)
-                            <option value="{{ $product->id }}"
-                                    {{ in_array($product->id, $assignedProductIds) ? 'selected' : '' }}>
-                              {{ $product->name }}
-                            </option>
-                          @endforeach
-                        </optgroup>
+                        <div class="px-3 py-1.5 bg-gray-50 dark:bg-gray-700/50">
+                          <span class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                            {{ $categoryName }}
+                          </span>
+                        </div>
+                        @foreach($categoryProducts as $product)
+                          <label for="product_{{ $section->id }}_{{ $product->id }}"
+                                 class="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700/40
+                                        cursor-pointer select-none">
+                            <input type="checkbox"
+                                   id="product_{{ $section->id }}_{{ $product->id }}"
+                                   name="product_ids[]"
+                                   value="{{ $product->id }}"
+                                   {{ in_array($product->id, $assignedProductIds) ? 'checked' : '' }}
+                                   class="h-4 w-4 text-indigo-600 border-gray-300 rounded flex-shrink-0">
+                            <span class="text-sm text-gray-700 dark:text-gray-300">{{ $product->name }}</span>
+                          </label>
+                        @endforeach
                       @endforeach
-                    </select>
-                    <p class="mt-1 text-xs text-gray-400">Mantén Ctrl (o Cmd) para seleccionar múltiples productos.</p>
-                  </div>
-                  <div class="flex justify-end">
+                    </div>
+                  </fieldset>
+                  <div class="flex justify-end mt-3">
                     <button type="submit"
                             aria-label="Guardar productos de {{ $sectionLabels[$type] }}"
                             class="text-sm bg-indigo-600 hover:bg-indigo-700 text-white py-1.5 px-4 rounded">
