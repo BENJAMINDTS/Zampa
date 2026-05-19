@@ -501,7 +501,7 @@
                     ? `width:${floorWidth}px; height:${floorHeight}px; transform:scale(${canvasZoom}); transform-origin:top left; margin-bottom:${-floorHeight*(1-canvasZoom)}px; margin-right:${-floorWidth*(1-canvasZoom)}px;`
                     : `width:${floorWidth}px; height:${floorHeight}px; transform:scale(${canvasZoom}); transform-origin:center center; flex-shrink:0;`"
                 role="application"
-                aria-label="Plano interactivo del restaurante. En modo edición: Tab navega entre elementos, Intro o Espacio selecciona, Flechas mueven (Mayús+Flechas mueve 1 px), Alt+Flechas redimensiona, [ y ] rotan (Mayús para 1°), Supr elimina, Ctrl+Z deshace, Ctrl+Y rehace. En vértices de polígono: Tab navega entre vértices, Flechas mueven el vértice activo."
+                aria-label="Plano interactivo del restaurante. En modo edición: Tab navega entre elementos, Flechas mueven (Mayús = 1 px), Alt+Flechas redimensiona, R rota izquierda (Mayús = 1°), E rota derecha (Mayús = 1°), Supr elimina, Ctrl+Z deshace, Ctrl+Y rehace. En vértices: Tab navega, Flechas mueven el vértice activo."
                 :class="(editMode && currentView !== 'general' && !isPanning) ? 'cursor-grab' : ''"
                 @mousedown.self="startPan($event)"
                 @click="editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null; selectedId = null;"
@@ -548,7 +548,7 @@
                             background-color:${zone.vertices && zone.vertices.length >= 3 ? 'transparent' : zone.color+'22'};
                             border:${zone.vertices && zone.vertices.length >= 3 ? 'none' : '2px solid '+zone.color};
                             z-index:${hoveredId === zone.id || selectedId === zone.id || editingZoneId === zone.id ? 8 : 2};
-                            pointer-events:${zone.vertices && zone.vertices.length >= 3 ? 'none' : 'all'};
+                            pointer-events:all;
                             transform:rotate(${zone.rotation ?? 0}deg);
                             transform-origin:center;
                         `"
@@ -591,17 +591,23 @@
                                              :aria-label="`Vértice ${idx + 1} de la zona`">
                                         </div>
                                         <div x-show="zone.vertices.length > 3"
-                                             class="absolute -top-2 -right-2 w-3.5 h-3.5 rounded-full bg-red-500 text-white flex items-center justify-center leading-none pointer-events-auto cursor-pointer shadow text-[9px] font-bold select-none"
+                                             class="absolute -top-2 -right-2 w-3.5 h-3.5 rounded-full bg-red-500 text-white flex items-center justify-center leading-none pointer-events-auto cursor-pointer shadow text-[9px] font-bold select-none focus:outline-none focus:ring-2 focus:ring-red-400"
                                              style="z-index:11;"
+                                             role="button"
+                                             tabindex="0"
                                              @click.stop.prevent="removeZoneVertex(zone, idx)"
+                                             @keydown.enter.space.stop.prevent="removeZoneVertex(zone, idx)"
                                              :aria-label="`Eliminar vértice ${idx + 1} de la zona`">×</div>
                                     </div>
                                 </template>
                                 {{-- Botones "+" en el punto medio de cada arista para añadir vértices --}}
                                 <template x-for="(v, idx) in zone.vertices" :key="`e${idx}`">
-                                    <div class="absolute w-4 h-4 rounded-full bg-white border pointer-events-auto cursor-pointer z-9 shadow flex items-center justify-center text-xs font-bold leading-none select-none"
+                                    <div class="absolute w-4 h-4 rounded-full bg-white border pointer-events-auto cursor-pointer z-9 shadow flex items-center justify-center text-xs font-bold leading-none select-none focus:outline-none focus:ring-2"
                                          :style="`left:${((v.x + zone.vertices[(idx+1)%zone.vertices.length].x)/2)-8}px; top:${((v.y + zone.vertices[(idx+1)%zone.vertices.length].y)/2)-8}px; border-color:${zone.color}; color:${zone.color};`"
+                                         role="button"
+                                         tabindex="0"
                                          @click.stop.prevent="addZoneVertex(zone, idx)"
+                                         @keydown.enter.space.stop.prevent="addZoneVertex(zone, idx)"
                                          :aria-label="`Añadir vértice en arista ${idx + 1}`">+</div>
                                 </template>
                             </div>
@@ -752,17 +758,23 @@
                                                  :aria-label="`Vértice ${idx + 1} de la barra`">
                                             </div>
                                             <div x-show="bar.vertices.length > 3"
-                                                 class="absolute -top-2 -right-2 w-3.5 h-3.5 rounded-full bg-red-500 text-white flex items-center justify-center leading-none pointer-events-auto cursor-pointer shadow text-[9px] font-bold select-none"
+                                                 class="absolute -top-2 -right-2 w-3.5 h-3.5 rounded-full bg-red-500 text-white flex items-center justify-center leading-none pointer-events-auto cursor-pointer shadow text-[9px] font-bold select-none focus:outline-none focus:ring-2 focus:ring-red-400"
                                                  style="z-index:11;"
+                                                 role="button"
+                                                 tabindex="0"
                                                  @click.stop.prevent="removeBarVertex(bar, idx)"
+                                                 @keydown.enter.space.stop.prevent="removeBarVertex(bar, idx)"
                                                  :aria-label="`Eliminar vértice ${idx + 1} de la barra`">×</div>
                                         </div>
                                     </template>
                                     {{-- Botones "+" en el punto medio de cada arista para añadir vértices --}}
                                     <template x-for="(v, idx) in bar.vertices" :key="`e${idx}`">
-                                        <div class="absolute w-4 h-4 rounded-full bg-white border border-amber-500 pointer-events-auto cursor-pointer z-9 shadow flex items-center justify-center text-xs font-bold leading-none select-none text-amber-600"
+                                        <div class="absolute w-4 h-4 rounded-full bg-white border border-amber-500 pointer-events-auto cursor-pointer z-9 shadow flex items-center justify-center text-xs font-bold leading-none select-none text-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-400"
                                              :style="`left:${((v.x + bar.vertices[(idx+1)%bar.vertices.length].x)/2)-8}px; top:${((v.y + bar.vertices[(idx+1)%bar.vertices.length].y)/2)-8}px;`"
+                                             role="button"
+                                             tabindex="0"
                                              @click.stop.prevent="addBarVertex(bar, idx)"
+                                             @keydown.enter.space.stop.prevent="addBarVertex(bar, idx)"
                                              :aria-label="`Añadir vértice en arista ${idx + 1}`">+</div>
                                     </template>
                                 </div>
@@ -3750,8 +3762,19 @@ document.addEventListener('alpine:init', () => {
             if (!item) return;
             this.pushUndo();
             const { width: cw, height: ch } = this.sizeForItem(item);
+            const oldW = item.width;
+            const oldH = item.height;
             item.width  = Math.max(40, Math.min(item.width  + dw, cw - item.position_x));
             item.height = Math.max(40, Math.min(item.height + dh, ch - item.position_y));
+
+            // Escalar vértices del polígono proporcionalmente para evitar
+            // que el div y el SVG queden desincronizados visualmente.
+            if (item.vertices && item.vertices.length >= 3 && oldW > 0 && oldH > 0) {
+                const scaleX = item.width  / oldW;
+                const scaleY = item.height / oldH;
+                item.vertices.forEach(v => { v.x = Math.round(v.x * scaleX); v.y = Math.round(v.y * scaleY); });
+            }
+
             if (this.zones.some(z => z.id === item.id)) {
                 try {
                     await fetch(`/zonas/${item.id}`, {
@@ -3760,8 +3783,14 @@ document.addEventListener('alpine:init', () => {
                         body: JSON.stringify({ position_x: item.position_x, position_y: item.position_y, width: item.width, height: item.height }),
                     });
                 } catch { this.showToast('Error al guardar dimensiones.', true); }
+                if (item.vertices && item.vertices.length >= 3) {
+                    await this.persistZoneVertices(item.id, item.vertices);
+                }
             } else {
                 await this.persistPosition(item.id, item.position_x, item.position_y, item.width, item.height);
+                if (item.vertices && item.vertices.length >= 3) {
+                    await this.persistBarVertices(item.id, item.vertices);
+                }
             }
         },
 
@@ -3838,14 +3867,14 @@ document.addEventListener('alpine:init', () => {
             }
 
             switch (event.key) {
-                case 'ArrowUp':    this.kbMove(0, -step);  break;
-                case 'ArrowDown':  this.kbMove(0,  step);  break;
-                case 'ArrowLeft':  this.kbMove(-step, 0);  break;
-                case 'ArrowRight': this.kbMove( step, 0);  break;
-                case '[':          event.preventDefault(); this.kbRotate(-rStep); break;
-                case ']':          event.preventDefault(); this.kbRotate( rStep); break;
+                case 'ArrowUp':    this.kbMove(0, -step);                          break;
+                case 'ArrowDown':  this.kbMove(0,  step);                          break;
+                case 'ArrowLeft':  this.kbMove(-step, 0);                          break;
+                case 'ArrowRight': this.kbMove( step, 0);                          break;
+                case 'r': event.preventDefault(); this.kbRotate(event.shiftKey ? -1 : -5); break;
+                case 'e': event.preventDefault(); this.kbRotate(event.shiftKey ?  1 :  5); break;
                 case 'Delete':
-                case 'Backspace':  event.preventDefault(); this.kbDelete();       break;
+                case 'Backspace':  event.preventDefault(); this.kbDelete();         break;
                 case 'Escape':
                     this.selectedId       = null;
                     this.focusedVertexIdx = null;
