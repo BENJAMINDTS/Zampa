@@ -197,16 +197,24 @@ window.dailyMenuBanner = function (hash) {
 
         /* ── Navegación del stepper ─────────────────────────────────── */
         siguiente() {
-            this.intentoAvanzar = true;
-            if (!this.puedeAvanzar) return;
-            this.intentoAvanzar = false;
+            const paso = this.pasoActualObj;
+            if (!paso) return;
+
+            if (paso.tipo === 'seleccion') {
+                this.intentoAvanzar = true;
+                if (paso.required && !this.selections[paso.sectionId]) return;
+                this.intentoAvanzar = false;
+            }
+
             this.pasoActual = Math.min(this.pasoActual + 1, this.pasos.length - 1);
-            this.$nextTick(() => {
-                const el = this.$el.querySelector(
+
+            setTimeout(() => {
+                const stepper = document.getElementById('daily-menu-stepper');
+                const el = stepper && stepper.querySelector(
                     '[data-step-content] button:not([disabled]), [data-step-content] input:not([disabled])'
                 );
                 if (el) el.focus();
-            });
+            }, 50);
         },
 
         anterior() {
