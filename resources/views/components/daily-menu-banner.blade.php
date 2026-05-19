@@ -283,10 +283,15 @@ window.dailyMenuBanner = function (hash) {
                             product_id: sel.product_id,
                             quantity:   1,
                         })),
-                    timing_overrides: Object.entries(this.timings).map(([round, delay]) => ({
-                        round:         parseInt(round),
-                        delay_minutes: delay,
-                    })),
+                    timing_overrides: (() => {
+                        const firstRound = this.timingRules.length > 0 ? this.timingRules[0].round : null;
+                        return Object.entries(this.timings)
+                            .filter(([round]) => parseInt(round) !== firstRound)
+                            .map(([round, delay]) => ({
+                                round:         parseInt(round),
+                                delay_minutes: delay,
+                            }));
+                    })(),
                 };
                 const res = await fetch(`/api/v1/menu/${hash}/daily-menu/order`, {
                     method:  'POST',
