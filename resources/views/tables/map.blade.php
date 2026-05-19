@@ -321,15 +321,14 @@ kbd {
             {{-- Botón de ayuda de atajos de teclado --}}
             <button type="button"
                     @click="showHelp = true"
-                    class="p-1.5 rounded-lg text-gray-500 dark:text-gray-400
-                           hover:bg-gray-100 dark:hover:bg-gray-700
-                           hover:text-gray-700 dark:hover:text-gray-200 transition-colors
-                           focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                    aria-label="Ver atajos de teclado (?)"
+                    class="flex items-center justify-center w-7 h-7 rounded-full border-2
+                           border-gray-300 dark:border-gray-500
+                           text-gray-500 dark:text-gray-400 text-sm font-bold
+                           hover:border-indigo-500 hover:text-indigo-600 dark:hover:border-indigo-400 dark:hover:text-indigo-400
+                           transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                    aria-label="Ver atajos de teclado"
                     title="Atajos de teclado (?)">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 7.5l3 2.25-3 2.25m4.5 0h3m-9 8.25h13.5A2.25 2.25 0 0021 18V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 6v12a2.25 2.25 0 002.25 2.25z"/>
-                </svg>
+                ?
             </button>
 
             <a href="{{ route('tables.index') }}"
