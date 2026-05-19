@@ -85,33 +85,50 @@
                 </form>
 
                 {{-- Configuración de la sección existente --}}
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4 mt-4">
-                  <div class="flex items-center gap-2">
-                    <input type="checkbox" id="is_required_{{ $section->id }}"
-                           class="h-4 w-4 text-orange-500 border-gray-300 rounded"
-                           {{ $section->is_required ? 'checked' : '' }} disabled>
-                    <label for="is_required_{{ $section->id }}" class="text-sm text-gray-600 dark:text-gray-400">
-                      Obligatoria
-                    </label>
+                <form action="{{ route('daily-menus.sections.update', [$dailyMenu, $section]) }}" method="POST"
+                      class="mt-4 mb-4">
+                  @csrf
+                  @method('PATCH')
+                  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-3">
+                    <div class="flex items-center gap-2">
+                      <input type="checkbox" id="is_required_{{ $section->id }}" name="is_required"
+                             value="1"
+                             class="h-4 w-4 text-orange-500 border-gray-300 rounded"
+                             {{ $section->is_required ? 'checked' : '' }}>
+                      <label for="is_required_{{ $section->id }}" class="text-sm text-gray-600 dark:text-gray-400">
+                        Obligatoria
+                      </label>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <input type="checkbox" id="is_free_{{ $section->id }}" name="is_free"
+                             value="1"
+                             class="h-4 w-4 text-orange-500 border-gray-300 rounded"
+                             {{ $section->is_free ? 'checked' : '' }}>
+                      <label for="is_free_{{ $section->id }}" class="text-sm text-gray-600 dark:text-gray-400">
+                        Incluida en precio
+                      </label>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <label for="max_qty_{{ $section->id }}" class="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                        Máx. elecciones:
+                      </label>
+                      <input type="number" id="max_qty_{{ $section->id }}" name="max_quantity"
+                             value="{{ $section->max_quantity }}" min="1"
+                             aria-required="true"
+                             class="w-16 border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-sm
+                                    dark:bg-gray-700 dark:text-gray-100">
+                    </div>
                   </div>
-                  <div class="flex items-center gap-2">
-                    <input type="checkbox" id="is_free_{{ $section->id }}"
-                           class="h-4 w-4 text-orange-500 border-gray-300 rounded"
-                           {{ $section->is_free ? 'checked' : '' }} disabled>
-                    <label for="is_free_{{ $section->id }}" class="text-sm text-gray-600 dark:text-gray-400">
-                      Incluida en precio
-                    </label>
+                  <div class="flex justify-start">
+                    <button type="submit"
+                            aria-label="Guardar configuración de {{ $sectionLabels[$type] }}"
+                            class="text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600
+                                   text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600
+                                   py-1 px-3 rounded">
+                      Guardar configuración
+                    </button>
                   </div>
-                  <div class="flex items-center gap-2">
-                    <label for="max_qty_{{ $section->id }}" class="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                      Máx. elecciones:
-                    </label>
-                    <input type="number" id="max_qty_{{ $section->id }}" value="{{ $section->max_quantity }}"
-                           min="1" disabled
-                           class="w-16 border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-sm
-                                  dark:bg-gray-700 dark:text-gray-100 bg-gray-50">
-                  </div>
-                </div>
+                </form>
 
                 @if($section->is_free && $type === 'bread')
                   <p class="text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded px-3 py-2 mb-3">
