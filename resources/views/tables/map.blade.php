@@ -12,6 +12,28 @@
 .zampa-selected {
     animation: zampa-selected-pulse 1.4s ease-in-out infinite;
 }
+kbd {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.5rem;
+    padding: 0.1rem 0.35rem;
+    border-radius: 0.25rem;
+    border: 1px solid #d1d5db;
+    background: #f9fafb;
+    color: #374151;
+    font-family: ui-monospace, monospace;
+    font-size: 0.72rem;
+    font-weight: 600;
+    line-height: 1.4;
+    box-shadow: 0 1px 0 1px #d1d5db;
+}
+.dark kbd {
+    border-color: #4b5563;
+    background: #1f2937;
+    color: #e5e7eb;
+    box-shadow: 0 1px 0 1px #4b5563;
+}
 </style>
 
 <x-app-layout>
@@ -295,6 +317,20 @@
                     </button>
                 </div>
             </template>
+
+            {{-- Botón de ayuda de atajos de teclado --}}
+            <button type="button"
+                    @click="showHelp = true"
+                    class="p-1.5 rounded-lg text-gray-500 dark:text-gray-400
+                           hover:bg-gray-100 dark:hover:bg-gray-700
+                           hover:text-gray-700 dark:hover:text-gray-200 transition-colors
+                           focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                    aria-label="Ver atajos de teclado (?)"
+                    title="Atajos de teclado (?)">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 7.5l3 2.25-3 2.25m4.5 0h3m-9 8.25h13.5A2.25 2.25 0 0021 18V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 6v12a2.25 2.25 0 002.25 2.25z"/>
+                </svg>
+            </button>
 
             <a href="{{ route('tables.index') }}"
                class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-white
@@ -1770,6 +1806,7 @@ document.addEventListener('alpine:init', () => {
         redoStack:             [],
         isPanning:             false,
         focusedVertexIdx:      null,
+        showHelp:              false,
 
         init() {
             this.$nextTick(() => {
@@ -3827,6 +3864,12 @@ document.addEventListener('alpine:init', () => {
         handleKb(event) {
             if (this._isTyping()) return;
 
+            if (event.key === '?') {
+                event.preventDefault();
+                this.showHelp = !this.showHelp;
+                return;
+            }
+
             const isArrow = event.key === 'ArrowUp' || event.key === 'ArrowDown'
                          || event.key === 'ArrowLeft' || event.key === 'ArrowRight';
 
@@ -3885,4 +3928,188 @@ document.addEventListener('alpine:init', () => {
     }));
 });
 </script>
+
+{{-- ══════════════════════════════════════════════════════
+     MODAL — Atajos de teclado
+══════════════════════════════════════════════════════ --}}
+<div x-show="showHelp"
+     x-transition:enter="transition ease-out duration-200"
+     x-transition:enter-start="opacity-0"
+     x-transition:enter-end="opacity-100"
+     x-transition:leave="transition ease-in duration-150"
+     x-transition:leave-start="opacity-100"
+     x-transition:leave-end="opacity-0"
+     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="help-modal-title"
+     @click.self="showHelp = false"
+     @keydown.escape.window="showHelp = false"
+     x-effect="if (showHelp) $nextTick(() => $refs.helpClose?.focus())">
+
+    <div class="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto
+                bg-white dark:bg-gray-800 rounded-2xl shadow-2xl">
+
+        {{-- Cabecera --}}
+        <div class="sticky top-0 flex items-center justify-between
+                    px-6 py-4 border-b border-gray-200 dark:border-gray-700
+                    bg-white dark:bg-gray-800 rounded-t-2xl z-10">
+            <h2 id="help-modal-title"
+                class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 7.5l3 2.25-3 2.25m4.5 0h3m-9 8.25h13.5A2.25 2.25 0 0021 18V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 6v12a2.25 2.25 0 002.25 2.25z"/>
+                </svg>
+                Atajos de teclado
+            </h2>
+            <button type="button"
+                    x-ref="helpClose"
+                    @click="showHelp = false"
+                    class="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200
+                           hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors
+                           focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                    aria-label="Cerrar panel de atajos">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+
+        {{-- Contenido --}}
+        <div class="px-6 py-5 space-y-6">
+
+            {{-- Navegar --}}
+            <section>
+                <h3 class="text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-3">Navegar</h3>
+                <dl class="space-y-2.5">
+                    <div class="flex items-center justify-between gap-4">
+                        <dt class="text-sm text-gray-700 dark:text-gray-300">Seleccionar siguiente / anterior elemento</dt>
+                        <dd class="flex items-center gap-1 shrink-0"><kbd>Tab</kbd> / <kbd>Shift</kbd>+<kbd>Tab</kbd></dd>
+                    </div>
+                    <div class="flex items-center justify-between gap-4">
+                        <dt class="text-sm text-gray-700 dark:text-gray-300">Abrir panel de edición</dt>
+                        <dd class="flex items-center gap-1 shrink-0"><kbd>Enter</kbd> / <kbd>Space</kbd></dd>
+                    </div>
+                    <div class="flex items-center justify-between gap-4">
+                        <dt class="text-sm text-gray-700 dark:text-gray-300">Cerrar panel / Deseleccionar todo</dt>
+                        <dd class="flex items-center gap-1 shrink-0"><kbd>Esc</kbd></dd>
+                    </div>
+                </dl>
+            </section>
+
+            <hr class="border-gray-100 dark:border-gray-700">
+
+            {{-- Mover --}}
+            <section>
+                <h3 class="text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-3">Mover elemento</h3>
+                <dl class="space-y-2.5">
+                    <div class="flex items-center justify-between gap-4">
+                        <dt class="text-sm text-gray-700 dark:text-gray-300">Mover 10 px</dt>
+                        <dd class="flex items-center gap-1 shrink-0"><kbd>↑</kbd> <kbd>↓</kbd> <kbd>←</kbd> <kbd>→</kbd></dd>
+                    </div>
+                    <div class="flex items-center justify-between gap-4">
+                        <dt class="text-sm text-gray-700 dark:text-gray-300">Mover 1 px (precisión)</dt>
+                        <dd class="flex items-center gap-1 shrink-0"><kbd>Shift</kbd>+<kbd>↑↓←→</kbd></dd>
+                    </div>
+                </dl>
+            </section>
+
+            <hr class="border-gray-100 dark:border-gray-700">
+
+            {{-- Rotar --}}
+            <section>
+                <h3 class="text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-3">Rotar elemento</h3>
+                <dl class="space-y-2.5">
+                    <div class="flex items-center justify-between gap-4">
+                        <dt class="text-sm text-gray-700 dark:text-gray-300">Girar sentido horario 5°</dt>
+                        <dd class="flex items-center gap-1 shrink-0"><kbd>E</kbd></dd>
+                    </div>
+                    <div class="flex items-center justify-between gap-4">
+                        <dt class="text-sm text-gray-700 dark:text-gray-300">Girar sentido horario 1°</dt>
+                        <dd class="flex items-center gap-1 shrink-0"><kbd>Shift</kbd>+<kbd>E</kbd></dd>
+                    </div>
+                    <div class="flex items-center justify-between gap-4">
+                        <dt class="text-sm text-gray-700 dark:text-gray-300">Girar sentido antihorario 5°</dt>
+                        <dd class="flex items-center gap-1 shrink-0"><kbd>R</kbd></dd>
+                    </div>
+                    <div class="flex items-center justify-between gap-4">
+                        <dt class="text-sm text-gray-700 dark:text-gray-300">Girar sentido antihorario 1°</dt>
+                        <dd class="flex items-center gap-1 shrink-0"><kbd>Shift</kbd>+<kbd>R</kbd></dd>
+                    </div>
+                </dl>
+            </section>
+
+            <hr class="border-gray-100 dark:border-gray-700">
+
+            {{-- Redimensionar --}}
+            <section>
+                <h3 class="text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-3">Redimensionar elemento</h3>
+                <dl class="space-y-2.5">
+                    <div class="flex items-center justify-between gap-4">
+                        <dt class="text-sm text-gray-700 dark:text-gray-300">Ampliar / reducir 10 px</dt>
+                        <dd class="flex items-center gap-1 shrink-0"><kbd>Alt</kbd>+<kbd>↑↓←→</kbd></dd>
+                    </div>
+                    <div class="flex items-center justify-between gap-4">
+                        <dt class="text-sm text-gray-700 dark:text-gray-300">Ampliar / reducir 1 px</dt>
+                        <dd class="flex items-center gap-1 shrink-0"><kbd>Shift</kbd>+<kbd>Alt</kbd>+<kbd>↑↓←→</kbd></dd>
+                    </div>
+                </dl>
+            </section>
+
+            <hr class="border-gray-100 dark:border-gray-700">
+
+            {{-- Vértices --}}
+            <section>
+                <h3 class="text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-3">Editar vértices de zona / barra</h3>
+                <dl class="space-y-2.5">
+                    <div class="flex items-center justify-between gap-4">
+                        <dt class="text-sm text-gray-700 dark:text-gray-300">Añadir vértice — foco en <kbd>+</kbd></dt>
+                        <dd class="flex items-center gap-1 shrink-0"><kbd>Enter</kbd> / <kbd>Space</kbd></dd>
+                    </div>
+                    <div class="flex items-center justify-between gap-4">
+                        <dt class="text-sm text-gray-700 dark:text-gray-300">Eliminar vértice — foco en <kbd>×</kbd></dt>
+                        <dd class="flex items-center gap-1 shrink-0"><kbd>Enter</kbd> / <kbd>Space</kbd></dd>
+                    </div>
+                    <div class="flex items-center justify-between gap-4">
+                        <dt class="text-sm text-gray-700 dark:text-gray-300">Mover vértice 5 px (foco en <kbd>×</kbd>)</dt>
+                        <dd class="flex items-center gap-1 shrink-0"><kbd>↑</kbd> <kbd>↓</kbd> <kbd>←</kbd> <kbd>→</kbd></dd>
+                    </div>
+                    <div class="flex items-center justify-between gap-4">
+                        <dt class="text-sm text-gray-700 dark:text-gray-300">Mover vértice 1 px</dt>
+                        <dd class="flex items-center gap-1 shrink-0"><kbd>Shift</kbd>+<kbd>↑↓←→</kbd></dd>
+                    </div>
+                    <div class="flex items-center justify-between gap-4">
+                        <dt class="text-sm text-gray-700 dark:text-gray-300">Salir del modo vértice</dt>
+                        <dd class="flex items-center gap-1 shrink-0"><kbd>Esc</kbd></dd>
+                    </div>
+                </dl>
+            </section>
+
+            <hr class="border-gray-100 dark:border-gray-700">
+
+            {{-- General --}}
+            <section>
+                <h3 class="text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-3">General</h3>
+                <dl class="space-y-2.5">
+                    <div class="flex items-center justify-between gap-4">
+                        <dt class="text-sm text-gray-700 dark:text-gray-300">Eliminar elemento seleccionado</dt>
+                        <dd class="flex items-center gap-1 shrink-0"><kbd>Delete</kbd> / <kbd>Backspace</kbd></dd>
+                    </div>
+                    <div class="flex items-center justify-between gap-4">
+                        <dt class="text-sm text-gray-700 dark:text-gray-300">Deshacer</dt>
+                        <dd class="flex items-center gap-1 shrink-0"><kbd>Ctrl</kbd>+<kbd>Z</kbd></dd>
+                    </div>
+                    <div class="flex items-center justify-between gap-4">
+                        <dt class="text-sm text-gray-700 dark:text-gray-300">Rehacer</dt>
+                        <dd class="flex items-center gap-1 shrink-0"><kbd>Ctrl</kbd>+<kbd>Y</kbd></dd>
+                    </div>
+                    <div class="flex items-center justify-between gap-4">
+                        <dt class="text-sm text-gray-700 dark:text-gray-300">Abrir / cerrar esta ayuda</dt>
+                        <dd class="flex items-center gap-1 shrink-0"><kbd>?</kbd></dd>
+                    </div>
+                </dl>
+            </section>
+
+        </div>
+    </div>
+</div>
 </x-app-layout>
