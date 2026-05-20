@@ -6,6 +6,7 @@ use App\Http\Controllers\StaffController;
 use App\Http\Controllers\BarPanelController;
 use App\Http\Controllers\ManagerRevenueController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\SplitPaymentConfigController;
 use App\Http\Controllers\TapasController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\KitchenController;
@@ -51,6 +52,9 @@ Route::middleware(['auth', 'business.active'])->group(function () {
     Route::middleware('role:admin')->group(function () {
         Route::get('/tapas/config', [TapasController::class, 'edit'])->name('tapas.edit');
         Route::put('/tapas/config', [TapasController::class, 'update'])->name('tapas.update');
+
+        Route::get('/split-payment/config', [SplitPaymentConfigController::class, 'edit'])->name('split-payment.edit');
+        Route::put('/split-payment/config', [SplitPaymentConfigController::class, 'update'])->name('split-payment.update');
 
         Route::get('/manager/income', [ManagerRevenueController::class, 'index'])->name('manager.income');
 
