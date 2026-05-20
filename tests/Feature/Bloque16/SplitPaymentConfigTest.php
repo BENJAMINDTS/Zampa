@@ -67,7 +67,8 @@ it('admin can disable split payment', function () {
          ->assertRedirect(route('split-payment.edit'));
 
     $fresh = $this->admin->fresh();
-    expect($fresh->split_payment_enabled)->toBeFalse();
+    expect($fresh->split_payment_enabled)->toBeFalse()
+        ->and($fresh->split_payment_max_parts)->toBeNull();
 });
 
 it('admin can set max parts limit', function () {

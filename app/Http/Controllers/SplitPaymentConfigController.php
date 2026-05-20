@@ -40,12 +40,12 @@ class SplitPaymentConfigController extends Controller
      */
     public function update(Request $request): RedirectResponse
     {
-        $enabled = $request->boolean('split_payment_enabled');
-
-        $request->validate([
+        $validated = $request->validate([
             'split_payment_enabled'   => ['sometimes', 'boolean'],
             'split_payment_max_parts' => ['nullable', 'integer', 'min:2', 'max:20'],
         ]);
+
+        $enabled = (bool) ($validated['split_payment_enabled'] ?? false);
 
         Auth::user()->update([
             'split_payment_enabled'   => $enabled,
