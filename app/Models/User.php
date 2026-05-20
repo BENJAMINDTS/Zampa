@@ -38,6 +38,8 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property int         $floor_height   Alto del canvas del plano (px)
  * @property int         $floor_count    Número de plantas activas del local (1–5)
  * @property bool        $floors_enabled Si el sistema de plantas está activo
+ * @property bool        $split_payment_enabled   Si el cobro partido está activo para este restaurante
+ * @property int|null    $split_payment_max_parts Máximo de partes en que se puede dividir la cuenta (null = sin límite)
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property \Illuminate\Support\Carbon|null $deleted_at
@@ -72,6 +74,8 @@ class User extends Authenticatable
         'floor_count',
         'floors_enabled',
         'floor_canvas_sizes',
+        'split_payment_enabled',
+        'split_payment_max_parts',
     ];
 
     /**
@@ -97,9 +101,11 @@ class User extends Authenticatable
             'active'            => 'boolean',
             'is_waiter'         => 'boolean',
             'is_kitchen'        => 'boolean',
-            'floor_count'        => 'integer',
-            'floors_enabled'     => 'boolean',
-            'floor_canvas_sizes' => 'array',
+            'floor_count'             => 'integer',
+            'floors_enabled'          => 'boolean',
+            'floor_canvas_sizes'      => 'array',
+            'split_payment_enabled'   => 'boolean',
+            'split_payment_max_parts' => 'integer',
         ];
     }
 
@@ -305,6 +311,16 @@ class User extends Authenticatable
     public function ownerUserId(): int
     {
         return $this->admin_id ?? $this->id;
+    }
+
+    /**
+     * Indica si el cobro partido está habilitado para este restaurante.
+     *
+     * @return bool
+     */
+    public function isSplitPaymentEnabled(): bool
+    {
+        return (bool) $this->split_payment_enabled;
     }
 
     /**
