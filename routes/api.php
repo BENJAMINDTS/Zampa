@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\BillRequestController;
 use App\Http\Controllers\Api\CardPaymentController;
 use App\Http\Controllers\Api\OrderController;
+use App\Http\Controllers\Api\SplitPaymentController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\DailyMenuPublicController;
 use Illuminate\Support\Facades\Route;
@@ -23,6 +24,20 @@ Route::post('/v1/payment/{hash}/intent',  [CardPaymentController::class, 'intent
 Route::post('/v1/payment/{hash}/confirm', [CardPaymentController::class, 'confirm'])
     ->middleware('throttle:10,1')
     ->name('api.payment.confirm');
+
+// Cobro partido — rutas públicas (sin autenticación, contexto por table_hash)
+Route::get('/v1/payment/{hash}/split/items',       [SplitPaymentController::class, 'claimedItems'])
+    ->middleware('throttle:30,1')
+    ->name('api.split.items');
+Route::post('/v1/payment/{hash}/split/pay-items',  [SplitPaymentController::class, 'payItems'])
+    ->middleware('throttle:10,1')
+    ->name('api.split.pay-items');
+Route::post('/v1/payment/{hash}/split/pay-eq',     [SplitPaymentController::class, 'payEquitative'])
+    ->middleware('throttle:10,1')
+    ->name('api.split.pay-eq');
+Route::post('/v1/payment/{hash}/split/confirm',    [SplitPaymentController::class, 'confirm'])
+    ->middleware('throttle:10,1')
+    ->name('api.split.confirm');
 
 // Chatbot IA — rutas públicas (sin autenticación, contexto por table_hash)
 Route::get('/v1/menu/{tableHash}',             [ChatController::class, 'menu'])->middleware('throttle:60,1')->name('api.chat.menu');
