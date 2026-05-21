@@ -53,9 +53,9 @@ Route::middleware(['auth', 'business.active'])->group(function () {
         Route::get('/negocio/configuracion', [TapasController::class, 'edit'])->name('negocio.config.edit');
         Route::put('/negocio/configuracion', [TapasController::class, 'update'])->name('negocio.config.update');
 
-        // Rutas antiguas redirigidas para no romper marcadores o enlaces externos
+        // Rutas antiguas: GET redirige, PUT sigue llamando al controlador por compat
         Route::get('/tapas/config', fn () => redirect()->route('negocio.config.edit'))->name('tapas.edit');
-        Route::put('/tapas/config', fn () => redirect()->route('negocio.config.edit'))->name('tapas.update');
+        Route::put('/tapas/config', [TapasController::class, 'update'])->name('tapas.update');
 
         Route::get('/split-payment/config', [SplitPaymentConfigController::class, 'edit'])->name('split-payment.edit');
         Route::put('/split-payment/config', [SplitPaymentConfigController::class, 'update'])->name('split-payment.update');
