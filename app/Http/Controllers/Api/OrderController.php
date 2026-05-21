@@ -42,7 +42,21 @@ class OrderController extends Controller
         ]);
 
         $table      = Table::where('unique_hash', $validated['table_hash'])->firstOrFail();
-        $tapaConfig = $table->user->tapaConfig?->load('schedules');
+        $tapaConfig = $table->user->tapaConfig?->load(['kitchenSchedules', 'businessSchedules']);
+
+        if ($tapaConfig && ! $tapaConfig->isBusinessOpen()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'El negocio está cerrado. No se pueden realizar pedidos en este momento.',
+            ], 422);
+        }
+
+        if ($tapaConfig && ! $tapaConfig->isOrderingAllowed()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'El tiempo de pedidos ha finalizado. Solo puedes solicitar la cuenta.',
+            ], 422);
+        }
 
         $order = DB::transaction(function () use ($validated, $table, $tapaConfig) {
             $order = Order::create([
