@@ -50,8 +50,12 @@ Route::middleware(['auth', 'business.active'])->group(function () {
 
     // Rutas exclusivas del gerente (admin)
     Route::middleware('role:admin')->group(function () {
-        Route::get('/tapas/config', [TapasController::class, 'edit'])->name('tapas.edit');
-        Route::put('/tapas/config', [TapasController::class, 'update'])->name('tapas.update');
+        Route::get('/negocio/configuracion', [TapasController::class, 'edit'])->name('negocio.config.edit');
+        Route::put('/negocio/configuracion', [TapasController::class, 'update'])->name('negocio.config.update');
+
+        // Rutas antiguas redirigidas para no romper marcadores o enlaces externos
+        Route::get('/tapas/config', fn () => redirect()->route('negocio.config.edit'))->name('tapas.edit');
+        Route::put('/tapas/config', fn () => redirect()->route('negocio.config.edit'))->name('tapas.update');
 
         Route::get('/split-payment/config', [SplitPaymentConfigController::class, 'edit'])->name('split-payment.edit');
         Route::put('/split-payment/config', [SplitPaymentConfigController::class, 'update'])->name('split-payment.update');
