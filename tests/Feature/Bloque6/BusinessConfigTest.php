@@ -50,6 +50,7 @@ it('creates default TapaConfig with ordering_cutoff_minutes on first visit', fun
 it('saves a single business schedule slot correctly', function () {
     $this->actingAs($this->user)
          ->put(route('negocio.config.update'), [
+             'tapas_free'         => '1',
              'max_tapa_variants'  => 3,
              'business_schedules' => [
                  ['opens_at' => '09:00', 'closes_at' => '14:00'],
@@ -66,6 +67,7 @@ it('saves a single business schedule slot correctly', function () {
 it('saves multiple business schedule slots correctly', function () {
     $this->actingAs($this->user)
          ->put(route('negocio.config.update'), [
+             'tapas_free'         => '1',
              'max_tapa_variants'  => 3,
              'business_schedules' => [
                  ['opens_at' => '07:00', 'closes_at' => '12:00'],
@@ -174,6 +176,7 @@ it('replaces existing business schedules on update', function () {
 
     $this->actingAs($this->user)
          ->put(route('negocio.config.update'), [
+             'tapas_free'         => '1',
              'max_tapa_variants'  => 3,
              'business_schedules' => [
                  ['opens_at' => '10:00', 'closes_at' => '15:00'],
@@ -188,6 +191,7 @@ it('replaces existing business schedules on update', function () {
 it('business and kitchen schedules are stored independently', function () {
     $this->actingAs($this->user)
          ->put(route('negocio.config.update'), [
+             'tapas_free'         => '1',
              'max_tapa_variants'  => 3,
              'business_schedules' => [
                  ['opens_at' => '09:00', 'closes_at' => '23:00'],
@@ -208,6 +212,7 @@ it('business and kitchen schedules are stored independently', function () {
 it('saves ordering_cutoff_minutes correctly', function () {
     $this->actingAs($this->user)
          ->put(route('negocio.config.update'), [
+             'tapas_free'              => '1',
              'max_tapa_variants'       => 3,
              'ordering_cutoff_minutes' => 15,
          ]);
