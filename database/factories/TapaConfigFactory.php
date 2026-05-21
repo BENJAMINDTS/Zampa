@@ -24,8 +24,9 @@ class TapaConfigFactory extends Factory
             'price_mode'         => 'fixed',
             'max_tapa_variants'  => 3,
             'tapa_price'         => null,
-            'extra_tapa_enabled' => false,
-            'extra_tapa_price'   => null,
+            'extra_tapa_enabled'      => false,
+            'extra_tapa_price'        => null,
+            'ordering_cutoff_minutes' => 0,
         ];
     }
 }
