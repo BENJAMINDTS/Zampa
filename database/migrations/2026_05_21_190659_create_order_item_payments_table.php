@@ -13,7 +13,8 @@ return new class extends Migration
             $table->foreignId('order_id')->constrained()->cascadeOnDelete();
             $table->foreignId('order_item_id')->nullable()->constrained()->nullOnDelete();
             $table->decimal('amount', 10, 2);
-            $table->string('stripe_payment_intent_id')->unique();
+            $table->string('stripe_payment_intent_id');
+            $table->index('stripe_payment_intent_id');
             $table->enum('status', ['pending', 'paid', 'failed'])->default('pending');
             $table->enum('mode', ['items', 'equitative']);
             $table->unsignedSmallInteger('parts_total')->nullable();
