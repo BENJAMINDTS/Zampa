@@ -116,11 +116,29 @@ class MenuController extends Controller
 
         $stripePublicKey = config('services.stripe.key');
 
+        $splitPaymentEnabled  = $table->user->isSplitPaymentEnabled();
+        $splitPaymentMaxParts = $table->user->split_payment_max_parts;
+
+        $activeOrderItemsForAlpine = $activeOrder
+            ? $activeOrder->items()->with('product:id,name')->get()
+                ->map(fn (OrderItem $item) => [
+                    'id'       => $item->id,
+                    'name'     => $item->product?->name ?? 'Producto',
+                    'quantity' => $item->quantity,
+                    'price'    => (float) $item->price,
+                    'total'    => round((float) $item->price * $item->quantity, 2),
+                    'claimed'  => false,
+                ])
+                ->values()
+                ->toArray()
+            : [];
+
         return view('menu.show', compact(
             'table', 'categories', 'allergens',
             'tapaConfig', 'barItemsCount', 'kitchenOpen', 'nextOpeningTime',
             'tapaVariantsUsed', 'tapaProducts', 'shouldSuggest',
-            'hasActiveOrder', 'activeOrderTotal', 'billRequested', 'stripePublicKey'
+            'hasActiveOrder', 'activeOrderTotal', 'billRequested', 'stripePublicKey',
+            'splitPaymentEnabled', 'splitPaymentMaxParts', 'activeOrderItemsForAlpine'
         ));
     }
 }
