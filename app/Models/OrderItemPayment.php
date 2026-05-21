@@ -22,6 +22,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int|null    $part_number
  *
  * @author BenjaminDTS
+ * @author AyrtonAlania
  */
 class OrderItemPayment extends Model
 {

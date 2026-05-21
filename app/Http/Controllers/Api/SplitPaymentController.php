@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\DB;
  * Cada comensal genera un PaymentIntent independiente en Stripe.
  *
  * @author BenjaminDTS
+ * @author AyrtonAlania
  */
 class SplitPaymentController extends Controller
 {
@@ -31,7 +32,11 @@ class SplitPaymentController extends Controller
      */
     public function claimedItems(string $hash): JsonResponse
     {
-        $table = Table::where('unique_hash', $hash)->firstOrFail();
+        $table = Table::with('user')->where('unique_hash', $hash)->firstOrFail();
+
+        if ($guard = $this->guardSplitEnabled($table)) {
+            return $guard;
+        }
 
         $order = $this->activeOrder($table->id);
 
@@ -66,7 +71,12 @@ class SplitPaymentController extends Controller
             'item_ids.*' => 'required|integer',
         ]);
 
-        $table = Table::where('unique_hash', $hash)->firstOrFail();
+        $table = Table::with('user')->where('unique_hash', $hash)->firstOrFail();
+
+        if ($guard = $this->guardSplitEnabled($table)) {
+            return $guard;
+        }
+
         $order = $this->activeOrder($table->id);
 
         if (! $order) {
@@ -137,7 +147,12 @@ class SplitPaymentController extends Controller
             'part_number' => 'required|integer|min:1',
         ]);
 
-        $table = Table::where('unique_hash', $hash)->firstOrFail();
+        $table = Table::with('user')->where('unique_hash', $hash)->firstOrFail();
+
+        if ($guard = $this->guardSplitEnabled($table)) {
+            return $guard;
+        }
+
         $order = $this->activeOrder($table->id);
 
         if (! $order) {
@@ -146,6 +161,14 @@ class SplitPaymentController extends Controller
 
         $people     = (int) $validated['people'];
         $partNumber = (int) $validated['part_number'];
+
+        $maxParts = $table->user->split_payment_max_parts;
+        if ($maxParts !== null && $people > $maxParts) {
+            return response()->json([
+                'success' => false,
+                'message' => "No se puede dividir en más de {$maxParts} partes.",
+            ], 422);
+        }
 
         if ($partNumber > $people) {
             return response()->json(['success' => false, 'message' => 'El número de parte excede el total de personas.'], 422);
@@ -195,29 +218,38 @@ class SplitPaymentController extends Controller
             'payment_intent_id' => 'required|string',
         ]);
 
-        $table = Table::where('unique_hash', $hash)->firstOrFail();
+        $table = Table::with('user')->where('unique_hash', $hash)->firstOrFail();
+
+        if ($guard = $this->guardSplitEnabled($table)) {
+            return $guard;
+        }
+
         $order = $this->activeOrder($table->id);
 
         if (! $order) {
             return response()->json(['success' => false, 'message' => 'No hay pedido activo.'], 404);
         }
 
-        $splitPayment = OrderItemPayment::where('stripe_payment_intent_id', $validated['payment_intent_id'])
+        $splitPayments = OrderItemPayment::where('stripe_payment_intent_id', $validated['payment_intent_id'])
             ->where('order_id', $order->id)
-            ->first();
+            ->get();
 
-        if (! $splitPayment) {
+        if ($splitPayments->isEmpty()) {
             return response()->json(['success' => false, 'message' => 'Pago parcial no encontrado.'], 404);
         }
 
         $intent = $this->stripe->confirmPayment($validated['payment_intent_id']);
 
         if ($intent['status'] !== 'succeeded') {
-            $splitPayment->update(['status' => 'failed']);
+            OrderItemPayment::where('stripe_payment_intent_id', $validated['payment_intent_id'])
+                ->where('order_id', $order->id)
+                ->update(['status' => 'failed']);
             return response()->json(['success' => false, 'message' => 'El pago no se ha completado.'], 422);
         }
 
-        $splitPayment->update(['status' => 'paid']);
+        OrderItemPayment::where('stripe_payment_intent_id', $validated['payment_intent_id'])
+            ->where('order_id', $order->id)
+            ->update(['status' => 'paid']);
 
         $fullyPaid = $this->checkOrderFullyPaid($order);
 
@@ -225,6 +257,24 @@ class SplitPaymentController extends Controller
             'success'    => true,
             'fully_paid' => $fullyPaid,
         ]);
+    }
+
+    /**
+     * Devuelve 403 si el cobro partido no está activado para este restaurante.
+     *
+     * @param  Table  $table
+     * @return JsonResponse|null
+     */
+    private function guardSplitEnabled(Table $table): ?JsonResponse
+    {
+        if (! $table->user->isSplitPaymentEnabled()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'El cobro partido no está activado para este restaurante.',
+            ], 403);
+        }
+
+        return null;
     }
 
     /**
