@@ -26,22 +26,22 @@ beforeEach(function () {
 // ─── Acceso y autenticación ───────────────────────────────────────────────────
 
 it('redirects unauthenticated user away from tapas config', function () {
-    $this->get(route('tapas.edit'))
+    $this->get(route('negocio.config.edit'))
          ->assertRedirect(route('login'));
 });
 
 it('gerente can access tapas configuration page', function () {
     $this->actingAs($this->user)
-         ->get(route('tapas.edit'))
+         ->get(route('negocio.config.edit'))
          ->assertOk()
-         ->assertViewIs('tapas.edit');
+         ->assertViewIs('negocio.config');
 });
 
 it('creates a default TapaConfig on first visit', function () {
     $this->assertDatabaseMissing('tapa_configs', ['user_id' => $this->user->id]);
 
     $this->actingAs($this->user)
-         ->get(route('tapas.edit'));
+         ->get(route('negocio.config.edit'));
 
     $this->assertDatabaseHas('tapa_configs', [
         'user_id'        => $this->user->id,
@@ -55,12 +55,12 @@ it('creates a default TapaConfig on first visit', function () {
 
 it('gerente can enable tapas', function () {
     $this->actingAs($this->user)
-         ->put(route('tapas.update'), [
+         ->put(route('negocio.config.update'), [
              'tapas_enabled'     => '1',
              'tapas_free'        => '1',
              'max_tapa_variants' => 3,
          ])
-         ->assertRedirect(route('tapas.edit'));
+         ->assertRedirect(route('negocio.config.edit'));
 
     $this->assertDatabaseHas('tapa_configs', [
         'user_id'       => $this->user->id,
@@ -75,12 +75,12 @@ it('gerente can disable tapas', function () {
     ]);
 
     $this->actingAs($this->user)
-         ->put(route('tapas.update'), [
+         ->put(route('negocio.config.update'), [
              'tapas_enabled'     => '0',
              'tapas_free'        => '1',
              'max_tapa_variants' => 3,
          ])
-         ->assertRedirect(route('tapas.edit'));
+         ->assertRedirect(route('negocio.config.edit'));
 
     $this->assertDatabaseHas('tapa_configs', [
         'user_id'       => $this->user->id,
@@ -92,7 +92,7 @@ it('gerente can disable tapas', function () {
 
 it('gerente can set tapas as free', function () {
     $this->actingAs($this->user)
-         ->put(route('tapas.update'), [
+         ->put(route('negocio.config.update'), [
              'tapas_enabled'     => '1',
              'tapas_free'        => '1',
              'max_tapa_variants' => 2,
@@ -106,7 +106,7 @@ it('gerente can set tapas as free', function () {
 
 it('gerente can set tapas with price', function () {
     $this->actingAs($this->user)
-         ->put(route('tapas.update'), [
+         ->put(route('negocio.config.update'), [
              'tapas_enabled'     => '1',
              'tapas_free'        => '0',
              'max_tapa_variants' => 2,
@@ -128,7 +128,7 @@ it('tapa_price is cleared when tapas_free is switched to true', function () {
     ]);
 
     $this->actingAs($this->user)
-         ->put(route('tapas.update'), [
+         ->put(route('negocio.config.update'), [
              'tapas_enabled'     => '1',
              'tapas_free'        => '1',
              'max_tapa_variants' => 3,
@@ -142,7 +142,7 @@ it('tapa_price is cleared when tapas_free is switched to true', function () {
 
 it('fails update when tapas are paid and tapa_price is missing', function () {
     $this->actingAs($this->user)
-         ->put(route('tapas.update'), [
+         ->put(route('negocio.config.update'), [
              'tapas_enabled'     => '1',
              'tapas_free'        => '0',
              'max_tapa_variants' => 3,
@@ -152,7 +152,7 @@ it('fails update when tapas are paid and tapa_price is missing', function () {
 
 it('fails update when tapas are paid and tapa_price is invalid', function () {
     $this->actingAs($this->user)
-         ->put(route('tapas.update'), [
+         ->put(route('negocio.config.update'), [
              'tapas_enabled'     => '1',
              'tapas_free'        => '0',
              'max_tapa_variants' => 3,
@@ -165,7 +165,7 @@ it('fails update when tapas are paid and tapa_price is invalid', function () {
 
 it('max tapa variants limit is respected in update', function () {
     $this->actingAs($this->user)
-         ->put(route('tapas.update'), [
+         ->put(route('negocio.config.update'), [
              'tapas_enabled'     => '1',
              'tapas_free'        => '1',
              'max_tapa_variants' => 5,
@@ -179,7 +179,7 @@ it('max tapa variants limit is respected in update', function () {
 
 it('fails update when max_tapa_variants exceeds 20', function () {
     $this->actingAs($this->user)
-         ->put(route('tapas.update'), [
+         ->put(route('negocio.config.update'), [
              'tapas_enabled'     => '1',
              'tapas_free'        => '1',
              'max_tapa_variants' => 99,
@@ -189,7 +189,7 @@ it('fails update when max_tapa_variants exceeds 20', function () {
 
 it('fails update when max_tapa_variants is below 1', function () {
     $this->actingAs($this->user)
-         ->put(route('tapas.update'), [
+         ->put(route('negocio.config.update'), [
              'tapas_enabled'     => '1',
              'tapas_free'        => '1',
              'max_tapa_variants' => 0,
@@ -201,14 +201,14 @@ it('fails update when max_tapa_variants is below 1', function () {
 
 it('each restaurant has its own independent tapa config', function () {
     $this->actingAs($this->user)
-         ->put(route('tapas.update'), [
+         ->put(route('negocio.config.update'), [
              'tapas_enabled'     => '1',
              'tapas_free'        => '1',
              'max_tapa_variants' => 4,
          ]);
 
     $this->actingAs($this->other)
-         ->put(route('tapas.update'), [
+         ->put(route('negocio.config.update'), [
              'tapas_enabled'     => '0',
              'tapas_free'        => '0',
              'max_tapa_variants' => 2,
@@ -304,7 +304,7 @@ it('waiter role cannot access tapas config', function () {
     $waiter = User::factory()->create(['role' => 'waiter']);
 
     $this->actingAs($waiter)
-         ->get(route('tapas.edit'))
+         ->get(route('negocio.config.edit'))
          ->assertForbidden();
 });
 
@@ -312,13 +312,13 @@ it('kitchen role cannot access tapas config', function () {
     $kitchen = User::factory()->create(['role' => 'kitchen']);
 
     $this->actingAs($kitchen)
-         ->get(route('tapas.edit'))
+         ->get(route('negocio.config.edit'))
          ->assertForbidden();
 });
 
 it('flash success message shown after saving tapa config', function () {
     $this->actingAs($this->user)
-         ->put(route('tapas.update'), [
+         ->put(route('negocio.config.update'), [
              'tapas_enabled'     => '1',
              'tapas_free'        => '1',
              'max_tapa_variants' => 3,
@@ -332,7 +332,7 @@ it('creates Tapas category when tapas are enabled for the first time', function 
     $this->assertDatabaseMissing('categories', ['user_id' => $this->user->id, 'name' => 'Tapas']);
 
     $this->actingAs($this->user)
-         ->put(route('tapas.update'), [
+         ->put(route('negocio.config.update'), [
              'tapas_enabled'     => '1',
              'tapas_free'        => '1',
              'max_tapa_variants' => 3,
@@ -346,7 +346,7 @@ it('creates Tapas category when tapas are enabled for the first time', function 
 
 it('creates Tapas category with destination kitchen', function () {
     $this->actingAs($this->user)
-         ->put(route('tapas.update'), [
+         ->put(route('negocio.config.update'), [
              'tapas_enabled'     => '1',
              'tapas_free'        => '1',
              'max_tapa_variants' => 3,
@@ -367,7 +367,7 @@ it('does not create duplicate Tapas category if already exists', function () {
     ]);
 
     $this->actingAs($this->user)
-         ->put(route('tapas.update'), [
+         ->put(route('negocio.config.update'), [
              'tapas_enabled'     => '1',
              'tapas_free'        => '1',
              'max_tapa_variants' => 3,
@@ -389,7 +389,7 @@ it('does not delete Tapas category when tapas are disabled', function () {
     ]);
 
     $this->actingAs($this->user)
-         ->put(route('tapas.update'), [
+         ->put(route('negocio.config.update'), [
              'tapas_enabled'     => '0',
              'tapas_free'        => '1',
              'max_tapa_variants' => 3,
@@ -405,7 +405,7 @@ it('does not delete Tapas category when tapas are disabled', function () {
 
 it('fails to save extra tapa enabled without extra tapa price', function () {
     $this->actingAs($this->user)
-         ->put(route('tapas.update'), [
+         ->put(route('negocio.config.update'), [
              'tapas_enabled'      => '1',
              'tapas_free'         => '1',
              'max_tapa_variants'  => 3,
@@ -417,19 +417,19 @@ it('fails to save extra tapa enabled without extra tapa price', function () {
 
 it('allows saving extra tapa disabled without extra tapa price', function () {
     $this->actingAs($this->user)
-         ->put(route('tapas.update'), [
+         ->put(route('negocio.config.update'), [
              'tapas_enabled'      => '1',
              'tapas_free'         => '1',
              'max_tapa_variants'  => 3,
              'extra_tapa_enabled' => '0',
          ])
          ->assertSessionMissing('errors')
-         ->assertRedirect(route('tapas.edit'));
+         ->assertRedirect(route('negocio.config.edit'));
 });
 
 it('saves extra tapa config correctly', function () {
     $this->actingAs($this->user)
-         ->put(route('tapas.update'), [
+         ->put(route('negocio.config.update'), [
              'tapas_enabled'      => '1',
              'tapas_free'         => '1',
              'max_tapa_variants'  => 3,
@@ -452,7 +452,7 @@ it('clears extra tapa price when extra tapa is disabled', function () {
     ]);
 
     $this->actingAs($this->user)
-         ->put(route('tapas.update'), [
+         ->put(route('negocio.config.update'), [
              'tapas_enabled'      => '1',
              'tapas_free'         => '1',
              'max_tapa_variants'  => 3,
@@ -469,15 +469,15 @@ it('clears extra tapa price when extra tapa is disabled', function () {
 
 it('saves a single kitchen schedule slot correctly', function () {
     $this->actingAs($this->user)
-         ->put(route('tapas.update'), [
+         ->put(route('negocio.config.update'), [
              'tapas_enabled'     => '1',
              'tapas_free'        => '1',
              'max_tapa_variants' => 3,
-             'schedules'         => [
+             'kitchen_schedules'  => [
                  ['opens_at' => '10:00', 'closes_at' => '16:00'],
              ],
          ])
-         ->assertRedirect(route('tapas.edit'));
+         ->assertRedirect(route('negocio.config.edit'));
 
     $config = TapaConfig::where('user_id', $this->user->id)->first();
     expect($config->schedules()->count())->toBe(1);
@@ -486,11 +486,11 @@ it('saves a single kitchen schedule slot correctly', function () {
 
 it('saves multiple kitchen schedule slots correctly', function () {
     $this->actingAs($this->user)
-         ->put(route('tapas.update'), [
+         ->put(route('negocio.config.update'), [
              'tapas_enabled'     => '1',
              'tapas_free'        => '1',
              'max_tapa_variants' => 3,
-             'schedules'         => [
+             'kitchen_schedules'  => [
                  ['opens_at' => '13:00', 'closes_at' => '16:30'],
                  ['opens_at' => '20:00', 'closes_at' => '23:30'],
              ],
@@ -506,11 +506,11 @@ it('replaces existing schedules on update', function () {
     $config->schedules()->create(['opens_at' => '19:00', 'closes_at' => '23:00']);
 
     $this->actingAs($this->user)
-         ->put(route('tapas.update'), [
+         ->put(route('negocio.config.update'), [
              'tapas_enabled'     => '1',
              'tapas_free'        => '1',
              'max_tapa_variants' => 3,
-             'schedules'         => [
+             'kitchen_schedules'  => [
                  ['opens_at' => '12:00', 'closes_at' => '15:00'],
              ],
          ]);
@@ -522,12 +522,12 @@ it('replaces existing schedules on update', function () {
 
 it('allows no schedules meaning kitchen always open', function () {
     $this->actingAs($this->user)
-         ->put(route('tapas.update'), [
+         ->put(route('negocio.config.update'), [
              'tapas_enabled'     => '1',
              'tapas_free'        => '1',
              'max_tapa_variants' => 3,
          ])
-         ->assertRedirect(route('tapas.edit'));
+         ->assertRedirect(route('negocio.config.edit'));
 
     $config = TapaConfig::where('user_id', $this->user->id)->first();
     expect($config->schedules()->count())->toBe(0);
@@ -535,41 +535,41 @@ it('allows no schedules meaning kitchen always open', function () {
 
 it('fails when a schedule slot is missing closes_at', function () {
     $this->actingAs($this->user)
-         ->put(route('tapas.update'), [
+         ->put(route('negocio.config.update'), [
              'tapas_enabled'     => '1',
              'tapas_free'        => '1',
              'max_tapa_variants' => 3,
-             'schedules'         => [
+             'kitchen_schedules'  => [
                  ['opens_at' => '10:00'],
              ],
          ])
-         ->assertSessionHasErrors('schedules.0.closes_at');
+         ->assertSessionHasErrors('kitchen_schedules.0.closes_at');
 });
 
 it('fails when a schedule slot has invalid time format', function () {
     $this->actingAs($this->user)
-         ->put(route('tapas.update'), [
+         ->put(route('negocio.config.update'), [
              'tapas_enabled'     => '1',
              'tapas_free'        => '1',
              'max_tapa_variants' => 3,
-             'schedules'         => [
+             'kitchen_schedules'  => [
                  ['opens_at' => 'not-a-time', 'closes_at' => '23:00'],
              ],
          ])
-         ->assertSessionHasErrors('schedules.0.opens_at');
+         ->assertSessionHasErrors('kitchen_schedules.0.opens_at');
 });
 
-it('fails when schedules array exceeds 10 slots', function () {
-    $slots = array_fill(0, 11, ['opens_at' => '10:00', 'closes_at' => '11:00']);
+it('fails when kitchen_schedules array exceeds 4 slots', function () {
+    $slots = array_fill(0, 5, ['opens_at' => '10:00', 'closes_at' => '11:00']);
 
     $this->actingAs($this->user)
-         ->put(route('tapas.update'), [
+         ->put(route('negocio.config.update'), [
              'tapas_enabled'     => '1',
              'tapas_free'        => '1',
              'max_tapa_variants' => 3,
-             'schedules'         => $slots,
+             'kitchen_schedules'  => $slots,
          ])
-         ->assertSessionHasErrors('schedules');
+         ->assertSessionHasErrors('kitchen_schedules');
 });
 
 it('menu hides kitchen categories when kitchen is closed', function () {
@@ -796,7 +796,7 @@ it('tapa products only include active products from Tapas category', function ()
 
 it('saves price_mode fixed correctly', function () {
     $this->actingAs($this->user)
-         ->put(route('tapas.update'), [
+         ->put(route('negocio.config.update'), [
              'tapas_enabled'     => '1',
              'tapas_free'        => '0',
              'price_mode'        => 'fixed',
@@ -810,13 +810,13 @@ it('saves price_mode fixed correctly', function () {
 
 it('saves price_mode per_product correctly', function () {
     $this->actingAs($this->user)
-         ->put(route('tapas.update'), [
+         ->put(route('negocio.config.update'), [
              'tapas_enabled'     => '1',
              'tapas_free'        => '0',
              'price_mode'        => 'per_product',
              'max_tapa_variants' => 3,
          ])
-         ->assertRedirect(route('tapas.edit'));
+         ->assertRedirect(route('negocio.config.edit'));
 
     $config = TapaConfig::where('user_id', $this->user->id)->first();
     expect($config->price_mode)->toBe('per_product')
@@ -825,7 +825,7 @@ it('saves price_mode per_product correctly', function () {
 
 it('fails to save paid tapas with fixed price mode and no global price', function () {
     $this->actingAs($this->user)
-         ->put(route('tapas.update'), [
+         ->put(route('negocio.config.update'), [
              'tapas_enabled'     => '1',
              'tapas_free'        => '0',
              'price_mode'        => 'fixed',
@@ -837,25 +837,25 @@ it('fails to save paid tapas with fixed price mode and no global price', functio
 
 it('allows saving paid tapas with per_product mode and no global price', function () {
     $this->actingAs($this->user)
-         ->put(route('tapas.update'), [
+         ->put(route('negocio.config.update'), [
              'tapas_enabled'     => '1',
              'tapas_free'        => '0',
              'price_mode'        => 'per_product',
              'max_tapa_variants' => 3,
          ])
          ->assertSessionMissing('errors')
-         ->assertRedirect(route('tapas.edit'));
+         ->assertRedirect(route('negocio.config.edit'));
 });
 
 it('allows saving free tapas without any price regardless of mode', function () {
     $this->actingAs($this->user)
-         ->put(route('tapas.update'), [
+         ->put(route('negocio.config.update'), [
              'tapas_enabled'     => '1',
              'tapas_free'        => '1',
              'max_tapa_variants' => 3,
          ])
          ->assertSessionMissing('errors')
-         ->assertRedirect(route('tapas.edit'));
+         ->assertRedirect(route('negocio.config.edit'));
 
     $config = TapaConfig::where('user_id', $this->user->id)->first();
     expect($config->tapa_price)->toBeNull();
@@ -870,7 +870,7 @@ it('clears tapa_price when mode changes to per_product', function () {
     ]);
 
     $this->actingAs($this->user)
-         ->put(route('tapas.update'), [
+         ->put(route('negocio.config.update'), [
              'tapas_enabled'     => '1',
              'tapas_free'        => '0',
              'price_mode'        => 'per_product',

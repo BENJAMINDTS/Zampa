@@ -33,8 +33,13 @@ class MenuController extends Controller
         $config = $table->user->tapaConfig;
 
         if ($config) {
-            $config->load('schedules');
+            $config->load(['kitchenSchedules', 'businessSchedules']);
         }
+
+        $businessOpen           = ! $config || $config->isBusinessOpen();
+        $orderingAllowed        = ! $config || $config->isOrderingAllowed();
+        $businessNextOpening    = ($config && ! $businessOpen) ? $config->getBusinessNextOpeningTime() : null;
+        $minutesUntilClose      = ($config && $businessOpen && ! $orderingAllowed) ? $config->minutesUntilBusinessClose() : null;
 
         $kitchenOpen     = ! ($config && $config->tapas_enabled) || $config->isKitchenOpen();
         $nextOpeningTime = ($config && ! $kitchenOpen) ? $config->nextOpeningTime() : null;
@@ -138,7 +143,8 @@ class MenuController extends Controller
             'tapaConfig', 'barItemsCount', 'kitchenOpen', 'nextOpeningTime',
             'tapaVariantsUsed', 'tapaProducts', 'shouldSuggest',
             'hasActiveOrder', 'activeOrderTotal', 'billRequested', 'stripePublicKey',
-            'splitPaymentEnabled', 'splitPaymentMaxParts', 'activeOrderItemsForAlpine'
+            'splitPaymentEnabled', 'splitPaymentMaxParts', 'activeOrderItemsForAlpine',
+            'businessOpen', 'orderingAllowed', 'businessNextOpening', 'minutesUntilClose'
         ));
     }
 }

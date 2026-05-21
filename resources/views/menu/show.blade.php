@@ -3436,6 +3436,33 @@
             </nav>
         @endif
 
+        {{-- ════════════════════════════════════════════════════════════ --}}
+        {{-- NEGOCIO CERRADO: carta inaccesible + horarios del día      --}}
+        {{-- ════════════════════════════════════════════════════════════ --}}
+        @if(!$businessOpen)
+        <main id="main-content" class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
+            <div class="text-center" role="status" aria-live="polite">
+                <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gray-100 dark:bg-gray-800 mb-6">
+                    <svg aria-hidden="true" class="w-10 h-10 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                              d="M12 6v6l4 2M12 2a10 10 0 100 20A10 10 0 0012 2z"/>
+                    </svg>
+                </div>
+                <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+                    {{ $table->user->business_name ?: $table->user->name }} {{ __('está cerrado ahora') }}
+                </h2>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                    {{ __('Estamos fuera de nuestro horario de atención. Vuelve cuando estemos abiertos.') }}
+                </p>
+                @if($businessNextOpening)
+                <p class="inline-block bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 text-sm font-semibold px-4 py-2 rounded-full">
+                    {{ __('Próxima apertura a las') }} {{ $businessNextOpening }}
+                </p>
+                @endif
+            </div>
+        </main>
+        @else
+
         {{-- ── Contenido principal ──────────────────────────────────── --}}
         <main id="main-content" class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-10">
 
@@ -3457,6 +3484,22 @@
                             {{ __('La cocina abre a las') }}
                             <span class="font-semibold">{{ $nextOpeningTime }}</span>.
                         @endif
+                    </p>
+                </div>
+            </div>
+            @endif
+
+            {{-- ── Banner período de cierre de pedidos ──────────────── --}}
+            @if($businessOpen && !$orderingAllowed)
+            <div role="alert"
+                 class="rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                <span aria-hidden="true" class="text-2xl leading-none">🛑</span>
+                <div class="flex-1">
+                    <p class="text-sm font-semibold text-amber-800 dark:text-amber-300">
+                        {{ __('La cocina ya no acepta pedidos') }}
+                    </p>
+                    <p class="text-xs text-amber-700 dark:text-amber-400 mt-0.5">
+                        {{ __('Estamos en el período de cierre. Puedes solicitar la cuenta desde el botón de abajo.') }}
                     </p>
                 </div>
             </div>
@@ -3582,6 +3625,7 @@
 
                                         {{-- Botón añadir al carrito --}}
                                         <div class="mt-3 flex justify-end">
+                                            @if($orderingAllowed)
                                             <button type="button"
                                                     @click="$store.cart.add(products.find(p => p.id === {{ $product->id }}))"
                                                     class="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full
@@ -3594,6 +3638,19 @@
                                                 </svg>
                                                 Añadir
                                             </button>
+                                            @else
+                                            <span class="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full
+                                                         bg-gray-200 dark:bg-gray-700
+                                                         text-gray-400 dark:text-gray-500 text-sm font-semibold
+                                                         cursor-not-allowed select-none"
+                                                  aria-disabled="true"
+                                                  title="{{ __('Pedidos cerrados') }}">
+                                                <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+                                                </svg>
+                                                Añadir
+                                            </span>
+                                            @endif
                                         </div>
                                     </div>
                                 </div>
@@ -3616,6 +3673,7 @@
             @endforelse
 
         </main>
+        @endif{{-- /businessOpen --}}
 
         {{-- ── Banner de Tapas disponibles ─────────────────────────── --}}
         @if($tapaConfig && $barItemsCount > 0)

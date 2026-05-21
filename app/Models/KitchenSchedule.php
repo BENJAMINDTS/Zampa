@@ -27,6 +27,7 @@ class KitchenSchedule extends Model
      */
     protected $fillable = [
         'tapa_config_id',
+        'type',
         'opens_at',
         'closes_at',
     ];

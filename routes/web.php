@@ -50,7 +50,11 @@ Route::middleware(['auth', 'business.active'])->group(function () {
 
     // Rutas exclusivas del gerente (admin)
     Route::middleware('role:admin')->group(function () {
-        Route::get('/tapas/config', [TapasController::class, 'edit'])->name('tapas.edit');
+        Route::get('/negocio/configuracion', [TapasController::class, 'edit'])->name('negocio.config.edit');
+        Route::put('/negocio/configuracion', [TapasController::class, 'update'])->name('negocio.config.update');
+
+        // Rutas antiguas: GET redirige, PUT sigue llamando al controlador por compat
+        Route::get('/tapas/config', fn () => redirect()->route('negocio.config.edit'))->name('tapas.edit');
         Route::put('/tapas/config', [TapasController::class, 'update'])->name('tapas.update');
 
         Route::get('/split-payment/config', [SplitPaymentConfigController::class, 'edit'])->name('split-payment.edit');

@@ -3,7 +3,7 @@
     @php
         $cartaActive   = request()->routeIs('categories.*', 'ingredients.*', 'products.*', 'daily-menus.*');
         $localActive   = request()->routeIs('tables.*', 'zones.*', 'staff.*');
-        $negocioActive = request()->routeIs('tapas.*', 'manager.*', 'split-payment.*');
+        $negocioActive = request()->routeIs('tapas.*', 'negocio.*', 'manager.*', 'split-payment.*');
     @endphp
 
     <!-- Primary Navigation Menu -->
@@ -150,8 +150,8 @@
                             role="menu"
                         >
                             <div class="rounded-md ring-1 ring-black ring-opacity-5 py-1 bg-white dark:bg-gray-700">
-                                <x-dropdown-link role="menuitem" :href="route('tapas.edit')" :active="request()->routeIs('tapas.*')">
-                                    {{ __('Tapas') }}
+                                <x-dropdown-link role="menuitem" :href="route('negocio.config.edit')" :active="request()->routeIs('negocio.*', 'tapas.*')">
+                                    {{ __('Configuración del negocio') }}
                                 </x-dropdown-link>
                                 <x-dropdown-link role="menuitem" :href="route('split-payment.edit')" :active="request()->routeIs('split-payment.*')">
                                     {{ __('Cobro Partido') }}
@@ -285,8 +285,8 @@
                 </x-responsive-nav-link>
 
                 <h3 class="px-3 pt-3 pb-1 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500" role="presentation">{{ __('Negocio') }}</h3>
-                <x-responsive-nav-link :href="route('tapas.edit')" :active="request()->routeIs('tapas.*')">
-                    {{ __('Tapas') }}
+                <x-responsive-nav-link :href="route('negocio.config.edit')" :active="request()->routeIs('negocio.*', 'tapas.*')">
+                    {{ __('Configuración del negocio') }}
                 </x-responsive-nav-link>
                 <x-responsive-nav-link :href="route('split-payment.edit')" :active="request()->routeIs('split-payment.*')">
                     {{ __('Cobro Partido') }}
