@@ -11,21 +11,19 @@ use Illuminate\Support\Carbon;
 /**
  * Class TapaConfig
  *
- * Configuración del sistema de tapas de un restaurante (relación 1:1 con User).
- * Permite al gerente activar tapas, definir si son gratuitas o de pago,
- * la modalidad de precio (fijo global o por producto), el número máximo de
- * variantes distintas por pedido, la tapa extra de pago y los tramos horarios
- * de apertura de cocina.
+ * Configuración del negocio: tapas, horarios de apertura (negocio y cocina)
+ * y período de cierre de pedidos. Relación 1:1 con User.
  *
  * @package App\Models
  * @property int        $user_id
- * @property bool       $tapas_enabled       Si el sistema de tapas está activo
- * @property bool       $tapas_free          true = gratuitas, false = de pago
- * @property string     $price_mode          'fixed' = precio global | 'per_product' = precio individual
- * @property int        $max_tapa_variants   Máximo de variantes distintas por mesa
- * @property float|null $tapa_price          Precio fijo global (solo si price_mode = fixed y tapas_free = false)
- * @property bool       $extra_tapa_enabled  Si se permite pedir una tapa extra de pago
- * @property float|null $extra_tapa_price    Precio de la tapa extra (obligatorio si extra_tapa_enabled)
+ * @property bool       $tapas_enabled              Si el sistema de tapas está activo
+ * @property bool       $tapas_free                 true = gratuitas, false = de pago
+ * @property string     $price_mode                 'fixed' | 'per_product'
+ * @property int        $max_tapa_variants          Máximo de variantes distintas por mesa
+ * @property float|null $tapa_price                 Precio fijo global (solo si price_mode=fixed y tapas_free=false)
+ * @property bool       $extra_tapa_enabled         Si se permite pedir una tapa extra de pago
+ * @property float|null $extra_tapa_price           Precio de la tapa extra
+ * @property int        $ordering_cutoff_minutes    Minutos antes del cierre en los que no se admiten nuevos pedidos
  *
  * @author BenjaminDTS
  */
@@ -45,24 +43,24 @@ class TapaConfig extends Model
         'tapa_price',
         'extra_tapa_enabled',
         'extra_tapa_price',
+        'ordering_cutoff_minutes',
     ];
 
     /**
      * @var array<string, string>
      */
     protected $casts = [
-        'tapas_enabled'      => 'boolean',
-        'tapas_free'         => 'boolean',
-        'price_mode'         => 'string',
-        'max_tapa_variants'  => 'integer',
-        'tapa_price'         => 'decimal:2',
-        'extra_tapa_enabled' => 'boolean',
-        'extra_tapa_price'   => 'decimal:2',
+        'tapas_enabled'           => 'boolean',
+        'tapas_free'              => 'boolean',
+        'price_mode'              => 'string',
+        'max_tapa_variants'       => 'integer',
+        'tapa_price'              => 'decimal:2',
+        'extra_tapa_enabled'      => 'boolean',
+        'extra_tapa_price'        => 'decimal:2',
+        'ordering_cutoff_minutes' => 'integer',
     ];
 
     /**
-     * El restaurante (usuario) al que pertenece esta configuración.
-     *
      * @return BelongsTo
      */
     public function user(): BelongsTo
@@ -71,14 +69,40 @@ class TapaConfig extends Model
     }
 
     /**
-     * Tramos horarios de apertura de cocina configurados por el gerente.
+     * Tramos horarios de la cocina.
+     *
+     * @return HasMany
+     */
+    public function kitchenSchedules(): HasMany
+    {
+        return $this->hasMany(KitchenSchedule::class)
+                    ->where('type', 'kitchen')
+                    ->orderBy('opens_at');
+    }
+
+    /**
+     * Tramos horarios de apertura del negocio.
+     *
+     * @return HasMany
+     */
+    public function businessSchedules(): HasMany
+    {
+        return $this->hasMany(KitchenSchedule::class)
+                    ->where('type', 'business')
+                    ->orderBy('opens_at');
+    }
+
+    /**
+     * Alias de kitchenSchedules() para compatibilidad con código y tests anteriores.
      *
      * @return HasMany
      */
     public function schedules(): HasMany
     {
-        return $this->hasMany(KitchenSchedule::class)->orderBy('opens_at');
+        return $this->kitchenSchedules();
     }
+
+    // ─── Helpers: cocina ─────────────────────────────────────────────────────
 
     /**
      * Determina si la cocina está abierta en este momento.
@@ -89,10 +113,101 @@ class TapaConfig extends Model
      */
     public function isKitchenOpen(): bool
     {
-        $schedules = $this->schedules;
+        $schedules = $this->kitchenSchedules;
 
         if ($schedules->isEmpty()) {
             return true;
+        }
+
+        return $this->isNowWithinSlots($schedules);
+    }
+
+    /**
+     * Devuelve la hora de apertura del próximo tramo de cocina (HH:MM).
+     * Null si no hay tramos configurados.
+     *
+     * @return string|null
+     */
+    public function nextOpeningTime(): ?string
+    {
+        return $this->nextSlotOpeningTime($this->kitchenSchedules);
+    }
+
+    // ─── Helpers: negocio ────────────────────────────────────────────────────
+
+    /**
+     * Determina si el negocio está abierto en este momento.
+     * Sin tramos de negocio configurados se considera siempre abierto.
+     *
+     * @return bool
+     */
+    public function isBusinessOpen(): bool
+    {
+        $schedules = $this->businessSchedules;
+
+        if ($schedules->isEmpty()) {
+            return true;
+        }
+
+        return $this->isNowWithinSlots($schedules);
+    }
+
+    /**
+     * Devuelve false si estamos en el período de cierre de pedidos
+     * (dentro de los últimos ordering_cutoff_minutes del tramo activo).
+     * Si ordering_cutoff_minutes = 0 los pedidos se admiten hasta el cierre.
+     * Si el negocio está cerrado siempre devuelve false.
+     *
+     * @return bool
+     */
+    public function isOrderingAllowed(): bool
+    {
+        if (! $this->isBusinessOpen()) {
+            return false;
+        }
+
+        $cutoff = (int) $this->ordering_cutoff_minutes;
+
+        if ($cutoff <= 0) {
+            return true;
+        }
+
+        $schedules = $this->businessSchedules;
+        $now       = Carbon::now()->format('H:i:s');
+
+        foreach ($schedules as $schedule) {
+            $opens  = $schedule->opens_at;
+            $closes = $schedule->closes_at;
+
+            $inSlot = ($opens <= $closes)
+                ? ($now >= $opens && $now <= $closes)
+                : ($now >= $opens || $now <= $closes);
+
+            if ($inSlot) {
+                // Calculamos minutos hasta el cierre del tramo
+                return $this->minutesToTime($closes) > $cutoff;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Minutos que quedan hasta el cierre del tramo de negocio activo.
+     * Null si el negocio está cerrado o no hay tramos.
+     *
+     * @return int|null
+     */
+    public function minutesUntilBusinessClose(): ?int
+    {
+        if (! $this->isBusinessOpen()) {
+            return null;
+        }
+
+        $schedules = $this->businessSchedules;
+
+        if ($schedules->isEmpty()) {
+            return null;
         }
 
         $now = Carbon::now()->format('H:i:s');
@@ -101,49 +216,34 @@ class TapaConfig extends Model
             $opens  = $schedule->opens_at;
             $closes = $schedule->closes_at;
 
-            if ($opens <= $closes) {
-                if ($now >= $opens && $now <= $closes) {
-                    return true;
-                }
-            } else {
-                // Tramo que cruza medianoche (ej: 22:00 – 02:00)
-                if ($now >= $opens || $now <= $closes) {
-                    return true;
-                }
+            $inSlot = ($opens <= $closes)
+                ? ($now >= $opens && $now <= $closes)
+                : ($now >= $opens || $now <= $closes);
+
+            if ($inSlot) {
+                return $this->minutesToTime($closes);
             }
         }
 
-        return false;
+        return null;
     }
 
     /**
-     * Devuelve la hora de apertura del próximo tramo (HH:MM) para mostrarlo
-     * en el aviso de cocina cerrada. Null si no hay tramos configurados.
+     * Devuelve la hora de apertura del próximo tramo de negocio (HH:MM).
+     * Null si no hay tramos configurados.
      *
      * @return string|null
      */
-    public function nextOpeningTime(): ?string
+    public function getBusinessNextOpeningTime(): ?string
     {
-        $schedules = $this->schedules;
-
-        if ($schedules->isEmpty()) {
-            return null;
-        }
-
-        $now  = Carbon::now()->format('H:i:s');
-        $next = $schedules->first(fn ($s) => $s->opens_at > $now);
-
-        // Si no hay tramo posterior hoy, el primero de mañana
-        $schedule = $next ?? $schedules->first();
-
-        return substr($schedule->opens_at, 0, 5);
+        return $this->nextSlotOpeningTime($this->businessSchedules);
     }
 
+    // ─── Lógica de tapas ─────────────────────────────────────────────────────
+
     /**
-     * Determina si se debe mostrar el modal de sugerencia de tapa al cliente.
-     *
-     * @param  int  $barItemsCount     Bebidas de barra en órdenes activas de la mesa
-     * @param  int  $tapaVariantsUsed  Variantes distintas de tapas ya pedidas en la mesa
+     * @param  int  $barItemsCount
+     * @param  int  $tapaVariantsUsed
      * @return bool
      */
     public function shouldSuggestTapa(int $barItemsCount, int $tapaVariantsUsed): bool
@@ -164,14 +264,6 @@ class TapaConfig extends Model
     }
 
     /**
-     * Devuelve el precio que el cliente debe pagar por una tapa según la modalidad activa.
-     *
-     * Si tapas son gratuitas     → 0.0
-     * Si price_mode = 'fixed'    → precio fijo global (tapa_price)
-     * Si price_mode = per_product → precio individual del producto
-     *
-     * La tapa extra tiene siempre su propio precio (extra_tapa_price), independiente de esta lógica.
-     *
      * @param  Product  $product
      * @return float
      */
@@ -189,9 +281,6 @@ class TapaConfig extends Model
     }
 
     /**
-     * Determina si un producto pertenece a la categoría "Tapas" de este restaurante.
-     * Usado para aplicar el precio de tapa en lugar del precio normal del producto.
-     *
      * @param  Product  $product  Debe tener la relación 'category' cargada
      * @return bool
      */
@@ -200,5 +289,70 @@ class TapaConfig extends Model
         return $product->category_id !== null
             && $product->category?->name === 'Tapas'
             && $product->category?->user_id === $this->user_id;
+    }
+
+    // ─── Helpers privados ────────────────────────────────────────────────────
+
+    /**
+     * @param  \Illuminate\Support\Collection  $schedules
+     * @return bool
+     */
+    private function isNowWithinSlots(\Illuminate\Support\Collection $schedules): bool
+    {
+        $now = Carbon::now()->format('H:i:s');
+
+        foreach ($schedules as $schedule) {
+            $opens  = $schedule->opens_at;
+            $closes = $schedule->closes_at;
+
+            if ($opens <= $closes) {
+                if ($now >= $opens && $now <= $closes) {
+                    return true;
+                }
+            } else {
+                if ($now >= $opens || $now <= $closes) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @param  \Illuminate\Support\Collection  $schedules
+     * @return string|null
+     */
+    private function nextSlotOpeningTime(\Illuminate\Support\Collection $schedules): ?string
+    {
+        if ($schedules->isEmpty()) {
+            return null;
+        }
+
+        $now  = Carbon::now()->format('H:i:s');
+        $next = $schedules->first(fn ($s) => $s->opens_at > $now);
+
+        $schedule = $next ?? $schedules->first();
+
+        return substr($schedule->opens_at, 0, 5);
+    }
+
+    /**
+     * Minutos que quedan desde ahora hasta la hora dada (HH:MM:SS).
+     * Si la hora ya pasó hoy, calcula como si fuera mañana.
+     *
+     * @param  string  $time  Formato HH:MM:SS
+     * @return int
+     */
+    private function minutesToTime(string $time): int
+    {
+        $now    = Carbon::now();
+        $target = Carbon::today()->setTimeFromTimeString($time);
+
+        if ($target <= $now) {
+            $target->addDay();
+        }
+
+        return (int) $now->diffInMinutes($target);
     }
 }
