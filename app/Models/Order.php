@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Class Order
@@ -85,5 +86,35 @@ class Order extends Model
     public function dailyMenuOrder(): HasOne
     {
         return $this->hasOne(DailyMenuOrder::class);
+    }
+
+    /**
+     * Todos los pagos parciales realizados sobre este pedido.
+     *
+     * @return HasMany
+     */
+    public function splitPayments(): HasMany
+    {
+        return $this->hasMany(OrderItemPayment::class);
+    }
+
+    /**
+     * Suma de los pagos parciales con status 'paid'.
+     *
+     * @return float
+     */
+    public function getPaidAmountViaSplit(): float
+    {
+        return (float) $this->splitPayments()->where('status', 'paid')->sum('amount');
+    }
+
+    /**
+     * Indica si el total del pedido está completamente cubierto por pagos parciales pagados.
+     *
+     * @return bool
+     */
+    public function isFullyPaidViaSplit(): bool
+    {
+        return $this->getPaidAmountViaSplit() >= (float) $this->total;
     }
 }

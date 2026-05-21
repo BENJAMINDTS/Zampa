@@ -44,6 +44,42 @@ class StripeService
     }
 
     /**
+     * Crea un PaymentIntent parcial para cobro partido.
+     * Igual que createPaymentIntent pero incluye metadata de split.
+     *
+     * @param  int     $amount      Importe en céntimos
+     * @param  string  $mode        'items' o 'equitative'
+     * @param  int     $partNumber  Número de esta parte (1-based)
+     * @param  int     $partsTotal  Total de partes de la división
+     * @param  array   $metadata    Metadatos adicionales
+     * @return array{id: string, client_secret: string, status: string}
+     */
+    public function createSplitPaymentIntent(
+        int $amount,
+        string $mode,
+        int $partNumber,
+        int $partsTotal,
+        array $metadata = [],
+    ): array {
+        $intent = $this->client->paymentIntents->create([
+            'amount'                    => $amount,
+            'currency'                  => 'eur',
+            'metadata'                  => array_merge($metadata, [
+                'split_mode'        => $mode,
+                'split_part_number' => $partNumber,
+                'split_parts_total' => $partsTotal,
+            ]),
+            'automatic_payment_methods' => ['enabled' => true],
+        ]);
+
+        return [
+            'id'            => $intent->id,
+            'client_secret' => $intent->client_secret,
+            'status'        => $intent->status,
+        ];
+    }
+
+    /**
      * Recupera un PaymentIntent y devuelve su estado actual.
      * Se usa para verificar el pago en el servidor tras la confirmación del cliente.
      *

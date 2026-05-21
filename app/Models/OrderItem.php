@@ -55,4 +55,34 @@ class OrderItem extends Model
     {
         return $this->hasMany(OrderItemModification::class);
     }
+
+    /**
+     * Pagos parciales que cubren este ítem.
+     *
+     * @return HasMany
+     */
+    public function splitPayments(): HasMany
+    {
+        return $this->hasMany(OrderItemPayment::class);
+    }
+
+    /**
+     * Indica si este ítem ha sido reclamado (hay algún pago parcial pendiente o pagado).
+     *
+     * @return bool
+     */
+    public function isClaimed(): bool
+    {
+        return $this->splitPayments()->whereIn('status', ['pending', 'paid'])->exists();
+    }
+
+    /**
+     * Indica si este ítem está completamente cubierto por pagos parciales pagados.
+     *
+     * @return bool
+     */
+    public function isPaidViaSplit(): bool
+    {
+        return $this->splitPayments()->where('status', 'paid')->exists();
+    }
 }

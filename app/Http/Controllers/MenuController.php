@@ -120,14 +120,14 @@ class MenuController extends Controller
         $splitPaymentMaxParts = $table->user->split_payment_max_parts;
 
         $activeOrderItemsForAlpine = $activeOrder
-            ? $activeOrder->items()->with('product:id,name')->get()
+            ? $activeOrder->items()->with(['product:id,name', 'splitPayments'])->get()
                 ->map(fn (OrderItem $item) => [
                     'id'       => $item->id,
                     'name'     => $item->product?->name ?? 'Producto',
                     'quantity' => $item->quantity,
                     'price'    => (float) $item->price,
                     'total'    => round((float) $item->price * $item->quantity, 2),
-                    'claimed'  => false, // B16.4 hidrata este campo desde order_item_payments
+                    'claimed'  => $item->isClaimed(),
                 ])
                 ->values()
                 ->toArray()
