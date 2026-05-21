@@ -183,7 +183,7 @@ php artisan make:factory NombreFactory --model=Nombre
 
 ## Progreso del desarrollo
 
-**Progreso global: 88%** (51/58 sub-bloques completados)
+**Progreso global: 93%** (57/63 sub-bloques completados)
 
 | Sub-bloque | Descripción | Estado |
 | ---------- | ----------- | ------ |
@@ -243,6 +243,11 @@ php artisan make:factory NombreFactory --model=Nombre
 | 9.3 | Platos más pedidos | Completado |
 | 9.4 | Horas punta y ticket medio por mesa | Completado |
 | 9.5 | Tests del Bloque 9 | Completado |
+| 16.1 | Campos `split_payment_enabled` y `split_payment_max_parts` en `users` | Completado |
+| 16.2 | Panel del gerente — activar/desactivar cobro partido y configurar partes | Completado |
+| 16.3 | Carta pública — Modo A (por ítems) y Modo B (equitativo) | Completado |
+| 16.4 | `SplitPaymentController` + tabla `order_item_payments` + PaymentIntents independientes | Completado |
+| 16.5 | Tests completos del Bloque 16 (62 Feature + 6 Unit) | Completado |
 | 11.1 | Design system (colores Zampa, tipografía, tokens Tailwind) | Pendiente |
 | 11.2 | Layout principal y navegación (sidebar, topbar, dark mode) | Pendiente |
 | 11.3 | Vistas del panel admin | Pendiente |
@@ -270,6 +275,7 @@ php artisan make:factory NombreFactory --model=Nombre
 | `messages` | Mensajes individuales — `role`: user / assistant |
 | `tapa_configs` | Configuración de tapas por restaurante (1:1 con users) |
 | `kitchen_schedules` | Tramos horarios de apertura de cocina por tapa_config |
+| `order_item_payments` | Pagos parciales del cobro partido — `mode`: items / equitative, `status`: pending / paid / failed |
 
 ---
 
