@@ -127,7 +127,7 @@ class MenuController extends Controller
                     'quantity' => $item->quantity,
                     'price'    => (float) $item->price,
                     'total'    => round((float) $item->price * $item->quantity, 2),
-                    'claimed'  => false,
+                    'claimed'  => false, // B16.4 hidrata este campo desde order_item_payments
                 ])
                 ->values()
                 ->toArray()

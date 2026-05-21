@@ -816,6 +816,7 @@
                     this.splitMode   = null;
                 },
 
+                // TODO B16.4: /split/intent y /split/confirm implementados en SplitPaymentController
                 async proceedSplitPayment(amount, type, itemIds) {
                     const ids = itemIds || [];
                     this.splitShowItems   = false;
@@ -872,6 +873,7 @@
                 closeSplitPayment() {
                     this.splitPayingCard  = false;
                     this.splitStripeError = null;
+                    this.splitMode        = null;
                     this._splitElements   = null;
                     this._splitStripe     = null;
                 },
