@@ -257,6 +257,7 @@
     <script id="menu-products" type="application/json">@json($productsForAlpine)</script>
     <script id="tapa-config" type="application/json">@json($tapaConfigForAlpine)</script>
     <script id="tapa-products" type="application/json">@json($tapaProductsForAlpine)</script>
+    <script id="order-items" type="application/json">@json($activeOrderItemsForAlpine)</script>
 
     <script>
         document.addEventListener('alpine:init', () => {
@@ -543,6 +544,23 @@
                 _stripe:      null,
                 _elements:    null,
 
+                // Cobro partido
+                splitEnabled:      @json($splitPaymentEnabled),
+                splitMaxParts:     @json($splitPaymentMaxParts),
+                showingSplit:      false,
+                splitMode:         null,
+                splitShowItems:    false,
+                splitShowEq:       false,
+                splitItems:        [],
+                splitSelected:     [],
+                splitPeople:       2,
+                splitPayingCard:   false,
+                splitStripeReady:  false,
+                splitStripeError:  null,
+                splitStripeTotal:  0,
+                _splitStripe:      null,
+                _splitElements:    null,
+
                 open() {
                     if (this.requested || this.sending) return;
                     this.error    = null;
@@ -727,6 +745,175 @@
                         }
                     } catch {
                         this.stripeError = 'Error de conexión. Inténtalo de nuevo.';
+                    } finally {
+                        this.sending = false;
+                    }
+                },
+
+                // ── Cobro partido ─────────────────────────────────────────
+                _loadSplitItems() {
+                    const raw = document.getElementById('order-items');
+                    const all = raw ? JSON.parse(raw.textContent) : [];
+                    this.splitItems    = all;
+                    this.splitSelected = [];
+                },
+
+                isItemSelected(id) {
+                    return this.splitSelected.includes(id);
+                },
+
+                toggleSplitItem(id, claimed) {
+                    if (claimed) return;
+                    const idx = this.splitSelected.indexOf(id);
+                    if (idx === -1) this.splitSelected.push(id);
+                    else            this.splitSelected.splice(idx, 1);
+                },
+
+                get splitItemsTotal() {
+                    const sel = this.splitSelected;
+                    return this.splitItems
+                        .filter(i => sel.includes(i.id))
+                        .reduce((sum, i) => sum + i.total, 0);
+                },
+
+                get splitMyPart() {
+                    const p = Math.max(2, parseInt(this.splitPeople) || 2);
+                    return this.orderTotal / p;
+                },
+
+                openSplit() {
+                    if (this.requested || this.sending) return;
+                    this.choosing     = false;
+                    this.showingSplit = true;
+                },
+
+                closeSplitSelector() {
+                    this.showingSplit = false;
+                },
+
+                openSplitItems() {
+                    this.showingSplit = false;
+                    this._loadSplitItems();
+                    this.splitMode      = 'items';
+                    this.splitShowItems = true;
+                },
+
+                closeSplitItems() {
+                    this.splitShowItems = false;
+                    this.splitMode      = null;
+                    this.splitSelected  = [];
+                },
+
+                openSplitEq() {
+                    this.showingSplit = false;
+                    this.splitMode    = 'equitable';
+                    this.splitPeople  = 2;
+                    this.splitShowEq  = true;
+                },
+
+                closeSplitEq() {
+                    this.splitShowEq = false;
+                    this.splitMode   = null;
+                },
+
+                async proceedSplitPayment(amount, type, itemIds) {
+                    const ids = itemIds || [];
+                    this.splitShowItems   = false;
+                    this.splitShowEq      = false;
+                    this.splitPayingCard  = true;
+                    this.splitStripeReady = false;
+                    this.splitStripeError = null;
+                    this.sending          = true;
+                    try {
+                        const res = await fetch('/api/v1/payment/' + this.tableHash + '/split/intent', {
+                            method:  'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept':       'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
+                            },
+                            body: JSON.stringify({ amount: Math.round(amount * 100), type, item_ids: ids }),
+                        });
+                        const data = await res.json();
+                        if (!res.ok) {
+                            this.splitStripeError = data.message ?? 'No se pudo iniciar el pago parcial.';
+                            this.splitPayingCard  = false;
+                            return;
+                        }
+                        this.splitStripeTotal = data.amount_eur ?? amount;
+                        requestAnimationFrame(() => requestAnimationFrame(() => this._mountSplitStripe(data.client_secret)));
+                    } catch {
+                        this.splitStripeError = 'Error de conexión al iniciar el pago.';
+                        this.splitPayingCard  = false;
+                    } finally {
+                        this.sending = false;
+                    }
+                },
+
+                _mountSplitStripe(clientSecret) {
+                    const pk = document.querySelector('meta[name="stripe-key"]')?.content ?? '';
+                    if (!pk || !window.Stripe) {
+                        this.splitStripeError = 'Stripe no disponible. Recarga la página.';
+                        this.splitPayingCard  = false;
+                        return;
+                    }
+                    try {
+                        this._splitStripe   = Stripe(pk);
+                        this._splitElements = this._splitStripe.elements({ clientSecret, locale: 'es' });
+                        const el = this._splitElements.create('payment');
+                        el.mount('#split-stripe-element');
+                        el.on('ready', () => { this.splitStripeReady = true; });
+                    } catch {
+                        this.splitStripeError = 'Error al cargar el formulario de pago.';
+                        this.splitPayingCard  = false;
+                    }
+                },
+
+                closeSplitPayment() {
+                    this.splitPayingCard  = false;
+                    this.splitStripeError = null;
+                    this._splitElements   = null;
+                    this._splitStripe     = null;
+                },
+
+                async submitSplitPayment() {
+                    if (!this._splitStripe || !this._splitElements || this.sending) return;
+                    this.sending          = true;
+                    this.splitStripeError = null;
+                    try {
+                        const { error, paymentIntent } = await this._splitStripe.confirmPayment({
+                            elements:      this._splitElements,
+                            confirmParams: { return_url: window.location.href },
+                            redirect:      'if_required',
+                        });
+                        if (error) {
+                            this.splitStripeError = error.message;
+                            return;
+                        }
+                        if (paymentIntent && paymentIntent.status === 'succeeded') {
+                            const res = await fetch('/api/v1/payment/' + this.tableHash + '/split/confirm', {
+                                method:  'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Accept':       'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
+                                },
+                                body: JSON.stringify({ payment_intent_id: paymentIntent.id, type: this.splitMode }),
+                            });
+                            const data = await res.json();
+                            if (res.ok && data.success) {
+                                this.splitPayingCard = false;
+                                this.paymentDone     = true;
+                                if (data.fully_paid) {
+                                    this.requested = true;
+                                    this.active    = false;
+                                }
+                            } else {
+                                this.splitStripeError = data.message ?? 'Error al confirmar el pago.';
+                            }
+                        }
+                    } catch {
+                        this.splitStripeError = 'Error de conexión. Inténtalo de nuevo.';
                     } finally {
                         this.sending = false;
                     }
@@ -2175,6 +2362,26 @@
                     </button>
                 </div>
 
+                {{-- Cobro partido (solo si está habilitado para este restaurante) --}}
+                <template x-if="$store.bill.splitEnabled">
+                    <div class="mt-4 space-y-2">
+                        <div class="flex items-center gap-2">
+                            <div class="flex-1 h-px bg-gray-200 dark:bg-gray-700"></div>
+                            <span class="text-xs font-medium text-gray-400 dark:text-gray-500 whitespace-nowrap px-2">o paga tu parte</span>
+                            <div class="flex-1 h-px bg-gray-200 dark:bg-gray-700"></div>
+                        </div>
+                        <button type="button"
+                                @click="$store.bill.openSplit()"
+                                class="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl
+                                       bg-gray-50 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700
+                                       hover:border-violet-500 hover:bg-violet-50 dark:hover:bg-violet-900/20
+                                       transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500">
+                            <span class="text-xl" aria-hidden="true">🤝</span>
+                            <span class="font-semibold text-sm text-gray-800 dark:text-gray-200">Cobro partido</span>
+                        </button>
+                    </div>
+                </template>
+
                 <button type="button"
                         @click="$store.bill.close()"
                         class="w-full mt-4 py-2.5 rounded-xl text-sm font-medium text-gray-500 dark:text-gray-400
@@ -2407,6 +2614,444 @@
                 </p>
             </div>
         </div>{{-- /stripe sheet --}}
+
+        {{-- ── Sheet: selector de modo de cobro partido ─────────────── --}}
+        <div x-show="$store.bill.showingSplit"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
+             @click.self="$store.bill.closeSplitSelector()"
+             @keydown.escape.window="$store.bill.closeSplitSelector()"
+             aria-modal="true" role="dialog" aria-label="Elige cómo pagar tu parte">
+
+            <div x-show="$store.bill.showingSplit"
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="translate-y-full"
+                 x-transition:enter-end="translate-y-0"
+                 x-transition:leave="transition ease-in duration-200"
+                 x-transition:leave-start="translate-y-0"
+                 x-transition:leave-end="translate-y-full"
+                 class="absolute bottom-0 left-0 right-0 bg-white dark:bg-gray-900
+                        rounded-t-2xl shadow-2xl px-5 pb-8 pt-4">
+
+                <div class="w-10 h-1 rounded-full bg-gray-300 dark:bg-gray-600 mx-auto mb-5"></div>
+
+                <h2 class="text-lg font-bold text-gray-900 dark:text-white text-center mb-1">
+                    Cobro partido
+                </h2>
+                <p class="text-sm text-gray-500 dark:text-gray-400 text-center mb-6">
+                    ¿Cómo quieres dividir la cuenta?
+                </p>
+
+                <div class="space-y-3">
+                    <button type="button"
+                            @click="$store.bill.openSplitItems()"
+                            class="w-full flex items-center gap-3 py-4 px-4 rounded-2xl
+                                   bg-gray-50 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700
+                                   hover:border-violet-500 hover:bg-violet-50 dark:hover:bg-violet-900/20
+                                   transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500">
+                        <span class="text-2xl flex-shrink-0" aria-hidden="true">🧾</span>
+                        <div class="text-left">
+                            <p class="font-semibold text-sm text-gray-800 dark:text-gray-200">Pagar por ítems</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Elige exactamente qué platos pagas tú</p>
+                        </div>
+                    </button>
+
+                    <button type="button"
+                            @click="$store.bill.openSplitEq()"
+                            class="w-full flex items-center gap-3 py-4 px-4 rounded-2xl
+                                   bg-gray-50 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700
+                                   hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20
+                                   transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <span class="text-2xl flex-shrink-0" aria-hidden="true">➗</span>
+                        <div class="text-left">
+                            <p class="font-semibold text-sm text-gray-800 dark:text-gray-200">Dividir a partes iguales</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">El total se divide entre todos por igual</p>
+                        </div>
+                    </button>
+                </div>
+
+                <button type="button"
+                        @click="$store.bill.closeSplitSelector()"
+                        class="w-full mt-4 py-2.5 rounded-xl text-sm font-medium text-gray-500 dark:text-gray-400
+                               hover:text-gray-700 dark:hover:text-gray-200 focus:outline-none focus:underline transition-colors">
+                    Cancelar
+                </button>
+            </div>
+        </div>{{-- /split selector sheet --}}
+
+        {{-- ── Sheet: cobro partido por ítems (Modo A) ────────────────── --}}
+        <div x-show="$store.bill.splitShowItems"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
+             @click.self="$store.bill.closeSplitItems()"
+             @keydown.escape.window="$store.bill.closeSplitItems()"
+             aria-modal="true" role="dialog" aria-label="Selecciona qué ítems pagas">
+
+            <div x-show="$store.bill.splitShowItems"
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="translate-y-full"
+                 x-transition:enter-end="translate-y-0"
+                 x-transition:leave="transition ease-in duration-200"
+                 x-transition:leave-start="translate-y-0"
+                 x-transition:leave-end="translate-y-full"
+                 class="absolute bottom-0 left-0 right-0 max-h-[88dvh] flex flex-col
+                        bg-white dark:bg-gray-900 rounded-t-2xl shadow-2xl overflow-hidden">
+
+                {{-- Cabecera --}}
+                <div class="flex-shrink-0 px-5 pt-4 pb-3 border-b border-gray-200 dark:border-gray-700">
+                    <div class="w-10 h-1 rounded-full bg-gray-300 dark:bg-gray-600 mx-auto mb-4"></div>
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h2 class="text-lg font-bold text-gray-900 dark:text-white">Pagar por ítems</h2>
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Marca los platos que quieres pagar tú</p>
+                        </div>
+                        <button type="button"
+                                @click="$store.bill.closeSplitItems()"
+                                aria-label="Cerrar selección de ítems"
+                                class="p-1.5 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100
+                                       dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400">
+                            <svg aria-hidden="true" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                {{-- Lista de ítems --}}
+                <div class="flex-1 overflow-y-auto px-5 py-3">
+                    <template x-if="$store.bill.splitItems.length === 0">
+                        <p class="text-center text-sm text-gray-400 dark:text-gray-500 py-8">
+                            No hay ítems en el pedido activo.
+                        </p>
+                    </template>
+                    <fieldset class="space-y-2">
+                        <legend class="sr-only">Selecciona los ítems que quieres pagar</legend>
+                        <template x-for="item in $store.bill.splitItems" :key="item.id">
+                            <label :for="'split-item-' + item.id"
+                                   :class="item.claimed
+                                       ? 'opacity-50 cursor-not-allowed bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700'
+                                       : $store.bill.isItemSelected(item.id)
+                                           ? 'ring-2 ring-violet-500 bg-violet-50 dark:bg-violet-900/20 border-violet-400 dark:border-violet-600 cursor-pointer'
+                                           : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 cursor-pointer hover:border-violet-400'"
+                                   class="flex items-center gap-3 p-3 rounded-xl border-2 transition-colors select-none">
+                                <input type="checkbox"
+                                       :id="'split-item-' + item.id"
+                                       :checked="$store.bill.isItemSelected(item.id)"
+                                       :disabled="item.claimed"
+                                       @change="$store.bill.toggleSplitItem(item.id, item.claimed)"
+                                       :aria-label="item.name + ' — ' + item.total.toFixed(2).replace('.', ',') + ' €'"
+                                       :aria-disabled="item.claimed"
+                                       class="w-5 h-5 rounded text-violet-600 border-gray-300
+                                              focus:ring-violet-500 flex-shrink-0">
+                                <div class="flex-1 min-w-0">
+                                    <p class="font-medium text-sm text-gray-900 dark:text-white leading-snug"
+                                       x-text="item.name"></p>
+                                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5"
+                                       x-text="item.quantity + ' × ' + item.price.toFixed(2).replace('.', ',') + ' €'"></p>
+                                </div>
+                                <div class="flex-shrink-0 text-right">
+                                    <template x-if="item.claimed">
+                                        <span class="inline-block text-xs font-medium text-amber-600 dark:text-amber-400
+                                                     bg-amber-100 dark:bg-amber-900/40 px-2 py-0.5 rounded-full"
+                                              aria-label="Ítem ya reclamado por otro comensal">
+                                            Ya reclamado
+                                        </span>
+                                    </template>
+                                    <template x-if="!item.claimed">
+                                        <span class="font-bold text-sm text-gray-700 dark:text-gray-300"
+                                              x-text="item.total.toFixed(2).replace('.', ',') + ' €'"></span>
+                                    </template>
+                                </div>
+                            </label>
+                        </template>
+                    </fieldset>
+                </div>
+
+                {{-- Footer con total reactivo y botón --}}
+                <div class="flex-shrink-0 px-5 py-4 border-t border-gray-200 dark:border-gray-700
+                            bg-white dark:bg-gray-900 space-y-3">
+                    <div role="status" aria-live="polite"
+                         class="flex items-center justify-between bg-gray-50 dark:bg-gray-800 rounded-xl px-4 py-3">
+                        <span class="text-sm font-medium text-gray-600 dark:text-gray-400">Tu total</span>
+                        <span class="text-xl font-bold text-violet-600 dark:text-violet-400"
+                              x-text="$store.bill.splitItemsTotal.toFixed(2).replace('.', ',') + ' €'"></span>
+                    </div>
+
+                    <button type="button"
+                            @click="$store.bill.proceedSplitPayment(
+                                $store.bill.splitItemsTotal,
+                                'items',
+                                $store.bill.splitSelected
+                            )"
+                            :disabled="$store.bill.splitSelected.length === 0 || $store.bill.sending"
+                            class="w-full py-3.5 rounded-xl bg-violet-600 hover:bg-violet-700 disabled:opacity-50
+                                   text-white font-bold text-base shadow-sm transition-colors
+                                   focus:outline-none focus:ring-4 focus:ring-violet-400">
+                        <span x-show="!$store.bill.sending">
+                            💳 Pagar mi selección —
+                            <span x-text="$store.bill.splitItemsTotal.toFixed(2).replace('.', ',') + ' €'"></span>
+                        </span>
+                        <span x-show="$store.bill.sending" class="flex items-center justify-center gap-2">
+                            <svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+                            </svg>
+                            Procesando...
+                        </span>
+                    </button>
+
+                    <button type="button"
+                            @click="$store.bill.closeSplitItems()"
+                            class="w-full py-2.5 rounded-xl text-sm font-medium text-gray-500 dark:text-gray-400
+                                   hover:text-gray-700 dark:hover:text-gray-200 focus:outline-none focus:underline transition-colors">
+                        Cancelar
+                    </button>
+                </div>
+            </div>
+        </div>{{-- /split items sheet --}}
+
+        {{-- ── Sheet: cobro partido equitativo (Modo B) ───────────────── --}}
+        <div x-show="$store.bill.splitShowEq"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
+             @click.self="$store.bill.closeSplitEq()"
+             @keydown.escape.window="$store.bill.closeSplitEq()"
+             aria-modal="true" role="dialog" aria-label="Dividir la cuenta a partes iguales">
+
+            <div x-show="$store.bill.splitShowEq"
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="translate-y-full"
+                 x-transition:enter-end="translate-y-0"
+                 x-transition:leave="transition ease-in duration-200"
+                 x-transition:leave-start="translate-y-0"
+                 x-transition:leave-end="translate-y-full"
+                 class="absolute bottom-0 left-0 right-0 bg-white dark:bg-gray-900
+                        rounded-t-2xl shadow-2xl px-5 pb-8 pt-4">
+
+                <div class="w-10 h-1 rounded-full bg-gray-300 dark:bg-gray-600 mx-auto mb-5"></div>
+
+                <div class="flex items-center justify-between mb-5">
+                    <div>
+                        <h2 class="text-lg font-bold text-gray-900 dark:text-white">Dividir a partes iguales</h2>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">¿Cuántas personas sois?</p>
+                    </div>
+                    <button type="button"
+                            @click="$store.bill.closeSplitEq()"
+                            aria-label="Cerrar cobro equitativo"
+                            class="p-1.5 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100
+                                   dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400">
+                        <svg aria-hidden="true" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+
+                {{-- Total del pedido --}}
+                <div class="bg-gray-50 dark:bg-gray-800 rounded-xl px-4 py-3 mb-5 flex justify-between items-center">
+                    <span class="text-sm text-gray-500 dark:text-gray-400">Total del pedido</span>
+                    <span class="text-lg font-bold text-gray-900 dark:text-white"
+                          x-text="$store.bill.orderTotal.toFixed(2).replace('.', ',') + ' €'"></span>
+                </div>
+
+                {{-- Selector de número de personas --}}
+                <div class="mb-5">
+                    <label for="split-people-input"
+                           class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Número de personas
+                    </label>
+                    <div class="flex items-center gap-3">
+                        <button type="button"
+                                @click="if ($store.bill.splitPeople > 2) $store.bill.splitPeople--"
+                                :disabled="$store.bill.splitPeople <= 2"
+                                aria-label="Reducir número de personas"
+                                class="w-10 h-10 flex items-center justify-center rounded-full border-2
+                                       border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400
+                                       hover:border-indigo-500 hover:text-indigo-600 dark:hover:text-indigo-400
+                                       disabled:opacity-40 disabled:cursor-not-allowed
+                                       focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors">
+                            <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M20 12H4"/>
+                            </svg>
+                        </button>
+                        <input type="number"
+                               id="split-people-input"
+                               x-model.number="$store.bill.splitPeople"
+                               min="2"
+                               :max="$store.bill.splitMaxParts || 20"
+                               aria-required="true"
+                               aria-describedby="split-people-hint"
+                               class="flex-1 text-center text-2xl font-bold text-gray-900 dark:text-white
+                                      bg-transparent border-0 focus:outline-none focus:ring-0">
+                        <button type="button"
+                                @click="if (!$store.bill.splitMaxParts || $store.bill.splitPeople < $store.bill.splitMaxParts) $store.bill.splitPeople++"
+                                :disabled="$store.bill.splitMaxParts && $store.bill.splitPeople >= $store.bill.splitMaxParts"
+                                aria-label="Aumentar número de personas"
+                                class="w-10 h-10 flex items-center justify-center rounded-full border-2
+                                       border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400
+                                       hover:border-indigo-500 hover:text-indigo-600 dark:hover:text-indigo-400
+                                       disabled:opacity-40 disabled:cursor-not-allowed
+                                       focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors">
+                            <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <p id="split-people-hint" class="sr-only">Mínimo 2 personas</p>
+                </div>
+
+                {{-- Resumen reactivo --}}
+                <div role="status" aria-live="polite"
+                     class="bg-indigo-50 dark:bg-indigo-900/20 rounded-xl px-4 py-4 mb-5 space-y-2">
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-600 dark:text-gray-400">Total del pedido</span>
+                        <span class="font-medium text-gray-900 dark:text-white"
+                              x-text="$store.bill.orderTotal.toFixed(2).replace('.', ',') + ' €'"></span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-600 dark:text-gray-400">Personas</span>
+                        <span class="font-medium text-gray-900 dark:text-white"
+                              x-text="$store.bill.splitPeople"></span>
+                    </div>
+                    <div class="flex justify-between text-base font-bold border-t border-indigo-200 dark:border-indigo-700 pt-2">
+                        <span class="text-indigo-700 dark:text-indigo-300">Tu parte</span>
+                        <span class="text-indigo-600 dark:text-indigo-400 text-xl"
+                              x-text="$store.bill.splitMyPart.toFixed(2).replace('.', ',') + ' €'"></span>
+                    </div>
+                </div>
+
+                {{-- Botón pagar --}}
+                <button type="button"
+                        @click="$store.bill.proceedSplitPayment($store.bill.splitMyPart, 'equitable', [])"
+                        :disabled="$store.bill.sending"
+                        class="w-full py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60
+                               text-white font-bold text-base shadow-sm transition-colors
+                               focus:outline-none focus:ring-4 focus:ring-indigo-400">
+                    <span x-show="!$store.bill.sending">
+                        💳 Pagar mi parte —
+                        <span x-text="$store.bill.splitMyPart.toFixed(2).replace('.', ',') + ' €'"></span>
+                    </span>
+                    <span x-show="$store.bill.sending" class="flex items-center justify-center gap-2">
+                        <svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+                        </svg>
+                        Procesando...
+                    </span>
+                </button>
+
+                <button type="button"
+                        @click="$store.bill.closeSplitEq()"
+                        class="w-full mt-3 py-2.5 rounded-xl text-sm font-medium text-gray-500 dark:text-gray-400
+                               hover:text-gray-700 dark:hover:text-gray-200 focus:outline-none focus:underline transition-colors">
+                    Cancelar
+                </button>
+            </div>
+        </div>{{-- /split equitable sheet --}}
+
+        {{-- ── Sheet: pago parcial con tarjeta (Stripe Elements) ──────── --}}
+        <div x-show="$store.bill.splitPayingCard"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
+             @keydown.escape.window="$store.bill.closeSplitPayment()"
+             aria-modal="true" role="dialog" aria-label="Pago parcial con tarjeta">
+
+            <div x-show="$store.bill.splitPayingCard"
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="translate-y-full"
+                 x-transition:enter-end="translate-y-0"
+                 x-transition:leave="transition ease-in duration-200"
+                 x-transition:leave-start="translate-y-0"
+                 x-transition:leave-end="translate-y-full"
+                 class="absolute bottom-0 left-0 right-0 bg-white dark:bg-gray-900
+                        rounded-t-2xl shadow-2xl px-5 pb-8 pt-4 max-h-[92dvh] overflow-y-auto">
+
+                <div class="w-10 h-1 rounded-full bg-gray-300 dark:bg-gray-600 mx-auto mb-5"></div>
+
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h2 class="text-lg font-bold text-gray-900 dark:text-white">Pago parcial con tarjeta</h2>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                            Tu parte:
+                            <span class="font-semibold text-gray-900 dark:text-white"
+                                  x-text="$store.bill.splitStripeTotal.toFixed(2).replace('.', ',') + ' €'"></span>
+                        </p>
+                    </div>
+                    <button type="button"
+                            @click="$store.bill.closeSplitPayment()"
+                            aria-label="Cerrar pago parcial"
+                            class="p-1.5 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100
+                                   dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400">
+                        <svg aria-hidden="true" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+
+                {{-- Spinner mientras carga Stripe Elements --}}
+                <div x-show="!$store.bill.splitStripeReady && !$store.bill.splitStripeError"
+                     class="flex items-center justify-center py-10">
+                    <svg class="animate-spin w-8 h-8 text-indigo-500" fill="none" viewBox="0 0 24 24"
+                         aria-label="Cargando formulario de pago">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+                    </svg>
+                </div>
+
+                <div id="split-stripe-element" class="mb-4"></div>
+
+                <template x-if="$store.bill.splitStripeError">
+                    <p class="mb-3 text-sm text-red-600 dark:text-red-400 font-medium text-center"
+                       role="alert"
+                       x-text="$store.bill.splitStripeError"></p>
+                </template>
+
+                <button type="button"
+                        x-show="$store.bill.splitStripeReady"
+                        @click="$store.bill.submitSplitPayment()"
+                        :disabled="$store.bill.sending"
+                        class="w-full py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60
+                               text-white font-bold text-base shadow-sm transition-colors
+                               focus:outline-none focus:ring-4 focus:ring-indigo-400">
+                    <span x-show="!$store.bill.sending">
+                        💳 Pagar
+                        <span x-text="$store.bill.splitStripeTotal.toFixed(2).replace('.', ',') + ' €'"></span>
+                    </span>
+                    <span x-show="$store.bill.sending" class="flex items-center justify-center gap-2">
+                        <svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+                        </svg>
+                        Procesando...
+                    </span>
+                </button>
+
+                <p class="mt-3 text-center text-xs text-gray-400 dark:text-gray-500">
+                    Pago parcial seguro procesado por
+                    <span class="font-semibold text-indigo-500">Stripe</span>
+                    &middot; Tarjeta de prueba: 4242 4242 4242 4242
+                </p>
+            </div>
+        </div>{{-- /split stripe sheet --}}
 
         {{-- ── FAB Carrito ─────────────────────────────────────────── --}}
         <div class="fixed bottom-6 right-4 z-50"
