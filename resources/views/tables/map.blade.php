@@ -2034,15 +2034,15 @@ kbd {
                     <dl class="space-y-2.5">
                         <div class="flex items-center justify-between gap-4">
                             <dt class="text-sm text-gray-700 dark:text-gray-300">Seleccionar siguiente / anterior elemento</dt>
-                            <dd class="flex items-center gap-1 shrink-0"><kbd>Tab</kbd> / <kbd>Shift</kbd>+<kbd>Tab</kbd></dd>
+                            <dd class="flex items-center gap-1 shrink-0"><kbd>Tab</kbd><span class="text-gray-400 dark:text-gray-400 text-[11px] font-medium select-none mx-0.5"> / </span><kbd>Shift</kbd><span class="text-gray-400 dark:text-gray-400 text-[11px] font-medium select-none mx-px">+</span><kbd>Tab</kbd></dd>
                         </div>
                         <div class="flex items-center justify-between gap-4">
                             <dt class="text-sm text-gray-700 dark:text-gray-300">Abrir panel de edición</dt>
-                            <dd class="flex items-center gap-1 shrink-0"><kbd>Enter</kbd> / <kbd>Space</kbd></dd>
+                            <dd class="flex items-center gap-1 shrink-0"><kbd>Enter</kbd><span class="text-gray-400 dark:text-gray-400 text-[11px] font-medium select-none mx-0.5"> / </span><kbd>Space</kbd></dd>
                         </div>
                         <div class="flex items-center justify-between gap-4">
                             <dt class="text-sm text-gray-700 dark:text-gray-300">Abrir menú contextual</dt>
-                            <dd class="flex items-center gap-1 shrink-0"><kbd>Menu</kbd> / <kbd>Shift</kbd>+<kbd>F10</kbd></dd>
+                            <dd class="flex items-center gap-1 shrink-0"><kbd>Menu</kbd><span class="text-gray-400 dark:text-gray-400 text-[11px] font-medium select-none mx-0.5"> / </span><kbd>Shift</kbd><span class="text-gray-400 dark:text-gray-400 text-[11px] font-medium select-none mx-px">+</span><kbd>F10</kbd></dd>
                         </div>
                         <div class="flex items-center justify-between gap-4">
                             <dt class="text-sm text-gray-700 dark:text-gray-300">Cerrar panel / Deseleccionar todo</dt>
@@ -2063,7 +2063,7 @@ kbd {
                         </div>
                         <div class="flex items-center justify-between gap-4">
                             <dt class="text-sm text-gray-700 dark:text-gray-300">Mover 1 px (precisión)</dt>
-                            <dd class="flex items-center gap-1 shrink-0"><kbd>Shift</kbd>+<kbd>↑↓←→</kbd></dd>
+                            <dd class="flex items-center gap-1 shrink-0"><kbd>Shift</kbd><span class="text-gray-400 dark:text-gray-400 text-[11px] font-medium select-none mx-px">+</span><kbd>↑↓←→</kbd></dd>
                         </div>
                     </dl>
                 </section>
@@ -2080,7 +2080,7 @@ kbd {
                         </div>
                         <div class="flex items-center justify-between gap-4">
                             <dt class="text-sm text-gray-700 dark:text-gray-300">Girar sentido horario 1°</dt>
-                            <dd class="flex items-center gap-1 shrink-0"><kbd>Shift</kbd>+<kbd>E</kbd></dd>
+                            <dd class="flex items-center gap-1 shrink-0"><kbd>Shift</kbd><span class="text-gray-400 dark:text-gray-400 text-[11px] font-medium select-none mx-px">+</span><kbd>E</kbd></dd>
                         </div>
                         <div class="flex items-center justify-between gap-4">
                             <dt class="text-sm text-gray-700 dark:text-gray-300">Girar sentido antihorario 5°</dt>
@@ -2088,7 +2088,7 @@ kbd {
                         </div>
                         <div class="flex items-center justify-between gap-4">
                             <dt class="text-sm text-gray-700 dark:text-gray-300">Girar sentido antihorario 1°</dt>
-                            <dd class="flex items-center gap-1 shrink-0"><kbd>Shift</kbd>+<kbd>R</kbd></dd>
+                            <dd class="flex items-center gap-1 shrink-0"><kbd>Shift</kbd><span class="text-gray-400 dark:text-gray-400 text-[11px] font-medium select-none mx-px">+</span><kbd>R</kbd></dd>
                         </div>
                     </dl>
                 </section>
@@ -2101,11 +2101,11 @@ kbd {
                     <dl class="space-y-2.5">
                         <div class="flex items-center justify-between gap-4">
                             <dt class="text-sm text-gray-700 dark:text-gray-300">Ampliar / reducir 10 px</dt>
-                            <dd class="flex items-center gap-1 shrink-0"><kbd>Alt</kbd>+<kbd>↑↓←→</kbd></dd>
+                            <dd class="flex items-center gap-1 shrink-0"><kbd>Alt</kbd><span class="text-gray-400 dark:text-gray-400 text-[11px] font-medium select-none mx-px">+</span><kbd>↑↓←→</kbd></dd>
                         </div>
                         <div class="flex items-center justify-between gap-4">
                             <dt class="text-sm text-gray-700 dark:text-gray-300">Ampliar / reducir 1 px</dt>
-                            <dd class="flex items-center gap-1 shrink-0"><kbd>Shift</kbd>+<kbd>Alt</kbd>+<kbd>↑↓←→</kbd></dd>
+                            <dd class="flex items-center gap-1 shrink-0"><kbd>Shift</kbd><span class="text-gray-400 dark:text-gray-400 text-[11px] font-medium select-none mx-px">+</span><kbd>Alt</kbd><span class="text-gray-400 dark:text-gray-400 text-[11px] font-medium select-none mx-px">+</span><kbd>↑↓←→</kbd></dd>
                         </div>
                     </dl>
                 </section>
@@ -2118,11 +2118,11 @@ kbd {
                     <dl class="space-y-2.5">
                         <div class="flex items-center justify-between gap-4">
                             <dt class="text-sm text-gray-700 dark:text-gray-300">Añadir vértice — foco en <kbd>+</kbd></dt>
-                            <dd class="flex items-center gap-1 shrink-0"><kbd>Enter</kbd> / <kbd>Space</kbd></dd>
+                            <dd class="flex items-center gap-1 shrink-0"><kbd>Enter</kbd><span class="text-gray-400 dark:text-gray-400 text-[11px] font-medium select-none mx-0.5"> / </span><kbd>Space</kbd></dd>
                         </div>
                         <div class="flex items-center justify-between gap-4">
                             <dt class="text-sm text-gray-700 dark:text-gray-300">Eliminar vértice — foco en <kbd>×</kbd></dt>
-                            <dd class="flex items-center gap-1 shrink-0"><kbd>Enter</kbd> / <kbd>Space</kbd></dd>
+                            <dd class="flex items-center gap-1 shrink-0"><kbd>Enter</kbd><span class="text-gray-400 dark:text-gray-400 text-[11px] font-medium select-none mx-0.5"> / </span><kbd>Space</kbd></dd>
                         </div>
                         <div class="flex items-center justify-between gap-4">
                             <dt class="text-sm text-gray-700 dark:text-gray-300">Mover vértice 5 px (foco en <kbd>×</kbd>)</dt>
@@ -2130,7 +2130,7 @@ kbd {
                         </div>
                         <div class="flex items-center justify-between gap-4">
                             <dt class="text-sm text-gray-700 dark:text-gray-300">Mover vértice 1 px</dt>
-                            <dd class="flex items-center gap-1 shrink-0"><kbd>Shift</kbd>+<kbd>↑↓←→</kbd></dd>
+                            <dd class="flex items-center gap-1 shrink-0"><kbd>Shift</kbd><span class="text-gray-400 dark:text-gray-400 text-[11px] font-medium select-none mx-px">+</span><kbd>↑↓←→</kbd></dd>
                         </div>
                         <div class="flex items-center justify-between gap-4">
                             <dt class="text-sm text-gray-700 dark:text-gray-300">Salir del modo vértice</dt>
@@ -2147,15 +2147,15 @@ kbd {
                     <dl class="space-y-2.5">
                         <div class="flex items-center justify-between gap-4">
                             <dt class="text-sm text-gray-700 dark:text-gray-300">Eliminar elemento seleccionado</dt>
-                            <dd class="flex items-center gap-1 shrink-0"><kbd>Delete</kbd> / <kbd>Backspace</kbd></dd>
+                            <dd class="flex items-center gap-1 shrink-0"><kbd>Delete</kbd><span class="text-gray-400 dark:text-gray-400 text-[11px] font-medium select-none mx-0.5"> / </span><kbd>Backspace</kbd></dd>
                         </div>
                         <div class="flex items-center justify-between gap-4">
                             <dt class="text-sm text-gray-700 dark:text-gray-300">Deshacer</dt>
-                            <dd class="flex items-center gap-1 shrink-0"><kbd>Ctrl</kbd>+<kbd>Z</kbd></dd>
+                            <dd class="flex items-center gap-1 shrink-0"><kbd>Ctrl</kbd><span class="text-gray-400 dark:text-gray-400 text-[11px] font-medium select-none mx-px">+</span><kbd>Z</kbd></dd>
                         </div>
                         <div class="flex items-center justify-between gap-4">
                             <dt class="text-sm text-gray-700 dark:text-gray-300">Rehacer</dt>
-                            <dd class="flex items-center gap-1 shrink-0"><kbd>Ctrl</kbd>+<kbd>Y</kbd></dd>
+                            <dd class="flex items-center gap-1 shrink-0"><kbd>Ctrl</kbd><span class="text-gray-400 dark:text-gray-400 text-[11px] font-medium select-none mx-px">+</span><kbd>Y</kbd></dd>
                         </div>
                         <div class="flex items-center justify-between gap-4">
                             <dt class="text-sm text-gray-700 dark:text-gray-300">Abrir / cerrar esta ayuda</dt>
