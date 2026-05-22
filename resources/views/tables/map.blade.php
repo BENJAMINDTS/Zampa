@@ -595,7 +595,7 @@ kbd {
                         :class="{'zampa-selected': isActive(zone.id) && (!zone.vertices || zone.vertices.length < 3)}"
                         tabindex="0"
                         @focus="selectedId = zone.id; editingTableId=null; editingTable=null; editingZoneId=null; editingZone=null;"
-                        @keydown.enter.space.prevent.stop="selectedId = selectedId === zone.id ? null : zone.id; editingTableId=null; editingTable=null; editingZoneId=null; editingZone=null;"
+                        @keydown.enter.space.prevent.stop="selectedId = zone.id; editingTableId=null; editingTable=null; editingZoneId=null; editingZone=null;"
                         :style="`
                             left:${zone.position_x}px;
                             top:${zone.position_y}px;
@@ -611,7 +611,7 @@ kbd {
                         :aria-label="`Zona ${zone.name}`"
                         @mouseenter="if (!(zone.vertices && zone.vertices.length >= 3)) hoveredId = zone.id"
                         @mouseleave="if (!(zone.vertices && zone.vertices.length >= 3)) hoveredId = null"
-                        @click.stop="if (!(zone.vertices && zone.vertices.length >= 3)) { selectedId = selectedId === zone.id ? null : zone.id; editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null; }"
+                        @click.stop="if (!(zone.vertices && zone.vertices.length >= 3)) { selectedId = zone.id; editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null; }"
                         @mousedown.prevent.self="if (!(zone.vertices && zone.vertices.length >= 3)) startZoneDrag($event, zone)"
                         @contextmenu.prevent.stop="openContextMenu($event, zone, 'zone')"
                         @keydown.stop="if ($event.key === 'ContextMenu' || ($event.shiftKey && $event.key === 'F10')) openContextMenu($event, zone, 'zone')"
@@ -625,7 +625,7 @@ kbd {
                              aria-hidden="true"
                              @mouseenter.stop="if (zone.vertices && zone.vertices.length >= 3) hoveredId = zone.id"
                              @mouseleave.stop="if (zone.vertices && zone.vertices.length >= 3) hoveredId = null"
-                             @click.stop="if (zone.vertices && zone.vertices.length >= 3) { selectedId = selectedId === zone.id ? null : zone.id; editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null; }"
+                             @click.stop="if (zone.vertices && zone.vertices.length >= 3) { selectedId = zone.id; editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null; }"
                              @mousedown.prevent.stop="if (zone.vertices && zone.vertices.length >= 3) startZoneDrag($event, zone)"
                              @contextmenu.prevent.stop="if (zone.vertices && zone.vertices.length >= 3) openContextMenu($event, zone, 'zone')">
                             <polygon :points="vertexPoints(zone)"
@@ -774,7 +774,7 @@ kbd {
                         class="table-item absolute group select-none touch-none"
                         tabindex="0"
                         @focus="selectedId = bar.id; editingTableId=null; editingTable=null; editingZoneId=null; editingZone=null;"
-                        @keydown.enter.space.prevent.stop="selectedId = selectedId === bar.id ? null : bar.id; editingTableId=null; editingTable=null; editingZoneId=null; editingZone=null;"
+                        @keydown.enter.space.prevent.stop="selectedId = bar.id; editingTableId=null; editingTable=null; editingZoneId=null; editingZone=null;"
                         :style="`left:${bar.position_x}px; top:${bar.position_y}px;
                                  width:${bar.width}px; height:${bar.height}px;
                                  transform:rotate(${bar.rotation ?? 0}deg);
@@ -782,7 +782,7 @@ kbd {
                                  z-index:${hoveredId === bar.id || selectedId === bar.id || rotatingId === bar.id ? 30 : 10};`"
                         @mouseenter="hoveredId = bar.id"
                         @mouseleave="hoveredId = null"
-                        @click.stop="selectedId = selectedId === bar.id ? null : bar.id; editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null;"
+                        @click.stop="selectedId = bar.id; editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null;"
                         @contextmenu.prevent.stop="openContextMenu($event, bar, 'bar')"
                         @keydown.stop="if ($event.key === 'ContextMenu' || ($event.shiftKey && $event.key === 'F10')) openContextMenu($event, bar, 'bar')"
                         :aria-label="`Barra: ${bar.name}`"
@@ -924,7 +924,7 @@ kbd {
                         class="element-item absolute group select-none touch-none"
                         tabindex="0"
                         @focus="selectedId = stool.id; editingTableId=null; editingTable=null; editingZoneId=null; editingZone=null;"
-                        @keydown.enter.space.prevent.stop="selectedId = selectedId === stool.id ? null : stool.id; editingTableId=null; editingTable=null; editingZoneId=null; editingZone=null;"
+                        @keydown.enter.space.prevent.stop="selectedId = stool.id; editingTableId=null; editingTable=null; editingZoneId=null; editingZone=null;"
                         :style="`left:${stool.position_x}px; top:${stool.position_y}px;
                                  width:${stool.width}px; height:${stool.height}px;
                                  transform:rotate(${stool.rotation ?? 0}deg);
@@ -932,7 +932,7 @@ kbd {
                                  z-index:${hoveredId === stool.id || selectedId === stool.id || rotatingId === stool.id ? 30 : 10};`"
                         @mouseenter="hoveredId = stool.id"
                         @mouseleave="hoveredId = null"
-                        @click.stop="selectedId = selectedId === stool.id ? null : stool.id; editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null;"
+                        @click.stop="selectedId = stool.id; editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null;"
                         @contextmenu.prevent.stop="openContextMenu($event, stool, 'stool')"
                         @keydown.stop="if ($event.key === 'ContextMenu' || ($event.shiftKey && $event.key === 'F10')) openContextMenu($event, stool, 'stool')"
                         :aria-label="`Taburete: ${stool.name}`"
@@ -1016,7 +1016,7 @@ kbd {
                         class="table-item absolute group select-none touch-none"
                         tabindex="0"
                         @focus="selectedId = table.id; editingTableId=null; editingTable=null; editingZoneId=null; editingZone=null;"
-                        @keydown.enter.space.prevent.stop="selectedId = selectedId === table.id ? null : table.id; editingTableId=null; editingTable=null; editingZoneId=null; editingZone=null;"
+                        @keydown.enter.space.prevent.stop="selectedId = table.id; editingTableId=null; editingTable=null; editingZoneId=null; editingZone=null;"
                         :style="`left:${table.position_x}px; top:${table.position_y}px;
                                  width:${table.width}px; height:${table.height}px;
                                  transform: rotate(${table.rotation ?? 0}deg);
@@ -1026,7 +1026,7 @@ kbd {
                                      : (floorsEnabled && currentView === 'general' ? 10 + ((table.floor ?? 1) - 1) * 10 : 10)};`"
                         @mouseenter="hoveredId = table.id"
                         @mouseleave="hoveredId = null"
-                        @click.stop="selectedId = selectedId === table.id ? null : table.id; editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null;"
+                        @click.stop="selectedId = table.id; editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null;"
                         @contextmenu.prevent.stop="openContextMenu($event, table, 'table')"
                         @keydown.stop="if ($event.key === 'ContextMenu' || ($event.shiftKey && $event.key === 'F10')) openContextMenu($event, table, 'table')"
                         :aria-label="`Mesa ${table.name}`"
