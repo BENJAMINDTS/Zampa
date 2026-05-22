@@ -694,7 +694,7 @@ kbd {
 
                         {{-- Botón editar zona --}}
                         <button type="button"
-                                @click.stop="if (editingZoneId === zone.id) { editingZoneId = null; editingZone = null; _zoneBtnEl = null; } else { editingZoneId = zone.id; editingZone = zone; _zoneBtnEl = $el; editZonePanelPos = panelPosFromBtn($el, 220); editingTableId = null; editingTable = null; _editBtnEl = null; }"
+                                @click.stop="closeContextMenu(); if (editingZoneId === zone.id) { editingZoneId = null; editingZone = null; _zoneBtnEl = null; } else { editingZoneId = zone.id; editingZone = zone; _zoneBtnEl = $el; editZonePanelPos = panelPosFromBtn($el, 220); editingTableId = null; editingTable = null; _editBtnEl = null; }"
                                 class="absolute -top-2.5 -right-9
                                        w-6 h-6 rounded-full bg-gray-600 dark:bg-gray-500 text-white
                                        flex items-center justify-center transition-opacity
@@ -1106,7 +1106,7 @@ kbd {
                             {{-- Botón editar forma — solo admin --}}
                             <button type="button"
                                     x-show="!readonly && editMode && !(isRotating && rotatingId === table.id)"
-                                    @click.stop="if (editingTableId === table.id) { editingTableId = null; editingTable = null; _editBtnEl = null; } else { editingTableId = table.id; editingTable = table; _editBtnEl = $el; editPanelPos = panelPosFromBtn($el, 220); editingZoneId = null; editingZone = null; _zoneBtnEl = null; }"
+                                    @click.stop="closeContextMenu(); if (editingTableId === table.id) { editingTableId = null; editingTable = null; _editBtnEl = null; } else { editingTableId = table.id; editingTable = table; _editBtnEl = $el; editPanelPos = panelPosFromBtn($el, 220); editingZoneId = null; editingZone = null; _zoneBtnEl = null; }"
                                     class="absolute -top-2.5 -right-16
                                            w-6 h-6 rounded-full bg-gray-600 dark:bg-gray-500 text-white
                                            flex items-center justify-center transition-opacity
