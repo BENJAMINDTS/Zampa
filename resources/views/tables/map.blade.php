@@ -2041,6 +2041,10 @@ kbd {
                             <dd class="flex items-center gap-1 shrink-0"><kbd>Enter</kbd> / <kbd>Space</kbd></dd>
                         </div>
                         <div class="flex items-center justify-between gap-4">
+                            <dt class="text-sm text-gray-700 dark:text-gray-300">Abrir menú contextual</dt>
+                            <dd class="flex items-center gap-1 shrink-0"><kbd>Menu</kbd> / <kbd>Shift</kbd>+<kbd>F10</kbd></dd>
+                        </div>
+                        <div class="flex items-center justify-between gap-4">
                             <dt class="text-sm text-gray-700 dark:text-gray-300">Cerrar panel / Deseleccionar todo</dt>
                             <dd class="flex items-center gap-1 shrink-0"><kbd>Esc</kbd></dd>
                         </div>
