@@ -4415,6 +4415,7 @@ document.addEventListener('alpine:init', () => {
 
         // ── Teclado: manejador principal ─────────────────────────────────────
         handleKb(event) {
+            if (this.contextMenu.show) return;
             if (this._isTyping()) return;
 
             if (event.key === '?') {
