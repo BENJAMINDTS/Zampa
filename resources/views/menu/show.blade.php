@@ -4120,7 +4120,7 @@
                                                                    transition-colors duration-150
                                                                    focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-1">
                                                         {{ $variant->name }}
-                                                        <span class="opacity-75">{{ number_format($variant->price, 2, ',', '.') }}&amp;nbsp;€</span>
+                                                        <span class="opacity-75">{{ number_format($variant->price, 2, ',', '.') }}&nbsp;€</span>
                                                     </button>
                                                 @endforeach
                                             </div>
