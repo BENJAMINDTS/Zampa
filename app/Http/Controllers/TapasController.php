@@ -82,6 +82,8 @@ class TapasController extends Controller
             'business_schedules'                  => ['nullable', 'array', 'max:4'],
             'business_schedules.*.opens_at'       => ['required', 'date_format:H:i'],
             'business_schedules.*.closes_at'      => ['required', 'date_format:H:i'],
+            'split_payment_enabled'               => ['sometimes', 'boolean'],
+            'split_payment_max_parts'             => ['nullable', 'integer', 'min:2', 'max:20'],
         ]);
 
         $userId       = Auth::id();
@@ -133,6 +135,15 @@ class TapasController extends Controller
                 'closes_at' => $slot['closes_at'],
             ]);
         }
+
+        // Guardar cobro partido en el usuario
+        $splitEnabled = $request->boolean('split_payment_enabled');
+        Auth::user()->update([
+            'split_payment_enabled'   => $splitEnabled,
+            'split_payment_max_parts' => $splitEnabled
+                ? ($request->input('split_payment_max_parts') ?: null)
+                : null,
+        ]);
 
         return redirect()->route('negocio.config.edit')
                          ->with('success', 'Configuración del negocio guardada correctamente.');
