@@ -559,7 +559,8 @@ kbd {
                 aria-label="Plano interactivo del restaurante. En modo edición: Tab navega entre elementos, Flechas mueven (Mayús = 1 px), Alt+Flechas redimensiona, R rota izquierda (Mayús = 1°), E rota derecha (Mayús = 1°), Supr elimina, Ctrl+Z deshace, Ctrl+Y rehace. En vértices: Tab navega, Flechas mueven el vértice activo."
                 :class="(editMode && currentView !== 'general' && !isPanning) ? 'cursor-grab' : ''"
                 @mousedown.self="startPan($event)"
-                @click="editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null; selectedId = null;"
+                @click="editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null; selectedId = null; closeContextMenu();"
+                @contextmenu.prevent="closeContextMenu()"
             >
 
                 {{-- Overlay modo visualización: bloquea interacción cuando no se está editando --}}
@@ -594,7 +595,7 @@ kbd {
                         :class="{'zampa-selected': isActive(zone.id) && (!zone.vertices || zone.vertices.length < 3)}"
                         tabindex="0"
                         @focus="selectedId = zone.id; editingTableId=null; editingTable=null; editingZoneId=null; editingZone=null;"
-                        @keydown.enter.space.prevent.stop="selectedId = selectedId === zone.id ? null : zone.id; editingTableId=null; editingTable=null; editingZoneId=null; editingZone=null;"
+                        @keydown.enter.space.prevent.stop="selectedId = zone.id; editingTableId=null; editingTable=null; editingZoneId=null; editingZone=null;"
                         :style="`
                             left:${zone.position_x}px;
                             top:${zone.position_y}px;
@@ -610,8 +611,10 @@ kbd {
                         :aria-label="`Zona ${zone.name}`"
                         @mouseenter="if (!(zone.vertices && zone.vertices.length >= 3)) hoveredId = zone.id"
                         @mouseleave="if (!(zone.vertices && zone.vertices.length >= 3)) hoveredId = null"
-                        @click.stop="if (!(zone.vertices && zone.vertices.length >= 3)) { selectedId = selectedId === zone.id ? null : zone.id; editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null; }"
+                        @click.stop="if (!(zone.vertices && zone.vertices.length >= 3)) { selectedId = zone.id; editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null; }"
                         @mousedown.prevent.self="if (!(zone.vertices && zone.vertices.length >= 3)) startZoneDrag($event, zone)"
+                        @contextmenu.prevent.stop="openContextMenu($event, zone, 'zone')"
+                        @keydown.stop="if ($event.key === 'ContextMenu' || ($event.shiftKey && $event.key === 'F10')) openContextMenu($event, zone, 'zone')"
                     >
                         {{-- Polígono SVG: en modo polígono recibe eventos y maneja drag/select --}}
                         <svg x-show="zone.vertices && zone.vertices.length >= 3"
@@ -622,8 +625,9 @@ kbd {
                              aria-hidden="true"
                              @mouseenter.stop="if (zone.vertices && zone.vertices.length >= 3) hoveredId = zone.id"
                              @mouseleave.stop="if (zone.vertices && zone.vertices.length >= 3) hoveredId = null"
-                             @click.stop="if (zone.vertices && zone.vertices.length >= 3) { selectedId = selectedId === zone.id ? null : zone.id; editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null; }"
-                             @mousedown.prevent.stop="if (zone.vertices && zone.vertices.length >= 3) startZoneDrag($event, zone)">
+                             @click.stop="if (zone.vertices && zone.vertices.length >= 3) { selectedId = zone.id; editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null; }"
+                             @mousedown.prevent.stop="if (zone.vertices && zone.vertices.length >= 3) startZoneDrag($event, zone)"
+                             @contextmenu.prevent.stop="if (zone.vertices && zone.vertices.length >= 3) openContextMenu($event, zone, 'zone')">
                             <polygon :points="vertexPoints(zone)"
                                      :fill="`${zone.color}22`"
                                      :stroke="isActive(zone.id) ? '#6366f1' : zone.color"
@@ -690,7 +694,7 @@ kbd {
 
                         {{-- Botón editar zona --}}
                         <button type="button"
-                                @click.stop="if (editingZoneId === zone.id) { editingZoneId = null; editingZone = null; _zoneBtnEl = null; } else { editingZoneId = zone.id; editingZone = zone; _zoneBtnEl = $el; editZonePanelPos = panelPosFromBtn($el, 220); editingTableId = null; editingTable = null; _editBtnEl = null; }"
+                                @click.stop="closeContextMenu(); if (editingZoneId === zone.id) { editingZoneId = null; editingZone = null; _zoneBtnEl = null; } else { editingZoneId = zone.id; editingZone = zone; _zoneBtnEl = $el; editZonePanelPos = panelPosFromBtn($el, 220); editingTableId = null; editingTable = null; _editBtnEl = null; }"
                                 class="absolute -top-2.5 -right-9
                                        w-6 h-6 rounded-full bg-gray-600 dark:bg-gray-500 text-white
                                        flex items-center justify-center transition-opacity
@@ -770,7 +774,7 @@ kbd {
                         class="table-item absolute group select-none touch-none"
                         tabindex="0"
                         @focus="selectedId = bar.id; editingTableId=null; editingTable=null; editingZoneId=null; editingZone=null;"
-                        @keydown.enter.space.prevent.stop="selectedId = selectedId === bar.id ? null : bar.id; editingTableId=null; editingTable=null; editingZoneId=null; editingZone=null;"
+                        @keydown.enter.space.prevent.stop="selectedId = bar.id; editingTableId=null; editingTable=null; editingZoneId=null; editingZone=null;"
                         :style="`left:${bar.position_x}px; top:${bar.position_y}px;
                                  width:${bar.width}px; height:${bar.height}px;
                                  transform:rotate(${bar.rotation ?? 0}deg);
@@ -778,7 +782,9 @@ kbd {
                                  z-index:${hoveredId === bar.id || selectedId === bar.id || rotatingId === bar.id ? 30 : 10};`"
                         @mouseenter="hoveredId = bar.id"
                         @mouseleave="hoveredId = null"
-                        @click.stop="selectedId = selectedId === bar.id ? null : bar.id; editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null;"
+                        @click.stop="selectedId = bar.id; editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null;"
+                        @contextmenu.prevent.stop="openContextMenu($event, bar, 'bar')"
+                        @keydown.stop="if ($event.key === 'ContextMenu' || ($event.shiftKey && $event.key === 'F10')) openContextMenu($event, bar, 'bar')"
                         :aria-label="`Barra: ${bar.name}`"
                     >
                         <div class="w-full h-full relative flex items-center justify-center
@@ -918,7 +924,7 @@ kbd {
                         class="element-item absolute group select-none touch-none"
                         tabindex="0"
                         @focus="selectedId = stool.id; editingTableId=null; editingTable=null; editingZoneId=null; editingZone=null;"
-                        @keydown.enter.space.prevent.stop="selectedId = selectedId === stool.id ? null : stool.id; editingTableId=null; editingTable=null; editingZoneId=null; editingZone=null;"
+                        @keydown.enter.space.prevent.stop="selectedId = stool.id; editingTableId=null; editingTable=null; editingZoneId=null; editingZone=null;"
                         :style="`left:${stool.position_x}px; top:${stool.position_y}px;
                                  width:${stool.width}px; height:${stool.height}px;
                                  transform:rotate(${stool.rotation ?? 0}deg);
@@ -926,7 +932,9 @@ kbd {
                                  z-index:${hoveredId === stool.id || selectedId === stool.id || rotatingId === stool.id ? 30 : 10};`"
                         @mouseenter="hoveredId = stool.id"
                         @mouseleave="hoveredId = null"
-                        @click.stop="selectedId = selectedId === stool.id ? null : stool.id; editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null;"
+                        @click.stop="selectedId = stool.id; editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null;"
+                        @contextmenu.prevent.stop="openContextMenu($event, stool, 'stool')"
+                        @keydown.stop="if ($event.key === 'ContextMenu' || ($event.shiftKey && $event.key === 'F10')) openContextMenu($event, stool, 'stool')"
                         :aria-label="`Taburete: ${stool.name}`"
                     >
                         <div class="w-full h-full relative flex items-center justify-center
@@ -1008,7 +1016,7 @@ kbd {
                         class="table-item absolute group select-none touch-none"
                         tabindex="0"
                         @focus="selectedId = table.id; editingTableId=null; editingTable=null; editingZoneId=null; editingZone=null;"
-                        @keydown.enter.space.prevent.stop="selectedId = selectedId === table.id ? null : table.id; editingTableId=null; editingTable=null; editingZoneId=null; editingZone=null;"
+                        @keydown.enter.space.prevent.stop="selectedId = table.id; editingTableId=null; editingTable=null; editingZoneId=null; editingZone=null;"
                         :style="`left:${table.position_x}px; top:${table.position_y}px;
                                  width:${table.width}px; height:${table.height}px;
                                  transform: rotate(${table.rotation ?? 0}deg);
@@ -1018,7 +1026,9 @@ kbd {
                                      : (floorsEnabled && currentView === 'general' ? 10 + ((table.floor ?? 1) - 1) * 10 : 10)};`"
                         @mouseenter="hoveredId = table.id"
                         @mouseleave="hoveredId = null"
-                        @click.stop="selectedId = selectedId === table.id ? null : table.id; editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null;"
+                        @click.stop="selectedId = table.id; editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null;"
+                        @contextmenu.prevent.stop="openContextMenu($event, table, 'table')"
+                        @keydown.stop="if ($event.key === 'ContextMenu' || ($event.shiftKey && $event.key === 'F10')) openContextMenu($event, table, 'table')"
                         :aria-label="`Mesa ${table.name}`"
                     >
                         {{-- Fondo de la mesa (color según estado del pedido) --}}
@@ -1096,7 +1106,7 @@ kbd {
                             {{-- Botón editar forma — solo admin --}}
                             <button type="button"
                                     x-show="!readonly && editMode && !(isRotating && rotatingId === table.id)"
-                                    @click.stop="if (editingTableId === table.id) { editingTableId = null; editingTable = null; _editBtnEl = null; } else { editingTableId = table.id; editingTable = table; _editBtnEl = $el; editPanelPos = panelPosFromBtn($el, 220); editingZoneId = null; editingZone = null; _zoneBtnEl = null; }"
+                                    @click.stop="closeContextMenu(); if (editingTableId === table.id) { editingTableId = null; editingTable = null; _editBtnEl = null; } else { editingTableId = table.id; editingTable = table; _editBtnEl = $el; editPanelPos = panelPosFromBtn($el, 220); editingZoneId = null; editingZone = null; _zoneBtnEl = null; }"
                                     class="absolute -top-2.5 -right-16
                                            w-6 h-6 rounded-full bg-gray-600 dark:bg-gray-500 text-white
                                            flex items-center justify-center transition-opacity
@@ -1374,6 +1384,278 @@ kbd {
                 <span x-text="rotTooltip.deg > 180 ? rotTooltip.deg - 360 : rotTooltip.deg"></span>°
             </span>
         </div>
+    </div>
+
+    {{-- ═══════════════════════════════════════════════════════════
+         Menú contextual de estructuras (clic derecho / ContextMenu)
+         ═══════════════════════════════════════════════════════════ --}}
+    <div id="context-menu"
+         x-show="contextMenu.show"
+         x-transition:enter="transition ease-out duration-100"
+         x-transition:enter-start="opacity-0 scale-95"
+         x-transition:enter-end="opacity-100 scale-100"
+         x-transition:leave="transition ease-in duration-75"
+         x-transition:leave-start="opacity-100 scale-100"
+         x-transition:leave-end="opacity-0 scale-95"
+         x-effect="if (contextMenu.show) $nextTick(() => { const first = $el.querySelector('[role=menuitem]'); first?.focus(); })"
+         @click.stop
+         @keydown.escape.prevent="closeContextMenu()"
+         @keydown.arrow-down.prevent="focusNextContextItem($event.target)"
+         @keydown.arrow-up.prevent="focusPrevContextItem($event.target)"
+         @keydown.home.prevent="$el.querySelector('[role=menuitem]')?.focus()"
+         @keydown.end.prevent="[...$el.querySelectorAll('[role=menuitem]')].at(-1)?.focus()"
+         @keydown.tab="closeContextMenu()"
+         class="fixed z-[9999] bg-white dark:bg-gray-800 rounded-xl shadow-2xl
+                border border-gray-200 dark:border-gray-700 py-1 min-w-[200px]
+                select-none"
+         :style="`left:${contextMenu.x}px; top:${contextMenu.y}px`"
+         role="menu"
+         aria-label="Opciones de la estructura"
+         x-cloak>
+
+        {{-- Cabecera: nombre de la estructura --}}
+        <div class="px-3 py-2 border-b border-gray-100 dark:border-gray-700 flex items-center gap-2">
+            <span class="text-xs font-bold text-gray-700 dark:text-gray-200 truncate"
+                  x-text="contextMenu.item?.name ?? 'Estructura'"></span>
+            <span class="ml-auto text-[10px] font-medium px-1.5 py-0.5 rounded-full"
+                  :class="{
+                      'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-300': contextMenu.type === 'table',
+                      'bg-amber-100  text-amber-600  dark:bg-amber-900/50  dark:text-amber-300':  contextMenu.type === 'bar' || contextMenu.type === 'stool',
+                      'bg-green-100  text-green-600  dark:bg-green-900/50  dark:text-green-300':  contextMenu.type === 'zone',
+                  }"
+                  x-text="{ table: 'Mesa', bar: 'Barra', stool: 'Taburete', zone: 'Zona' }[contextMenu.type] ?? ''">
+            </span>
+        </div>
+
+        {{-- ── OPCIONES PARA MESAS ── --}}
+        <template x-if="contextMenu.type === 'table'">
+            <div>
+                {{-- Editar (solo edit mode) --}}
+                <template x-if="!readonly && editMode">
+                    <button type="button"
+                            role="menuitem"
+                            tabindex="0"
+                            @click.stop="editingTableId = contextMenu.item.id; editingTable = contextMenu.item; editPanelPos = panelPosFromItem(contextMenu.item, 220); editingZoneId = null; editingZone = null; closeContextMenu()"
+                            class="w-full flex items-center gap-2.5 px-3 py-2 text-sm
+                                   text-gray-700 dark:text-gray-200
+                                   hover:bg-indigo-50 dark:hover:bg-indigo-900/30
+                                   focus:outline-none focus:bg-indigo-50 dark:focus:bg-indigo-900/30
+                                   transition-colors">
+                        <svg class="w-4 h-4 flex-shrink-0 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z"/>
+                        </svg>
+                        Editar mesa
+                    </button>
+                </template>
+
+                {{-- Ver QR (siempre disponible) --}}
+                <button type="button"
+                        role="menuitem"
+                        tabindex="0"
+                        @click.stop="$store.qrModal.open(contextMenu.item); closeContextMenu()"
+                        class="w-full flex items-center gap-2.5 px-3 py-2 text-sm
+                               text-gray-700 dark:text-gray-200
+                               hover:bg-indigo-50 dark:hover:bg-indigo-900/30
+                               focus:outline-none focus:bg-indigo-50 dark:focus:bg-indigo-900/30
+                               transition-colors">
+                    <svg class="w-4 h-4 flex-shrink-0 text-indigo-400" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M3 3h7v7H3V3zm2 2v3h3V5H5zm9-2h7v7h-7V3zm2 2v3h3V5h-3zM3 14h7v7H3v-7zm2 2v3h3v-3H5zm11.5-2a.5.5 0 01.5.5v1h1.5a.5.5 0 010 1H17v1.5a.5.5 0 01-1 0V17h-1.5a.5.5 0 010-1H16v-1.5a.5.5 0 01.5-.5zm3 3a.5.5 0 01.5.5V21h-2.5a.5.5 0 010-1H21v-1.5a.5.5 0 01.5-.5z"/>
+                    </svg>
+                    Ver código QR
+                </button>
+
+                {{-- Cambiar forma + Eliminar (solo edit mode) --}}
+                <template x-if="!readonly && editMode">
+                    <div>
+                        <div class="border-t border-gray-100 dark:border-gray-700 my-1" role="separator"></div>
+                        <p class="px-3 py-1 text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider"
+                           role="presentation">Cambiar forma</p>
+
+                        <button type="button"
+                                role="menuitem"
+                                tabindex="0"
+                                @click.stop="updateShape(contextMenu.item, 'square'); closeContextMenu()"
+                                class="w-full flex items-center gap-2.5 px-3 py-2 text-sm
+                                       hover:bg-indigo-50 dark:hover:bg-indigo-900/30
+                                       focus:outline-none focus:bg-indigo-50 dark:focus:bg-indigo-900/30
+                                       transition-colors"
+                                :class="contextMenu.item?.shape === 'square'
+                                    ? 'text-indigo-600 dark:text-indigo-400 font-semibold'
+                                    : 'text-gray-700 dark:text-gray-200'">
+                            <svg class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/></svg>
+                            Cuadrada
+                            <svg x-show="contextMenu.item?.shape === 'square'" class="w-3.5 h-3.5 ml-auto text-indigo-500" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                        </button>
+
+                        <button type="button"
+                                role="menuitem"
+                                tabindex="0"
+                                @click.stop="updateShape(contextMenu.item, 'round'); closeContextMenu()"
+                                class="w-full flex items-center gap-2.5 px-3 py-2 text-sm
+                                       hover:bg-indigo-50 dark:hover:bg-indigo-900/30
+                                       focus:outline-none focus:bg-indigo-50 dark:focus:bg-indigo-900/30
+                                       transition-colors"
+                                :class="contextMenu.item?.shape === 'round'
+                                    ? 'text-indigo-600 dark:text-indigo-400 font-semibold'
+                                    : 'text-gray-700 dark:text-gray-200'">
+                            <svg class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/></svg>
+                            Redonda
+                            <svg x-show="contextMenu.item?.shape === 'round'" class="w-3.5 h-3.5 ml-auto text-indigo-500" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                        </button>
+
+                        <button type="button"
+                                role="menuitem"
+                                tabindex="0"
+                                @click.stop="updateShape(contextMenu.item, 'rectangle'); closeContextMenu()"
+                                class="w-full flex items-center gap-2.5 px-3 py-2 text-sm
+                                       hover:bg-indigo-50 dark:hover:bg-indigo-900/30
+                                       focus:outline-none focus:bg-indigo-50 dark:focus:bg-indigo-900/30
+                                       transition-colors"
+                                :class="contextMenu.item?.shape === 'rectangle'
+                                    ? 'text-indigo-600 dark:text-indigo-400 font-semibold'
+                                    : 'text-gray-700 dark:text-gray-200'">
+                            <svg class="w-5 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 24 14" aria-hidden="true"><rect x="0" y="0" width="24" height="14" rx="3"/></svg>
+                            Rectangular
+                            <svg x-show="contextMenu.item?.shape === 'rectangle'" class="w-3.5 h-3.5 ml-auto text-indigo-500" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                        </button>
+
+                        <div class="border-t border-gray-100 dark:border-gray-700 my-1" role="separator"></div>
+
+                        <button type="button"
+                                role="menuitem"
+                                tabindex="0"
+                                @click.stop="deleteTable(contextMenu.item); closeContextMenu()"
+                                class="w-full flex items-center gap-2.5 px-3 py-2 text-sm
+                                       text-red-600 dark:text-red-400
+                                       hover:bg-red-50 dark:hover:bg-red-900/20
+                                       focus:outline-none focus:bg-red-50 dark:focus:bg-red-900/20
+                                       transition-colors">
+                            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/>
+                            </svg>
+                            Eliminar mesa
+                        </button>
+                    </div>
+                </template>
+            </div>
+        </template>
+
+        {{-- ── OPCIONES PARA ZONAS ── --}}
+        <template x-if="contextMenu.type === 'zone'">
+            <div>
+                <template x-if="!readonly && editMode">
+                    <div>
+                        <button type="button"
+                                role="menuitem"
+                                tabindex="0"
+                                @click.stop="editingZoneId = contextMenu.item.id; editingZone = contextMenu.item; editZonePanelPos = panelPosFromItem(contextMenu.item, 220); editingTableId = null; editingTable = null; closeContextMenu()"
+                                class="w-full flex items-center gap-2.5 px-3 py-2 text-sm
+                                       text-gray-700 dark:text-gray-200
+                                       hover:bg-indigo-50 dark:hover:bg-indigo-900/30
+                                       focus:outline-none focus:bg-indigo-50 dark:focus:bg-indigo-900/30
+                                       transition-colors">
+                            <svg class="w-4 h-4 flex-shrink-0 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z"/>
+                            </svg>
+                            Editar zona
+                        </button>
+
+                        <button type="button"
+                                role="menuitem"
+                                tabindex="0"
+                                x-show="!contextMenu.item?.vertices || contextMenu.item?.vertices.length < 3"
+                                @click.stop="initPolygonVertices(contextMenu.item); closeContextMenu()"
+                                class="w-full flex items-center gap-2.5 px-3 py-2 text-sm
+                                       text-gray-700 dark:text-gray-200
+                                       hover:bg-indigo-50 dark:hover:bg-indigo-900/30
+                                       focus:outline-none focus:bg-indigo-50 dark:focus:bg-indigo-900/30
+                                       transition-colors">
+                            <span class="w-4 h-4 flex-shrink-0 text-center leading-none text-base" aria-hidden="true">⬡</span>
+                            Convertir a polígono
+                        </button>
+
+                        <div class="border-t border-gray-100 dark:border-gray-700 my-1" role="separator"></div>
+
+                        <button type="button"
+                                role="menuitem"
+                                tabindex="0"
+                                @click.stop="deleteZone(contextMenu.item); closeContextMenu()"
+                                class="w-full flex items-center gap-2.5 px-3 py-2 text-sm
+                                       text-red-600 dark:text-red-400
+                                       hover:bg-red-50 dark:hover:bg-red-900/20
+                                       focus:outline-none focus:bg-red-50 dark:focus:bg-red-900/20
+                                       transition-colors">
+                            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/>
+                            </svg>
+                            Eliminar zona
+                        </button>
+                    </div>
+                </template>
+            </div>
+        </template>
+
+        {{-- ── OPCIONES PARA BARRAS ── --}}
+        <template x-if="contextMenu.type === 'bar'">
+            <div>
+                <template x-if="!readonly && editMode">
+                    <div>
+                        <button type="button"
+                                role="menuitem"
+                                tabindex="0"
+                                x-show="!contextMenu.item?.vertices || contextMenu.item?.vertices.length < 3"
+                                @click.stop="initBarPolygonVertices(contextMenu.item); closeContextMenu()"
+                                class="w-full flex items-center gap-2.5 px-3 py-2 text-sm
+                                       text-gray-700 dark:text-gray-200
+                                       hover:bg-amber-50 dark:hover:bg-amber-900/30
+                                       focus:outline-none focus:bg-amber-50 dark:focus:bg-amber-900/30
+                                       transition-colors">
+                            <span class="w-4 h-4 flex-shrink-0 text-center leading-none text-base" aria-hidden="true">⬡</span>
+                            Convertir a polígono
+                        </button>
+
+                        <div class="border-t border-gray-100 dark:border-gray-700 my-1" role="separator"></div>
+
+                        <button type="button"
+                                role="menuitem"
+                                tabindex="0"
+                                @click.stop="deleteElement(contextMenu.item); closeContextMenu()"
+                                class="w-full flex items-center gap-2.5 px-3 py-2 text-sm
+                                       text-red-600 dark:text-red-400
+                                       hover:bg-red-50 dark:hover:bg-red-900/20
+                                       focus:outline-none focus:bg-red-50 dark:focus:bg-red-900/20
+                                       transition-colors">
+                            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/>
+                            </svg>
+                            Eliminar barra
+                        </button>
+                    </div>
+                </template>
+            </div>
+        </template>
+
+        {{-- ── OPCIONES PARA TABURETES ── --}}
+        <template x-if="contextMenu.type === 'stool'">
+            <div>
+                <template x-if="!readonly && editMode">
+                    <button type="button"
+                            role="menuitem"
+                            tabindex="0"
+                            @click.stop="deleteElement(contextMenu.item); closeContextMenu()"
+                            class="w-full flex items-center gap-2.5 px-3 py-2 text-sm
+                                   text-red-600 dark:text-red-400
+                                   hover:bg-red-50 dark:hover:bg-red-900/20
+                                   focus:outline-none focus:bg-red-50 dark:focus:bg-red-900/20
+                                   transition-colors">
+                        <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/>
+                        </svg>
+                        Eliminar taburete
+                    </button>
+                </template>
+            </div>
+        </template>
     </div>
 
     {{-- Toast fijo — siempre visible sin importar scroll ni zoom del canvas --}}
@@ -1752,11 +2034,15 @@ kbd {
                     <dl class="space-y-2.5">
                         <div class="flex items-center justify-between gap-4">
                             <dt class="text-sm text-gray-700 dark:text-gray-300">Seleccionar siguiente / anterior elemento</dt>
-                            <dd class="flex items-center gap-1 shrink-0"><kbd>Tab</kbd> / <kbd>Shift</kbd>+<kbd>Tab</kbd></dd>
+                            <dd class="flex items-center gap-1 shrink-0"><kbd>Tab</kbd><span class="text-gray-400 dark:text-gray-400 text-[11px] font-medium select-none mx-0.5"> / </span><kbd>Shift</kbd><span class="text-gray-400 dark:text-gray-400 text-[11px] font-medium select-none mx-px">+</span><kbd>Tab</kbd></dd>
                         </div>
                         <div class="flex items-center justify-between gap-4">
                             <dt class="text-sm text-gray-700 dark:text-gray-300">Abrir panel de edición</dt>
-                            <dd class="flex items-center gap-1 shrink-0"><kbd>Enter</kbd> / <kbd>Space</kbd></dd>
+                            <dd class="flex items-center gap-1 shrink-0"><kbd>Enter</kbd><span class="text-gray-400 dark:text-gray-400 text-[11px] font-medium select-none mx-0.5"> / </span><kbd>Space</kbd></dd>
+                        </div>
+                        <div class="flex items-center justify-between gap-4">
+                            <dt class="text-sm text-gray-700 dark:text-gray-300">Abrir menú contextual</dt>
+                            <dd class="flex items-center gap-1 shrink-0"><kbd>Menu</kbd><span class="text-gray-400 dark:text-gray-400 text-[11px] font-medium select-none mx-0.5"> / </span><kbd>Shift</kbd><span class="text-gray-400 dark:text-gray-400 text-[11px] font-medium select-none mx-px">+</span><kbd>F10</kbd></dd>
                         </div>
                         <div class="flex items-center justify-between gap-4">
                             <dt class="text-sm text-gray-700 dark:text-gray-300">Cerrar panel / Deseleccionar todo</dt>
@@ -1777,7 +2063,7 @@ kbd {
                         </div>
                         <div class="flex items-center justify-between gap-4">
                             <dt class="text-sm text-gray-700 dark:text-gray-300">Mover 1 px (precisión)</dt>
-                            <dd class="flex items-center gap-1 shrink-0"><kbd>Shift</kbd>+<kbd>↑↓←→</kbd></dd>
+                            <dd class="flex items-center gap-1 shrink-0"><kbd>Shift</kbd><span class="text-gray-400 dark:text-gray-400 text-[11px] font-medium select-none mx-px">+</span><kbd>↑↓←→</kbd></dd>
                         </div>
                     </dl>
                 </section>
@@ -1794,7 +2080,7 @@ kbd {
                         </div>
                         <div class="flex items-center justify-between gap-4">
                             <dt class="text-sm text-gray-700 dark:text-gray-300">Girar sentido horario 1°</dt>
-                            <dd class="flex items-center gap-1 shrink-0"><kbd>Shift</kbd>+<kbd>E</kbd></dd>
+                            <dd class="flex items-center gap-1 shrink-0"><kbd>Shift</kbd><span class="text-gray-400 dark:text-gray-400 text-[11px] font-medium select-none mx-px">+</span><kbd>E</kbd></dd>
                         </div>
                         <div class="flex items-center justify-between gap-4">
                             <dt class="text-sm text-gray-700 dark:text-gray-300">Girar sentido antihorario 5°</dt>
@@ -1802,7 +2088,7 @@ kbd {
                         </div>
                         <div class="flex items-center justify-between gap-4">
                             <dt class="text-sm text-gray-700 dark:text-gray-300">Girar sentido antihorario 1°</dt>
-                            <dd class="flex items-center gap-1 shrink-0"><kbd>Shift</kbd>+<kbd>R</kbd></dd>
+                            <dd class="flex items-center gap-1 shrink-0"><kbd>Shift</kbd><span class="text-gray-400 dark:text-gray-400 text-[11px] font-medium select-none mx-px">+</span><kbd>R</kbd></dd>
                         </div>
                     </dl>
                 </section>
@@ -1815,11 +2101,11 @@ kbd {
                     <dl class="space-y-2.5">
                         <div class="flex items-center justify-between gap-4">
                             <dt class="text-sm text-gray-700 dark:text-gray-300">Ampliar / reducir 10 px</dt>
-                            <dd class="flex items-center gap-1 shrink-0"><kbd>Alt</kbd>+<kbd>↑↓←→</kbd></dd>
+                            <dd class="flex items-center gap-1 shrink-0"><kbd>Alt</kbd><span class="text-gray-400 dark:text-gray-400 text-[11px] font-medium select-none mx-px">+</span><kbd>↑↓←→</kbd></dd>
                         </div>
                         <div class="flex items-center justify-between gap-4">
                             <dt class="text-sm text-gray-700 dark:text-gray-300">Ampliar / reducir 1 px</dt>
-                            <dd class="flex items-center gap-1 shrink-0"><kbd>Shift</kbd>+<kbd>Alt</kbd>+<kbd>↑↓←→</kbd></dd>
+                            <dd class="flex items-center gap-1 shrink-0"><kbd>Shift</kbd><span class="text-gray-400 dark:text-gray-400 text-[11px] font-medium select-none mx-px">+</span><kbd>Alt</kbd><span class="text-gray-400 dark:text-gray-400 text-[11px] font-medium select-none mx-px">+</span><kbd>↑↓←→</kbd></dd>
                         </div>
                     </dl>
                 </section>
@@ -1832,11 +2118,11 @@ kbd {
                     <dl class="space-y-2.5">
                         <div class="flex items-center justify-between gap-4">
                             <dt class="text-sm text-gray-700 dark:text-gray-300">Añadir vértice — foco en <kbd>+</kbd></dt>
-                            <dd class="flex items-center gap-1 shrink-0"><kbd>Enter</kbd> / <kbd>Space</kbd></dd>
+                            <dd class="flex items-center gap-1 shrink-0"><kbd>Enter</kbd><span class="text-gray-400 dark:text-gray-400 text-[11px] font-medium select-none mx-0.5"> / </span><kbd>Space</kbd></dd>
                         </div>
                         <div class="flex items-center justify-between gap-4">
                             <dt class="text-sm text-gray-700 dark:text-gray-300">Eliminar vértice — foco en <kbd>×</kbd></dt>
-                            <dd class="flex items-center gap-1 shrink-0"><kbd>Enter</kbd> / <kbd>Space</kbd></dd>
+                            <dd class="flex items-center gap-1 shrink-0"><kbd>Enter</kbd><span class="text-gray-400 dark:text-gray-400 text-[11px] font-medium select-none mx-0.5"> / </span><kbd>Space</kbd></dd>
                         </div>
                         <div class="flex items-center justify-between gap-4">
                             <dt class="text-sm text-gray-700 dark:text-gray-300">Mover vértice 5 px (foco en <kbd>×</kbd>)</dt>
@@ -1844,7 +2130,7 @@ kbd {
                         </div>
                         <div class="flex items-center justify-between gap-4">
                             <dt class="text-sm text-gray-700 dark:text-gray-300">Mover vértice 1 px</dt>
-                            <dd class="flex items-center gap-1 shrink-0"><kbd>Shift</kbd>+<kbd>↑↓←→</kbd></dd>
+                            <dd class="flex items-center gap-1 shrink-0"><kbd>Shift</kbd><span class="text-gray-400 dark:text-gray-400 text-[11px] font-medium select-none mx-px">+</span><kbd>↑↓←→</kbd></dd>
                         </div>
                         <div class="flex items-center justify-between gap-4">
                             <dt class="text-sm text-gray-700 dark:text-gray-300">Salir del modo vértice</dt>
@@ -1861,15 +2147,15 @@ kbd {
                     <dl class="space-y-2.5">
                         <div class="flex items-center justify-between gap-4">
                             <dt class="text-sm text-gray-700 dark:text-gray-300">Eliminar elemento seleccionado</dt>
-                            <dd class="flex items-center gap-1 shrink-0"><kbd>Delete</kbd> / <kbd>Backspace</kbd></dd>
+                            <dd class="flex items-center gap-1 shrink-0"><kbd>Delete</kbd><span class="text-gray-400 dark:text-gray-400 text-[11px] font-medium select-none mx-0.5"> / </span><kbd>Backspace</kbd></dd>
                         </div>
                         <div class="flex items-center justify-between gap-4">
                             <dt class="text-sm text-gray-700 dark:text-gray-300">Deshacer</dt>
-                            <dd class="flex items-center gap-1 shrink-0"><kbd>Ctrl</kbd>+<kbd>Z</kbd></dd>
+                            <dd class="flex items-center gap-1 shrink-0"><kbd>Ctrl</kbd><span class="text-gray-400 dark:text-gray-400 text-[11px] font-medium select-none mx-px">+</span><kbd>Z</kbd></dd>
                         </div>
                         <div class="flex items-center justify-between gap-4">
                             <dt class="text-sm text-gray-700 dark:text-gray-300">Rehacer</dt>
-                            <dd class="flex items-center gap-1 shrink-0"><kbd>Ctrl</kbd>+<kbd>Y</kbd></dd>
+                            <dd class="flex items-center gap-1 shrink-0"><kbd>Ctrl</kbd><span class="text-gray-400 dark:text-gray-400 text-[11px] font-medium select-none mx-px">+</span><kbd>Y</kbd></dd>
                         </div>
                         <div class="flex items-center justify-between gap-4">
                             <dt class="text-sm text-gray-700 dark:text-gray-300">Abrir / cerrar esta ayuda</dt>
@@ -2015,6 +2301,7 @@ document.addEventListener('alpine:init', () => {
         redoStack:             [],
         isPanning:             false,
         focusedVertexIdx:      null,
+        contextMenu:           { show: false, x: 0, y: 0, type: null, item: null },
 
         init() {
             this.$nextTick(() => {
@@ -3652,6 +3939,64 @@ document.addEventListener('alpine:init', () => {
             this._zoneBtnEl     = null;
         },
 
+        // ── Menú contextual ──────────────────────────────────────────────────
+        openContextMenu(event, item, type) {
+            event.preventDefault();
+            this.selectedId = item.id;
+            this.closeEditPanels();
+
+            const menuW = 220;
+            const menuH = 340;
+            const vw    = window.innerWidth;
+            const vh    = window.innerHeight;
+
+            let x, y;
+
+            // Teclado: no hay clientX/Y reales, posicionar junto al elemento en el canvas
+            if (event.type !== 'contextmenu' || !event.clientX) {
+                const canvas = this.$refs.canvas;
+                const cRect  = canvas.getBoundingClientRect();
+                x = cRect.left + (item.position_x + item.width) * this.canvasZoom;
+                y = cRect.top  + (item.position_y + item.height / 2) * this.canvasZoom;
+            } else {
+                x = event.clientX;
+                y = event.clientY;
+            }
+
+            if (x + menuW > vw) x = Math.max(0, vw - menuW - 8);
+            if (y + menuH > vh) y = Math.max(0, vh - menuH - 8);
+
+            this.contextMenu = { show: true, x, y, type, item };
+        },
+
+        closeContextMenu() {
+            if (!this.contextMenu.show) return;
+            this.contextMenu = { show: false, x: 0, y: 0, type: null, item: null };
+        },
+
+        // Posición del panel de edición basada en coordenadas canvas del ítem
+        panelPosFromItem(item, panelW) {
+            return {
+                x: Math.max(4, item.position_x + item.width + 8),
+                y: Math.max(4, item.position_y),
+            };
+        },
+
+        // Navegación teclado dentro del menú contextual
+        focusNextContextItem(current) {
+            const items = [...document.querySelectorAll('#context-menu [role=menuitem]')]
+                .filter(el => el.offsetParent !== null);
+            const idx = items.indexOf(current);
+            items[(idx + 1) % items.length]?.focus();
+        },
+
+        focusPrevContextItem(current) {
+            const items = [...document.querySelectorAll('#context-menu [role=menuitem]')]
+                .filter(el => el.offsetParent !== null);
+            const idx = items.indexOf(current);
+            items[(idx - 1 + items.length) % items.length]?.focus();
+        },
+
         exitEditMode() {
             this.editMode  = false;
             this.closeEditPanels();
@@ -4070,6 +4415,7 @@ document.addEventListener('alpine:init', () => {
 
         // ── Teclado: manejador principal ─────────────────────────────────────
         handleKb(event) {
+            if (this.contextMenu.show) return;
             if (this._isTyping()) return;
 
             if (event.key === '?') {
