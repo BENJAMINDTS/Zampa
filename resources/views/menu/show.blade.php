@@ -575,6 +575,21 @@
                 _splitStripe:      null,
                 _splitElements:    null,
 
+                // Propina para efectivo
+                showingCashTip:    false,
+                cashTipAmount:     0,
+                cashTipPercent:    null,
+                cashGrandTotal:    0,
+
+                // Propina para cobro partido
+                showingSplitTip:    false,
+                splitTipAmount:     0,
+                splitTipPercent:    null,
+                splitTipBase:       0,
+                splitTipType:       null,
+                splitTipItemIds:    [],
+                splitTipGrandTotal: 0,
+
                 open() {
                     if (this.requested || this.sending) return;
                     this.error    = null;
@@ -599,7 +614,7 @@
                                 'Accept':       'application/json',
                                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
                             },
-                            body: JSON.stringify({ payment_method: 'cash' }),
+                            body: JSON.stringify({ payment_method: 'cash', tip: this.cashTipAmount }),
                         });
                         const data = await res.json();
                         if (res.ok && data.success) {
@@ -841,7 +856,88 @@
                     this.splitMode   = null;
                 },
 
-                async proceedSplitPayment(amount, type, itemIds) {
+                // Propina para efectivo
+                openCashTip() {
+                    this.choosing       = false;
+                    this.cashTipAmount  = 0;
+                    this.cashTipPercent = null;
+                    this.cashGrandTotal = this.orderTotal;
+                    this.showingCashTip = true;
+                },
+
+                setCashTipPercent(pct) {
+                    this.cashTipPercent = pct;
+                    this.cashTipAmount  = Math.round(this.orderTotal * pct) / 100;
+                    this.cashGrandTotal = this.orderTotal + this.cashTipAmount;
+                },
+
+                updateCustomCashTip(value) {
+                    this.cashTipPercent = null;
+                    const parsed        = parseFloat(value) || 0;
+                    this.cashTipAmount  = Math.max(0, Math.round(parsed * 100) / 100);
+                    this.cashGrandTotal = this.orderTotal + this.cashTipAmount;
+                },
+
+                closeCashTip() {
+                    this.showingCashTip = false;
+                    this.cashTipAmount  = 0;
+                    this.cashTipPercent = null;
+                    this.choosing       = true;
+                },
+
+                async confirmCashPayment() {
+                    this.showingCashTip = false;
+                    await this.requestCash();
+                },
+
+                // Propina para cobro partido
+                openSplitTip(amount, type, itemIds) {
+                    this.splitTipBase       = amount;
+                    this.splitTipType       = type;
+                    this.splitTipItemIds    = itemIds || [];
+                    this.splitTipAmount     = 0;
+                    this.splitTipPercent    = null;
+                    this.splitTipGrandTotal = amount;
+                    this.splitShowItems     = false;
+                    this.splitShowEq        = false;
+                    this.showingSplitTip    = true;
+                },
+
+                setSplitTipPercent(pct) {
+                    this.splitTipPercent    = pct;
+                    this.splitTipAmount     = Math.round(this.splitTipBase * pct) / 100;
+                    this.splitTipGrandTotal = this.splitTipBase + this.splitTipAmount;
+                },
+
+                updateCustomSplitTip(value) {
+                    this.splitTipPercent    = null;
+                    const parsed            = parseFloat(value) || 0;
+                    this.splitTipAmount     = Math.max(0, Math.round(parsed * 100) / 100);
+                    this.splitTipGrandTotal = this.splitTipBase + this.splitTipAmount;
+                },
+
+                closeSplitTip() {
+                    this.showingSplitTip = false;
+                    this.splitTipAmount  = 0;
+                    this.splitTipPercent = null;
+                    if (this.splitTipType === 'items') {
+                        this.splitShowItems = true;
+                    } else {
+                        this.splitShowEq = true;
+                    }
+                },
+
+                async confirmSplitTip() {
+                    this.showingSplitTip = false;
+                    await this.proceedSplitPayment(
+                        this.splitTipGrandTotal,
+                        this.splitTipType,
+                        this.splitTipItemIds,
+                        this.splitTipAmount
+                    );
+                },
+
+                async proceedSplitPayment(amount, type, itemIds, tip = 0) {
                     const ids = itemIds || [];
                     this.splitShowItems   = false;
                     this.splitShowEq      = false;
@@ -854,8 +950,8 @@
                             ? '/api/v1/payment/' + this.tableHash + '/split/pay-items'
                             : '/api/v1/payment/' + this.tableHash + '/split/pay-eq';
                         const body = type === 'items'
-                            ? { item_ids: ids }
-                            : { people: Math.max(2, parseInt(this.splitPeople) || 2), part_number: 1 };
+                            ? { item_ids: ids, tip: tip }
+                            : { people: Math.max(2, parseInt(this.splitPeople) || 2), part_number: 1, tip: tip };
                         const res = await fetch(url, {
                             method:  'POST',
                             headers: {
@@ -2380,7 +2476,7 @@
 
                 <div class="grid grid-cols-2 gap-3">
                     <button type="button"
-                            @click="$store.bill.requestCash()"
+                            @click="$store.bill.openCashTip()"
                             class="flex flex-col items-center justify-center gap-2 py-5 rounded-2xl
                                    bg-gray-50 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700
                                    hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-900/20
@@ -2555,6 +2651,144 @@
                 </button>
             </div>
         </div>{{-- /tip sheet --}}
+
+        {{-- ── Sheet: propina para efectivo ──────────────────────── --}}
+        <div x-show="$store.bill.showingCashTip"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
+             @click.self="$store.bill.closeCashTip()"
+             @keydown.escape.window="$store.bill.closeCashTip()"
+             aria-modal="true" role="dialog" aria-label="Añadir propina para pago en efectivo">
+
+            <div x-show="$store.bill.showingCashTip"
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="translate-y-full"
+                 x-transition:enter-end="translate-y-0"
+                 x-transition:leave="transition ease-in duration-200"
+                 x-transition:leave-start="translate-y-0"
+                 x-transition:leave-end="translate-y-full"
+                 class="absolute bottom-0 left-0 right-0 bg-white dark:bg-gray-900
+                        rounded-t-2xl shadow-2xl px-5 pb-8 pt-4">
+
+                <div class="w-10 h-1 rounded-full bg-gray-300 dark:bg-gray-600 mx-auto mb-5"></div>
+
+                <div class="flex items-center justify-between mb-5">
+                    <div>
+                        <h2 class="text-lg font-bold text-gray-900 dark:text-white">¿Quieres dejar propina?</h2>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">La propina es completamente opcional</p>
+                    </div>
+                    <button type="button"
+                            @click="$store.bill.closeCashTip()"
+                            aria-label="Cancelar propina"
+                            class="p-1.5 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100
+                                   dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400">
+                        <svg aria-hidden="true" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="bg-gray-50 dark:bg-gray-800 rounded-xl px-4 py-3 mb-5 flex justify-between items-center">
+                    <span class="text-sm text-gray-500 dark:text-gray-400">Total del pedido</span>
+                    <span class="text-lg font-bold text-gray-900 dark:text-white"
+                          x-text="$store.bill.orderTotal.toFixed(2).replace('.', ',') + ' €'"></span>
+                </div>
+
+                <div class="grid grid-cols-4 gap-2 mb-4" role="group" aria-label="Porcentaje de propina">
+                    <template x-for="pct in [5, 10, 15, 20]" :key="pct">
+                        <button type="button"
+                                @click="$store.bill.setCashTipPercent(pct)"
+                                :aria-pressed="$store.bill.cashTipPercent === pct"
+                                :class="$store.bill.cashTipPercent === pct
+                                    ? 'ring-2 ring-green-500 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-400'
+                                    : 'bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700'"
+                                class="flex flex-col items-center py-3 rounded-xl border-2 font-semibold text-sm
+                                       transition-colors focus:outline-none focus:ring-2 focus:ring-green-500">
+                            <span x-text="pct + '%'"></span>
+                            <span class="text-xs font-normal mt-0.5 text-gray-500 dark:text-gray-400"
+                                  x-text="(Math.round($store.bill.orderTotal * pct) / 100).toFixed(2).replace('.', ',') + ' €'"></span>
+                        </button>
+                    </template>
+                </div>
+
+                <div class="relative mb-5">
+                    <label for="cash-tip-input" class="sr-only">Propina personalizada en euros</label>
+                    <input type="number"
+                           id="cash-tip-input"
+                           min="0"
+                           step="0.50"
+                           placeholder="Otro importe"
+                           @input="$store.bill.updateCustomCashTip($event.target.value)"
+                           :value="$store.bill.cashTipPercent === null && $store.bill.cashTipAmount > 0 ? $store.bill.cashTipAmount : ''"
+                           class="w-full rounded-xl border border-gray-300 dark:border-gray-600
+                                  bg-white dark:bg-gray-800 text-gray-900 dark:text-white
+                                  px-4 py-3 pr-10 text-right placeholder-gray-400
+                                  focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500
+                                  [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
+                    <span class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium pointer-events-none"
+                          aria-hidden="true">€</span>
+                </div>
+
+                <div class="space-y-1 mb-4">
+                    <template x-if="$store.bill.cashTipAmount > 0">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500 dark:text-gray-400">Propina</span>
+                            <span class="font-medium text-gray-700 dark:text-gray-300"
+                                  x-text="'+ ' + $store.bill.cashTipAmount.toFixed(2).replace('.', ',') + ' €'"></span>
+                        </div>
+                    </template>
+                    <div class="flex justify-between text-base font-bold border-t border-gray-200 dark:border-gray-700 pt-2">
+                        <span class="text-gray-900 dark:text-white">Total a pagar</span>
+                        <span class="text-green-600 dark:text-green-400"
+                              x-text="$store.bill.cashGrandTotal.toFixed(2).replace('.', ',') + ' €'"></span>
+                    </div>
+                </div>
+
+                <div class="mb-5 bg-green-50 dark:bg-green-900/20 rounded-xl px-4 py-3 flex items-center gap-2 text-sm text-green-700 dark:text-green-300">
+                    <svg aria-hidden="true" class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <span>La propina se entrega directamente al camarero en efectivo</span>
+                </div>
+
+                <button type="button"
+                        @click="$store.bill.confirmCashPayment()"
+                        :disabled="$store.bill.sending"
+                        class="w-full py-3.5 rounded-xl bg-green-600 hover:bg-green-700 disabled:opacity-60
+                               text-white font-bold text-base shadow-sm transition-colors
+                               focus:outline-none focus:ring-4 focus:ring-green-400">
+                    <span x-show="!$store.bill.sending">
+                        <span x-show="$store.bill.cashTipAmount > 0">
+                            💵 Solicitar cuenta —
+                            <span x-text="$store.bill.cashGrandTotal.toFixed(2).replace('.', ',') + ' €'"></span>
+                            con propina
+                        </span>
+                        <span x-show="$store.bill.cashTipAmount <= 0">
+                            💵 Solicitar cuenta sin propina
+                        </span>
+                    </span>
+                    <span x-show="$store.bill.sending" class="flex items-center justify-center gap-2">
+                        <svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+                        </svg>
+                        Enviando solicitud...
+                    </span>
+                </button>
+
+                <button type="button"
+                        @click="$store.bill.closeCashTip()"
+                        class="w-full mt-3 py-2.5 rounded-xl text-sm font-medium text-gray-500 dark:text-gray-400
+                               hover:text-gray-700 dark:hover:text-gray-200 focus:outline-none focus:underline transition-colors">
+                    Cancelar
+                </button>
+            </div>
+        </div>{{-- /cash tip sheet --}}
 
         {{-- ── Sheet: pago con tarjeta (Stripe Elements) ──────────── --}}
         <div x-show="$store.bill.payingCard"
@@ -2836,7 +3070,7 @@
                     </div>
 
                     <button type="button"
-                            @click="$store.bill.proceedSplitPayment(
+                            @click="$store.bill.openSplitTip(
                                 $store.bill.splitItemsTotal,
                                 'items',
                                 $store.bill.splitSelected
@@ -2984,7 +3218,7 @@
 
                 {{-- Botón pagar --}}
                 <button type="button"
-                        @click="$store.bill.proceedSplitPayment($store.bill.splitMyPart, 'equitable', [])"
+                        @click="$store.bill.openSplitTip($store.bill.splitMyPart, 'equitable', [])"
                         :disabled="$store.bill.sending"
                         class="w-full py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60
                                text-white font-bold text-base shadow-sm transition-colors
@@ -3010,6 +3244,135 @@
                 </button>
             </div>
         </div>{{-- /split equitable sheet --}}
+
+        {{-- ── Sheet: propina para cobro partido ──────────────────── --}}
+        <div x-show="$store.bill.showingSplitTip"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
+             @click.self="$store.bill.closeSplitTip()"
+             @keydown.escape.window="$store.bill.closeSplitTip()"
+             aria-modal="true" role="dialog" aria-label="Añadir propina al cobro partido">
+
+            <div x-show="$store.bill.showingSplitTip"
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="translate-y-full"
+                 x-transition:enter-end="translate-y-0"
+                 x-transition:leave="transition ease-in duration-200"
+                 x-transition:leave-start="translate-y-0"
+                 x-transition:leave-end="translate-y-full"
+                 class="absolute bottom-0 left-0 right-0 bg-white dark:bg-gray-900
+                        rounded-t-2xl shadow-2xl px-5 pb-8 pt-4">
+
+                <div class="w-10 h-1 rounded-full bg-gray-300 dark:bg-gray-600 mx-auto mb-5"></div>
+
+                <div class="flex items-center justify-between mb-5">
+                    <div>
+                        <h2 class="text-lg font-bold text-gray-900 dark:text-white">¿Quieres dejar propina?</h2>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">La propina es completamente opcional</p>
+                    </div>
+                    <button type="button"
+                            @click="$store.bill.closeSplitTip()"
+                            aria-label="Cancelar propina"
+                            class="p-1.5 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100
+                                   dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400">
+                        <svg aria-hidden="true" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="bg-gray-50 dark:bg-gray-800 rounded-xl px-4 py-3 mb-5 flex justify-between items-center">
+                    <span class="text-sm text-gray-500 dark:text-gray-400">Tu parte</span>
+                    <span class="text-lg font-bold text-gray-900 dark:text-white"
+                          x-text="$store.bill.splitTipBase.toFixed(2).replace('.', ',') + ' €'"></span>
+                </div>
+
+                <div class="grid grid-cols-4 gap-2 mb-4" role="group" aria-label="Porcentaje de propina">
+                    <template x-for="pct in [5, 10, 15, 20]" :key="pct">
+                        <button type="button"
+                                @click="$store.bill.setSplitTipPercent(pct)"
+                                :aria-pressed="$store.bill.splitTipPercent === pct"
+                                :class="$store.bill.splitTipPercent === pct
+                                    ? 'ring-2 ring-violet-500 bg-violet-50 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 border-violet-400'
+                                    : 'bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700'"
+                                class="flex flex-col items-center py-3 rounded-xl border-2 font-semibold text-sm
+                                       transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500">
+                            <span x-text="pct + '%'"></span>
+                            <span class="text-xs font-normal mt-0.5 text-gray-500 dark:text-gray-400"
+                                  x-text="(Math.round($store.bill.splitTipBase * pct) / 100).toFixed(2).replace('.', ',') + ' €'"></span>
+                        </button>
+                    </template>
+                </div>
+
+                <div class="relative mb-5">
+                    <label for="split-tip-input" class="sr-only">Propina personalizada en euros</label>
+                    <input type="number"
+                           id="split-tip-input"
+                           min="0"
+                           step="0.50"
+                           placeholder="Otro importe"
+                           @input="$store.bill.updateCustomSplitTip($event.target.value)"
+                           :value="$store.bill.splitTipPercent === null && $store.bill.splitTipAmount > 0 ? $store.bill.splitTipAmount : ''"
+                           class="w-full rounded-xl border border-gray-300 dark:border-gray-600
+                                  bg-white dark:bg-gray-800 text-gray-900 dark:text-white
+                                  px-4 py-3 pr-10 text-right placeholder-gray-400
+                                  focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500
+                                  [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
+                    <span class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium pointer-events-none"
+                          aria-hidden="true">€</span>
+                </div>
+
+                <div class="space-y-1 mb-5">
+                    <template x-if="$store.bill.splitTipAmount > 0">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500 dark:text-gray-400">Propina</span>
+                            <span class="font-medium text-gray-700 dark:text-gray-300"
+                                  x-text="'+ ' + $store.bill.splitTipAmount.toFixed(2).replace('.', ',') + ' €'"></span>
+                        </div>
+                    </template>
+                    <div class="flex justify-between text-base font-bold border-t border-gray-200 dark:border-gray-700 pt-2">
+                        <span class="text-gray-900 dark:text-white">Total a pagar</span>
+                        <span class="text-violet-600 dark:text-violet-400"
+                              x-text="$store.bill.splitTipGrandTotal.toFixed(2).replace('.', ',') + ' €'"></span>
+                    </div>
+                </div>
+
+                <button type="button"
+                        @click="$store.bill.confirmSplitTip()"
+                        :disabled="$store.bill.sending"
+                        class="w-full py-3.5 rounded-xl bg-violet-600 hover:bg-violet-700 disabled:opacity-60
+                               text-white font-bold text-base shadow-sm transition-colors
+                               focus:outline-none focus:ring-4 focus:ring-violet-400">
+                    <span x-show="!$store.bill.sending">
+                        <span x-show="$store.bill.splitTipAmount > 0">
+                            💳 Pagar <span x-text="$store.bill.splitTipGrandTotal.toFixed(2).replace('.', ',') + ' €'"></span> con propina
+                        </span>
+                        <span x-show="$store.bill.splitTipAmount <= 0">
+                            💳 Pagar sin propina
+                        </span>
+                    </span>
+                    <span x-show="$store.bill.sending" class="flex items-center justify-center gap-2">
+                        <svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+                        </svg>
+                        Procesando...
+                    </span>
+                </button>
+
+                <button type="button"
+                        @click="$store.bill.closeSplitTip()"
+                        class="w-full mt-3 py-2.5 rounded-xl text-sm font-medium text-gray-500 dark:text-gray-400
+                               hover:text-gray-700 dark:hover:text-gray-200 focus:outline-none focus:underline transition-colors">
+                    Cancelar
+                </button>
+            </div>
+        </div>{{-- /split tip sheet --}}
 
         {{-- ── Sheet: pago parcial con tarjeta (Stripe Elements) ──────── --}}
         <div x-show="$store.bill.splitPayingCard"

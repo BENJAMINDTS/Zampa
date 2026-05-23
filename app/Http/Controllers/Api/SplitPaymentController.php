@@ -78,6 +78,7 @@ class SplitPaymentController extends Controller
         $validated = $request->validate([
             'item_ids'   => 'required|array|min:1',
             'item_ids.*' => 'required|integer',
+            'tip'        => 'nullable|numeric|min:0|max:500',
         ]);
 
         $table = Table::with('user')->where('unique_hash', $hash)->firstOrFail();
@@ -92,7 +93,9 @@ class SplitPaymentController extends Controller
             return response()->json(['success' => false, 'message' => 'No hay pedido activo.'], 404);
         }
 
-        return DB::transaction(function () use ($order, $validated, $table) {
+        $tip = (float) ($validated['tip'] ?? 0);
+
+        return DB::transaction(function () use ($order, $validated, $table, $tip) {
             $items = $order->items()
                 ->whereIn('id', $validated['item_ids'])
                 ->lockForUpdate()
@@ -111,21 +114,23 @@ class SplitPaymentController extends Controller
                 ], 409);
             }
 
-            $amount = $items->sum(fn (OrderItem $i) => round($i->price * $i->quantity, 2));
+            $amount      = $items->sum(fn (OrderItem $i) => round($i->price * $i->quantity, 2));
+            $grandAmount = $amount + $tip;
 
             $result = $this->stripe->createSplitPaymentIntent(
-                amount:      (int) round($amount * 100),
+                amount:      (int) round($grandAmount * 100),
                 mode:        'items',
                 partNumber:  1,
                 partsTotal:  1,
-                metadata:    ['order_id' => $order->id, 'table_name' => $table->name],
+                metadata:    ['order_id' => $order->id, 'table_name' => $table->name, 'tip' => $tip],
             );
 
-            foreach ($items as $item) {
+            foreach ($items as $index => $item) {
                 OrderItemPayment::create([
                     'order_id'                  => $order->id,
                     'order_item_id'             => $item->id,
                     'amount'                    => round($item->price * $item->quantity, 2),
+                    'tip'                       => $index === 0 ? $tip : 0,
                     'stripe_payment_intent_id'  => $result['id'],
                     'status'                    => 'pending',
                     'mode'                      => 'items',
@@ -137,7 +142,8 @@ class SplitPaymentController extends Controller
             return response()->json([
                 'success'       => true,
                 'client_secret' => $result['client_secret'],
-                'amount'        => $amount,
+                'amount'        => $grandAmount,
+                'tip'           => $tip,
             ]);
         });
     }
@@ -154,6 +160,7 @@ class SplitPaymentController extends Controller
         $validated = $request->validate([
             'people'      => 'required|integer|min:2|max:50',
             'part_number' => 'required|integer|min:1',
+            'tip'         => 'nullable|numeric|min:0|max:500',
         ]);
 
         $table = Table::with('user')->where('unique_hash', $hash)->firstOrFail();
@@ -170,6 +177,7 @@ class SplitPaymentController extends Controller
 
         $people     = (int) $validated['people'];
         $partNumber = (int) $validated['part_number'];
+        $tip        = (float) ($validated['tip'] ?? 0);
 
         $maxParts = $table->user->split_payment_max_parts;
         if ($maxParts !== null && $people > $maxParts) {
@@ -183,20 +191,22 @@ class SplitPaymentController extends Controller
             return response()->json(['success' => false, 'message' => 'El número de parte excede el total de personas.'], 422);
         }
 
-        $part = round((float) $order->total / $people, 2);
+        $part        = round((float) $order->total / $people, 2);
+        $grandAmount = $part + $tip;
 
         $result = $this->stripe->createSplitPaymentIntent(
-            amount:     (int) round($part * 100),
+            amount:     (int) round($grandAmount * 100),
             mode:       'equitative',
             partNumber: $partNumber,
             partsTotal: $people,
-            metadata:   ['order_id' => $order->id, 'table_name' => $table->name],
+            metadata:   ['order_id' => $order->id, 'table_name' => $table->name, 'tip' => $tip],
         );
 
         OrderItemPayment::create([
             'order_id'                 => $order->id,
             'order_item_id'            => null,
             'amount'                   => $part,
+            'tip'                      => $tip,
             'stripe_payment_intent_id' => $result['id'],
             'status'                   => 'pending',
             'mode'                     => 'equitative',
@@ -207,7 +217,8 @@ class SplitPaymentController extends Controller
         return response()->json([
             'success'       => true,
             'client_secret' => $result['client_secret'],
-            'amount'        => $part,
+            'amount'        => $grandAmount,
+            'tip'           => $tip,
             'part_number'   => $partNumber,
             'parts_total'   => $people,
         ]);
@@ -300,11 +311,16 @@ class SplitPaymentController extends Controller
             return false;
         }
 
+        $totalTip = OrderItemPayment::where('order_id', $order->id)
+            ->where('status', 'paid')
+            ->sum('tip');
+
         $order->update([
             'payment_method' => 'card',
             'payment_status' => 'paid',
             'status'         => 'closed',
             'bill_requested' => false,
+            'tip'            => (float) $totalTip,
         ]);
 
         return true;

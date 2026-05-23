@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int         $order_id
  * @property int|null    $order_item_id
  * @property float       $amount
+ * @property float       $tip
  * @property string      $stripe_payment_intent_id
  * @property string      $status              'pending', 'paid', 'failed'
  * @property string      $mode                'items', 'equitative'
@@ -32,6 +33,7 @@ class OrderItemPayment extends Model
         'order_id',
         'order_item_id',
         'amount',
+        'tip',
         'stripe_payment_intent_id',
         'status',
         'mode',
@@ -41,6 +43,7 @@ class OrderItemPayment extends Model
 
     protected $casts = [
         'amount'      => 'float',
+        'tip'         => 'float',
         'parts_total' => 'integer',
         'part_number' => 'integer',
     ];
