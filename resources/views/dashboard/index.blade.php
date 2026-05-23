@@ -87,7 +87,7 @@
                     </a>
                 </div>
 
-                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="grid grid-cols-2 lg:grid-cols-3 gap-4">
 
                     {{-- Efectivo --}}
                     <div role="region" aria-label="Total ingresos en efectivo"
@@ -123,20 +123,6 @@
                         </p>
                     </div>
 
-                    {{-- Propinas --}}
-                    <div role="region" aria-label="Total propinas en tarjeta"
-                         class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm
-                                border border-gray-200 dark:border-gray-700 p-5">
-                        <div class="flex items-center gap-2 mb-3">
-                            <span class="text-xl" aria-hidden="true">🎁</span>
-                            <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Propinas</span>
-                        </div>
-                        <p class="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
-                            {{ number_format($summary->tip_revenue, 2, ',', '.') }}&nbsp;€
-                        </p>
-                        <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">Solo pagos con tarjeta</p>
-                    </div>
-
                     {{-- Total global --}}
                     <div role="region" aria-label="Total global cobrado en el período"
                          class="bg-indigo-600 dark:bg-indigo-700 rounded-2xl shadow-sm p-5">
@@ -151,6 +137,47 @@
                             {{ $summary->total_count }}
                             pedido{{ $summary->total_count != 1 ? 's' : '' }}
                         </p>
+                    </div>
+
+                </div>
+
+                {{-- Propinas desglosadas --}}
+                <div class="grid grid-cols-2 gap-4 mt-4">
+
+                    {{-- Propina en efectivo --}}
+                    <div role="region" aria-label="Total propinas en efectivo"
+                         class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm
+                                border border-gray-200 dark:border-gray-700 p-5">
+                        <div class="flex items-center gap-2 mb-3">
+                            <span class="text-xl" aria-hidden="true">🎁</span>
+                            <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Propina</span>
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium
+                                         bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300">
+                                <span aria-hidden="true">💵</span> Efectivo
+                            </span>
+                        </div>
+                        <p class="text-2xl font-bold text-green-700 dark:text-green-400 tabular-nums">
+                            {{ number_format($summary->cash_tip_revenue, 2, ',', '.') }}&nbsp;€
+                        </p>
+                        <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">Propinas recibidas en mano</p>
+                    </div>
+
+                    {{-- Propina en tarjeta --}}
+                    <div role="region" aria-label="Total propinas en tarjeta"
+                         class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm
+                                border border-gray-200 dark:border-gray-700 p-5">
+                        <div class="flex items-center gap-2 mb-3">
+                            <span class="text-xl" aria-hidden="true">🎁</span>
+                            <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Propina</span>
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium
+                                         bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300">
+                                <span aria-hidden="true">💳</span> Tarjeta
+                            </span>
+                        </div>
+                        <p class="text-2xl font-bold text-indigo-600 dark:text-indigo-400 tabular-nums">
+                            {{ number_format($summary->card_tip_revenue, 2, ',', '.') }}&nbsp;€
+                        </p>
+                        <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">Propinas cobradas con Stripe</p>
                     </div>
 
                 </div>
