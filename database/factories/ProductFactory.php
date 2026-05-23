@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\Category;
+use App\Models\ProductVariant;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -25,5 +26,30 @@ class ProductFactory extends Factory
             'user_id'     => User::factory(),
             'category_id' => Category::factory(),
         ];
+    }
+
+    /**
+     * Producto con 2 variantes (Ración entera y Media ración).
+     * El precio base queda en null porque el precio viene de la variante.
+     *
+     * @return static
+     */
+    public function withVariants(): static
+    {
+        return $this->state(['price' => null])
+            ->afterCreating(function ($product) {
+                ProductVariant::factory()->create([
+                    'product_id' => $product->id,
+                    'name'       => 'Ración entera',
+                    'price'      => fake()->randomFloat(2, 10, 25),
+                    'sort_order' => 0,
+                ]);
+                ProductVariant::factory()->create([
+                    'product_id' => $product->id,
+                    'name'       => 'Media ración',
+                    'price'      => fake()->randomFloat(2, 5, 12),
+                    'sort_order' => 1,
+                ]);
+            });
     }
 }
