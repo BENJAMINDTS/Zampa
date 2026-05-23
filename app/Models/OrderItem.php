@@ -25,7 +25,7 @@ class OrderItem extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['order_id', 'product_id', 'quantity', 'price', 'status', 'destination', 'is_daily_menu'];
+    protected $fillable = ['order_id', 'product_id', 'variant_id', 'variant_name', 'quantity', 'price', 'status', 'destination', 'is_daily_menu'];
 
     protected $casts = [
         'is_daily_menu' => 'boolean',
@@ -45,6 +45,16 @@ class OrderItem extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    /**
+     * La variante elegida en el momento del pedido (nullable).
+     *
+     * @return BelongsTo
+     */
+    public function variant(): BelongsTo
+    {
+        return $this->belongsTo(ProductVariant::class, 'variant_id');
     }
 
     /**

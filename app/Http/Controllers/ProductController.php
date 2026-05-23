@@ -5,11 +5,13 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use App\Models\Product;
+use App\Models\ProductVariant;
 use App\Models\Category;
 use App\Models\Ingredient;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -29,7 +31,7 @@ class ProductController extends Controller
   public function index(): View
   {
     $ownerId  = Auth::user()->ownerUserId();
-    $products = Product::where('user_id', $ownerId)->with('allergens')->paginate(15);
+    $products = Product::where('user_id', $ownerId)->with(['allergens', 'variants'])->paginate(15);
     return view('products.index', compact('products'));
   }
 
@@ -54,16 +56,26 @@ class ProductController extends Controller
    */
   public function store(Request $request): RedirectResponse
   {
+    $hasVariants = ! empty($request->input('variants'));
+
     /** @var array $validatedData Datos validados del formulario */
     $validatedData = $request->validate([
-      'name'        => 'required|string|max:255',
-      'description' => 'nullable|string',
-      'price'       => 'required|numeric|min:0',
-      'category_id' => ['required', Rule::exists('categories', 'id')->where('user_id', Auth::user()->ownerUserId())],
-      'image'       => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+      'name'               => 'required|string|max:255',
+      'description'        => 'nullable|string',
+      'price'              => $hasVariants ? 'nullable|numeric|min:0' : 'required|numeric|min:0',
+      'category_id'        => ['required', Rule::exists('categories', 'id')->where('user_id', Auth::user()->ownerUserId())],
+      'image'              => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+      'variants'           => 'nullable|array',
+      'variants.*.name'    => 'required_with:variants|string|max:100',
+      'variants.*.price'   => 'required_with:variants|numeric|min:0',
+      'variants.*.sort_order' => 'nullable|integer|min:0',
     ]);
 
     $validatedData['user_id'] = Auth::user()->ownerUserId();
+
+    if ($hasVariants) {
+      $validatedData['price'] = null;
+    }
 
     if ($request->hasFile('image')) {
       /** @var string $path Ruta donde se almacena temporalmente la imagen */
@@ -71,7 +83,22 @@ class ProductController extends Controller
       $validatedData['image'] = $path;
     }
 
-    $product = Product::create($validatedData);
+    $product = DB::transaction(function () use ($validatedData, $hasVariants) {
+      $product = Product::create(collect($validatedData)->except('variants')->toArray());
+
+      if ($hasVariants) {
+        foreach ($validatedData['variants'] as $idx => $variantData) {
+          ProductVariant::create([
+            'product_id' => $product->id,
+            'name'       => $variantData['name'],
+            'price'      => $variantData['price'],
+            'sort_order' => $variantData['sort_order'] ?? $idx,
+          ]);
+        }
+      }
+
+      return $product;
+    });
 
     if ($request->boolean('configure_ingredients')) {
       return redirect()
@@ -102,7 +129,7 @@ class ProductController extends Controller
         $ownerId = Auth::user()->ownerUserId();
         abort_if($product->user_id !== $ownerId, 403, 'No tienes permiso para editar este plato.');
 
-        $product->load('allergens');
+        $product->load(['allergens', 'variants']);
 
         $categories = Category::where('user_id', $ownerId)->get();
 
@@ -130,36 +157,48 @@ class ProductController extends Controller
 
         abort_if($product->user_id !== Auth::user()->ownerUserId(), 403);
 
+        $hasVariants = ! empty($request->input('variants'));
+
         $validatedData = $request->validate([
-
-            'name'        => 'required|string|max:255',
-
-            'description' => 'nullable|string',
-
-            'price'       => 'required|numeric|min:0',
-
-            'category_id' => 'required|exists:categories,id',
-
-            'image'       => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
-
+            'name'               => 'required|string|max:255',
+            'description'        => 'nullable|string',
+            'price'              => $hasVariants ? 'nullable|numeric|min:0' : 'required|numeric|min:0',
+            'category_id'        => ['required', Rule::exists('categories', 'id')->where('user_id', Auth::user()->ownerUserId())],
+            'image'              => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'variants'           => 'nullable|array',
+            'variants.*.name'    => 'required_with:variants|string|max:100',
+            'variants.*.price'   => 'required_with:variants|numeric|min:0',
+            'variants.*.sort_order' => 'nullable|integer|min:0',
         ]);
- 
+
         if ($request->hasFile('image')) {
-
             if ($product->image) {
-
                 Storage::disk('public')->delete($product->image);
-
             }
-
             $path = $request->file('image')->store('products', 'public');
-
             $validatedData['image'] = $path;
-
         }
- 
-        $product->update($validatedData);
- 
+
+        DB::transaction(function () use ($request, $product, $validatedData, $hasVariants) {
+            $productData          = collect($validatedData)->except('variants')->toArray();
+            $productData['price'] = $hasVariants ? null : $validatedData['price'];
+
+            $product->update($productData);
+
+            $product->variants()->delete();
+
+            if ($hasVariants) {
+                foreach ($validatedData['variants'] as $idx => $variantData) {
+                    ProductVariant::create([
+                        'product_id' => $product->id,
+                        'name'       => $variantData['name'],
+                        'price'      => $variantData['price'],
+                        'sort_order' => $variantData['sort_order'] ?? $idx,
+                    ]);
+                }
+            }
+        });
+
         return redirect()->route('products.index')->with('success', '¡Plato actualizado correctamente!');
 
     }

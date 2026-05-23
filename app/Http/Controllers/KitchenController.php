@@ -72,7 +72,7 @@ class KitchenController extends Controller
                     ->where('status', 'queued')
                     ->map(fn(OrderItem $item) => [
                         'id'            => $item->id,
-                        'product_name'  => $item->product->name,
+                        'product_name'  => $item->product->name . ($item->variant_name ? ' — ' . $item->variant_name : ''),
                         'quantity'      => $item->quantity,
                         'is_daily_menu' => (bool) $item->is_daily_menu,
                         'modifications' => $item->modifications

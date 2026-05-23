@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es" class="scroll-smooth">
 <head>
     <meta charset="utf-8">
@@ -213,7 +213,13 @@
             return $category->products->map(fn ($p) => [
                 'id'          => $p->id,
                 'name'        => $p->name,
-                'price'       => (float) $p->price,
+                'price'       => $p->variants->isNotEmpty() ? (float) $p->variants->min('price') : (float) $p->price,
+                'hasVariants' => $p->variants->isNotEmpty(),
+                'variants'    => $p->variants->map(fn ($v) => [
+                    'id'    => $v->id,
+                    'name'  => $v->name,
+                    'price' => (float) $v->price,
+                ])->values(),
                 'categoryId'  => $category->id,
                 'destination' => $category->destination,
                 'allergenTypes' => $p->ingredients->where('is_allergen', true)
@@ -285,12 +291,16 @@
                 _variantsUsed:  tapaConfig.variantsUsed  ?? 0,
 
                 add(product) {
-                    const existing = this.items.find(i => i.productId === product.id);
+                    const key      = product.id + ':none';
+                    const existing = this.items.find(i => i._key === key);
                     if (existing) {
                         existing.quantity++;
                     } else {
                         this.items.push({
+                            _key:        key,
                             productId:   product.id,
+                            variantId:   null,
+                            variantName: null,
                             name:        product.name,
                             price:       product.price,
                             quantity:    1,
@@ -301,6 +311,32 @@
                         });
                     }
                     if (product.destination === 'bar') {
+                        this._barItemsCount++;
+                        this._checkTapaSuggestion();
+                    }
+                },
+
+                addWithVariant(productId, variantId, variantName, variantPrice, productData) {
+                    const key      = productId + ':' + variantId;
+                    const existing = this.items.find(i => i._key === key);
+                    if (existing) {
+                        existing.quantity++;
+                    } else {
+                        this.items.push({
+                            _key:        key,
+                            productId:   productId,
+                            variantId:   variantId,
+                            variantName: variantName,
+                            name:        (productData?.name ?? '') + ' — ' + variantName,
+                            price:       variantPrice,
+                            quantity:    1,
+                            destination: productData?.destination ?? null,
+                            mods:        [],
+                            removable:   [],
+                            extras:      [],
+                        });
+                    }
+                    if (productData?.destination === 'bar') {
                         this._barItemsCount++;
                         this._checkTapaSuggestion();
                     }
@@ -334,36 +370,36 @@
                     this.showTapaModal = false;
                 },
 
-                inc(productId) {
-                    const item = this.items.find(i => i.productId === productId);
+                inc(key) {
+                    const item = this.items.find(i => i._key === key);
                     if (item) item.quantity++;
                 },
 
-                dec(productId) {
-                    const idx = this.items.findIndex(i => i.productId === productId);
+                dec(key) {
+                    const idx = this.items.findIndex(i => i._key === key);
                     if (idx === -1) return;
                     this.items[idx].quantity--;
                     if (this.items[idx].quantity <= 0) this.items.splice(idx, 1);
                 },
 
-                toggleRemove(productId, ing) {
-                    const item = this.items.find(i => i.productId === productId);
+                toggleRemove(key, ing) {
+                    const item = this.items.find(i => i._key === key);
                     if (!item) return;
                     const i = item.mods.findIndex(m => m.ingredientId === ing.id && m.action === 'remove');
                     if (i === -1) item.mods.push({ ingredientId: ing.id, name: ing.name, action: 'remove', amountCharged: 0 });
                     else          item.mods.splice(i, 1);
                 },
 
-                toggleExtra(productId, ing) {
-                    const item = this.items.find(i => i.productId === productId);
+                toggleExtra(key, ing) {
+                    const item = this.items.find(i => i._key === key);
                     if (!item) return;
                     const i = item.mods.findIndex(m => m.ingredientId === ing.id && m.action === 'add');
                     if (i === -1) item.mods.push({ ingredientId: ing.id, name: ing.name, action: 'add', amountCharged: ing.price });
                     else          item.mods.splice(i, 1);
                 },
 
-                hasMod(productId, ingId, action) {
-                    const item = this.items.find(i => i.productId === productId);
+                hasMod(key, ingId, action) {
+                    const item = this.items.find(i => i._key === key);
                     return item ? item.mods.some(m => m.ingredientId === ingId && m.action === action) : false;
                 },
 
@@ -407,6 +443,7 @@
                                 table_hash: this.tableHash,
                                 items: this.items.map(item => ({
                                     product_id:    item.productId,
+                                    variant_id:    item.variantId ?? null,
                                     quantity:      item.quantity,
                                     modifications: item.mods.map(m => ({
                                         ingredient_id:  m.ingredientId,
@@ -1246,8 +1283,8 @@
                 },
 
                 decreaseQty(card) {
-                    const id = card.id ?? card.productId;
-                    Alpine.store('cart').dec(id);
+                    const key = card._key ?? ((card.id ?? card.productId) + ':none');
+                    Alpine.store('cart').dec(key);
                 },
 
                 decreaseQtyMin1(item) {
@@ -3539,7 +3576,7 @@
 
                 {{-- Lista de items --}}
                 <div class="flex-1 overflow-y-auto px-4 py-3 space-y-4">
-                    <template x-for="item in $store.cart.items" :key="item.productId">
+                    <template x-for="item in $store.cart.items" :key="item._key">
                         <div class="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 space-y-3">
 
                             {{-- Fila producto --}}
@@ -3551,7 +3588,7 @@
 
                                 {{-- Cantidad --}}
                                 <div class="flex items-center gap-2 flex-shrink-0">
-                                    <button type="button" @click="$store.cart.dec(item.productId)"
+                                    <button type="button" @click="$store.cart.dec(item._key)"
                                             class="w-7 h-7 rounded-full border-2 border-gray-300 dark:border-gray-600
                                                    flex items-center justify-center text-gray-600 dark:text-gray-300
                                                    hover:border-red-400 hover:text-red-500 transition-colors
@@ -3561,7 +3598,7 @@
                                         </svg>
                                     </button>
                                     <span class="w-5 text-center font-bold text-gray-900 dark:text-white text-sm" x-text="item.quantity"></span>
-                                    <button type="button" @click="$store.cart.inc(item.productId)"
+                                    <button type="button" @click="$store.cart.inc(item._key)"
                                             class="w-7 h-7 rounded-full border-2 border-gray-300 dark:border-gray-600
                                                    flex items-center justify-center text-gray-600 dark:text-gray-300
                                                    hover:border-green-500 hover:text-green-600 transition-colors
@@ -3587,8 +3624,8 @@
                                             <div class="flex flex-wrap gap-1.5">
                                                 <template x-for="ing in item.removable" :key="ing.id">
                                                     <button type="button"
-                                                            @click="$store.cart.toggleRemove(item.productId, ing)"
-                                                            :class="$store.cart.hasMod(item.productId, ing.id, 'remove')
+                                                            @click="$store.cart.toggleRemove(item._key, ing)"
+                                                            :class="$store.cart.hasMod(item._key, ing.id, 'remove')
                                                                 ? 'bg-red-100 dark:bg-red-900/40 border-red-400 text-red-700 dark:text-red-300'
                                                                 : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300'"
                                                             class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border text-xs font-medium transition-colors
@@ -3606,8 +3643,8 @@
                                             <div class="flex flex-wrap gap-1.5">
                                                 <template x-for="ing in item.extras" :key="ing.id">
                                                     <button type="button"
-                                                            @click="$store.cart.toggleExtra(item.productId, ing)"
-                                                            :class="$store.cart.hasMod(item.productId, ing.id, 'add')
+                                                            @click="$store.cart.toggleExtra(item._key, ing)"
+                                                            :class="$store.cart.hasMod(item._key, ing.id, 'add')
                                                                 ? 'bg-green-100 dark:bg-green-900/40 border-green-500 text-green-700 dark:text-green-300'
                                                                 : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300'"
                                                             class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border text-xs font-medium transition-colors
@@ -4034,6 +4071,98 @@
 
                                     {{-- Info --}}
                                     <div class="flex-1 min-w-0">
+                                        @if($product->variants->isNotEmpty())
+                                        {{-- Producto con variantes --}}
+                                        <div x-data="{
+                                            selectedVariantId: {{ $product->variants->first()->id }},
+                                            variants: {{ $product->variants->map(fn($v) => ['id' => $v->id, 'name' => $v->name, 'price' => (float)$v->price])->values()->toJson() }},
+                                            get selectedVariant() { return this.variants.find(v => v.id === this.selectedVariantId); }
+                                        }">
+                                            <div class="flex items-start justify-between gap-2">
+                                                <h3 class="font-semibold text-base sm:text-lg leading-snug text-gray-900 dark:text-gray-100">
+                                                    {{ $product->name }}
+                                                </h3>
+                                                <span class="flex-shrink-0 font-bold text-base sm:text-lg text-indigo-600 dark:text-indigo-400"
+                                                      x-text="'desde ' + Number(Math.min(...variants.map(v => v.price))).toFixed(2).replace('.',',') + ' €'"
+                                                      aria-label="Desde {{ number_format($product->variants->min('price'), 2, ',', '.') }} euros"></span>
+                                            </div>
+
+                                            @if ($product->description)
+                                                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+                                                    {{ $product->description }}
+                                                </p>
+                                            @endif
+
+                                            {{-- Alérgenos --}}
+                                            @if ($product->ingredients->where('is_allergen', true)->isNotEmpty())
+                                                <div class="mt-2" aria-label="Alérgenos de {{ $product->name }}">
+                                                    <p class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1">
+                                                        Alérgenos
+                                                    </p>
+                                                    <ul class="flex flex-wrap gap-3" role="list">
+                                                        @foreach ($product->ingredients->where('is_allergen', true)->unique('allergen_type') as $allergen)
+                                                            <li><x-allergen-badge :ingredient="$allergen" /></li>
+                                                        @endforeach
+                                                    </ul>
+                                                </div>
+                                            @endif
+
+                                            {{-- Chips de variante (server-rendered + Alpine para estado activo) --}}
+                                            <div class="mt-3 flex flex-wrap gap-2" role="group" aria-label="Elige tamaño de {{ $product->name }}">
+                                                @foreach($product->variants as $variant)
+                                                    <button type="button"
+                                                            @click="selectedVariantId = {{ $variant->id }}"
+                                                            :class="selectedVariantId === {{ $variant->id }}
+                                                                ? 'bg-indigo-600 text-white border-indigo-600'
+                                                                : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:border-indigo-400'"
+                                                            :aria-pressed="(selectedVariantId === {{ $variant->id }}).toString()"
+                                                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold
+                                                                   transition-colors duration-150
+                                                                   focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-1">
+                                                        {{ $variant->name }}
+                                                        <span class="opacity-75">{{ number_format($variant->price, 2, ',', '.') }}&nbsp;€</span>
+                                                    </button>
+                                                @endforeach
+                                            </div>
+
+                                            {{-- Botón añadir variante seleccionada --}}
+                                            <div class="mt-3 flex justify-end">
+                                                @if($orderingAllowed)
+                                                <button type="button"
+                                                        @click="$store.cart.addWithVariant(
+                                                            {{ $product->id }},
+                                                            selectedVariantId,
+                                                            selectedVariant.name,
+                                                            selectedVariant.price,
+                                                            products.find(p => p.id === {{ $product->id }})
+                                                        )"
+                                                        :aria-label="'Añadir ' + selectedVariant.name + ' de {{ $product->name }} al pedido'"
+                                                        class="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full
+                                                               bg-green-600 hover:bg-green-700 active:scale-95
+                                                               text-white text-sm font-semibold shadow-sm
+                                                               transition-all duration-150
+                                                               focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
+                                                    <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+                                                    </svg>
+                                                    Añadir
+                                                </button>
+                                                @else
+                                                <span class="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full
+                                                             bg-gray-200 dark:bg-gray-700
+                                                             text-gray-400 dark:text-gray-500 text-sm font-semibold
+                                                             cursor-not-allowed select-none"
+                                                      aria-disabled="true" title="{{ __('Pedidos cerrados') }}">
+                                                    <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+                                                    </svg>
+                                                    Añadir
+                                                </span>
+                                                @endif
+                                            </div>
+                                        </div>
+                                        @else
+                                        {{-- Producto sin variantes (comportamiento original) --}}
                                         <div class="flex items-start justify-between gap-2">
                                             <h3 class="font-semibold text-base sm:text-lg leading-snug text-gray-900 dark:text-gray-100">
                                                 {{ $product->name }}
@@ -4070,6 +4199,7 @@
                                             @if($orderingAllowed)
                                             <button type="button"
                                                     @click="$store.cart.add(products.find(p => p.id === {{ $product->id }}))"
+                                                    aria-label="Añadir {{ $product->name }} al pedido"
                                                     class="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full
                                                            bg-green-600 hover:bg-green-700 active:scale-95
                                                            text-white text-sm font-semibold shadow-sm
@@ -4094,6 +4224,7 @@
                                             </span>
                                             @endif
                                         </div>
+                                        @endif
                                     </div>
                                 </div>
                             </li>

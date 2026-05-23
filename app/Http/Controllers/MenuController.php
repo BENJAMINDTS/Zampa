@@ -60,6 +60,7 @@ class MenuController extends Controller
                                         'ingredients.allergen_type',
                                     ]);
                               },
+                              'variants',
                           ])
                           ->orderBy('name');
                 },
