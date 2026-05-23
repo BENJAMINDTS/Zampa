@@ -29,7 +29,9 @@
             {{-- Tarjetas de resumen --}}
             <section aria-labelledby="summary-heading">
                 <h2 id="summary-heading" class="sr-only">Resumen de ingresos</h2>
-                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                @php $grand = $summary->cash_revenue + $summary->card_revenue + $summary->cash_tip_revenue + $summary->card_tip_revenue; @endphp
+
+                <div class="grid grid-cols-2 lg:grid-cols-3 gap-4">
 
                     {{-- Efectivo --}}
                     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm
@@ -63,21 +65,7 @@
                         </p>
                     </div>
 
-                    {{-- Propinas --}}
-                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm
-                                border border-gray-200 dark:border-gray-700 p-5">
-                        <div class="flex items-center gap-2 mb-3">
-                            <span class="text-xl" aria-hidden="true">🎁</span>
-                            <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Propinas</span>
-                        </div>
-                        <p class="text-2xl font-bold text-gray-900 dark:text-white">
-                            {{ number_format($summary->tip_revenue, 2, ',', '.') }}&nbsp;€
-                        </p>
-                        <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">Solo pagos con tarjeta</p>
-                    </div>
-
                     {{-- Total cobrado --}}
-                    @php $grand = $summary->cash_revenue + $summary->card_revenue + $summary->tip_revenue; @endphp
                     <div class="bg-indigo-600 dark:bg-indigo-700 rounded-2xl shadow-sm p-5">
                         <div class="flex items-center gap-2 mb-3">
                             <span class="text-xl" aria-hidden="true">💰</span>
@@ -91,6 +79,46 @@
                             pedido{{ $summary->total_count != 1 ? 's' : '' }}
                         </p>
                     </div>
+
+                </div>
+
+                {{-- Propinas desglosadas --}}
+                <div class="grid grid-cols-2 gap-4 mt-4">
+
+                    {{-- Propina en efectivo --}}
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm
+                                border border-gray-200 dark:border-gray-700 p-5">
+                        <div class="flex items-center gap-2 mb-3">
+                            <span class="text-xl" aria-hidden="true">🎁</span>
+                            <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Propina</span>
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium
+                                         bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300">
+                                <span aria-hidden="true">💵</span> Efectivo
+                            </span>
+                        </div>
+                        <p class="text-2xl font-bold text-green-700 dark:text-green-400">
+                            {{ number_format($summary->cash_tip_revenue, 2, ',', '.') }}&nbsp;€
+                        </p>
+                        <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">Propinas recibidas en mano</p>
+                    </div>
+
+                    {{-- Propina en tarjeta --}}
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm
+                                border border-gray-200 dark:border-gray-700 p-5">
+                        <div class="flex items-center gap-2 mb-3">
+                            <span class="text-xl" aria-hidden="true">🎁</span>
+                            <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Propina</span>
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium
+                                         bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300">
+                                <span aria-hidden="true">💳</span> Tarjeta
+                            </span>
+                        </div>
+                        <p class="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
+                            {{ number_format($summary->card_tip_revenue, 2, ',', '.') }}&nbsp;€
+                        </p>
+                        <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">Propinas cobradas con Stripe</p>
+                    </div>
+
                 </div>
             </section>
 
@@ -186,9 +214,15 @@
                                             <td class="hidden sm:table-cell px-5 py-4 text-sm text-right
                                                        whitespace-nowrap tabular-nums">
                                                 @if($order->tip > 0)
-                                                    <span class="text-indigo-600 dark:text-indigo-400">
-                                                        +{{ number_format($order->tip, 2, ',', '.') }}&nbsp;€
-                                                    </span>
+                                                    @if($order->payment_method === 'cash')
+                                                        <span class="text-green-600 dark:text-green-400">
+                                                            +{{ number_format($order->tip, 2, ',', '.') }}&nbsp;€
+                                                        </span>
+                                                    @else
+                                                        <span class="text-indigo-600 dark:text-indigo-400">
+                                                            +{{ number_format($order->tip, 2, ',', '.') }}&nbsp;€
+                                                        </span>
+                                                    @endif
                                                 @else
                                                     <span class="text-gray-300 dark:text-gray-600"
                                                           aria-label="Sin propina">—</span>
