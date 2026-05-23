@@ -17,7 +17,7 @@ return new class extends Migration
             $table->enum('status', ['pending', 'cooking', 'ready', 'served', 'closed'])->default('pending');
             $table->decimal('total', 10, 2)->default(0);
             $table->decimal('tip', 10, 2)->default(0);
-            $table->enum('payment_method', ['cash', 'card'])->nullable();
+            $table->enum('payment_method', ['cash', 'card', 'split'])->nullable();
             $table->enum('payment_status', ['pending', 'paid'])->default('pending');
             $table->text('note')->nullable();
             $table->timestamps();
