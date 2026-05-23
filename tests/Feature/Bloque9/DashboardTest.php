@@ -152,7 +152,7 @@ it('calculates card tips correctly for the period', function () {
                     ->get(route('dashboard', ['period' => 'month']))
                     ->viewData('summary');
 
-    expect((float) $summary->tip_revenue)->toBe(5.0);
+    expect((float) $summary->card_tip_revenue)->toBe(5.0);
 });
 
 it('calculates total income correctly for the period', function () {
@@ -180,10 +180,11 @@ it('calculates total income correctly for the period', function () {
                     ->viewData('summary');
 
     expect((int) $summary->total_count)->toBe(2);
-    // cash(30) + card(40) + tip(5) = 75
+    // cash(30) + card(40) + card_tip(5) = 75
     $grand = (float) $summary->cash_revenue
            + (float) $summary->card_revenue
-           + (float) $summary->tip_revenue;
+           + (float) $summary->cash_tip_revenue
+           + (float) $summary->card_tip_revenue;
     expect($grand)->toBe(75.0);
 });
 
