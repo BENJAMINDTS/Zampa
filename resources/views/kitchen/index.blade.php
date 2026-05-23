@@ -141,7 +141,7 @@
       'serving'    => false,
       'items'      => $o->items->map(fn($i) => [
         'id'            => $i->id,
-        'product_name'  => $i->product->name,
+        'product_name'  => $i->product->name . ($i->variant_name ? ' — ' . $i->variant_name : ''),
         'quantity'      => $i->quantity,
         'is_daily_menu' => (bool) $i->is_daily_menu,
         'marking'       => false,
