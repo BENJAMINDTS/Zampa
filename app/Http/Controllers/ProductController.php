@@ -31,7 +31,7 @@ class ProductController extends Controller
   public function index(): View
   {
     $ownerId  = Auth::user()->ownerUserId();
-    $products = Product::where('user_id', $ownerId)->with('allergens')->paginate(15);
+    $products = Product::where('user_id', $ownerId)->with(['allergens', 'variants'])->paginate(15);
     return view('products.index', compact('products'));
   }
 

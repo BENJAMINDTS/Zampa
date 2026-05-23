@@ -35,7 +35,13 @@
               @endif
             </td>
             <td class="px-4 sm:px-6 py-4 whitespace-nowrap font-medium text-gray-900 text-sm sm:text-base">{{ $product->name }}</td>
-            <td class="hidden md:table-cell px-4 sm:px-6 py-4 whitespace-nowrap text-gray-500">{{ number_format($product->price, 2) }} €</td>
+            <td class="hidden md:table-cell px-4 sm:px-6 py-4 whitespace-nowrap text-gray-500">
+              @if($product->variants->isNotEmpty())
+                desde {{ number_format($product->getEffectivePrice(), 2, ',', '.') }} €
+              @else
+                {{ number_format($product->price, 2, ',', '.') }} €
+              @endif
+            </td>
             <td class="hidden lg:table-cell px-4 sm:px-6 py-4">
               @if($product->ingredients->where('is_allergen', true)->isNotEmpty())
                 <div class="flex flex-wrap gap-3" role="list" aria-label="Alérgenos de {{ $product->name }}">
