@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
@@ -16,8 +17,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @author SebastianBCF
  * @author BenjaminDTS
  *
- * @property string $image       Ruta relativa de la imagen almacenada en storage/app/public/products
- * @property float $price      Precio base del producto
+ * @property string  $image       Ruta relativa de la imagen almacenada en storage/app/public/products
+ * @property float|null $price   Precio base del producto (null si tiene variantes)
  * @property boolean $is_active  Si está disponible para pedir
  */
 class Product extends Model
@@ -73,6 +74,46 @@ class Product extends Model
         return $this->belongsToMany(Ingredient::class, 'ingredient_product')
             ->where('is_allergen', true)
             ->withTimestamps();
+    }
+
+    /**
+     * Variantes del producto (ej: Ración entera, Media ración).
+     *
+     * @return HasMany
+     */
+    public function variants(): HasMany
+    {
+        return $this->hasMany(ProductVariant::class)->orderBy('sort_order')->orderBy('id');
+    }
+
+    /**
+     * Indica si el producto tiene al menos una variante definida.
+     *
+     * @return bool
+     */
+    public function hasVariants(): bool
+    {
+        return $this->variants()->exists();
+    }
+
+    /**
+     * Devuelve el precio efectivo para mostrar en la carta.
+     * Si tiene variantes, devuelve el precio de la más barata ("desde X€").
+     * Si no tiene variantes, devuelve el precio directo del producto.
+     *
+     * @return float
+     */
+    public function getEffectivePrice(): float
+    {
+        if ($this->relationLoaded('variants') && $this->variants->isNotEmpty()) {
+            return (float) $this->variants->min('price');
+        }
+
+        if ($this->variants()->exists()) {
+            return (float) $this->variants()->min('price');
+        }
+
+        return (float) $this->price;
     }
 
     /**
