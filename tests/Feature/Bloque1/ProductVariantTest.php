@@ -73,7 +73,7 @@ it('gerente can remove a variant from a product', function () {
         ->assertRedirect(route('products.index'));
 
     expect(ProductVariant::where('product_id', $product->id)->count())->toBe(0);
-    expect($product->fresh()->price)->toBe('9.99');
+    expect((float) $product->fresh()->price)->toBe(9.99);
 });
 
 it('product with variants does not require direct price', function () {
@@ -331,14 +331,14 @@ it('kitchen panel shows variant name next to product name', function () {
     $table   = Table::factory()->create(['user_id' => $user->id, 'is_service_point' => true]);
     $cat     = Category::factory()->create(['user_id' => $user->id, 'destination' => 'kitchen']);
     $product = Product::factory()->create(['user_id' => $user->id, 'category_id' => $cat->id, 'price' => null, 'is_active' => true]);
-    $variant = ProductVariant::factory()->create(['product_id' => $product->id, 'name' => 'Media ración', 'price' => 7.50, 'sort_order' => 0]);
+    $variant = ProductVariant::factory()->create(['product_id' => $product->id, 'name' => 'Media racion', 'price' => 7.50, 'sort_order' => 0]);
 
     $order = Order::factory()->create(['table_id' => $table->id, 'status' => 'pending', 'total' => 7.50]);
     OrderItem::factory()->create([
         'order_id'     => $order->id,
         'product_id'   => $product->id,
         'variant_id'   => $variant->id,
-        'variant_name' => 'Media ración',
+        'variant_name' => 'Media racion',
         'price'        => 7.50,
         'quantity'     => 1,
         'status'       => 'queued',
@@ -348,5 +348,5 @@ it('kitchen panel shows variant name next to product name', function () {
     $response = $this->actingAs($user)->get(route('kitchen.index'));
 
     $response->assertStatus(200);
-    $response->assertSee('Media ración');
+    $response->assertSee('Media racion');
 });
