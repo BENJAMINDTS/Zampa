@@ -5,6 +5,7 @@
  */
 
 use App\Models\Order;
+use App\Models\OrderPayment;
 use App\Models\Table;
 use App\Models\User;
 use Illuminate\Support\Carbon;
@@ -763,4 +764,148 @@ it('average ticket updates correctly when period filter changes', function () {
                             ->viewData('avgTicket');
 
     expect((float) $avgTicketCustom)->toBe(60.0);
+});
+
+// ─── Cobro partido ─────────────────────────────────────────────────────────────
+
+it('split payment orders appear in split_count not cash or card count', function () {
+    $table = Table::factory()->create(['user_id' => $this->admin->id]);
+
+    $order = Order::factory()->create([
+        'table_id'       => $table->id,
+        'payment_method' => 'split',
+        'payment_status' => 'paid',
+        'total'          => 40.00,
+        'tip'            => 2.00,
+        'updated_at'     => now(),
+    ]);
+
+    OrderPayment::factory()->create(['order_id' => $order->id, 'method' => 'card', 'amount' => 30.00, 'tip' => 2.00]);
+    OrderPayment::factory()->create(['order_id' => $order->id, 'method' => 'cash', 'amount' => 10.00, 'tip' => 0]);
+
+    $summary = $this->actingAs($this->admin)
+                    ->get(route('dashboard', ['period' => 'month']))
+                    ->assertOk()
+                    ->viewData('summary');
+
+    expect((int) $summary->cash_count)->toBe(0);
+    expect((int) $summary->card_count)->toBe(0);
+    expect((int) $summary->split_count)->toBe(1);
+    expect((int) $summary->total_count)->toBe(1);
+});
+
+it('split payment revenue and tips are broken down by method in summary', function () {
+    $table = Table::factory()->create(['user_id' => $this->admin->id]);
+
+    $order = Order::factory()->create([
+        'table_id'       => $table->id,
+        'payment_method' => 'split',
+        'payment_status' => 'paid',
+        'total'          => 50.00,
+        'tip'            => 5.00,
+        'updated_at'     => now(),
+    ]);
+
+    OrderPayment::factory()->create(['order_id' => $order->id, 'method' => 'card', 'amount' => 35.00, 'tip' => 3.00]);
+    OrderPayment::factory()->create(['order_id' => $order->id, 'method' => 'cash', 'amount' => 15.00, 'tip' => 2.00]);
+
+    $summary = $this->actingAs($this->admin)
+                    ->get(route('dashboard', ['period' => 'month']))
+                    ->assertOk()
+                    ->viewData('summary');
+
+    expect((float) $summary->split_card_revenue)->toBe(35.0);
+    expect((float) $summary->split_cash_revenue)->toBe(15.0);
+    expect((float) $summary->split_card_tip_revenue)->toBe(3.0);
+    expect((float) $summary->split_cash_tip_revenue)->toBe(2.0);
+});
+
+it('split revenue is included in grand total', function () {
+    $table = Table::factory()->create(['user_id' => $this->admin->id]);
+
+    Order::factory()->create([
+        'table_id'       => $table->id,
+        'payment_method' => 'cash',
+        'payment_status' => 'paid',
+        'total'          => 20.00,
+        'tip'            => 0,
+        'updated_at'     => now(),
+    ]);
+
+    $splitOrder = Order::factory()->create([
+        'table_id'       => $table->id,
+        'payment_method' => 'split',
+        'payment_status' => 'paid',
+        'total'          => 40.00,
+        'tip'            => 2.00,
+        'updated_at'     => now(),
+    ]);
+
+    OrderPayment::factory()->create(['order_id' => $splitOrder->id, 'method' => 'card', 'amount' => 30.00, 'tip' => 2.00]);
+    OrderPayment::factory()->create(['order_id' => $splitOrder->id, 'method' => 'cash', 'amount' => 10.00, 'tip' => 1.00]);
+
+    $grand = $this->actingAs($this->admin)
+                  ->get(route('dashboard', ['period' => 'month']))
+                  ->assertOk()
+                  ->viewData('grand');
+
+    // cash(20) + split_card(30) + split_cash(10) + split_card_tip(2) + split_cash_tip(1) = 63
+    expect((float) $grand)->toBe(63.0);
+});
+
+it('split revenue from other restaurants is not counted', function () {
+    $otherTable = Table::factory()->create(['user_id' => $this->other->id]);
+
+    $otherOrder = Order::factory()->create([
+        'table_id'       => $otherTable->id,
+        'payment_method' => 'split',
+        'payment_status' => 'paid',
+        'total'          => 100.00,
+        'updated_at'     => now(),
+    ]);
+
+    OrderPayment::factory()->create(['order_id' => $otherOrder->id, 'method' => 'card', 'amount' => 70.00]);
+    OrderPayment::factory()->create(['order_id' => $otherOrder->id, 'method' => 'cash', 'amount' => 30.00]);
+
+    $summary = $this->actingAs($this->admin)
+                    ->get(route('dashboard', ['period' => 'month']))
+                    ->assertOk()
+                    ->viewData('summary');
+
+    expect((float) $summary->split_cash_revenue)->toBe(0.0);
+    expect((float) $summary->split_card_revenue)->toBe(0.0);
+    expect((int) $summary->split_count)->toBe(0);
+});
+
+it('average ticket includes split orders', function () {
+    $table = Table::factory()->create(['user_id' => $this->admin->id]);
+
+    Order::factory()->create([
+        'table_id'       => $table->id,
+        'payment_method' => 'cash',
+        'payment_status' => 'paid',
+        'total'          => 30.00,
+        'tip'            => 0,
+        'updated_at'     => now(),
+    ]);
+
+    $splitOrder = Order::factory()->create([
+        'table_id'       => $table->id,
+        'payment_method' => 'split',
+        'payment_status' => 'paid',
+        'total'          => 50.00,
+        'tip'            => 0,
+        'updated_at'     => now(),
+    ]);
+
+    OrderPayment::factory()->create(['order_id' => $splitOrder->id, 'method' => 'card', 'amount' => 30.00, 'tip' => 0]);
+    OrderPayment::factory()->create(['order_id' => $splitOrder->id, 'method' => 'cash', 'amount' => 20.00, 'tip' => 0]);
+
+    $avgTicket = $this->actingAs($this->admin)
+                      ->get(route('dashboard', ['period' => 'month']))
+                      ->assertOk()
+                      ->viewData('avgTicket');
+
+    // (cash 30 + split_card 30 + split_cash 20) / 2 orders = 40
+    expect((float) $avgTicket)->toBe(40.0);
 });
