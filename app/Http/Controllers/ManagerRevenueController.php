@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Order;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 /**
@@ -29,24 +30,57 @@ class ManagerRevenueController extends Controller
             default => [now()->startOfMonth(), now()->endOfMonth()],
         };
 
-        // JOIN en lugar de whereHas para evitar N+1 y garantizar multitenancy en una sola query
+        $ownerUserId = Auth::user()->ownerUserId();
+
         $base = Order::query()
             ->join('tables', 'orders.table_id', '=', 'tables.id')
-            ->where('tables.user_id', Auth::user()->ownerUserId())
+            ->where('tables.user_id', $ownerUserId)
             ->where('orders.payment_status', 'paid')
             ->whereBetween('orders.updated_at', [$start, $end]);
 
-        $summary = (clone $base)
+        $nonSplitRaw = (clone $base)
+            ->whereIn('orders.payment_method', ['cash', 'card'])
             ->selectRaw("
                 COALESCE(SUM(CASE WHEN orders.payment_method = 'cash' THEN orders.total ELSE 0 END), 0) as cash_revenue,
                 COALESCE(SUM(CASE WHEN orders.payment_method = 'card' THEN orders.total ELSE 0 END), 0) as card_revenue,
                 COALESCE(SUM(CASE WHEN orders.payment_method = 'cash' THEN orders.tip  ELSE 0 END), 0)  as cash_tip_revenue,
                 COALESCE(SUM(CASE WHEN orders.payment_method = 'card' THEN orders.tip  ELSE 0 END), 0)  as card_tip_revenue,
                 SUM(CASE WHEN orders.payment_method = 'cash' THEN 1 ELSE 0 END)                         as cash_count,
-                SUM(CASE WHEN orders.payment_method = 'card' THEN 1 ELSE 0 END)                         as card_count,
-                COUNT(*)                                                                                 as total_count
+                SUM(CASE WHEN orders.payment_method = 'card' THEN 1 ELSE 0 END)                         as card_count
             ")
             ->first();
+
+        $splitRaw = DB::table('order_payments')
+            ->join('orders', 'order_payments.order_id', '=', 'orders.id')
+            ->join('tables', 'orders.table_id', '=', 'tables.id')
+            ->where('tables.user_id', $ownerUserId)
+            ->where('orders.payment_status', 'paid')
+            ->whereBetween('orders.updated_at', [$start, $end])
+            ->selectRaw("
+                COALESCE(SUM(CASE WHEN order_payments.method = 'cash' THEN order_payments.amount ELSE 0 END), 0) as split_cash_revenue,
+                COALESCE(SUM(CASE WHEN order_payments.method = 'card' THEN order_payments.amount ELSE 0 END), 0) as split_card_revenue,
+                COALESCE(SUM(CASE WHEN order_payments.method = 'cash' THEN order_payments.tip    ELSE 0 END), 0) as split_cash_tip_revenue,
+                COALESCE(SUM(CASE WHEN order_payments.method = 'card' THEN order_payments.tip    ELSE 0 END), 0) as split_card_tip_revenue,
+                COUNT(DISTINCT order_payments.order_id)                                                          as split_count
+            ")
+            ->first();
+
+        $summary = (object) [
+            'cash_revenue'           => (float) ($nonSplitRaw->cash_revenue ?? 0),
+            'card_revenue'           => (float) ($nonSplitRaw->card_revenue ?? 0),
+            'cash_tip_revenue'       => (float) ($nonSplitRaw->cash_tip_revenue ?? 0),
+            'card_tip_revenue'       => (float) ($nonSplitRaw->card_tip_revenue ?? 0),
+            'cash_count'             => (int)   ($nonSplitRaw->cash_count ?? 0),
+            'card_count'             => (int)   ($nonSplitRaw->card_count ?? 0),
+            'split_cash_revenue'     => (float) ($splitRaw->split_cash_revenue ?? 0),
+            'split_card_revenue'     => (float) ($splitRaw->split_card_revenue ?? 0),
+            'split_cash_tip_revenue' => (float) ($splitRaw->split_cash_tip_revenue ?? 0),
+            'split_card_tip_revenue' => (float) ($splitRaw->split_card_tip_revenue ?? 0),
+            'split_count'            => (int)   ($splitRaw->split_count ?? 0),
+            'total_count'            => (int) ($nonSplitRaw->cash_count ?? 0)
+                                      + (int) ($nonSplitRaw->card_count ?? 0)
+                                      + (int) ($splitRaw->split_count ?? 0),
+        ];
 
         $orders = (clone $base)
             ->select(
