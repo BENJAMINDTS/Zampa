@@ -87,7 +87,7 @@
                     </a>
                 </div>
 
-                <div class="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
 
                     {{-- Efectivo --}}
                     <div role="region" aria-label="Total ingresos en efectivo"
@@ -121,6 +121,29 @@
                             {{ $summary->card_count }}
                             pedido{{ $summary->card_count != 1 ? 's' : '' }}
                         </p>
+                    </div>
+
+                    {{-- Cobro partido --}}
+                    <div role="region" aria-label="Total ingresos por cobro partido"
+                         class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm
+                                border border-gray-200 dark:border-gray-700 p-5">
+                        <div class="flex items-center gap-2 mb-3">
+                            <span class="text-xl" aria-hidden="true">🔀</span>
+                            <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Cobro partido</span>
+                        </div>
+                        <p class="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
+                            {{ number_format($summary->split_cash_revenue + $summary->split_card_revenue, 2, ',', '.') }}&nbsp;€
+                        </p>
+                        <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">
+                            {{ $summary->split_count }}
+                            pedido{{ $summary->split_count != 1 ? 's' : '' }}
+                        </p>
+                        @if($summary->split_count > 0)
+                            <p class="mt-2 text-xs text-gray-400 dark:text-gray-500">
+                                💵 {{ number_format($summary->split_cash_revenue, 2, ',', '.') }}&nbsp;€
+                                · 💳 {{ number_format($summary->split_card_revenue, 2, ',', '.') }}&nbsp;€
+                            </p>
+                        @endif
                     </div>
 
                     {{-- Total global --}}
@@ -157,7 +180,7 @@
                             </span>
                         </div>
                         <p class="text-2xl font-bold text-green-700 dark:text-green-400 tabular-nums">
-                            {{ number_format($summary->cash_tip_revenue, 2, ',', '.') }}&nbsp;€
+                            {{ number_format($summary->cash_tip_revenue + $summary->split_cash_tip_revenue, 2, ',', '.') }}&nbsp;€
                         </p>
                         <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">Propinas recibidas en mano</p>
                     </div>
@@ -175,7 +198,7 @@
                             </span>
                         </div>
                         <p class="text-2xl font-bold text-indigo-600 dark:text-indigo-400 tabular-nums">
-                            {{ number_format($summary->card_tip_revenue, 2, ',', '.') }}&nbsp;€
+                            {{ number_format($summary->card_tip_revenue + $summary->split_card_tip_revenue, 2, ',', '.') }}&nbsp;€
                         </p>
                         <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">Propinas cobradas con Stripe</p>
                     </div>

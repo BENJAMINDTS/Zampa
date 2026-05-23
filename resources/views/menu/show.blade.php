@@ -418,11 +418,14 @@
                         });
                         const data = await res.json();
                         if (res.ok && data.success) {
-                            const bill       = Alpine.store('bill');
-                            bill.active      = true;
-                            bill.requested   = false;
-                            bill.method      = null;
-                            bill.paymentDone = false;
+                            const bill             = Alpine.store('bill');
+                            bill.active            = true;
+                            bill.requested         = false;
+                            bill.method            = null;
+                            bill.paymentDone       = false;
+                            bill.orderTotal        = parseFloat(data.total) || 0;
+                            bill.grandTotal        = parseFloat(data.total) || 0;
+                            bill.originalOrderTotal = parseFloat(data.total) || 0;
                             this.sent  = true;
                             this.items = [];
                             this.open  = false;
@@ -572,6 +575,7 @@
                 splitStripeReady:  false,
                 splitStripeError:  null,
                 splitStripeTotal:  0,
+                splitStripeTip:    0,
                 _splitStripe:      null,
                 _splitElements:    null,
 
@@ -968,6 +972,7 @@
                             return;
                         }
                         this.splitStripeTotal = data.amount ?? amount;
+                        this.splitStripeTip   = tip;
                         requestAnimationFrame(() => requestAnimationFrame(() => this._mountSplitStripe(data.client_secret)));
                     } catch {
                         this.splitStripeError = 'Error de conexión al iniciar el pago.';
@@ -1031,12 +1036,13 @@
                             const data = await res.json();
                             if (res.ok && data.success) {
                                 this.splitPayingCard = false;
-                                this.paymentDone     = true;
-                                this.orderTotal      = Math.max(0, this.orderTotal - this.splitStripeTotal);
+                                const basePaid       = this.splitStripeTotal - (this.splitStripeTip || 0);
+                                this.orderTotal      = Math.max(0, this.orderTotal - basePaid);
                                 this.grandTotal      = this.orderTotal;
                                 if (data.fully_paid) {
-                                    this.requested = true;
-                                    this.active    = false;
+                                    this.paymentDone = true;
+                                    this.requested   = true;
+                                    this.active      = false;
                                 }
                             } else {
                                 this.splitStripeError = data.message ?? 'Error al confirmar el pago.';

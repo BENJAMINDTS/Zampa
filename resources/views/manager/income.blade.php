@@ -29,9 +29,14 @@
             {{-- Tarjetas de resumen --}}
             <section aria-labelledby="summary-heading">
                 <h2 id="summary-heading" class="sr-only">Resumen de ingresos</h2>
-                @php $grand = $summary->cash_revenue + $summary->card_revenue + $summary->cash_tip_revenue + $summary->card_tip_revenue; @endphp
+                @php
+                    $grand = $summary->cash_revenue + $summary->card_revenue
+                           + $summary->cash_tip_revenue + $summary->card_tip_revenue
+                           + $summary->split_cash_revenue + $summary->split_card_revenue
+                           + $summary->split_cash_tip_revenue + $summary->split_card_tip_revenue;
+                @endphp
 
-                <div class="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
 
                     {{-- Efectivo --}}
                     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm
@@ -63,6 +68,28 @@
                             {{ $summary->card_count }}
                             pedido{{ $summary->card_count != 1 ? 's' : '' }}
                         </p>
+                    </div>
+
+                    {{-- Cobro partido --}}
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm
+                                border border-gray-200 dark:border-gray-700 p-5">
+                        <div class="flex items-center gap-2 mb-3">
+                            <span class="text-xl" aria-hidden="true">🔀</span>
+                            <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Cobro partido</span>
+                        </div>
+                        <p class="text-2xl font-bold text-gray-900 dark:text-white">
+                            {{ number_format($summary->split_cash_revenue + $summary->split_card_revenue, 2, ',', '.') }}&nbsp;€
+                        </p>
+                        <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">
+                            {{ $summary->split_count }}
+                            pedido{{ $summary->split_count != 1 ? 's' : '' }}
+                        </p>
+                        @if($summary->split_count > 0)
+                            <p class="mt-2 text-xs text-gray-400 dark:text-gray-500">
+                                💵 {{ number_format($summary->split_cash_revenue, 2, ',', '.') }}&nbsp;€
+                                · 💳 {{ number_format($summary->split_card_revenue, 2, ',', '.') }}&nbsp;€
+                            </p>
+                        @endif
                     </div>
 
                     {{-- Total cobrado --}}
@@ -97,7 +124,7 @@
                             </span>
                         </div>
                         <p class="text-2xl font-bold text-green-700 dark:text-green-400">
-                            {{ number_format($summary->cash_tip_revenue, 2, ',', '.') }}&nbsp;€
+                            {{ number_format($summary->cash_tip_revenue + $summary->split_cash_tip_revenue, 2, ',', '.') }}&nbsp;€
                         </p>
                         <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">Propinas recibidas en mano</p>
                     </div>
@@ -114,7 +141,7 @@
                             </span>
                         </div>
                         <p class="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
-                            {{ number_format($summary->card_tip_revenue, 2, ',', '.') }}&nbsp;€
+                            {{ number_format($summary->card_tip_revenue + $summary->split_card_tip_revenue, 2, ',', '.') }}&nbsp;€
                         </p>
                         <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">Propinas cobradas con Stripe</p>
                     </div>
@@ -198,6 +225,13 @@
                                                                  text-indigo-700 dark:text-indigo-300">
                                                         <span aria-hidden="true">💳</span> Tarjeta
                                                     </span>
+                                                @elseif($order->payment_method === 'split')
+                                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full
+                                                                 text-xs font-medium
+                                                                 bg-purple-100 dark:bg-purple-900/40
+                                                                 text-purple-700 dark:text-purple-300">
+                                                        <span aria-hidden="true">🔀</span> Partido
+                                                    </span>
                                                 @else
                                                     <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full
                                                                  text-xs font-medium
@@ -219,6 +253,7 @@
                                                             +{{ number_format($order->tip, 2, ',', '.') }}&nbsp;€
                                                         </span>
                                                     @else
+                                                        {{-- card y split: la propina registrada es siempre de tarjeta --}}
                                                         <span class="text-indigo-600 dark:text-indigo-400">
                                                             +{{ number_format($order->tip, 2, ',', '.') }}&nbsp;€
                                                         </span>
