@@ -101,6 +101,16 @@ class Order extends Model
     }
 
     /**
+     * Registros contables de cobro partido (solo para payment_method='split').
+     *
+     * @return HasMany
+     */
+    public function orderPayments(): HasMany
+    {
+        return $this->hasMany(OrderPayment::class);
+    }
+
+    /**
      * Suma de los pagos parciales con status 'paid'.
      *
      * @return float
