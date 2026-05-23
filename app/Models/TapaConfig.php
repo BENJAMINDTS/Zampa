@@ -106,13 +106,19 @@ class TapaConfig extends Model
 
     /**
      * Determina si la cocina está abierta en este momento.
-     * Sin tramos configurados se considera siempre abierta.
+     * El horario del negocio tiene prioridad: si el negocio está cerrado, la cocina también.
+     * Sin tramos de cocina configurados se considera abierta dentro del horario del negocio.
      * Soporta rangos que cruzan medianoche (ej: 22:00 – 02:00).
      *
      * @return bool
      */
     public function isKitchenOpen(): bool
     {
+        // El negocio manda: si está cerrado, la cocina no puede estar abierta
+        if (! $this->isBusinessOpen()) {
+            return false;
+        }
+
         $schedules = $this->kitchenSchedules;
 
         if ($schedules->isEmpty()) {

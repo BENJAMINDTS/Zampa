@@ -43,6 +43,8 @@ class Order extends Model
     protected $casts = [
         'notification_ready' => 'boolean',
         'bill_requested'     => 'boolean',
+        'total'              => 'float',
+        'tip'                => 'float',
     ];
 
     /**

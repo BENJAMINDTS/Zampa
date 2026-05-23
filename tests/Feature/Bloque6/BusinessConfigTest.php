@@ -335,3 +335,96 @@ it('menu view receives businessOpen and orderingAllowed variables', function () 
              ->assertViewHas('businessOpen')
              ->assertViewHas('orderingAllowed');
 });
+
+// ─── Prioridad negocio sobre cocina ───────────────────────────────────────────
+
+it('kitchen is closed when business is closed even if within kitchen schedule', function () {
+    Carbon::setTestNow('2026-05-21 21:00:00');
+
+    $config = TapaConfig::factory()->create(['user_id' => $this->user->id]);
+    // Negocio cerrado: horario 09:00-18:00, ahora son 21:00
+    $config->businessSchedules()->create(['type' => 'business', 'opens_at' => '09:00:00', 'closes_at' => '18:00:00']);
+    // Cocina "abierta": horario 20:00-23:00, ahora son 21:00 → dentro del tramo
+    $config->kitchenSchedules()->create(['type' => 'kitchen', 'opens_at' => '20:00:00', 'closes_at' => '23:00:00']);
+    $config->load(['kitchenSchedules', 'businessSchedules']);
+
+    // El negocio cierra a las 18:00 → la cocina también debe estar cerrada
+    expect($config->isBusinessOpen())->toBeFalse();
+    expect($config->isKitchenOpen())->toBeFalse();
+
+    Carbon::setTestNow();
+});
+
+it('kitchen can be closed within business hours via kitchen schedule', function () {
+    Carbon::setTestNow('2026-05-21 17:00:00');
+
+    $config = TapaConfig::factory()->create(['user_id' => $this->user->id]);
+    // Negocio abierto: 09:00-23:00, ahora son 17:00 → abierto
+    $config->businessSchedules()->create(['type' => 'business', 'opens_at' => '09:00:00', 'closes_at' => '23:00:00']);
+    // Cocina cerrada: 13:00-16:00 y 20:00-23:00, ahora son 17:00 → fuera de ambos tramos
+    $config->kitchenSchedules()->create(['type' => 'kitchen', 'opens_at' => '13:00:00', 'closes_at' => '16:00:00']);
+    $config->kitchenSchedules()->create(['type' => 'kitchen', 'opens_at' => '20:00:00', 'closes_at' => '23:00:00']);
+    $config->load(['kitchenSchedules', 'businessSchedules']);
+
+    expect($config->isBusinessOpen())->toBeTrue();
+    expect($config->isKitchenOpen())->toBeFalse();
+
+    Carbon::setTestNow();
+});
+
+it('kitchen is open within business hours when both schedules are active', function () {
+    Carbon::setTestNow('2026-05-21 14:00:00');
+
+    $config = TapaConfig::factory()->create(['user_id' => $this->user->id]);
+    $config->businessSchedules()->create(['type' => 'business', 'opens_at' => '09:00:00', 'closes_at' => '23:00:00']);
+    $config->kitchenSchedules()->create(['type' => 'kitchen', 'opens_at' => '13:00:00', 'closes_at' => '16:00:00']);
+    $config->load(['kitchenSchedules', 'businessSchedules']);
+
+    expect($config->isBusinessOpen())->toBeTrue();
+    expect($config->isKitchenOpen())->toBeTrue();
+
+    Carbon::setTestNow();
+});
+
+it('cannot place kitchen items via API when kitchen is closed within business hours', function () {
+    Carbon::setTestNow('2026-05-21 17:00:00');
+
+    $config = TapaConfig::factory()->create(['user_id' => $this->user->id]);
+    // Negocio abierto, cocina cerrada (17:00 fuera de ambos tramos)
+    $config->businessSchedules()->create(['type' => 'business', 'opens_at' => '09:00:00', 'closes_at' => '23:00:00']);
+    $config->kitchenSchedules()->create(['type' => 'kitchen', 'opens_at' => '13:00:00', 'closes_at' => '16:00:00']);
+    $config->kitchenSchedules()->create(['type' => 'kitchen', 'opens_at' => '20:00:00', 'closes_at' => '23:00:00']);
+
+    $table   = Table::factory()->create(['user_id' => $this->user->id]);
+    $cat     = Category::factory()->create(['user_id' => $this->user->id, 'destination' => 'kitchen']);
+    $product = Product::factory()->create(['user_id' => $this->user->id, 'category_id' => $cat->id]);
+
+    $this->postJson('/api/v1/orders', [
+        'table_hash' => $table->unique_hash,
+        'items'      => [['product_id' => $product->id, 'quantity' => 1]],
+    ])->assertStatus(422)
+      ->assertJsonFragment(['success' => false]);
+
+    Carbon::setTestNow();
+});
+
+it('bar items can be ordered when kitchen is closed but business is open', function () {
+    Carbon::setTestNow('2026-05-21 17:00:00');
+
+    $config = TapaConfig::factory()->create(['user_id' => $this->user->id]);
+    // Negocio abierto, cocina cerrada (17:00 fuera de tramo)
+    $config->businessSchedules()->create(['type' => 'business', 'opens_at' => '09:00:00', 'closes_at' => '23:00:00']);
+    $config->kitchenSchedules()->create(['type' => 'kitchen', 'opens_at' => '13:00:00', 'closes_at' => '16:00:00']);
+
+    $table   = Table::factory()->create(['user_id' => $this->user->id]);
+    $cat     = Category::factory()->create(['user_id' => $this->user->id, 'destination' => 'bar']);
+    $product = Product::factory()->create(['user_id' => $this->user->id, 'category_id' => $cat->id]);
+
+    $this->postJson('/api/v1/orders', [
+        'table_hash' => $table->unique_hash,
+        'items'      => [['product_id' => $product->id, 'quantity' => 1]],
+    ])->assertStatus(201)
+      ->assertJsonFragment(['success' => true]);
+
+    Carbon::setTestNow();
+});
