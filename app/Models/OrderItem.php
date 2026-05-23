@@ -19,7 +19,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $destination   'kitchen' o 'bar', copiado de la categoría del producto
  *
  * @author BenjaminDTS
- * @author Ayrtonalania
+ * @author AyrtonAlania
  */
 class OrderItem extends Model
 {
