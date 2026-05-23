@@ -26,13 +26,21 @@ class NotificationController extends Controller
      */
     public function ready(Request $request): JsonResponse
     {
-        $orders = Order::with('table')
+        $orders = Order::with(['table', 'items.product.category'])
             ->where('notification_ready', true)
             ->whereHas('table', fn($q) => $q->where('user_id', Auth::user()->ownerUserId()))
             ->get()
             ->map(fn(Order $order) => [
                 'id'    => $order->id,
                 'table' => $order->table->name,
+                'items' => $order->items
+                    ->where('destination', 'kitchen')
+                    ->map(fn($item) => [
+                        'name'     => $item->product->name,
+                        'quantity' => $item->quantity,
+                        'is_tapa'  => $item->product->category?->name === 'Tapas',
+                    ])
+                    ->values(),
             ])
             ->values();
 
@@ -69,6 +77,9 @@ class NotificationController extends Controller
                 'id'              => $order->id,
                 'table'           => $order->table->name,
                 'payment_method'  => $order->requested_payment_method,
+                'subtotal'        => round((float) $order->total, 2),
+                'tip'             => round((float) $order->tip, 2),
+                'amount_to_collect' => round((float) $order->total + (float) $order->tip, 2),
             ])
             ->values();
 
