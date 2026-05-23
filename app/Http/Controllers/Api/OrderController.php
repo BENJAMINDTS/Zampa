@@ -58,6 +58,20 @@ class OrderController extends Controller
             ], 422);
         }
 
+        if ($tapaConfig && ! $tapaConfig->isKitchenOpen()) {
+            $hasKitchenItems = Product::with('category')
+                ->whereIn('id', collect($validated['items'])->pluck('product_id'))
+                ->whereHas('category', fn ($q) => $q->where('destination', 'kitchen'))
+                ->exists();
+
+            if ($hasKitchenItems) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'La cocina está cerrada. Solo puedes pedir productos de barra.',
+                ], 422);
+            }
+        }
+
         $order = DB::transaction(function () use ($validated, $table, $tapaConfig) {
             $order = Order::create([
                 'table_id'       => $table->id,
