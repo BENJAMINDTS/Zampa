@@ -33,30 +33,32 @@ beforeEach(function () {
 });
 
 it('redirects unauthenticated user from split payment config', function () {
-    $this->get(route('split-payment.edit'))->assertRedirect(route('login'));
-    $this->put(route('split-payment.update'))->assertRedirect(route('login'));
+    $this->get(route('negocio.config.edit'))->assertRedirect(route('login'));
+    $this->put(route('negocio.config.update'))->assertRedirect(route('login'));
 });
 
 it('waiter cannot access split payment config', function () {
     $this->actingAs($this->waiter)
-         ->get(route('split-payment.edit'))
+         ->get(route('negocio.config.edit'))
          ->assertForbidden();
 });
 
 it('admin can view split payment config', function () {
     $this->actingAs($this->admin)
-         ->get(route('split-payment.edit'))
+         ->get(route('negocio.config.edit'))
          ->assertOk()
-         ->assertViewIs('split-payment.edit')
-         ->assertViewHas('user', $this->admin);
+         ->assertViewIs('negocio.config')
+         ->assertViewHas('tapaConfig');
 });
 
 it('admin can enable split payment', function () {
     $this->actingAs($this->admin)
-         ->put(route('split-payment.update'), [
-             'split_payment_enabled' => '1',
+         ->put(route('negocio.config.update'), [
+             'split_payment_enabled'   => '1',
+             'max_tapa_variants'       => '3',
+             'tapas_free'              => '1',
          ])
-         ->assertRedirect(route('split-payment.edit'));
+         ->assertRedirect(route('negocio.config.edit'));
 
     expect($this->admin->fresh()->split_payment_enabled)->toBeTrue();
 });
@@ -65,10 +67,12 @@ it('admin can disable split payment', function () {
     $this->admin->update(['split_payment_enabled' => true, 'split_payment_max_parts' => 4]);
 
     $this->actingAs($this->admin)
-         ->put(route('split-payment.update'), [
+         ->put(route('negocio.config.update'), [
              'split_payment_enabled' => '0',
+             'max_tapa_variants'     => '3',
+             'tapas_free'            => '1',
          ])
-         ->assertRedirect(route('split-payment.edit'));
+         ->assertRedirect(route('negocio.config.edit'));
 
     $fresh = $this->admin->fresh();
     expect($fresh->split_payment_enabled)->toBeFalse()
@@ -77,38 +81,46 @@ it('admin can disable split payment', function () {
 
 it('admin can set max parts limit', function () {
     $this->actingAs($this->admin)
-         ->put(route('split-payment.update'), [
+         ->put(route('negocio.config.update'), [
              'split_payment_enabled'   => '1',
              'split_payment_max_parts' => '5',
+             'max_tapa_variants'       => '3',
+             'tapas_free'              => '1',
          ])
-         ->assertRedirect(route('split-payment.edit'));
+         ->assertRedirect(route('negocio.config.edit'));
 
     expect($this->admin->fresh()->split_payment_max_parts)->toBe(5);
 });
 
 it('max parts must be at least 2', function () {
     $this->actingAs($this->admin)
-         ->put(route('split-payment.update'), [
+         ->put(route('negocio.config.update'), [
              'split_payment_enabled'   => '1',
              'split_payment_max_parts' => '1',
+             'max_tapa_variants'       => '3',
+             'tapas_free'              => '1',
          ])
          ->assertSessionHasErrors('split_payment_max_parts');
 });
 
 it('max parts cannot exceed 20', function () {
     $this->actingAs($this->admin)
-         ->put(route('split-payment.update'), [
+         ->put(route('negocio.config.update'), [
              'split_payment_enabled'   => '1',
              'split_payment_max_parts' => '21',
+             'max_tapa_variants'       => '3',
+             'tapas_free'              => '1',
          ])
          ->assertSessionHasErrors('split_payment_max_parts');
 });
 
 it('max parts must be an integer', function () {
     $this->actingAs($this->admin)
-         ->put(route('split-payment.update'), [
+         ->put(route('negocio.config.update'), [
              'split_payment_enabled'   => '1',
              'split_payment_max_parts' => 'abc',
+             'max_tapa_variants'       => '3',
+             'tapas_free'              => '1',
          ])
          ->assertSessionHasErrors('split_payment_max_parts');
 });
@@ -117,30 +129,36 @@ it('max parts is cleared when split payment is disabled', function () {
     $this->admin->update(['split_payment_enabled' => true, 'split_payment_max_parts' => 6]);
 
     $this->actingAs($this->admin)
-         ->put(route('split-payment.update'), [
+         ->put(route('negocio.config.update'), [
              'split_payment_enabled'   => '0',
              'split_payment_max_parts' => '6',
+             'max_tapa_variants'       => '3',
+             'tapas_free'              => '1',
          ])
-         ->assertRedirect(route('split-payment.edit'));
+         ->assertRedirect(route('negocio.config.edit'));
 
     expect($this->admin->fresh()->split_payment_max_parts)->toBeNull();
 });
 
 it('max parts can be left empty for no limit', function () {
     $this->actingAs($this->admin)
-         ->put(route('split-payment.update'), [
+         ->put(route('negocio.config.update'), [
              'split_payment_enabled'   => '1',
              'split_payment_max_parts' => '',
+             'max_tapa_variants'       => '3',
+             'tapas_free'              => '1',
          ])
-         ->assertRedirect(route('split-payment.edit'));
+         ->assertRedirect(route('negocio.config.edit'));
 
     expect($this->admin->fresh()->split_payment_max_parts)->toBeNull();
 });
 
 it('shows success flash after saving config', function () {
     $this->actingAs($this->admin)
-         ->put(route('split-payment.update'), [
+         ->put(route('negocio.config.update'), [
              'split_payment_enabled' => '1',
+             'max_tapa_variants'     => '3',
+             'tapas_free'            => '1',
          ])
          ->assertSessionHas('success');
 });
@@ -149,9 +167,11 @@ it('split payment config is scoped to the restaurant', function () {
     $this->admin->update(['split_payment_enabled' => true, 'split_payment_max_parts' => 3]);
 
     $this->actingAs($this->other)
-         ->put(route('split-payment.update'), [
+         ->put(route('negocio.config.update'), [
              'split_payment_enabled'   => '0',
              'split_payment_max_parts' => null,
+             'max_tapa_variants'       => '3',
+             'tapas_free'              => '1',
          ]);
 
     expect($this->admin->fresh()->split_payment_enabled)->toBeTrue()
@@ -162,7 +182,11 @@ it('other admin cannot change another admins split payment config', function () 
     $this->admin->update(['split_payment_enabled' => true]);
 
     $this->actingAs($this->other)
-         ->put(route('split-payment.update'), ['split_payment_enabled' => '0']);
+         ->put(route('negocio.config.update'), [
+             'split_payment_enabled' => '0',
+             'max_tapa_variants'     => '3',
+             'tapas_free'            => '1',
+         ]);
 
     expect($this->admin->fresh()->split_payment_enabled)->toBeTrue();
 });
