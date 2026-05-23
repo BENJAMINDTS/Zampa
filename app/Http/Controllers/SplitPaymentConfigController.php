@@ -14,6 +14,7 @@ use Illuminate\View\View;
  * y configurar el número máximo de partes en que se puede dividir la cuenta por mesa.
  *
  * @author BenjaminDTS
+ * @author SebastianBCF
  */
 class SplitPaymentConfigController extends Controller
 {
