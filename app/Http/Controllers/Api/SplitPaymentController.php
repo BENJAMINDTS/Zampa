@@ -174,6 +174,16 @@ class SplitPaymentController extends Controller
             return response()->json(['success' => false, 'message' => 'El número de parte excede el total de personas.'], 422);
         }
 
+        $alreadyClaimed = OrderItemPayment::where('order_id', $order->id)
+            ->where('mode', 'equitative')
+            ->where('part_number', $partNumber)
+            ->whereIn('status', ['pending', 'paid'])
+            ->exists();
+
+        if ($alreadyClaimed) {
+            return response()->json(['success' => false, 'message' => 'Esta parte ya ha sido reclamada.'], 409);
+        }
+
         $part = round((float) $order->total / $people, 2);
 
         $result = $this->stripe->createSplitPaymentIntent(
