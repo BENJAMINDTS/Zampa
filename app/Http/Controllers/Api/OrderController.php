@@ -74,7 +74,59 @@ class OrderController extends Controller
             }
         }
 
-        $order = DB::transaction(function () use ($validated, $table, $tapaConfig) {
+        // Pre-validate variant ownership and product/variant consistency before opening transaction.
+        $resolvedItems = [];
+        foreach ($validated['items'] as $itemData) {
+            $product   = Product::with('category')->findOrFail($itemData['product_id']);
+            $variantId = $itemData['variant_id'] ?? null;
+            $variant   = null;
+
+            if ($variantId !== null) {
+                $variant = ProductVariant::findOrFail($variantId);
+                if ($variant->product_id !== $product->id) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'La variante no pertenece al producto indicado.',
+                    ], 422);
+                }
+            }
+
+            $productHasVariants = $product->variants()->exists();
+
+            if ($productHasVariants && $variantId === null) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Este producto requiere seleccionar una variante.',
+                ], 422);
+            }
+
+            if (! $productHasVariants && $variantId !== null) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Este producto no tiene variantes.',
+                ], 422);
+            }
+
+            if ($variant !== null) {
+                $basePrice = (float) $variant->price;
+            } elseif ($tapaConfig && $tapaConfig->tapas_enabled && $tapaConfig->isTapaProduct($product)) {
+                $basePrice = $tapaConfig->getPriceForProduct($product);
+            } else {
+                $basePrice = (float) $product->price;
+            }
+
+            $resolvedItems[] = [
+                'product'      => $product,
+                'variant'      => $variant,
+                'variantId'    => $variantId,
+                'variantName'  => $variant?->name,
+                'basePrice'    => $basePrice,
+                'quantity'     => $itemData['quantity'],
+                'modifications' => $itemData['modifications'] ?? [],
+            ];
+        }
+
+        $order = DB::transaction(function () use ($resolvedItems, $table) {
             $order = Order::create([
                 'table_id'       => $table->id,
                 'status'         => 'pending',
@@ -84,68 +136,26 @@ class OrderController extends Controller
 
             $total = 0;
 
-            foreach ($validated['items'] as $itemData) {
-                $product   = Product::with('category')->findOrFail($itemData['product_id']);
-                $variantId   = $itemData['variant_id'] ?? null;
-                $variant     = null;
-                $variantName = null;
-
-                if ($variantId !== null) {
-                    $variant = ProductVariant::findOrFail($variantId);
-
-                    if ($variant->product_id !== $product->id) {
-                        return response()->json([
-                            'success' => false,
-                            'message' => 'La variante no pertenece al producto indicado.',
-                        ], 422);
-                    }
-
-                    $variantName = $variant->name;
-                }
-
-                $productHasVariants = $product->variants()->exists();
-
-                if ($productHasVariants && $variantId === null) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Este producto requiere seleccionar una variante.',
-                    ], 422);
-                }
-
-                if (! $productHasVariants && $variantId !== null) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Este producto no tiene variantes.',
-                    ], 422);
-                }
-
-                if ($variant !== null) {
-                    $basePrice = (float) $variant->price;
-                } elseif ($tapaConfig && $tapaConfig->tapas_enabled && $tapaConfig->isTapaProduct($product)) {
-                    $basePrice = $tapaConfig->getPriceForProduct($product);
-                } else {
-                    $basePrice = (float) $product->price;
-                }
-
-                $extraCharge = collect($itemData['modifications'] ?? [])
+            foreach ($resolvedItems as $item) {
+                $extraCharge = collect($item['modifications'])
                     ->where('action', 'add')
                     ->sum('amount_charged');
 
-                $unitPrice = $basePrice + (float) $extraCharge;
-                $total    += $unitPrice * $itemData['quantity'];
+                $unitPrice = $item['basePrice'] + (float) $extraCharge;
+                $total    += $unitPrice * $item['quantity'];
 
                 $orderItem = OrderItem::create([
                     'order_id'    => $order->id,
-                    'product_id'  => $product->id,
-                    'variant_id'  => $variantId,
-                    'variant_name' => $variantName,
-                    'quantity'    => $itemData['quantity'],
-                    'price'       => $basePrice,
+                    'product_id'  => $item['product']->id,
+                    'variant_id'  => $item['variantId'],
+                    'variant_name' => $item['variantName'],
+                    'quantity'    => $item['quantity'],
+                    'price'       => $item['basePrice'],
                     'status'      => 'queued',
-                    'destination' => $product->category->destination,
+                    'destination' => $item['product']->category->destination,
                 ]);
 
-                foreach ($itemData['modifications'] ?? [] as $mod) {
+                foreach ($item['modifications'] as $mod) {
                     OrderItemModification::create([
                         'order_item_id'  => $orderItem->id,
                         'ingredient_id'  => $mod['ingredient_id'],
