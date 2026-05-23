@@ -7,6 +7,7 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\OrderItemModification;
 use App\Models\Product;
+use App\Models\ProductVariant;
 use App\Models\Table;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -34,6 +35,7 @@ class OrderController extends Controller
             'table_hash'                             => 'required|string',
             'items'                                  => 'required|array|min:1',
             'items.*.product_id'                     => 'required|integer|exists:products,id',
+            'items.*.variant_id'                     => 'nullable|integer|exists:product_variants,id',
             'items.*.quantity'                       => 'required|integer|min:1|max:99',
             'items.*.modifications'                  => 'nullable|array',
             'items.*.modifications.*.ingredient_id'  => 'required|integer|exists:ingredients,id',
@@ -83,11 +85,47 @@ class OrderController extends Controller
             $total = 0;
 
             foreach ($validated['items'] as $itemData) {
-                $product = Product::with('category')->findOrFail($itemData['product_id']);
+                $product   = Product::with('category')->findOrFail($itemData['product_id']);
+                $variantId   = $itemData['variant_id'] ?? null;
+                $variant     = null;
+                $variantName = null;
 
-                $basePrice = ($tapaConfig && $tapaConfig->tapas_enabled && $tapaConfig->isTapaProduct($product))
-                    ? $tapaConfig->getPriceForProduct($product)
-                    : (float) $product->price;
+                if ($variantId !== null) {
+                    $variant = ProductVariant::findOrFail($variantId);
+
+                    if ($variant->product_id !== $product->id) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'La variante no pertenece al producto indicado.',
+                        ], 422);
+                    }
+
+                    $variantName = $variant->name;
+                }
+
+                $productHasVariants = $product->variants()->exists();
+
+                if ($productHasVariants && $variantId === null) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Este producto requiere seleccionar una variante.',
+                    ], 422);
+                }
+
+                if (! $productHasVariants && $variantId !== null) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Este producto no tiene variantes.',
+                    ], 422);
+                }
+
+                if ($variant !== null) {
+                    $basePrice = (float) $variant->price;
+                } elseif ($tapaConfig && $tapaConfig->tapas_enabled && $tapaConfig->isTapaProduct($product)) {
+                    $basePrice = $tapaConfig->getPriceForProduct($product);
+                } else {
+                    $basePrice = (float) $product->price;
+                }
 
                 $extraCharge = collect($itemData['modifications'] ?? [])
                     ->where('action', 'add')
@@ -99,6 +137,8 @@ class OrderController extends Controller
                 $orderItem = OrderItem::create([
                     'order_id'    => $order->id,
                     'product_id'  => $product->id,
+                    'variant_id'  => $variantId,
+                    'variant_name' => $variantName,
                     'quantity'    => $itemData['quantity'],
                     'price'       => $basePrice,
                     'status'      => 'queued',
