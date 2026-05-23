@@ -51,7 +51,7 @@ class SplitPaymentConfigController extends Controller
         Auth::user()->update([
             'split_payment_enabled'   => $enabled,
             'split_payment_max_parts' => $enabled
-                ? ($request->input('split_payment_max_parts') ?: null)
+                ? ($validated['split_payment_max_parts'] ?? null)
                 : null,
         ]);
 
