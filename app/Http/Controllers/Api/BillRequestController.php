@@ -27,6 +27,7 @@ class BillRequestController extends Controller
     {
         $validated = $request->validate([
             'payment_method' => 'required|in:cash,card',
+            'tip'            => 'nullable|numeric|min:0|max:500',
         ]);
 
         $table = Table::where('unique_hash', $hash)->firstOrFail();
@@ -54,6 +55,7 @@ class BillRequestController extends Controller
         $order->update([
             'bill_requested'           => true,
             'requested_payment_method' => $validated['payment_method'],
+            'tip'                      => (float) ($validated['tip'] ?? 0),
         ]);
 
         return response()->json(['success' => true]);
