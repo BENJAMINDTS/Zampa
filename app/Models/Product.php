@@ -25,6 +25,13 @@ class Product extends Model
 {
     use HasFactory, SoftDeletes;
 
+    protected static function booted(): void
+    {
+        static::deleting(function (Product $product) {
+            $product->variants()->delete();
+        });
+    }
+
     protected $fillable = [
         'user_id',
         'category_id',
