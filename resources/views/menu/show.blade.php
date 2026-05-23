@@ -290,13 +290,14 @@
                         existing.quantity++;
                     } else {
                         this.items.push({
-                            productId:  product.id,
-                            name:       product.name,
-                            price:      product.price,
-                            quantity:   1,
-                            mods:       [],
-                            removable:  product.removable || [],
-                            extras:     product.extras    || [],
+                            productId:   product.id,
+                            name:        product.name,
+                            price:       product.price,
+                            quantity:    1,
+                            destination: product.destination ?? null,
+                            mods:        [],
+                            removable:   product.removable || [],
+                            extras:      product.extras    || [],
                         });
                     }
                     if (product.destination === 'bar') {
@@ -379,6 +380,13 @@
                     return this.items.reduce((s, i) => s + i.quantity, 0);
                 },
 
+                get sendLabel() {
+                    const dests = [...new Set(this.items.map(i => i.destination).filter(Boolean))];
+                    if (dests.length === 1 && dests[0] === 'bar')     return '🍺 Enviar pedido a barra';
+                    if (dests.length === 1 && dests[0] === 'kitchen') return '🍽️ Enviar pedido a cocina';
+                    return '🛎️ Enviar pedido';
+                },
+
                 fmt(n) {
                     return n.toFixed(2).replace('.', ',') + ' €';
                 },
@@ -410,7 +418,11 @@
                         });
                         const data = await res.json();
                         if (res.ok && data.success) {
-                            Alpine.store('bill').active = true;
+                            const bill       = Alpine.store('bill');
+                            bill.active      = true;
+                            bill.requested   = false;
+                            bill.method      = null;
+                            bill.paymentDone = false;
                             this.sent  = true;
                             this.items = [];
                             this.open  = false;
@@ -532,8 +544,9 @@
                 showingTip:  false,
                 tipAmount:   0,
                 tipPercent:  null,
-                orderTotal:  @json((float) $activeOrderTotal),
-                grandTotal:  @json((float) $activeOrderTotal),
+                orderTotal:         @json((float) $activeOrderTotal),
+                originalOrderTotal: @json((float) $originalOrderTotal),
+                grandTotal:         @json((float) $activeOrderTotal),
 
                 // Estado de pago con tarjeta
                 payingCard:   false,
@@ -545,10 +558,11 @@
                 _elements:    null,
 
                 // Cobro partido
-                splitEnabled:      @json($splitPaymentEnabled),
-                splitMaxParts:     @json($splitPaymentMaxParts),
-                showingSplit:      false,
-                splitMode:         null,
+                splitEnabled:           @json($splitPaymentEnabled),
+                splitMaxParts:          @json($splitPaymentMaxParts),
+                splitEquitativeLocked:  false,
+                showingSplit:           false,
+                splitMode:              null,
                 splitShowItems:    false,
                 splitShowEq:       false,
                 splitItems:        [],
@@ -615,8 +629,8 @@
                             this.error  = data.message ?? 'No hay un pedido activo.';
                             return;
                         }
-                        this.orderTotal = data.total;
-                        this.grandTotal = data.total;
+                        this.orderTotal = parseFloat(data.total) || 0;
+                        this.grandTotal = parseFloat(data.total) || 0;
                     } catch {
                         // si falla el fetch se usa el total cacheado en page load
                     }
@@ -751,10 +765,21 @@
                 },
 
                 // ── Cobro partido ─────────────────────────────────────────
-                _loadSplitItems() {
-                    const raw = document.getElementById('order-items');
-                    const all = raw ? JSON.parse(raw.textContent) : [];
-                    this.splitItems    = all;
+                async _loadSplitItems() {
+                    try {
+                        const res  = await fetch('/api/v1/payment/' + this.tableHash + '/split/items', {
+                            headers: { 'Accept': 'application/json' },
+                        });
+                        const data = await res.json();
+                        if (res.ok && data.success) {
+                            this.splitItems            = data.items;
+                            this.splitEquitativeLocked = data.equitative_locked ?? false;
+                        } else {
+                            this.splitItems = [];
+                        }
+                    } catch {
+                        this.splitItems = [];
+                    }
                     this.splitSelected = [];
                 },
 
@@ -778,7 +803,7 @@
 
                 get splitMyPart() {
                     const p = Math.max(2, parseInt(this.splitPeople) || 2);
-                    return this.orderTotal / p;
+                    return this.originalOrderTotal / p;
                 },
 
                 openSplit() {
@@ -791,11 +816,11 @@
                     this.showingSplit = false;
                 },
 
-                openSplitItems() {
+                async openSplitItems() {
                     this.showingSplit = false;
-                    this._loadSplitItems();
                     this.splitMode      = 'items';
                     this.splitShowItems = true;
+                    await this._loadSplitItems();
                 },
 
                 closeSplitItems() {
@@ -816,7 +841,6 @@
                     this.splitMode   = null;
                 },
 
-                // TODO B16.4: /split/intent y /split/confirm implementados en SplitPaymentController
                 async proceedSplitPayment(amount, type, itemIds) {
                     const ids = itemIds || [];
                     this.splitShowItems   = false;
@@ -826,14 +850,20 @@
                     this.splitStripeError = null;
                     this.sending          = true;
                     try {
-                        const res = await fetch('/api/v1/payment/' + this.tableHash + '/split/intent', {
+                        const url  = type === 'items'
+                            ? '/api/v1/payment/' + this.tableHash + '/split/pay-items'
+                            : '/api/v1/payment/' + this.tableHash + '/split/pay-eq';
+                        const body = type === 'items'
+                            ? { item_ids: ids }
+                            : { people: Math.max(2, parseInt(this.splitPeople) || 2), part_number: 1 };
+                        const res = await fetch(url, {
                             method:  'POST',
                             headers: {
                                 'Content-Type': 'application/json',
                                 'Accept':       'application/json',
                                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
                             },
-                            body: JSON.stringify({ amount: Math.round(amount * 100), type, item_ids: ids }),
+                            body: JSON.stringify(body),
                         });
                         const data = await res.json();
                         if (!res.ok) {
@@ -841,7 +871,7 @@
                             this.splitPayingCard  = false;
                             return;
                         }
-                        this.splitStripeTotal = data.amount_eur ?? amount;
+                        this.splitStripeTotal = data.amount ?? amount;
                         requestAnimationFrame(() => requestAnimationFrame(() => this._mountSplitStripe(data.client_secret)));
                     } catch {
                         this.splitStripeError = 'Error de conexión al iniciar el pago.';
@@ -906,6 +936,8 @@
                             if (res.ok && data.success) {
                                 this.splitPayingCard = false;
                                 this.paymentDone     = true;
+                                this.orderTotal      = Math.max(0, this.orderTotal - this.splitStripeTotal);
+                                this.grandTotal      = this.orderTotal;
                                 if (data.fully_paid) {
                                     this.requested = true;
                                     this.active    = false;
@@ -1192,7 +1224,11 @@
 
                         if (res.ok && data.success) {
                             Alpine.store('cart').items = [];
-                            Alpine.store('bill').active = true;
+                            const bill       = Alpine.store('bill');
+                            bill.active      = true;
+                            bill.requested   = false;
+                            bill.method      = null;
+                            bill.paymentDone = false;
                             this.pushMsg({ type: 'system',
                                 text: '✅ Pedido #' + data.order_id + ' confirmado — en preparación' });
                             this.pushMsg({ type: 'bot',
@@ -2474,7 +2510,8 @@
                            class="w-full rounded-xl border border-gray-300 dark:border-gray-600
                                   bg-white dark:bg-gray-800 text-gray-900 dark:text-white
                                   px-4 py-3 pr-10 text-right placeholder-gray-400
-                                  focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                  focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500
+                                  [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
                     <span class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium pointer-events-none"
                           aria-hidden="true">€</span>
                 </div>
@@ -2651,15 +2688,24 @@
 
                 <div class="space-y-3">
                     <button type="button"
-                            @click="$store.bill.openSplitItems()"
+                            @click="!$store.bill.splitEquitativeLocked && $store.bill.openSplitItems()"
+                            :disabled="$store.bill.splitEquitativeLocked"
+                            :class="$store.bill.splitEquitativeLocked
+                                ? 'opacity-50 cursor-not-allowed bg-gray-50 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700'
+                                : 'bg-gray-50 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 hover:border-violet-500 hover:bg-violet-50 dark:hover:bg-violet-900/20 focus:ring-2 focus:ring-violet-500'"
                             class="w-full flex items-center gap-3 py-4 px-4 rounded-2xl
-                                   bg-gray-50 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700
-                                   hover:border-violet-500 hover:bg-violet-50 dark:hover:bg-violet-900/20
-                                   transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500">
+                                   transition-colors focus:outline-none">
                         <span class="text-2xl flex-shrink-0" aria-hidden="true">🧾</span>
                         <div class="text-left">
                             <p class="font-semibold text-sm text-gray-800 dark:text-gray-200">Pagar por ítems</p>
-                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Elige exactamente qué platos pagas tú</p>
+                            <p class="text-xs mt-0.5"
+                               :class="$store.bill.splitEquitativeLocked
+                                   ? 'text-amber-600 dark:text-amber-400'
+                                   : 'text-gray-500 dark:text-gray-400'"
+                               x-text="$store.bill.splitEquitativeLocked
+                                   ? 'No disponible: ya hay pagos a partes iguales en curso'
+                                   : 'Elige exactamente qué platos pagas tú'">
+                            </p>
                         </div>
                     </button>
 
@@ -3229,7 +3275,7 @@
                             class="w-full py-3.5 rounded-xl bg-green-600 hover:bg-green-700 disabled:opacity-60
                                    text-white font-bold text-base shadow-sm transition-colors
                                    focus:outline-none focus:ring-4 focus:ring-green-400">
-                        <span x-show="!$store.cart.sending">🍽️ Enviar pedido a cocina</span>
+                        <span x-show="!$store.cart.sending" x-text="$store.cart.sendLabel"></span>
                         <span x-show="$store.cart.sending" class="flex items-center justify-center gap-2">
                             <svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
@@ -3269,6 +3315,7 @@
         </div>
 
         {{-- ── Barra de filtros ─────────────────────────────────────── --}}
+        @if($businessOpen)
         <div class="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 shadow-sm"
              role="region" aria-label="Filtros de la carta">
             <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-3 space-y-2">
@@ -3392,9 +3439,10 @@
 
             </div>
         </div>
+        @endif
 
         {{-- ── Filtro de categorías ────────────────────────────────────── --}}
-        @if ($categories->isNotEmpty())
+        @if ($businessOpen && $categories->isNotEmpty())
             <nav aria-label="Filtrar por categoría"
                  class="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
                 <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -3460,6 +3508,31 @@
                 </p>
                 @endif
             </div>
+
+            @if($hasActiveOrder)
+            <div class="mt-8 rounded-2xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 p-5 text-center" role="alert">
+                <p class="text-sm font-semibold text-green-800 dark:text-green-300 mb-1">
+                    {{ __('Tienes un pedido activo') }}
+                </p>
+                <p class="text-xs text-green-700 dark:text-green-400 mb-4">
+                    {{ __('El negocio ha cerrado pero puedes solicitar la cuenta desde el botón de abajo.') }}
+                </p>
+                <button type="button"
+                        @click="$store.bill.open()"
+                        :disabled="$store.bill.requested || $store.bill.sending"
+                        class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-green-600 hover:bg-green-700
+                               text-white text-sm font-bold shadow transition-colors
+                               disabled:opacity-60 disabled:cursor-not-allowed
+                               focus:outline-none focus:ring-4 focus:ring-green-400">
+                    <template x-if="!$store.bill.requested">
+                        <span>💳 {{ __('Solicitar la cuenta') }}</span>
+                    </template>
+                    <template x-if="$store.bill.requested">
+                        <span>✅ {{ __('Cuenta solicitada') }}</span>
+                    </template>
+                </button>
+            </div>
+            @endif
         </main>
         @else
 
