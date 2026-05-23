@@ -48,14 +48,16 @@ class DashboardController extends Controller
             ->selectRaw("
                 COALESCE(SUM(CASE WHEN orders.payment_method = 'cash' THEN orders.total ELSE 0 END), 0) as cash_revenue,
                 COALESCE(SUM(CASE WHEN orders.payment_method = 'card' THEN orders.total ELSE 0 END), 0) as card_revenue,
-                COALESCE(SUM(CASE WHEN orders.payment_method = 'card' THEN orders.tip  ELSE 0 END), 0)  as tip_revenue,
+                COALESCE(SUM(CASE WHEN orders.payment_method = 'cash' THEN orders.tip  ELSE 0 END), 0)  as cash_tip_revenue,
+                COALESCE(SUM(CASE WHEN orders.payment_method = 'card' THEN orders.tip  ELSE 0 END), 0)  as card_tip_revenue,
                 SUM(CASE WHEN orders.payment_method = 'cash' THEN 1 ELSE 0 END)                         as cash_count,
                 SUM(CASE WHEN orders.payment_method = 'card' THEN 1 ELSE 0 END)                         as card_count,
                 COUNT(*)                                                                                 as total_count
             ")
             ->first() ?? (object) [
-                'cash_revenue' => 0, 'card_revenue' => 0, 'tip_revenue'  => 0,
-                'cash_count'   => 0, 'card_count'   => 0, 'total_count'  => 0,
+                'cash_revenue'     => 0, 'card_revenue'     => 0,
+                'cash_tip_revenue' => 0, 'card_tip_revenue' => 0,
+                'cash_count'       => 0, 'card_count'       => 0, 'total_count' => 0,
             ];
 
         $topTable = (clone $base)
@@ -89,7 +91,8 @@ class DashboardController extends Controller
             ->limit(3)
             ->get();
 
-        $grand     = (float) $summary->cash_revenue + (float) $summary->card_revenue + (float) $summary->tip_revenue;
+        $grand     = (float) $summary->cash_revenue + (float) $summary->card_revenue
+                   + (float) $summary->cash_tip_revenue + (float) $summary->card_tip_revenue;
         $avgTicket = $summary->total_count > 0
             ? round($grand / $summary->total_count, 2)
             : 0.0;
