@@ -44,16 +44,25 @@ class SplitPaymentController extends Controller
             return response()->json(['success' => false, 'message' => 'No hay pedido activo.'], 404);
         }
 
+        $equitativeLocked = $order->splitPayments()
+            ->where('mode', 'equitative')
+            ->whereIn('status', ['pending', 'paid'])
+            ->exists();
+
         $items = $order->items()->with('splitPayments')->get()
             ->map(fn (OrderItem $item) => [
                 'id'      => $item->id,
                 'name'    => $item->product?->name ?? 'Producto',
                 'price'   => (float) $item->price,
                 'total'   => round((float) $item->price * $item->quantity, 2),
-                'claimed' => $item->isClaimed(),
+                'claimed' => $equitativeLocked || $item->isClaimed(),
             ]);
 
-        return response()->json(['success' => true, 'items' => $items]);
+        return response()->json([
+            'success'           => true,
+            'items'             => $items,
+            'equitative_locked' => $equitativeLocked,
+        ]);
     }
 
     /**

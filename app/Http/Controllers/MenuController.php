@@ -41,7 +41,7 @@ class MenuController extends Controller
         $businessNextOpening    = ($config && ! $businessOpen) ? $config->getBusinessNextOpeningTime() : null;
         $minutesUntilClose      = ($config && $businessOpen && ! $orderingAllowed) ? $config->minutesUntilBusinessClose() : null;
 
-        $kitchenOpen     = ! ($config && $config->tapas_enabled) || $config->isKitchenOpen();
+        $kitchenOpen     = ! $config || $config->isKitchenOpen();
         $nextOpeningTime = ($config && ! $kitchenOpen) ? $config->nextOpeningTime() : null;
 
         $categories = Category::where('user_id', $table->user_id)
@@ -115,9 +115,11 @@ class MenuController extends Controller
             ->latest()
             ->first();
 
-        $hasActiveOrder   = (bool) $activeOrder;
-        $activeOrderTotal = $activeOrder?->total ?? 0;
-        $billRequested    = (bool) ($activeOrder?->bill_requested);
+        $hasActiveOrder      = (bool) $activeOrder;
+        $originalOrderTotal  = $activeOrder?->total ?? 0;
+        $paidViaSplit        = $activeOrder?->getPaidAmountViaSplit() ?? 0;
+        $activeOrderTotal    = max(0, $originalOrderTotal - $paidViaSplit);
+        $billRequested       = (bool) ($activeOrder?->bill_requested);
 
         $stripePublicKey = config('services.stripe.key');
 
@@ -142,7 +144,7 @@ class MenuController extends Controller
             'table', 'categories', 'allergens',
             'tapaConfig', 'barItemsCount', 'kitchenOpen', 'nextOpeningTime',
             'tapaVariantsUsed', 'tapaProducts', 'shouldSuggest',
-            'hasActiveOrder', 'activeOrderTotal', 'billRequested', 'stripePublicKey',
+            'hasActiveOrder', 'activeOrderTotal', 'originalOrderTotal', 'billRequested', 'stripePublicKey',
             'splitPaymentEnabled', 'splitPaymentMaxParts', 'activeOrderItemsForAlpine',
             'businessOpen', 'orderingAllowed', 'businessNextOpening', 'minutesUntilClose'
         ));

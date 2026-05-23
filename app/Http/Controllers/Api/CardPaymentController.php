@@ -43,7 +43,9 @@ class CardPaymentController extends Controller
             ], 404);
         }
 
-        return response()->json(['success' => true, 'total' => $order->total]);
+        $remaining = max(0, $order->total - $order->getPaidAmountViaSplit());
+
+        return response()->json(['success' => true, 'total' => $remaining]);
     }
 
     /**
@@ -78,7 +80,8 @@ class CardPaymentController extends Controller
             ], 404);
         }
 
-        $grandTotal = $order->total + $tip;
+        $remaining  = max(0, $order->total - $order->getPaidAmountViaSplit());
+        $grandTotal = $remaining + $tip;
 
         $result = $this->stripe->createPaymentIntent(
             amount:   (int) round($grandTotal * 100),
@@ -89,7 +92,7 @@ class CardPaymentController extends Controller
         return response()->json([
             'success'       => true,
             'client_secret' => $result['client_secret'],
-            'total'         => $order->total,
+            'total'         => $remaining,
             'tip'           => $tip,
             'grand_total'   => $grandTotal,
         ]);

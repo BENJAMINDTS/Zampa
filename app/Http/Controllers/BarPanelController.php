@@ -70,9 +70,15 @@ class BarPanelController extends Controller
         abort_if(! Auth::user()->canAccessBar(), 403, 'Acceso denegado.');
 
         $ownerId = Auth::user()->ownerUserId();
-        $count   = Order::whereHas('table', fn($q) => $q->where('user_id', $ownerId))
-            ->whereHas('items', fn($q) => $q->where('destination', 'bar')->where('status', 'queued'))
-            ->whereIn('status', ['pending', 'cooking'])
+        $count = Order::whereHas('table', fn($q) => $q->where('user_id', $ownerId))
+            ->where(fn($q) => $q
+                ->where(fn($inner) => $inner
+                    ->whereIn('status', ['pending', 'cooking'])
+                    ->whereHas('items', fn($q) => $q->where('destination', 'bar')->where('status', 'queued'))
+                )
+                ->orWhere('notification_ready', true)
+                ->orWhere('bill_requested', true)
+            )
             ->count();
 
         return response()->json(['pending_count' => $count]);
