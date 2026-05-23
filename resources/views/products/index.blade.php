@@ -35,9 +35,16 @@
               @endif
             </td>
             <td class="px-4 sm:px-6 py-4 whitespace-nowrap font-medium text-gray-900 text-sm sm:text-base">{{ $product->name }}</td>
-            <td class="hidden md:table-cell px-4 sm:px-6 py-4 whitespace-nowrap text-gray-500">
+            <td class="hidden md:table-cell px-4 sm:px-6 py-4 text-gray-500">
               @if($product->variants->isNotEmpty())
-                desde {{ number_format($product->getEffectivePrice(), 2, ',', '.') }} €
+                <div class="text-sm mb-1">desde {{ number_format($product->getEffectivePrice(), 2, ',', '.') }} €</div>
+                <div class="flex flex-wrap gap-1">
+                  @foreach($product->variants as $variant)
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 text-xs font-medium border border-indigo-200">
+                      {{ $variant->name }}&nbsp;·&nbsp;{{ number_format($variant->price, 2, ',', '.') }}&nbsp;€
+                    </span>
+                  @endforeach
+                </div>
               @else
                 {{ number_format($product->price, 2, ',', '.') }} €
               @endif
