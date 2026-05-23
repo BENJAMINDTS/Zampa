@@ -38,6 +38,7 @@
                         extra_tapa_enabled: {{ $tapaConfig->extra_tapa_enabled ? 'true' : 'false' }},
                         kitchen_schedules:  {{ json_encode($kitchenSchedulesForAlpine, JSON_HEX_QUOT) }},
                         business_schedules: {{ json_encode($businessSchedulesForAlpine, JSON_HEX_QUOT) }},
+                        split_enabled:      {{ auth()->user()->split_payment_enabled ? 'true' : 'false' }},
                         addKitchenSchedule()     { if (this.kitchen_schedules.length < 4) this.kitchen_schedules.push({ opens_at: '', closes_at: '' }); },
                         removeKitchenSchedule(i) { this.kitchen_schedules.splice(i, 1); },
                         addBusinessSchedule()     { if (this.business_schedules.length < 4) this.business_schedules.push({ opens_at: '', closes_at: '' }); },
@@ -460,6 +461,65 @@
 
                         </div>
 
+                    </section>
+
+                    {{-- ════════════════════════════════════════════ --}}
+                    {{-- SECCIÓN: Cobro partido                     --}}
+                    {{-- ════════════════════════════════════════════ --}}
+                    <section aria-labelledby="split-payment-heading" class="pt-8 border-t border-gray-200 dark:border-gray-700">
+                        <h3 id="split-payment-heading" class="text-base font-semibold text-gray-900 dark:text-gray-100 mb-1">
+                            {{ __('Cobro partido') }}
+                        </h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">
+                            {{ __('Permite a los clientes dividir la cuenta entre varios comensales desde la carta digital.') }}
+                        </p>
+
+                        {{-- Toggle --}}
+                        <div class="flex items-center justify-between mb-4">
+                            <label for="split_enabled_btn" class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                {{ __('Activar cobro partido') }}
+                            </label>
+                            <button
+                                id="split_enabled_btn"
+                                type="button"
+                                role="switch"
+                                :aria-checked="split_enabled.toString()"
+                                @click="split_enabled = !split_enabled"
+                                :class="split_enabled ? 'bg-indigo-600' : 'bg-gray-300 dark:bg-gray-600'"
+                                class="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                            >
+                                <span
+                                    :class="split_enabled ? 'translate-x-6' : 'translate-x-1'"
+                                    class="inline-block h-4 w-4 transform bg-white rounded-full transition-transform"
+                                ></span>
+                            </button>
+                            <input type="hidden" name="split_payment_enabled" :value="split_enabled ? '1' : '0'">
+                        </div>
+
+                        {{-- Máximo de partes (visible solo si activo) --}}
+                        <div x-show="split_enabled" x-transition>
+                            <label for="split_payment_max_parts" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                {{ __('Máximo de partes por mesa') }}
+                            </label>
+                            <p id="max-parts-desc" class="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                                {{ __('Deja vacío para no limitar el número de partes en que se puede dividir la cuenta.') }}
+                            </p>
+                            <input
+                                type="number"
+                                id="split_payment_max_parts"
+                                name="split_payment_max_parts"
+                                value="{{ old('split_payment_max_parts', auth()->user()->split_payment_max_parts > 0 ? auth()->user()->split_payment_max_parts : '') }}"
+                                min="2"
+                                max="20"
+                                :disabled="!split_enabled"
+                                aria-describedby="max-parts-desc error-split_payment_max_parts"
+                                class="mt-1 block w-32 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                placeholder="{{ __('Sin límite') }}"
+                            >
+                            @error('split_payment_max_parts')
+                                <p id="error-split_payment_max_parts" role="alert" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                            @enderror
+                        </div>
                     </section>
 
                     <div class="mt-8 flex justify-end">
