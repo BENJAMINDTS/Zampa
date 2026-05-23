@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es" class="scroll-smooth">
 <head>
     <meta charset="utf-8">
@@ -4107,23 +4107,22 @@
                                                 </div>
                                             @endif
 
-                                            {{-- Chips de variante --}}
+                                            {{-- Chips de variante (server-rendered + Alpine para estado activo) --}}
                                             <div class="mt-3 flex flex-wrap gap-2" role="group" aria-label="Elige tamaño de {{ $product->name }}">
-                                                <template x-for="v in variants" :key="v.id">
+                                                @foreach($product->variants as $variant)
                                                     <button type="button"
-                                                            @click="selectedVariantId = v.id"
-                                                            :class="selectedVariantId === v.id
+                                                            @click="selectedVariantId = {{ $variant->id }}"
+                                                            :class="selectedVariantId === {{ $variant->id }}
                                                                 ? 'bg-indigo-600 text-white border-indigo-600'
                                                                 : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:border-indigo-400'"
-                                                            :aria-pressed="selectedVariantId === v.id"
+                                                            :aria-pressed="(selectedVariantId === {{ $variant->id }}).toString()"
                                                             class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold
                                                                    transition-colors duration-150
                                                                    focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-1">
-                                                        <span x-text="v.name"></span>
-                                                        <span x-text="Number(v.price).toFixed(2).replace('.',',') + ' €'"
-                                                              class="opacity-75"></span>
+                                                        {{ $variant->name }}
+                                                        <span class="opacity-75">{{ number_format($variant->price, 2, ',', '.') }}&amp;nbsp;€</span>
                                                     </button>
-                                                </template>
+                                                @endforeach
                                             </div>
 
                                             {{-- Botón añadir variante seleccionada --}}
