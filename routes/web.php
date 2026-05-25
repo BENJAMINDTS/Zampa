@@ -179,30 +179,4 @@ Route::middleware(['auth', 'role.superadmin'])
          ->name('map');
 });
 
-// ── Ruta temporal de verificación de plantillas de ticket (Bloque 17.4) ──
-// Eliminar tras verificación visual.
-Route::get('/ticket/test/{template}', function (string $template) {
-    abort_unless(in_array($template, \App\Models\TicketConfig::TEMPLATES), 404);
-    $data = [
-        'business_name'  => 'Restaurante Demo S.L.',
-        'tax_id'         => 'B12345678',
-        'logo_url'       => null,
-        'footer_text'    => 'Gracias por su visita. IVA incluido al 10%.',
-        'template'       => $template,
-        'table_name'     => 'Mesa 3',
-        'date'           => now()->format('d/m/Y H:i'),
-        'lines'          => collect([
-            ['name' => 'Pizza Margarita', 'quantity' => 1, 'unit_price' => 12.00, 'subtotal' => 12.00],
-            ['name' => 'Agua mineral ×2', 'quantity' => 2, 'unit_price' => 1.50,  'subtotal' => 3.00],
-            ['name' => 'Café con leche',  'quantity' => 1, 'unit_price' => 1.80,  'subtotal' => 1.80],
-        ]),
-        'subtotal'       => 16.80,
-        'tip'            => 1.50,
-        'total'          => 18.30,
-        'payment_method' => 'card',
-        'order_id'       => 999,
-    ];
-    return view('tickets.' . $template, $data);
-})->middleware(['auth', 'role:admin'])->name('ticket.test');
-
 require __DIR__.'/auth.php';
