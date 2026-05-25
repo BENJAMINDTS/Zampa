@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Auth;
  * reprint()  requiere auth: solo el gerente propietario del restaurante.
  *
  * @author BenjaminDTS
+ * @author AyrtonAlania
  */
 class TicketController extends Controller
 {
