@@ -24,8 +24,11 @@ class TicketConfig extends Model
 {
     use HasFactory;
 
-    /** @var array<string, string> */
+    /** @var array<int, string> */
     public const TEMPLATES = ['classic', 'modern', 'minimal'];
+
+    /** @var array<string, mixed> */
+    protected $attributes = ['template' => 'classic'];
 
     /**
      * @var array<int, string>
@@ -37,16 +40,6 @@ class TicketConfig extends Model
         'footer_text',
         'template',
     ];
-
-    /**
-     * @return array<string, string>
-     */
-    protected function casts(): array
-    {
-        return [
-            'template' => 'string',
-        ];
-    }
 
     /**
      * @return BelongsTo
