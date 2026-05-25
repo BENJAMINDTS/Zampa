@@ -13,6 +13,7 @@ use Illuminate\Http\Response;
  * Usa barryvdh/laravel-dompdf para el renderizado.
  *
  * @author BenjaminDTS
+ * @author AyrtonAlania
  */
 class TicketPdfService
 {
