@@ -19,12 +19,16 @@ use Illuminate\Support\Facades\Auth;
  */
 class TicketController extends Controller
 {
+    /**
+     * @param  TicketPdfService $pdfService
+     */
     public function __construct(private readonly TicketPdfService $pdfService) {}
 
     /**
      * Descarga pública del ticket tras el pago.
-     * Verifica que el pedido está pagado y que el hash de mesa es correcto.
-     * Si el restaurante no tiene TicketConfig se usa plantilla classic por defecto.
+     * El hash de mesa actúa como token: se verifica primero para evitar revelar
+     * si un order_id arbitrario está pagado o no (timing oracle).
+     * Si el restaurante no tiene TicketConfig se genera el PDF con valores por defecto.
      *
      * @param  Request $request
      * @param  Order   $order
@@ -32,14 +36,14 @@ class TicketController extends Controller
      */
     public function download(Request $request, Order $order): Response
     {
-        abort_if($order->payment_status !== 'paid', 403, 'El pedido no está pagado.');
         abort_if(
-            $order->table->unique_hash !== $request->input('hash'),
+            $order->table->unique_hash !== $request->input('hash', ''),
             403,
             'Hash de mesa incorrecto.'
         );
+        abort_if($order->payment_status !== 'paid', 403, 'El pedido no está pagado.');
 
-        $config = TicketConfig::firstOrCreate(
+        $config = TicketConfig::firstOrNew(
             ['user_id' => $order->table->user_id],
             ['template' => 'classic']
         );
@@ -49,7 +53,8 @@ class TicketController extends Controller
 
     /**
      * Reimpresión del ticket desde el panel del gerente.
-     * Restringida al gerente propietario del restaurante.
+     * Solo accesible para el gerente propietario (Auth::id() === table.user_id).
+     * La ruta ya exige role:admin; esta guarda añade multitenancy explícita.
      *
      * @param  Order $order
      * @return Response
@@ -57,12 +62,12 @@ class TicketController extends Controller
     public function reprint(Order $order): Response
     {
         abort_if(
-            $order->table->user_id !== Auth::user()->ownerUserId(),
+            $order->table->user_id !== Auth::id(),
             403,
             'Acceso denegado.'
         );
 
-        $config = TicketConfig::firstOrCreate(
+        $config = TicketConfig::firstOrNew(
             ['user_id' => $order->table->user_id],
             ['template' => 'classic']
         );
