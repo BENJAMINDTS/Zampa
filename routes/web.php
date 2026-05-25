@@ -14,6 +14,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TableController;
+use App\Http\Controllers\TicketConfigController;
 use App\Http\Controllers\ZoneController;
 use App\Http\Controllers\SuperAdmin\SuperAdminDashboardController;
 use App\Http\Controllers\SuperAdmin\SuperAdminPlanController;
@@ -58,6 +59,11 @@ Route::middleware(['auth', 'business.active'])->group(function () {
 
 
         Route::get('/manager/income', [ManagerRevenueController::class, 'index'])->name('manager.income');
+
+        // Configuración del ticket PDF (Bloque 17.2)
+        Route::get('/ticket-config', [TicketConfigController::class, 'edit'])->name('ticket-config.edit');
+        Route::put('/ticket-config', [TicketConfigController::class, 'update'])->name('ticket-config.update');
+        Route::get('/ticket-config/preview', [TicketConfigController::class, 'preview'])->name('ticket-config.preview');
 
         // Gestión de personal del restaurante
         Route::get('/staff', [StaffController::class, 'index'])->name('staff.index');
