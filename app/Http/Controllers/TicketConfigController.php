@@ -15,6 +15,7 @@ use Illuminate\View\View;
  * siempre se resuelve por Auth::id(), nunca por ID de ruta ajeno.
  *
  * @author SebastianBCF
+ * @author AyrtonAlania
  */
 class TicketConfigController extends Controller
 {
