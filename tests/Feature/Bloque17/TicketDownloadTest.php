@@ -6,7 +6,6 @@ use App\Models\Product;
 use App\Models\Table;
 use App\Models\TicketConfig;
 use App\Models\User;
-use App\Services\TicketPdfService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Response;
@@ -125,7 +124,14 @@ it('download uses default config when no ticket config exists', function () {
     );
 
     expect($response->status())->toBe(200);
-    expect(TicketConfig::where('user_id', $this->admin->id)->exists())->toBeTrue();
+    // firstOrNew no persiste — no se crea registro en BD
+    expect(TicketConfig::where('user_id', $this->admin->id)->exists())->toBeFalse();
+});
+
+it('download without hash parameter returns 403', function () {
+    $response = $this->get(route('ticket.download', $this->order));
+
+    expect($response->status())->toBe(403);
 });
 
 // ── reprint (protegida) ───────────────────────────────────────────────────────
@@ -157,6 +163,12 @@ it('returns 403 for waiter trying to reprint', function () {
         ->get(route('ticket.reprint', $this->order));
 
     expect($response->status())->toBe(403);
+});
+
+it('unauthenticated user is redirected from reprint', function () {
+    $response = $this->get(route('ticket.reprint', $this->order));
+
+    $response->assertRedirect('/login');
 });
 
 it('reprint returns a pdf response', function () {
