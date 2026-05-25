@@ -195,3 +195,40 @@ it('buildTicketData logo url is null when no logo', function () {
 
     expect($data['logo_url'])->toBeNull();
 });
+
+// ── Selección de template (Bloque 17.4) ───────────────────────────────────────
+
+it('uses classic template when config is classic', function () {
+    $this->config->update(['template' => 'classic']);
+
+    Pdf::shouldReceive('loadView')
+        ->once()
+        ->withArgs(fn ($view) => $view === 'tickets.classic')
+        ->andReturnSelf();
+    Pdf::shouldReceive('download')->once()->andReturn(new Response('pdf'));
+
+    $this->service->generate($this->order, $this->config->fresh());
+});
+
+it('ticket data includes all required fields for templates', function () {
+    $data = $this->service->buildTicketData(
+        $this->order->load(['items.product', 'items.variant', 'table']),
+        $this->config->load('user')
+    );
+
+    expect($data)->toHaveKeys([
+        'business_name',
+        'tax_id',
+        'logo_url',
+        'footer_text',
+        'template',
+        'table_name',
+        'date',
+        'lines',
+        'subtotal',
+        'tip',
+        'total',
+        'payment_method',
+        'order_id',
+    ]);
+});
