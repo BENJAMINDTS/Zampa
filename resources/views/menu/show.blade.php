@@ -578,7 +578,8 @@
                 error:       null,
                 choosing:    false,
                 method:      null,
-                tableHash:   '{{ $table->unique_hash }}',
+                tableHash:            '{{ $table->unique_hash }}',
+                ticketDownloadBase:   '{{ url("/ticket") }}',
 
                 // Estado de la pantalla de propina
                 showingTip:  false,
@@ -2487,7 +2488,7 @@
                    x-text="$store.bill.error"></p>
             </template>
             <template x-if="$store.bill.paymentDone && $store.bill.paidOrderId">
-                <a :href="'/ticket/' + $store.bill.paidOrderId + '/download?hash=' + $store.bill.tableHash"
+                <a :href="$store.bill.ticketDownloadBase + '/' + $store.bill.paidOrderId + '/download?hash=' + $store.bill.tableHash"
                    target="_blank"
                    rel="noopener noreferrer"
                    class="mt-2 w-full flex items-center justify-center gap-2 rounded-xl
