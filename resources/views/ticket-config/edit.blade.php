@@ -120,7 +120,7 @@
                             Texto que aparece al final del ticket. Máximo 500 caracteres.
                         </p>
                     </div>
-                    <div class="px-4 py-5 sm:p-6" x-data="{ count: {{ strlen(old('footer_text', $ticketConfig->footer_text ?? '')) }} }">
+                    <div class="px-4 py-5 sm:p-6" x-data="{ count: {{ mb_strlen(old('footer_text', $ticketConfig->footer_text ?? '')) }} }">
                         <label for="footer_text" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
                             Texto del pie
                         </label>
