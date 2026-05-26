@@ -540,31 +540,26 @@
             </div>{{-- /x-data --}}
         </div>
     </div>
-</x-app-layout>
 
-@push('scripts')
-<script>
-/**
- * Alpine.js component para ticket-config/edit.
- * Se define como función global para evitar problemas de escape
- * al inyectar valores PHP dentro de atributos HTML.
- */
-function ticketConfigData() {
-    return {
-        template:    @js(old('template', $ticketConfig->template)),
-        taxId:       @js(old('tax_id', $ticketConfig->tax_id)),
-        footerText:  @js(old('footer_text', $ticketConfig->footer_text ?? '')),
-        footerCount: {{ mb_strlen(old('footer_text', $ticketConfig->footer_text ?? '')) }},
-        logoUrl:     @js($ticketConfig->hasLogo() ? $ticketConfig->getLogoUrl() : ''),
-        businessName:@js(Auth::user()->business_name ?? Auth::user()->name),
-        handleLogo(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = ev => { this.logoUrl = ev.target.result; };
-            reader.readAsDataURL(file);
-        }
-    };
-}
-</script>
-@endpush
+    @push('scripts')
+    <script>
+    function ticketConfigData() {
+        return {
+            template:    @js(old('template', $ticketConfig->template)),
+            taxId:       @js(old('tax_id', $ticketConfig->tax_id)),
+            footerText:  @js(old('footer_text', $ticketConfig->footer_text ?? '')),
+            footerCount: {{ mb_strlen(old('footer_text', $ticketConfig->footer_text ?? '')) }},
+            logoUrl:     @js($ticketConfig->hasLogo() ? $ticketConfig->getLogoUrl() : ''),
+            businessName:@js(Auth::user()->business_name ?? Auth::user()->name),
+            handleLogo(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = ev => { this.logoUrl = ev.target.result; };
+                reader.readAsDataURL(file);
+            }
+        };
+    }
+    </script>
+    @endpush
+</x-app-layout>
