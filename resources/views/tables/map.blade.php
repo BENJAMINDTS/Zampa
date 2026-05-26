@@ -2141,23 +2141,27 @@
 <script src="https://cdn.jsdelivr.net/npm/interactjs@1.10.27/dist/interact.min.js"></script>
 
 
-<script id="map-init" type="application/json">@json([
-    'tables'         => $tables,
-    'elements'       => $elements,
-    'zones'          => $zones,
-    'floorWidth'     => $floorWidth,
-    'floorHeight'    => $floorHeight,
-    'floorsEnabled'  => $floorsEnabled,
-    'floorCount'     => $floorCount,
-    'floorCanvasSizes' => $floorCanvasSizes,
-    'readonly'       => $readonly,
-    'maxTables'      => $maxTables,
-])</script>
-<script id="map-urls" type="application/json">@json([
-    'statuses'       => route('tables.map.statuses'),
-    'canvasUpdate'   => route('tables.canvas.update'),
-    'store'          => route('tables.store'),
-    'zonesStore'     => route('zones.store'),
-    'floorSettings'  => route('tables.floor-settings'),
-])</script>
+@php
+    $mapInit = [
+        'tables'           => $tables,
+        'elements'         => $elements,
+        'zones'            => $zones,
+        'floorWidth'       => $floorWidth,
+        'floorHeight'      => $floorHeight,
+        'floorsEnabled'    => $floorsEnabled,
+        'floorCount'       => $floorCount,
+        'floorCanvasSizes' => $floorCanvasSizes,
+        'readonly'         => $readonly,
+        'maxTables'        => $maxTables,
+    ];
+    $mapUrls = [
+        'statuses'     => route('tables.map.statuses'),
+        'canvasUpdate' => route('tables.canvas.update'),
+        'store'        => route('tables.store'),
+        'zonesStore'   => route('zones.store'),
+        'floorSettings'=> route('tables.floor-settings'),
+    ];
+@endphp
+<script id="map-init" type="application/json">@json($mapInit)</script>
+<script id="map-urls" type="application/json">@json($mapUrls)</script>
 </x-app-layout>
