@@ -633,6 +633,24 @@
                 splitTipItemIds:    [],
                 splitTipGrandTotal: 0,
 
+                // Cobro mixto (efectivo + tarjeta)
+                showingMixed:       false,
+                mixedCashAmount:    0,
+                mixedPayingCard:    false,
+                mixedStripeReady:   false,
+                mixedStripeError:   null,
+                mixedStripeTotal:   0,
+                mixedStripeTip:     0,
+                mixedCashPending:   false,
+                mixedCashPendingAmt: 0,
+                _mixedStripe:       null,
+                _mixedElements:     null,
+                showingMixedTip:    false,
+                mixedTipAmount:     0,
+                mixedTipPercent:    null,
+                mixedTipBase:       0,
+                mixedTipGrandTotal: 0,
+
                 open() {
                     if (this.requested || this.sending) return;
                     this.error    = null;
@@ -981,6 +999,172 @@
                     );
                 },
 
+                // ── Cobro mixto ───────────────────────────────────────────
+                openMixed() {
+                    if (this.requested || this.sending) return;
+                    this.choosing        = false;
+                    this.mixedCashAmount = Math.round(this.orderTotal / 2 * 100) / 100;
+                    this.showingMixed    = true;
+                },
+
+                closeMixed() {
+                    this.showingMixed    = false;
+                    this.mixedCashAmount = 0;
+                    this.choosing        = true;
+                },
+
+                get mixedCardAmount() {
+                    return Math.max(0, Math.round((this.orderTotal - this.mixedCashAmount) * 100) / 100);
+                },
+
+                get mixedCashValid() {
+                    return this.mixedCashAmount > 0 && this.mixedCashAmount < this.orderTotal && this.mixedCardAmount >= 0.5;
+                },
+
+                openMixedTip() {
+                    this.showingMixed    = false;
+                    this.mixedTipBase    = this.mixedCardAmount;
+                    this.mixedTipAmount  = 0;
+                    this.mixedTipPercent = null;
+                    this.mixedTipGrandTotal = this.mixedCardAmount;
+                    this.showingMixedTip = true;
+                },
+
+                setMixedTipPercent(pct) {
+                    this.mixedTipPercent    = pct;
+                    this.mixedTipAmount     = Math.round(this.mixedTipBase * pct) / 100;
+                    this.mixedTipGrandTotal = this.mixedTipBase + this.mixedTipAmount;
+                },
+
+                updateCustomMixedTip(value) {
+                    this.mixedTipPercent    = null;
+                    const parsed            = parseFloat(value) || 0;
+                    this.mixedTipAmount     = Math.max(0, Math.round(parsed * 100) / 100);
+                    this.mixedTipGrandTotal = this.mixedTipBase + this.mixedTipAmount;
+                },
+
+                closeMixedTip() {
+                    this.showingMixedTip = false;
+                    this.mixedTipAmount  = 0;
+                    this.mixedTipPercent = null;
+                    this.showingMixed    = true;
+                },
+
+                async confirmMixedTip() {
+                    this.showingMixedTip = false;
+                    await this._startMixedPayment();
+                },
+
+                async _startMixedPayment() {
+                    this.mixedPayingCard  = true;
+                    this.mixedStripeReady = false;
+                    this.mixedStripeError = null;
+                    this.sending          = true;
+                    try {
+                        const res = await fetch('/api/v1/payment/' + this.tableHash + '/mixed/intent', {
+                            method:  'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept':       'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
+                            },
+                            body: JSON.stringify({
+                                cash_amount: this.mixedCashAmount,
+                                tip:         this.mixedTipAmount,
+                            }),
+                        });
+                        const data = await res.json();
+                        if (!res.ok) {
+                            this.mixedStripeError = data.message ?? 'No se pudo iniciar el pago.';
+                            this.mixedPayingCard  = false;
+                            return;
+                        }
+                        this.mixedStripeTotal = data.grand_total ?? data.card_amount;
+                        this.mixedStripeTip   = this.mixedTipAmount;
+                        requestAnimationFrame(() => requestAnimationFrame(() => this._mountMixedStripe(data.client_secret)));
+                    } catch {
+                        this.mixedStripeError = 'Error de conexión al iniciar el pago.';
+                        this.mixedPayingCard  = false;
+                    } finally {
+                        this.sending = false;
+                    }
+                },
+
+                _mountMixedStripe(clientSecret) {
+                    const pk = document.querySelector('meta[name="stripe-key"]')?.content ?? '';
+                    if (!pk || !window.Stripe) {
+                        this.mixedStripeError = 'Stripe no disponible. Recarga la página.';
+                        this.mixedPayingCard  = false;
+                        return;
+                    }
+                    try {
+                        this._mixedStripe   = Stripe(pk);
+                        this._mixedElements = this._mixedStripe.elements({ clientSecret, locale: 'es' });
+                        const el = this._mixedElements.create('payment');
+                        el.mount('#mixed-stripe-element');
+                        el.on('ready', () => { this.mixedStripeReady = true; });
+                    } catch {
+                        this.mixedStripeError = 'Error al cargar el formulario de pago.';
+                        this.mixedPayingCard  = false;
+                    }
+                },
+
+                closeMixedPayment() {
+                    this.mixedPayingCard  = false;
+                    this.mixedStripeError = null;
+                    this._mixedStripe     = null;
+                    this._mixedElements   = null;
+                    this.showingMixed     = true;
+                },
+
+                async submitMixedPayment() {
+                    if (!this._mixedStripe || !this._mixedElements || this.sending) return;
+                    this.sending          = true;
+                    this.mixedStripeError = null;
+                    try {
+                        const { error, paymentIntent } = await this._mixedStripe.confirmPayment({
+                            elements:      this._mixedElements,
+                            confirmParams: { return_url: window.location.href },
+                            redirect:      'if_required',
+                        });
+                        if (error) {
+                            this.mixedStripeError = error.message;
+                            return;
+                        }
+                        if (paymentIntent && paymentIntent.status === 'succeeded') {
+                            const res = await fetch('/api/v1/payment/' + this.tableHash + '/mixed/confirm', {
+                                method:  'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Accept':       'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
+                                },
+                                body: JSON.stringify({
+                                    payment_intent_id: paymentIntent.id,
+                                    cash_amount:       this.mixedCashAmount,
+                                    tip:               this.mixedStripeTip,
+                                }),
+                            });
+                            const data = await res.json();
+                            if (res.ok && data.success) {
+                                this.mixedPayingCard      = false;
+                                this._mixedStripe         = null;
+                                this._mixedElements       = null;
+                                this.mixedCashPending     = true;
+                                this.mixedCashPendingAmt  = data.cash_amount ?? this.mixedCashAmount;
+                                this.requested            = true;
+                                this.method               = 'mixed';
+                            } else {
+                                this.mixedStripeError = data.message ?? 'Error al confirmar el pago.';
+                            }
+                        }
+                    } catch {
+                        this.mixedStripeError = 'Error de conexión. Inténtalo de nuevo.';
+                    } finally {
+                        this.sending = false;
+                    }
+                },
+
                 async proceedSplitPayment(amount, type, itemIds, tip = 0) {
                     const ids = itemIds || [];
                     this.splitShowItems   = false;
@@ -1075,15 +1259,21 @@
                             });
                             const data = await res.json();
                             if (res.ok && data.success) {
-                                this.splitPayingCard = false;
-                                const basePaid       = this.splitStripeTotal - (this.splitStripeTip || 0);
-                                this.orderTotal      = Math.max(0, this.orderTotal - basePaid);
-                                this.grandTotal      = this.orderTotal;
+                                const basePaid  = this.splitStripeTotal - (this.splitStripeTip || 0);
+                                this.orderTotal = Math.max(0, this.orderTotal - basePaid);
+                                this.grandTotal = this.orderTotal;
                                 if (data.fully_paid) {
-                                    this.paymentDone = true;
-                                    this.paidOrderId = data.order_id ?? null;
-                                    this.requested   = true;
-                                    this.active      = false;
+                                    this.splitPayingCard = false;
+                                    this.paymentDone     = true;
+                                    this.paidOrderId     = data.order_id ?? null;
+                                    this.requested       = true;
+                                    this.active          = false;
+                                } else {
+                                    this._splitStripe    = null;
+                                    this._splitElements  = null;
+                                    this.splitPayingCard = false;
+                                    await this._loadSplitItems();
+                                    this.splitShowItems  = true;
                                 }
                             } else {
                                 this.splitStripeError = data.message ?? 'Error al confirmar el pago.';
@@ -2478,7 +2668,7 @@
                         <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
                         </svg>
-                        <span x-text="$store.bill.paymentDone ? '¡Pago completado!' : ($store.bill.method === 'cash' ? 'Cuenta solicitada · Efectivo' : 'Cuenta solicitada · Tarjeta')"></span>
+                        <span x-text="$store.bill.paymentDone ? '¡Pago completado!' : ($store.bill.method === 'cash' ? 'Cuenta solicitada · Efectivo' : ($store.bill.method === 'mixed' ? 'Tarjeta pagada · Espera al camarero' : 'Cuenta solicitada · Tarjeta'))"></span>
                     </span>
                 </template>
             </button>
@@ -2560,9 +2750,23 @@
                     </button>
                 </div>
 
+                {{-- Cobro mixto (efectivo + tarjeta) --}}
+                <div class="mt-3">
+                    <button type="button"
+                            @click="$store.bill.openMixed()"
+                            class="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl
+                                   bg-gray-50 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700
+                                   hover:border-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20
+                                   transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500">
+                        <span class="text-xl" aria-hidden="true">💵💳</span>
+                        <span class="font-semibold text-sm text-gray-800 dark:text-gray-200">Cobro mixto</span>
+                        <span class="text-xs text-gray-400 dark:text-gray-500">(efectivo + tarjeta)</span>
+                    </button>
+                </div>
+
                 {{-- Cobro partido (solo si está habilitado para este restaurante) --}}
                 <template x-if="$store.bill.splitEnabled">
-                    <div class="mt-4 space-y-2">
+                    <div class="mt-3 space-y-2">
                         <div class="flex items-center gap-2">
                             <div class="flex-1 h-px bg-gray-200 dark:bg-gray-700"></div>
                             <span class="text-xs font-medium text-gray-400 dark:text-gray-500 whitespace-nowrap px-2">o paga tu parte</span>
@@ -3527,6 +3731,329 @@
                 </p>
             </div>
         </div>{{-- /split stripe sheet --}}
+
+        {{-- ── Sheet: cobro mixto — selector de importe ───────────── --}}
+        <div x-show="$store.bill.showingMixed"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
+             @click.self="$store.bill.closeMixed()"
+             @keydown.escape.window="$store.bill.closeMixed()"
+             aria-modal="true" role="dialog" aria-label="Cobro mixto — elige importe en efectivo">
+
+            <div x-show="$store.bill.showingMixed"
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="translate-y-full"
+                 x-transition:enter-end="translate-y-0"
+                 x-transition:leave="transition ease-in duration-200"
+                 x-transition:leave-start="translate-y-0"
+                 x-transition:leave-end="translate-y-full"
+                 class="absolute bottom-0 left-0 right-0 bg-white dark:bg-gray-900
+                        rounded-t-2xl shadow-2xl px-5 pb-8 pt-4">
+
+                <div class="w-10 h-1 rounded-full bg-gray-300 dark:bg-gray-600 mx-auto mb-5"></div>
+
+                <div class="flex items-center justify-between mb-5">
+                    <button type="button" @click="$store.bill.closeMixed()"
+                            class="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 focus:outline-none focus:underline"
+                            aria-label="Volver a métodos de pago">
+                        ← Volver
+                    </button>
+                    <h2 class="text-lg font-bold text-gray-900 dark:text-white">Cobro mixto</h2>
+                    <div class="w-14"></div>
+                </div>
+
+                <p class="text-sm text-gray-500 dark:text-gray-400 text-center mb-6">
+                    Elige cuánto pagas en efectivo. El resto se cobrará con tarjeta.
+                </p>
+
+                {{-- Total del pedido --}}
+                <div class="bg-gray-50 dark:bg-gray-800 rounded-xl px-4 py-3 mb-5 flex justify-between items-center">
+                    <span class="text-sm text-gray-500 dark:text-gray-400">Total del pedido</span>
+                    <span class="font-bold text-gray-900 dark:text-white"
+                          x-text="$store.bill.orderTotal.toFixed(2).replace('.', ',') + ' €'"></span>
+                </div>
+
+                {{-- Slider de importe en efectivo --}}
+                <div class="mb-5">
+                    <label for="mixed-cash-input" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Importe en efectivo
+                    </label>
+                    <div class="flex items-center gap-3">
+                        <input type="range"
+                               id="mixed-cash-slider"
+                               :min="0.01"
+                               :max="($store.bill.orderTotal - 0.50).toFixed(2)"
+                               step="0.01"
+                               x-model="$store.bill.mixedCashAmount"
+                               class="flex-1 accent-amber-500"
+                               aria-label="Importe en efectivo">
+                        <div class="relative w-28">
+                            <input type="number"
+                                   id="mixed-cash-input"
+                                   :min="0.01"
+                                   :max="($store.bill.orderTotal - 0.50).toFixed(2)"
+                                   step="0.01"
+                                   x-model="$store.bill.mixedCashAmount"
+                                   class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 pr-7
+                                          text-sm text-right bg-white dark:bg-gray-800 dark:text-white
+                                          focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                                   aria-label="Importe exacto en efectivo">
+                            <span class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 text-sm">€</span>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Resumen del desglose --}}
+                <div class="rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 px-4 py-3 mb-6 space-y-2">
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-600 dark:text-gray-300 flex items-center gap-1">
+                            <span aria-hidden="true">💵</span> Pagas en efectivo
+                        </span>
+                        <span class="font-semibold text-gray-900 dark:text-white"
+                              x-text="parseFloat($store.bill.mixedCashAmount || 0).toFixed(2).replace('.', ',') + ' €'"></span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-600 dark:text-gray-300 flex items-center gap-1">
+                            <span aria-hidden="true">💳</span> Pagas con tarjeta
+                        </span>
+                        <span class="font-semibold text-gray-900 dark:text-white"
+                              x-text="$store.bill.mixedCardAmount.toFixed(2).replace('.', ',') + ' €'"></span>
+                    </div>
+                </div>
+
+                <template x-if="!$store.bill.mixedCashValid">
+                    <p class="text-xs text-amber-600 dark:text-amber-400 text-center mb-3" role="alert">
+                        El importe con tarjeta debe ser al menos 0,50 €.
+                    </p>
+                </template>
+
+                <button type="button"
+                        @click="$store.bill.openMixedTip()"
+                        :disabled="!$store.bill.mixedCashValid || $store.bill.sending"
+                        class="w-full py-3.5 rounded-xl bg-amber-500 hover:bg-amber-600 disabled:opacity-50
+                               text-white font-bold text-base shadow-sm transition-colors
+                               focus:outline-none focus:ring-4 focus:ring-amber-300">
+                    Continuar → Añadir propina
+                </button>
+
+                <button type="button"
+                        @click="$store.bill.closeMixed()"
+                        class="w-full mt-3 py-2.5 rounded-xl text-sm font-medium text-gray-500 dark:text-gray-400
+                               hover:text-gray-700 dark:hover:text-gray-200 focus:outline-none focus:underline transition-colors">
+                    Cancelar
+                </button>
+            </div>
+        </div>{{-- /mixed selector sheet --}}
+
+        {{-- ── Sheet: cobro mixto — propina (sobre la parte de tarjeta) ── --}}
+        <div x-show="$store.bill.showingMixedTip"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
+             @click.self="$store.bill.closeMixedTip()"
+             @keydown.escape.window="$store.bill.closeMixedTip()"
+             aria-modal="true" role="dialog" aria-label="Añadir propina al pago con tarjeta">
+
+            <div x-show="$store.bill.showingMixedTip"
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="translate-y-full"
+                 x-transition:enter-end="translate-y-0"
+                 x-transition:leave="transition ease-in duration-200"
+                 x-transition:leave-start="translate-y-0"
+                 x-transition:leave-end="translate-y-full"
+                 class="absolute bottom-0 left-0 right-0 bg-white dark:bg-gray-900
+                        rounded-t-2xl shadow-2xl px-5 pb-8 pt-4">
+
+                <div class="w-10 h-1 rounded-full bg-gray-300 dark:bg-gray-600 mx-auto mb-5"></div>
+
+                <div class="flex items-center justify-between mb-5">
+                    <button type="button" @click="$store.bill.closeMixedTip()"
+                            class="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 focus:outline-none focus:underline"
+                            aria-label="Volver a cobro mixto">
+                        ← Volver
+                    </button>
+                    <h2 class="text-lg font-bold text-gray-900 dark:text-white">Propina (tarjeta)</h2>
+                    <div class="w-14"></div>
+                </div>
+
+                <p class="text-sm text-gray-500 dark:text-gray-400 text-center mb-4">
+                    ¿Quieres añadir propina al pago con tarjeta?
+                </p>
+
+                <div class="grid grid-cols-4 gap-2 mb-4">
+                    <template x-for="pct in [5, 10, 15, 20]" :key="pct">
+                        <button type="button"
+                                @click="$store.bill.setMixedTipPercent(pct)"
+                                :class="$store.bill.mixedTipPercent === pct
+                                    ? 'bg-amber-500 text-white border-amber-500'
+                                    : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-amber-400'"
+                                class="py-2.5 rounded-xl border-2 text-sm font-semibold transition-colors
+                                       focus:outline-none focus:ring-2 focus:ring-amber-400"
+                                :aria-pressed="$store.bill.mixedTipPercent === pct"
+                                :aria-label="'Propina ' + pct + '%'">
+                            <span x-text="pct + '%'"></span>
+                        </button>
+                    </template>
+                </div>
+
+                <div class="relative mb-5">
+                    <input type="number"
+                           min="0" max="500" step="0.01"
+                           placeholder="0,00"
+                           @input="$store.bill.updateCustomMixedTip($event.target.value)"
+                           class="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-3 pr-10
+                                  text-sm bg-white dark:bg-gray-800 dark:text-white
+                                  focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                           aria-label="Importe personalizado de propina">
+                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">€</span>
+                </div>
+
+                <div class="bg-gray-50 dark:bg-gray-800 rounded-xl px-4 py-3 mb-5 space-y-2">
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-500 dark:text-gray-400">Pago con tarjeta</span>
+                        <span x-text="$store.bill.mixedTipBase.toFixed(2).replace('.', ',') + ' €'"
+                              class="font-medium text-gray-700 dark:text-gray-300"></span>
+                    </div>
+                    <template x-if="$store.bill.mixedTipAmount > 0">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500 dark:text-gray-400">Propina</span>
+                            <span class="font-medium text-gray-700 dark:text-gray-300"
+                                  x-text="'+ ' + $store.bill.mixedTipAmount.toFixed(2).replace('.', ',') + ' €'"></span>
+                        </div>
+                    </template>
+                    <div class="flex justify-between text-base font-bold border-t border-gray-200 dark:border-gray-700 pt-2">
+                        <span class="text-gray-900 dark:text-white">Total con tarjeta</span>
+                        <span class="text-amber-600 dark:text-amber-400"
+                              x-text="$store.bill.mixedTipGrandTotal.toFixed(2).replace('.', ',') + ' €'"></span>
+                    </div>
+                </div>
+
+                <button type="button"
+                        @click="$store.bill.confirmMixedTip()"
+                        :disabled="$store.bill.sending"
+                        class="w-full py-3.5 rounded-xl bg-amber-500 hover:bg-amber-600 disabled:opacity-60
+                               text-white font-bold text-base shadow-sm transition-colors
+                               focus:outline-none focus:ring-4 focus:ring-amber-300">
+                    <span x-show="!$store.bill.sending">
+                        <span x-show="$store.bill.mixedTipAmount > 0"
+                              x-text="'💳 Pagar ' + $store.bill.mixedTipGrandTotal.toFixed(2).replace(\'.\', \',\') + ' € con tarjeta'"></span>
+                        <span x-show="$store.bill.mixedTipAmount <= 0">💳 Pagar sin propina</span>
+                    </span>
+                    <span x-show="$store.bill.sending" class="flex items-center justify-center gap-2">
+                        <svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+                        </svg>
+                        Procesando...
+                    </span>
+                </button>
+
+                <button type="button"
+                        @click="$store.bill.closeMixedTip()"
+                        class="w-full mt-3 py-2.5 rounded-xl text-sm font-medium text-gray-500 dark:text-gray-400
+                               hover:text-gray-700 dark:hover:text-gray-200 focus:outline-none focus:underline transition-colors">
+                    Cancelar
+                </button>
+            </div>
+        </div>{{-- /mixed tip sheet --}}
+
+        {{-- ── Sheet: cobro mixto — pago con tarjeta (Stripe) ─────── --}}
+        <div x-show="$store.bill.mixedPayingCard"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
+             @click.self="$store.bill.closeMixedPayment()"
+             @keydown.escape.window="$store.bill.closeMixedPayment()"
+             aria-modal="true" role="dialog" aria-label="Pago con tarjeta — cobro mixto">
+
+            <div x-show="$store.bill.mixedPayingCard"
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="translate-y-full"
+                 x-transition:enter-end="translate-y-0"
+                 x-transition:leave="transition ease-in duration-200"
+                 x-transition:leave-start="translate-y-0"
+                 x-transition:leave-end="translate-y-full"
+                 class="absolute bottom-0 left-0 right-0 bg-white dark:bg-gray-900
+                        rounded-t-2xl shadow-2xl px-5 pb-8 pt-4">
+
+                <div class="w-10 h-1 rounded-full bg-gray-300 dark:bg-gray-600 mx-auto mb-5"></div>
+
+                <div class="flex items-center justify-between mb-5">
+                    <button type="button" @click="$store.bill.closeMixedPayment()"
+                            class="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 focus:outline-none focus:underline"
+                            aria-label="Volver">← Volver</button>
+                    <h2 class="text-lg font-bold text-gray-900 dark:text-white">Pago con tarjeta</h2>
+                    <div class="w-14"></div>
+                </div>
+
+                {{-- Resumen antes de pagar --}}
+                <div class="bg-amber-50 dark:bg-amber-900/20 rounded-xl px-4 py-3 mb-5 space-y-1">
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                            <span aria-hidden="true">💵</span> Efectivo al camarero
+                        </span>
+                        <span class="font-semibold text-gray-800 dark:text-white"
+                              x-text="parseFloat($store.bill.mixedCashAmount || 0).toFixed(2).replace('.', ',') + ' €'"></span>
+                    </div>
+                    <div class="flex justify-between text-sm font-bold">
+                        <span class="text-gray-700 dark:text-gray-200 flex items-center gap-1">
+                            <span aria-hidden="true">💳</span> Cargo tarjeta ahora
+                        </span>
+                        <span class="text-amber-600 dark:text-amber-400"
+                              x-text="$store.bill.mixedStripeTotal.toFixed(2).replace('.', ',') + ' €'"></span>
+                    </div>
+                </div>
+
+                <template x-if="$store.bill.mixedStripeError">
+                    <p class="mb-3 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20
+                               rounded-lg px-4 py-2"
+                       role="alert"
+                       x-text="$store.bill.mixedStripeError"></p>
+                </template>
+
+                <div id="mixed-stripe-element" class="mb-5 min-h-[120px]"></div>
+
+                <div x-show="!$store.bill.mixedStripeReady"
+                     class="flex items-center justify-center py-6 text-sm text-gray-400 gap-2">
+                    <svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+                    </svg>
+                    Cargando formulario...
+                </div>
+
+                <button type="button"
+                        @click="$store.bill.submitMixedPayment()"
+                        :disabled="!$store.bill.mixedStripeReady || $store.bill.sending"
+                        x-show="$store.bill.mixedStripeReady"
+                        class="w-full py-3.5 rounded-xl bg-amber-500 hover:bg-amber-600 disabled:opacity-60
+                               text-white font-bold text-base shadow-sm transition-colors
+                               focus:outline-none focus:ring-4 focus:ring-amber-300">
+                    <span x-show="!$store.bill.sending"
+                          x-text="'💳 Pagar ' + $store.bill.mixedStripeTotal.toFixed(2).replace(\'.\', \',\') + ' €'"></span>
+                    <span x-show="$store.bill.sending" class="flex items-center justify-center gap-2">
+                        <svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+                        </svg>
+                        Procesando...
+                    </span>
+                </button>
+            </div>
+        </div>{{-- /mixed stripe sheet --}}
 
         {{-- ── FAB Carrito ─────────────────────────────────────────── --}}
         <div class="fixed bottom-6 right-4 z-50"
