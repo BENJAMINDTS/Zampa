@@ -28,22 +28,20 @@
                     })->values();
                 @endphp
 
+                <script id="config-init" type="application/json">@json([
+                    'tapas_enabled'      => (bool) $tapaConfig->tapas_enabled,
+                    'tapas_free'         => (bool) $tapaConfig->tapas_free,
+                    'price_mode'         => old('price_mode', $tapaConfig->price_mode ?? 'fixed'),
+                    'extra_tapa_enabled' => (bool) $tapaConfig->extra_tapa_enabled,
+                    'kitchen_schedules'  => $kitchenSchedulesForAlpine,
+                    'business_schedules' => $businessSchedulesForAlpine,
+                    'split_enabled'      => (bool) auth()->user()->split_payment_enabled,
+                ])</script>
+
                 <form
                     method="POST"
                     action="{{ route('negocio.config.update') }}"
-                    x-data="{
-                        tapas_enabled:      {{ $tapaConfig->tapas_enabled ? 'true' : 'false' }},
-                        tapas_free:         {{ $tapaConfig->tapas_free ? 'true' : 'false' }},
-                        price_mode:         '{{ old('price_mode', $tapaConfig->price_mode ?? 'fixed') }}',
-                        extra_tapa_enabled: {{ $tapaConfig->extra_tapa_enabled ? 'true' : 'false' }},
-                        kitchen_schedules:  {{ json_encode($kitchenSchedulesForAlpine, JSON_HEX_QUOT) }},
-                        business_schedules: {{ json_encode($businessSchedulesForAlpine, JSON_HEX_QUOT) }},
-                        split_enabled:      {{ auth()->user()->split_payment_enabled ? 'true' : 'false' }},
-                        addKitchenSchedule()     { if (this.kitchen_schedules.length < 4) this.kitchen_schedules.push({ opens_at: '', closes_at: '' }); },
-                        removeKitchenSchedule(i) { this.kitchen_schedules.splice(i, 1); },
-                        addBusinessSchedule()     { if (this.business_schedules.length < 4) this.business_schedules.push({ opens_at: '', closes_at: '' }); },
-                        removeBusinessSchedule(i) { this.business_schedules.splice(i, 1); }
-                    }"
+                    x-data="businessConfig()"
                 >
                     @csrf
                     @method('PUT')
