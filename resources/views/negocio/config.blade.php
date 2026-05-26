@@ -26,17 +26,19 @@
                     $businessSchedulesForAlpine = $tapaConfig->businessSchedules->map(function ($s) {
                         return ['opens_at' => substr($s->opens_at, 0, 5), 'closes_at' => substr($s->closes_at, 0, 5)];
                     })->values();
+
+                    $configInit = [
+                        'tapas_enabled'      => (bool) $tapaConfig->tapas_enabled,
+                        'tapas_free'         => (bool) $tapaConfig->tapas_free,
+                        'price_mode'         => old('price_mode', $tapaConfig->price_mode ?? 'fixed'),
+                        'extra_tapa_enabled' => (bool) $tapaConfig->extra_tapa_enabled,
+                        'kitchen_schedules'  => $kitchenSchedulesForAlpine,
+                        'business_schedules' => $businessSchedulesForAlpine,
+                        'split_enabled'      => (bool) auth()->user()->split_payment_enabled,
+                    ];
                 @endphp
 
-                <script id="config-init" type="application/json">@json([
-                    'tapas_enabled'      => (bool) $tapaConfig->tapas_enabled,
-                    'tapas_free'         => (bool) $tapaConfig->tapas_free,
-                    'price_mode'         => old('price_mode', $tapaConfig->price_mode ?? 'fixed'),
-                    'extra_tapa_enabled' => (bool) $tapaConfig->extra_tapa_enabled,
-                    'kitchen_schedules'  => $kitchenSchedulesForAlpine,
-                    'business_schedules' => $businessSchedulesForAlpine,
-                    'split_enabled'      => (bool) auth()->user()->split_payment_enabled,
-                ])</script>
+                <script id="config-init" type="application/json">@json($configInit)</script>
 
                 <form
                     method="POST"
