@@ -314,7 +314,7 @@
                                                :class="template === '{{ $value }}'
                                                        ? '{{ $ac['border'] }} {{ str_replace(' ', ' ', str_replace("'", "\'", $ac['bg'])) }}'
                                                        : 'border-gray-200 dark:border-gray-600'"
-                                               @mousedown.prevent="template = '{{ $value }}'">
+                                               @click.prevent="template = '{{ $value }}'">
 
                                             {{-- Banda superior de color --}}
                                             <div class="h-1.5 w-full {{ $ac['stripe'] }} transition-opacity duration-150"
