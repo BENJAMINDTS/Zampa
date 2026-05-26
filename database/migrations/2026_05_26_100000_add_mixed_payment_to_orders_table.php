@@ -9,8 +9,10 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Ampliar el enum payment_method para incluir 'mixed'
-        DB::statement("ALTER TABLE orders MODIFY COLUMN payment_method ENUM('cash','card','split','mixed') NULL");
+        // SQLite no soporta MODIFY COLUMN; en MySQL ampliamos el enum para incluir 'mixed'
+        if (DB::connection()->getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE orders MODIFY COLUMN payment_method ENUM('cash','card','split','mixed') NULL");
+        }
 
         Schema::table('orders', function (Blueprint $table) {
             $table->decimal('mixed_cash_amount', 10, 2)->nullable()->after('tip');
@@ -23,6 +25,8 @@ return new class extends Migration
             $table->dropColumn('mixed_cash_amount');
         });
 
-        DB::statement("ALTER TABLE orders MODIFY COLUMN payment_method ENUM('cash','card','split') NULL");
+        if (DB::connection()->getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE orders MODIFY COLUMN payment_method ENUM('cash','card','split') NULL");
+        }
     }
 };
