@@ -578,7 +578,8 @@
                 error:       null,
                 choosing:    false,
                 method:      null,
-                tableHash:   '{{ $table->unique_hash }}',
+                tableHash:            '{{ $table->unique_hash }}',
+                ticketDownloadBase:   '{{ url("/ticket") }}',
 
                 // Estado de la pantalla de propina
                 showingTip:  false,
@@ -594,6 +595,7 @@
                 stripeError:  null,
                 stripeTotal:  0,
                 paymentDone:  false,
+                paidOrderId:  null,
                 _stripe:      null,
                 _elements:    null,
 
@@ -806,6 +808,7 @@
                             if (res.ok && data.success) {
                                 this.payingCard  = false;
                                 this.paymentDone = true;
+                                this.paidOrderId = data.order_id ?? null;
                                 this.requested   = true;
                                 this.active      = false;
                                 this.method      = 'card';
@@ -1078,6 +1081,7 @@
                                 this.grandTotal      = this.orderTotal;
                                 if (data.fully_paid) {
                                     this.paymentDone = true;
+                                    this.paidOrderId = data.order_id ?? null;
                                     this.requested   = true;
                                     this.active      = false;
                                 }
@@ -2482,6 +2486,23 @@
                 <p class="mt-1 text-xs text-red-600 bg-white rounded px-2 py-1 shadow"
                    role="alert"
                    x-text="$store.bill.error"></p>
+            </template>
+            <template x-if="$store.bill.paymentDone && $store.bill.paidOrderId">
+                <a :href="$store.bill.ticketDownloadBase + '/' + $store.bill.paidOrderId + '/download?hash=' + $store.bill.tableHash"
+                   target="_blank"
+                   rel="noopener noreferrer"
+                   class="mt-2 w-full flex items-center justify-center gap-2 rounded-xl
+                          bg-white/20 hover:bg-white/30 text-white text-sm font-medium
+                          py-2.5 px-4 transition-colors focus:outline-none
+                          focus:ring-2 focus:ring-white/50"
+                   :aria-label="'Descargar ticket del pedido #' + $store.bill.paidOrderId">
+                    <svg aria-hidden="true" class="w-4 h-4 shrink-0" fill="none"
+                         stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                              d="M12 16v-8m0 8l-3-3m3 3l3-3M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2"/>
+                    </svg>
+                    Descargar ticket
+                </a>
             </template>
         </div>
 

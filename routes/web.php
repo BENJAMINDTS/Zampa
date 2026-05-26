@@ -14,6 +14,8 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TableController;
+use App\Http\Controllers\TicketConfigController;
+use App\Http\Controllers\TicketController;
 use App\Http\Controllers\ZoneController;
 use App\Http\Controllers\SuperAdmin\SuperAdminDashboardController;
 use App\Http\Controllers\SuperAdmin\SuperAdminPlanController;
@@ -30,6 +32,11 @@ Route::get('/', function () {
 Route::get('/carta/{hash}', [MenuController::class, 'show'])
     ->middleware('throttle:60,1')
     ->name('menu.show');
+
+// Descarga pública del ticket tras el pago (sin auth, hash de mesa como token)
+Route::get('/ticket/{order}/download', [TicketController::class, 'download'])
+    ->middleware('throttle:10,1')
+    ->name('ticket.download');
 
 Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified', 'business.active', 'role:admin'])
@@ -58,6 +65,14 @@ Route::middleware(['auth', 'business.active'])->group(function () {
 
 
         Route::get('/manager/income', [ManagerRevenueController::class, 'index'])->name('manager.income');
+
+        // Configuración del ticket PDF (Bloque 17.2)
+        Route::get('/ticket-config', [TicketConfigController::class, 'edit'])->name('ticket-config.edit');
+        Route::put('/ticket-config', [TicketConfigController::class, 'update'])->name('ticket-config.update');
+        Route::get('/ticket-config/preview', [TicketConfigController::class, 'preview'])->name('ticket-config.preview');
+
+        // Reimpresión del ticket PDF desde el panel del gerente (Bloque 17.5)
+        Route::get('/ticket/{order}/reprint', [TicketController::class, 'reprint'])->name('ticket.reprint');
 
         // Gestión de personal del restaurante
         Route::get('/staff', [StaffController::class, 'index'])->name('staff.index');
