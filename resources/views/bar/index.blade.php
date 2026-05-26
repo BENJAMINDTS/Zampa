@@ -239,16 +239,18 @@
         'marking'      => false,
       ])->values(),
     ])->values();
+
+    $barUrls = [
+      'barPending'                   => route('bar.pending'),
+      'billRequests'                 => route('notifications.bill.requests'),
+      'billDismissTemplate'          => route('notifications.bill.dismiss', ['order' => '__ID__']),
+      'notificationsDismissTemplate' => route('notifications.dismiss', ['order' => '__ID__']),
+      'notificationsReady'           => route('notifications.ready'),
+      'payments'                     => url('/payments'),
+      'barItems'                     => url('/bar/items'),
+    ];
   @endphp
-  <script id="bar-urls" type="application/json">@json([
-    'barPending'                 => route('bar.pending'),
-    'billRequests'               => route('notifications.bill.requests'),
-    'billDismissTemplate'        => route('notifications.bill.dismiss', ['order' => '__ID__']),
-    'notificationsDismissTemplate' => route('notifications.dismiss', ['order' => '__ID__']),
-    'notificationsReady'         => route('notifications.ready'),
-    'payments'                   => url('/payments'),
-    'barItems'                   => url('/bar/items'),
-  ])</script>
+  <script id="bar-urls" type="application/json">@json($barUrls)</script>
   <script id="bar-ready-orders" type="application/json">@json($readyOrders)</script>
   <script id="bar-init" type="application/json">@json($ordersForJs)</script>
   @endpush

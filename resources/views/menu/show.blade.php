@@ -64,6 +64,16 @@
             'barItemsCount' => (int) $barItemsCount,
             'kitchenOpen'   => $kitchenOpen,
         ];
+
+        $menuContext = [
+            'tableHash'           => $table->unique_hash,
+            'hasActiveOrder'      => $hasActiveOrder,
+            'billRequested'       => $billRequested,
+            'activeOrderTotal'    => (float) $activeOrderTotal,
+            'originalOrderTotal'  => (float) $originalOrderTotal,
+            'splitPaymentEnabled' => $splitPaymentEnabled,
+            'splitPaymentMaxParts'=> $splitPaymentMaxParts,
+        ];
     @endphp
 
     {{-- Los datos se inyectan en un <script> separado para evitar conflictos
@@ -72,17 +82,7 @@
     <script id="tapa-config" type="application/json">@json($tapaConfigForAlpine)</script>
     <script id="tapa-products" type="application/json">@json($tapaProductsForAlpine)</script>
     <script id="order-items" type="application/json">@json($activeOrderItemsForAlpine)</script>
-
-
-    <script id="menu-context" type="application/json">@json([
-        'tableHash'           => $table->unique_hash,
-        'hasActiveOrder'      => $hasActiveOrder,
-        'billRequested'       => $billRequested,
-        'activeOrderTotal'    => (float) $activeOrderTotal,
-        'originalOrderTotal'  => (float) $originalOrderTotal,
-        'splitPaymentEnabled' => $splitPaymentEnabled,
-        'splitPaymentMaxParts'=> $splitPaymentMaxParts,
-    ])</script>
+    <script id="menu-context" type="application/json">@json($menuContext)</script>
 </head>
 
 <body class="font-sans antialiased bg-gray-200 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen">
