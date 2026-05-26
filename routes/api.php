@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\BillRequestController;
 use App\Http\Controllers\Api\CardPaymentController;
+use App\Http\Controllers\Api\MixedPaymentController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\SplitPaymentController;
 use App\Http\Controllers\ChatController;
@@ -38,6 +39,14 @@ Route::post('/v1/payment/{hash}/split/pay-eq',     [SplitPaymentController::clas
 Route::post('/v1/payment/{hash}/split/confirm',    [SplitPaymentController::class, 'confirm'])
     ->middleware('throttle:10,1')
     ->name('api.split.confirm');
+
+// Cobro mixto — rutas públicas (sin autenticación, contexto por table_hash)
+Route::post('/v1/payment/{hash}/mixed/intent',  [MixedPaymentController::class, 'intent'])
+    ->middleware('throttle:10,1')
+    ->name('api.mixed.intent');
+Route::post('/v1/payment/{hash}/mixed/confirm', [MixedPaymentController::class, 'confirm'])
+    ->middleware('throttle:10,1')
+    ->name('api.mixed.confirm');
 
 // Chatbot IA — rutas públicas (sin autenticación, contexto por table_hash)
 Route::get('/v1/menu/{tableHash}',             [ChatController::class, 'menu'])->middleware('throttle:60,1')->name('api.chat.menu');
