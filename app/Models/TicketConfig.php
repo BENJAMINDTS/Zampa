@@ -5,7 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Facades\Storage;
 
 /**
  * Configuración del ticket PDF por restaurante.
@@ -60,7 +59,7 @@ class TicketConfig extends Model
             return null;
         }
 
-        return Storage::disk('public')->url($this->logo);
+        return asset('storage/' . $this->logo);
     }
 
     /**
