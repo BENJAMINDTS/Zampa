@@ -32,6 +32,7 @@ class Order extends Model
         'status',
         'total',
         'tip',
+        'mixed_cash_amount',
         'payment_method',
         'payment_status',
         'note',
@@ -45,6 +46,7 @@ class Order extends Model
         'bill_requested'     => 'boolean',
         'total'              => 'float',
         'tip'                => 'float',
+        'mixed_cash_amount'  => 'float',
     ];
 
     /**

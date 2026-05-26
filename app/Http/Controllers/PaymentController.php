@@ -31,6 +31,18 @@ class PaymentController extends Controller
         abort_if($order->table->user_id !== Auth::user()->ownerUserId(), 403, 'Acceso denegado.');
         abort_if($order->status === 'closed', 422, 'Este pedido ya está cerrado.');
 
+        // Cobro mixto: la parte de tarjeta ya fue cobrada por Stripe, el camarero confirma el efectivo
+        if ($order->requested_payment_method === 'mixed') {
+            $order->update([
+                'payment_method' => 'mixed',
+                'payment_status' => 'paid',
+                'status'         => 'closed',
+                'bill_requested' => false,
+            ]);
+
+            return response()->json(['success' => true]);
+        }
+
         $paidCardParts = $order->splitPayments()->where('status', 'paid')->get();
 
         if ($paidCardParts->isNotEmpty()) {
