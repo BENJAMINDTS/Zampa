@@ -74,12 +74,17 @@ class NotificationController extends Controller
             ->whereHas('table', fn ($q) => $q->where('user_id', Auth::user()->ownerUserId()))
             ->get()
             ->map(fn (Order $order) => [
-                'id'              => $order->id,
-                'table'           => $order->table->name,
-                'payment_method'  => $order->requested_payment_method,
-                'subtotal'        => round((float) $order->total, 2),
-                'tip'             => round((float) $order->tip, 2),
-                'amount_to_collect' => round((float) $order->total + (float) $order->tip, 2),
+                'id'                => $order->id,
+                'table'             => $order->table->name,
+                'payment_method'    => $order->requested_payment_method,
+                'subtotal'          => round((float) $order->total, 2),
+                'tip'               => round((float) $order->tip, 2),
+                'mixed_cash_amount' => $order->requested_payment_method === 'mixed'
+                    ? round((float) $order->mixed_cash_amount, 2)
+                    : null,
+                'amount_to_collect' => $order->requested_payment_method === 'mixed'
+                    ? round((float) $order->mixed_cash_amount, 2)
+                    : round((float) $order->total + (float) $order->tip, 2),
             ])
             ->values();
 
