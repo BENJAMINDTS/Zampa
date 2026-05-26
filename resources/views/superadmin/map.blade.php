@@ -72,56 +72,6 @@
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
         crossorigin=""></script>
 
-<script>
-(function () {
-    const businesses = @json($businesses);
-
-    const map = L.map('map').setView([40.4168, -3.7038], 6);
-
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '© <a href="https://www.openstreetmap.org/copyright">' +
-                     'OpenStreetMap</a> contributors'
-    }).addTo(map);
-
-    if (businesses.length === 0) {
-        return;
-    }
-
-    const bounds = [];
-
-    businesses.forEach(function (b) {
-        const color = b.active ? b.plan_color : '#ef4444';
-
-        const icon = L.divIcon({
-            className: '',
-            html: '<div style="background:' + color + ';width:14px;' +
-                  'height:14px;border-radius:50%;border:2px solid white;' +
-                  'box-shadow:0 1px 4px rgba(0,0,0,.4)"></div>',
-            iconSize:   [14, 14],
-            iconAnchor: [7,  7],
-        });
-
-        const estado  = b.active ? 'Activo' : 'Inactivo';
-        const address = b.address ? '<br>' + b.address : '';
-
-        const popup = '<strong>' + b.name + '</strong>' +
-                      '<br>Plan: '   + b.plan +
-                      '<br>Estado: ' + estado +
-                      address;
-
-        L.marker([b.lat, b.lng], { icon })
-         .addTo(map)
-         .bindPopup(popup);
-
-        bounds.push([b.lat, b.lng]);
-    });
-
-    if (bounds.length > 1) {
-        map.fitBounds(bounds, { padding: [40, 40] });
-    } else if (bounds.length === 1) {
-        map.setView(bounds[0], 13);
-    }
-}());
-</script>
+<script id="superadmin-businesses" type="application/json">@json($businesses)</script>
+@vite(['resources/js/pages/superadmin-map.js'])
 @endpush
