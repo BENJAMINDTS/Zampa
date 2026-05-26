@@ -60,6 +60,8 @@ class TicketConfigController extends Controller
                 Storage::disk('public')->delete($ticketConfig->logo);
             }
             $validated['logo'] = $request->file('logo')->store('tickets', 'public');
+        } else {
+            unset($validated['logo']);
         }
 
         $ticketConfig->update($validated);
