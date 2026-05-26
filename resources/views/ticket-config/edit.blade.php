@@ -411,19 +411,18 @@
                                                  x-transition:enter-start="opacity-0 scale-95"
                                                  x-transition:enter-end="opacity-100 scale-100"
                                                  class="mt-auto flex items-center gap-2 rounded-lg px-3 py-2
-                                                        {{ $ac['badge'] }} bg-opacity-10 dark:bg-opacity-20
-                                                        border border-opacity-30 dark:border-opacity-30
-                                                        {{ str_replace('bg-','border-',$ac['badge']) }}"
+                                                        bg-emerald-50 dark:bg-emerald-900/20
+                                                        border border-emerald-200 dark:border-emerald-700"
                                                  aria-live="polite">
                                                 <div class="flex items-center justify-center h-5 w-5 rounded-full
-                                                            {{ $ac['badge'] }} shrink-0">
+                                                            bg-emerald-500 shrink-0">
                                                     <svg class="h-3 w-3 text-white" aria-hidden="true"
                                                          fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                         <path stroke-linecap="round" stroke-linejoin="round"
                                                               stroke-width="3.5" d="M5 13l4 4L19 7"/>
                                                     </svg>
                                                 </div>
-                                                <span class="text-sm font-semibold {{ $ac['icon'] }}">
+                                                <span class="text-sm font-semibold text-emerald-700 dark:text-emerald-400">
                                                     Plantilla seleccionada
                                                 </span>
                                                 <span class="sr-only">— {{ $meta['label'] }} está seleccionada como plantilla activa</span>
