@@ -101,13 +101,13 @@ class ProductController extends Controller
       return $product;
     });
 
+    Cache::forget("menu:{$validatedData['user_id']}");
+
     if ($request->boolean('configure_ingredients')) {
       return redirect()
         ->route('products.ingredients.edit', $product)
         ->with('success', '¡Plato creado! Ahora configura sus ingredientes.');
     }
-
-    Cache::forget("menu:{$validatedData['user_id']}");
 
     return redirect()
       ->route('products.index')
