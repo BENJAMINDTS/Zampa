@@ -72,10 +72,10 @@
                                         bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600">
                                 <img :src="logoUrl"
                                      alt="Logo actual de {{ Auth::user()->business_name ?? Auth::user()->name }}"
-                                     class="h-16 w-auto rounded-md border border-gray-200 dark:border-gray-600
-                                            object-contain bg-white dark:bg-gray-900 p-1">
-                                <div>
-                                    <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Logo actual</p>
+                                     class="h-16 w-auto max-w-[160px] shrink-0 rounded-md border border-gray-200
+                                            dark:border-gray-600 object-contain bg-white dark:bg-gray-900 p-1">
+                                <div class="min-w-0">
+                                    <p class="text-sm font-medium text-gray-700 dark:text-gray-300 truncate">Logo actual</p>
                                     <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Sube uno nuevo para reemplazarlo.</p>
                                 </div>
                             </div>
@@ -114,7 +114,7 @@
                                  x-transition:enter="transition ease-out duration-200"
                                  x-transition:enter-start="opacity-0 -translate-y-1"
                                  x-transition:enter-end="opacity-100 translate-y-0"
-                                 class="mx-4 mb-4 sm:mx-6 flex items-center gap-3 rounded-lg
+                                 class="mt-3 flex items-center gap-3 rounded-lg
                                         bg-amber-50 dark:bg-amber-900/20
                                         border border-amber-200 dark:border-amber-700 px-4 py-3"
                                  role="status" aria-live="polite">
@@ -189,7 +189,7 @@
                                  x-transition:enter="transition ease-out duration-200"
                                  x-transition:enter-start="opacity-0 -translate-y-1"
                                  x-transition:enter-end="opacity-100 translate-y-0"
-                                 class="mx-4 mb-4 sm:mx-6 flex items-center gap-3 rounded-lg
+                                 class="mt-3 flex items-center gap-3 rounded-lg
                                         bg-amber-50 dark:bg-amber-900/20
                                         border border-amber-200 dark:border-amber-700 px-4 py-3"
                                  role="status" aria-live="polite">
