@@ -531,6 +531,7 @@
                                                value="{{ old('tapa_price', $tapaConfig->tapa_price) }}"
                                                min="0" max="999.99" step="0.01"
                                                aria-required="true"
+                                               :disabled="tapas_free || price_mode !== 'fixed'"
                                                aria-describedby="error-tapa_price"
                                                placeholder="0.00"
                                                class="block w-40 h-10 rounded-lg border-gray-300
@@ -609,6 +610,7 @@
                                            aria-required="true"
                                            aria-describedby="error-extra_tapa_price"
                                            placeholder="0.00"
+                                           :disabled="!extra_tapa_enabled"
                                            class="block w-40 h-10 rounded-lg border-gray-300
                                                   dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100
                                                   shadow-sm text-sm
