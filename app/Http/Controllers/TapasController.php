@@ -74,7 +74,7 @@ class TapasController extends Controller
                 'nullable', 'numeric', 'min:0', 'max:999.99',
             ],
             'extra_tapa_enabled'                  => ['sometimes', 'boolean'],
-            'extra_tapa_price'                    => ['nullable', 'numeric', 'min:0', 'max:999.99'],
+            'extra_tapa_price'                    => ['required_if:extra_tapa_enabled,1', 'nullable', 'numeric', 'min:0', 'max:999.99'],
             'ordering_cutoff_minutes'             => ['nullable', 'integer', 'min:0', 'max:120'],
             'kitchen_schedules'                   => ['nullable', 'array', 'max:4'],
             'kitchen_schedules.*.opens_at'        => ['required', 'date_format:H:i'],
