@@ -181,6 +181,33 @@ php artisan make:factory NombreFactory --model=Nombre
 
 ---
 
+## Despliegue en producción
+
+Ejecutar estos comandos después de cada deploy para activar las optimizaciones de rendimiento de Laravel:
+
+```bash
+# Compilar assets
+npm run build
+
+# Cachés de framework (mejoran el arranque en producción)
+php artisan optimize
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+php artisan event:cache
+
+# Migraciones
+php artisan migrate --force
+```
+
+Para limpiar todas las cachés durante el desarrollo o tras un deploy fallido:
+
+```bash
+php artisan optimize:clear
+```
+
+---
+
 ## Progreso del desarrollo
 
 **Progreso global: 89%** (63/71 sub-bloques completados)
