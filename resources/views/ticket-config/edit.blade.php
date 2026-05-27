@@ -92,7 +92,8 @@
             {{-- ─── FORMULARIO con Alpine.js reactivo ─── --}}
             <div x-data="ticketConfigData()">
                 <form method="POST" action="{{ route('ticket-config.update') }}"
-                      enctype="multipart/form-data" class="space-y-6">
+                      enctype="multipart/form-data" class="space-y-6"
+                      @submit="$el.querySelectorAll('input[type=radio][name=template]').forEach(r => { r.checked = (r.value === template) })">
                     @csrf
                     @method('PUT')
 
@@ -398,7 +399,8 @@
                                                            : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500' }}"
                                                :class="template === '{{ $value }}'
                                                        ? '{{ $ac['border'] }} {{ str_replace(' ', ' ', str_replace("'", "\'", $ac['bg'])) }}'
-                                                       : 'border-gray-200 dark:border-gray-600'">
+                                                       : 'border-gray-200 dark:border-gray-600'"
+                                               @click.prevent="template = '{{ $value }}'">
 
                                             {{-- Banda superior de color --}}
                                             <div class="h-1.5 w-full {{ $ac['stripe'] }} transition-opacity duration-150"
