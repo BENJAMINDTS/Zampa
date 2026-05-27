@@ -67,7 +67,8 @@
             <script id="config-init" type="application/json">@json($configInit)</script>
 
             <form method="POST" action="{{ route('negocio.config.update') }}"
-                  x-data="businessConfig()">
+                  x-data="businessConfig()"
+                  class="space-y-6">
                 @csrf
                 @method('PUT')
 
