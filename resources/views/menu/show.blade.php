@@ -2806,6 +2806,8 @@
                                         <div class="flex-shrink-0">
                                             <img src="{{ Storage::url($product->image) }}"
                                                  alt="Foto de {{ $product->name }}"
+                                                 loading="lazy"
+                                                 decoding="async"
                                                  class="h-20 w-20 sm:h-24 sm:w-24 object-cover rounded-lg">
                                         </div>
                                     @endif
