@@ -39,6 +39,56 @@
                 </div>
             @endif
 
+            {{-- ─── RESUMEN DE CAMBIOS GUARDADOS ─── --}}
+            @if(session('success') && session('success') !== 'Sin cambios detectados.')
+            @php
+                $savedParts = array_filter(array_map('trim', explode('·', session('success'))));
+            @endphp
+            <div x-data="{ open: true }"
+                 x-show="open"
+                 x-transition:leave="transition ease-in duration-150"
+                 x-transition:leave-start="opacity-100"
+                 x-transition:leave-end="opacity-0"
+                 class="rounded-xl border border-emerald-200 dark:border-emerald-700
+                        bg-emerald-50 dark:bg-emerald-900/20
+                        px-4 py-4 flex items-start gap-4"
+                 role="status" aria-live="polite">
+                <div class="flex items-center justify-center h-9 w-9 rounded-full
+                            bg-emerald-100 dark:bg-emerald-800/50 shrink-0">
+                    <svg class="h-5 w-5 text-emerald-600 dark:text-emerald-400" aria-hidden="true"
+                         fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                    </svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-semibold text-emerald-800 dark:text-emerald-300">
+                        Cambios guardados correctamente
+                    </p>
+                    <ul class="mt-2 space-y-1">
+                        @foreach($savedParts as $part)
+                            <li class="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-400">
+                                <svg class="h-3.5 w-3.5 shrink-0 text-emerald-500" aria-hidden="true"
+                                     fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                                </svg>
+                                {{ $part }}
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
+                <button @click="open = false"
+                        aria-label="Cerrar resumen de cambios"
+                        class="shrink-0 text-emerald-400 hover:text-emerald-600 dark:hover:text-emerald-200
+                               focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2
+                               dark:focus:ring-offset-gray-900 rounded-md p-1 transition-colors">
+                    <svg class="h-4 w-4" aria-hidden="true" fill="none" stroke="currentColor"
+                         stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            @endif
+
             {{-- ─── FORMULARIO con Alpine.js reactivo ─── --}}
             <div x-data="ticketConfigData()">
                 <form method="POST" action="{{ route('ticket-config.update') }}"
