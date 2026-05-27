@@ -484,13 +484,12 @@
                                                 @endif
 
                                                 {{-- Indicador "Plantilla seleccionada" — siempre verde esmeralda --}}
-                                                <div x-show="template === '{{ $value }}'"
-                                                     x-transition:enter="transition ease-out duration-150"
-                                                     x-transition:enter-start="opacity-0 scale-95"
-                                                     x-transition:enter-end="opacity-100 scale-100"
-                                                     class="mt-auto flex items-center gap-2 rounded-lg px-3 py-2
+                                                <div class="mt-auto flex items-center gap-2 rounded-lg px-3 py-2
                                                             bg-emerald-50 dark:bg-emerald-900/20
-                                                            border border-emerald-200 dark:border-emerald-700"
+                                                            border border-emerald-200 dark:border-emerald-700
+                                                            transition-opacity duration-150"
+                                                     :class="template === '{{ $value }}' ? 'opacity-100' : 'opacity-0'"
+                                                     :aria-hidden="template !== '{{ $value }}' ? 'true' : 'false'"
                                                      aria-live="polite">
                                                     <div class="flex items-center justify-center h-5 w-5 rounded-full bg-emerald-500 shrink-0">
                                                         <svg class="h-3 w-3 text-white" aria-hidden="true"
@@ -511,14 +510,12 @@
                             </fieldset>
 
                             {{-- Aviso inline al cambiar plantilla sin guardar --}}
-                            <div x-show="template !== savedTemplate"
-                                 x-transition:enter="transition ease-out duration-200"
-                                 x-transition:enter-start="opacity-0 -translate-y-1"
-                                 x-transition:enter-end="opacity-100 translate-y-0"
-                                 class="mt-4 flex items-center gap-3 rounded-lg
+                            <div class="mt-4 flex items-center gap-3 rounded-lg
                                         bg-amber-50 dark:bg-amber-900/20
                                         border border-amber-200 dark:border-amber-700
-                                        px-4 py-3"
+                                        px-4 py-3 transition-opacity duration-200"
+                                 :class="template !== savedTemplate ? 'opacity-100' : 'opacity-0 pointer-events-none'"
+                                 :aria-hidden="template === savedTemplate ? 'true' : 'false'"
                                  role="status" aria-live="polite">
                                 <svg class="h-4 w-4 text-amber-500 shrink-0" aria-hidden="true"
                                      fill="none" viewBox="0 0 24 24" stroke="currentColor">
