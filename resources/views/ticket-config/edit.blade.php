@@ -18,25 +18,6 @@
     <div class="py-8">
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
 
-            {{-- ─── FLASH ÉXITO — fuera del x-data para que no dependa de Alpine.js ─── --}}
-            @if(session('success'))
-                <div role="alert" aria-live="polite"
-                     class="rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200
-                            dark:border-emerald-700 p-4 flex items-start gap-3">
-                    <div class="flex items-center justify-center h-8 w-8 rounded-full
-                                bg-emerald-100 dark:bg-emerald-800/50 shrink-0">
-                        <svg class="h-4 w-4 text-emerald-600 dark:text-emerald-400" aria-hidden="true"
-                             fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
-                        </svg>
-                    </div>
-                    <div class="pt-0.5">
-                        <p class="text-sm font-medium text-emerald-800 dark:text-emerald-300">Guardado correctamente</p>
-                        <p class="text-sm text-emerald-700 dark:text-emerald-400 mt-0.5">{{ session('success') }}</p>
-                    </div>
-                </div>
-            @endif
-
             {{-- ─── ERRORES GLOBALES — fuera del x-data ─── --}}
             @if($errors->any())
                 <div role="alert" aria-live="assertive"
@@ -61,7 +42,8 @@
             {{-- ─── FORMULARIO con Alpine.js reactivo ─── --}}
             <div x-data="ticketConfigData()">
                 <form method="POST" action="{{ route('ticket-config.update') }}"
-                      enctype="multipart/form-data" class="space-y-6">
+                      enctype="multipart/form-data" class="space-y-6"
+                      @submit="$el.querySelectorAll('input[type=radio][name=template]').forEach(r => { r.checked = (r.value === template) })">
                     @csrf
                     @method('PUT')
 
@@ -127,6 +109,24 @@
                                     </p>
                                 @enderror
                             </div>
+
+                            <div x-show="logoChanged"
+                                 x-transition:enter="transition ease-out duration-200"
+                                 x-transition:enter-start="opacity-0 -translate-y-1"
+                                 x-transition:enter-end="opacity-100 translate-y-0"
+                                 class="mx-4 mb-4 sm:mx-6 flex items-center gap-3 rounded-lg
+                                        bg-amber-50 dark:bg-amber-900/20
+                                        border border-amber-200 dark:border-amber-700 px-4 py-3"
+                                 role="status" aria-live="polite">
+                                <svg class="h-4 w-4 text-amber-500 shrink-0" aria-hidden="true"
+                                     fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                          d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                <p class="text-sm text-amber-700 dark:text-amber-400">
+                                    Nuevo logo seleccionado. <strong>Guarda los cambios para aplicarlo.</strong>
+                                </p>
+                            </div>
                         </div>
                     </section>
 
@@ -184,6 +184,24 @@
                                     </p>
                                 @enderror
                             </div>
+
+                            <div x-show="taxId !== savedTaxId"
+                                 x-transition:enter="transition ease-out duration-200"
+                                 x-transition:enter-start="opacity-0 -translate-y-1"
+                                 x-transition:enter-end="opacity-100 translate-y-0"
+                                 class="mx-4 mb-4 sm:mx-6 flex items-center gap-3 rounded-lg
+                                        bg-amber-50 dark:bg-amber-900/20
+                                        border border-amber-200 dark:border-amber-700 px-4 py-3"
+                                 role="status" aria-live="polite">
+                                <svg class="h-4 w-4 text-amber-500 shrink-0" aria-hidden="true"
+                                     fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                          d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                <p class="text-sm text-amber-700 dark:text-amber-400">
+                                    NIF/CIF modificado. <strong>Guarda los cambios para aplicarlo.</strong>
+                                </p>
+                            </div>
                         </div>
                     </section>
 
@@ -236,6 +254,24 @@
                                     {{ $message }}
                                 </p>
                             @enderror
+
+                            <div x-show="footerText !== savedFooterText"
+                                 x-transition:enter="transition ease-out duration-200"
+                                 x-transition:enter-start="opacity-0 -translate-y-1"
+                                 x-transition:enter-end="opacity-100 translate-y-0"
+                                 class="mt-3 flex items-center gap-3 rounded-lg
+                                        bg-amber-50 dark:bg-amber-900/20
+                                        border border-amber-200 dark:border-amber-700 px-4 py-3"
+                                 role="status" aria-live="polite">
+                                <svg class="h-4 w-4 text-amber-500 shrink-0" aria-hidden="true"
+                                     fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                          d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                <p class="text-sm text-amber-700 dark:text-amber-400">
+                                    Pie del ticket modificado. <strong>Guarda los cambios para aplicarlo.</strong>
+                                </p>
+                            </div>
                         </div>
                     </section>
 
@@ -414,6 +450,28 @@
                                     @endforeach
                                 </div>
                             </fieldset>
+
+                            {{-- Aviso inline al cambiar plantilla sin guardar --}}
+                            <div x-show="template !== savedTemplate"
+                                 x-transition:enter="transition ease-out duration-200"
+                                 x-transition:enter-start="opacity-0 -translate-y-1"
+                                 x-transition:enter-end="opacity-100 translate-y-0"
+                                 class="mt-4 flex items-center gap-3 rounded-lg
+                                        bg-amber-50 dark:bg-amber-900/20
+                                        border border-amber-200 dark:border-amber-700
+                                        px-4 py-3"
+                                 role="status" aria-live="polite">
+                                <svg class="h-4 w-4 text-amber-500 shrink-0" aria-hidden="true"
+                                     fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                          d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                <p class="text-sm text-amber-700 dark:text-amber-400">
+                                    Has seleccionado la plantilla
+                                    <strong x-text="templateLabels[template]"></strong>.
+                                    Guarda los cambios para aplicarla.
+                                </p>
+                            </div>
                         </div>
                     </section>
 
@@ -546,15 +604,21 @@
     <script>
     function ticketConfigData() {
         return {
-            template:    @js(old('template', $ticketConfig->template)),
-            taxId:       @js(old('tax_id', $ticketConfig->tax_id)),
-            footerText:  @js(old('footer_text', $ticketConfig->footer_text ?? '')),
-            footerCount: {{ mb_strlen(old('footer_text', $ticketConfig->footer_text ?? '')) }},
-            logoUrl:     @js($ticketConfig->hasLogo() ? $ticketConfig->getLogoUrl() : ''),
-            businessName:@js(Auth::user()->business_name ?? Auth::user()->name),
+            template:        @js(old('template', $ticketConfig->template)),
+            savedTemplate:   @js($ticketConfig->template),
+            templateLabels:  { classic: 'Clásica', modern: 'Moderna', minimal: 'Minimalista' },
+            taxId:           @js(old('tax_id', $ticketConfig->tax_id)),
+            savedTaxId:      @js($ticketConfig->tax_id),
+            footerText:      @js(old('footer_text', $ticketConfig->footer_text ?? '')),
+            savedFooterText: @js($ticketConfig->footer_text ?? ''),
+            footerCount:     {{ mb_strlen(old('footer_text', $ticketConfig->footer_text ?? '')) }},
+            logoUrl:         @js($ticketConfig->hasLogo() ? $ticketConfig->getLogoUrl() : ''),
+            logoChanged:     false,
+            businessName:    @js(Auth::user()->business_name ?? Auth::user()->name),
             handleLogo(e) {
                 const file = e.target.files[0];
                 if (!file) return;
+                this.logoChanged = true;
                 const reader = new FileReader();
                 reader.onload = ev => { this.logoUrl = ev.target.result; };
                 reader.readAsDataURL(file);
