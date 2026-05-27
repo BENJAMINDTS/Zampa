@@ -42,8 +42,7 @@
             {{-- ─── FORMULARIO con Alpine.js reactivo ─── --}}
             <div x-data="ticketConfigData()">
                 <form method="POST" action="{{ route('ticket-config.update') }}"
-                      enctype="multipart/form-data" class="space-y-6"
-                      @submit="$el.querySelectorAll('input[type=radio][name=template]').forEach(r => { r.checked = (r.value === template) })">
+                      enctype="multipart/form-data" class="space-y-6">
                     @csrf
                     @method('PUT')
 
@@ -349,8 +348,7 @@
                                                            : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500' }}"
                                                :class="template === '{{ $value }}'
                                                        ? '{{ $ac['border'] }} {{ str_replace(' ', ' ', str_replace("'", "\'", $ac['bg'])) }}'
-                                                       : 'border-gray-200 dark:border-gray-600'"
-                                               @click.prevent="template = '{{ $value }}'">
+                                                       : 'border-gray-200 dark:border-gray-600'">
 
                                             {{-- Banda superior de color --}}
                                             <div class="h-1.5 w-full {{ $ac['stripe'] }} transition-opacity duration-150"
@@ -373,10 +371,19 @@
                                                     <input type="radio" id="template_{{ $value }}"
                                                            name="template" value="{{ $value }}"
                                                            {{ $isSelected ? 'checked' : '' }}
-                                                           x-model="template"
-                                                           class="h-4 w-4 {{ $ac['radioText'] }} border-gray-300
-                                                                  focus:ring-2 focus:ring-offset-2
-                                                                  dark:focus:ring-offset-gray-800 {{ $ac['ring'] }}">
+                                                           @change="template = $el.value"
+                                                           class="absolute top-0 left-0 opacity-0 w-px h-px overflow-hidden"
+                                                           tabindex="-1">
+                                                    {{-- Indicador visual del radio --}}
+                                                    <span class="h-4 w-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors duration-150"
+                                                          :class="template === '{{ $value }}'
+                                                                  ? '{{ $ac['radioText'] }} border-current'
+                                                                  : 'border-gray-300 dark:border-gray-500'">
+                                                        <span class="h-2 w-2 rounded-full transition-opacity duration-150"
+                                                              :class="template === '{{ $value }}'
+                                                                      ? '{{ str_replace('text-', 'bg-', $ac['radioText']) }} opacity-100'
+                                                                      : 'opacity-0'"></span>
+                                                    </span>
                                                 </div>
 
                                                 <p class="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">{{ $meta['desc'] }}</p>
