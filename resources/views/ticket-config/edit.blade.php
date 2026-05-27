@@ -464,10 +464,14 @@
                                                         <div class="text-center font-bold tracking-[.15em]">MI NEGOCIO</div>
                                                         <div class="text-center text-gray-400 text-[9px]">B12345678</div>
                                                         <div class="border-t border-gray-700 my-1.5"></div>
+                                                        <div class="text-gray-500 text-[9px]">Mesa 3 · 14:30</div>
+                                                        <div class="border-t border-gray-700 my-1.5"></div>
                                                         <div class="flex justify-between"><span class="text-gray-300">Agua ×1</span><span>1,50 €</span></div>
                                                         <div class="flex justify-between"><span class="text-gray-300">Pizza ×1</span><span>12,00 €</span></div>
                                                         <div class="border-t border-gray-700 my-1.5"></div>
                                                         <div class="flex justify-between text-amber-400 font-bold"><span>TOTAL</span><span>13,50 €</span></div>
+                                                        <div class="border-t border-gray-700 my-1.5"></div>
+                                                        <div class="text-center text-gray-500 text-[9px]">Gracias por su visita.</div>
                                                     </div>
                                                 @else
                                                     <div aria-hidden="true"
@@ -476,10 +480,14 @@
                                                                 text-gray-700 dark:text-gray-300 leading-tight">
                                                         <div class="font-medium">MI NEGOCIO</div>
                                                         <div class="text-gray-500 text-[9px]">B12345678</div>
-                                                        <div class="mt-1.5">Agua .......... 1,50</div>
+                                                        <div class="text-gray-500 text-[9px] mt-0.5">Mesa 3 · 14:30</div>
+                                                        <div class="text-gray-400 my-0.5">-------------------</div>
+                                                        <div>Agua .......... 1,50</div>
                                                         <div>Pizza ........ 12,00</div>
                                                         <div class="text-gray-400">-------------------</div>
                                                         <div class="font-bold">TOTAL ........ 13,50</div>
+                                                        <div class="text-gray-400">-------------------</div>
+                                                        <div class="text-gray-500 text-[9px]">Gracias por su visita.</div>
                                                     </div>
                                                 @endif
 
