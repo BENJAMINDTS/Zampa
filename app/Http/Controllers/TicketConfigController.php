@@ -55,19 +55,39 @@ class TicketConfigController extends Controller
             ['user_id' => Auth::id()]
         );
 
+        $templateLabels = ['classic' => 'Clásica', 'modern' => 'Moderna', 'minimal' => 'Minimalista'];
+        $changed = [];
+
         if ($request->hasFile('logo')) {
             if ($ticketConfig->hasLogo()) {
                 Storage::disk('public')->delete($ticketConfig->logo);
             }
             $validated['logo'] = $request->file('logo')->store('tickets', 'public');
+            $changed[] = 'logo actualizado';
         } else {
             unset($validated['logo']);
         }
 
+        if (trim($request->input('tax_id', '')) !== trim($ticketConfig->tax_id ?? '')) {
+            $changed[] = 'datos fiscales guardados';
+        }
+
+        if (trim($request->input('footer_text', '')) !== trim($ticketConfig->footer_text ?? '')) {
+            $changed[] = 'pie del ticket guardado';
+        }
+
+        if ($request->input('template') !== $ticketConfig->template) {
+            $label = $templateLabels[$request->input('template')] ?? $request->input('template');
+            $changed[] = "plantilla cambiada a «{$label}»";
+        }
+
         $ticketConfig->update($validated);
 
-        return redirect()->route('ticket-config.edit')
-            ->with('success', 'Configuración del ticket guardada correctamente.');
+        $message = count($changed) > 0
+            ? ucfirst(implode(' · ', $changed)) . '.'
+            : 'Sin cambios detectados.';
+
+        return redirect()->route('ticket-config.edit')->with('success', $message);
     }
 
     /**
