@@ -26,21 +26,28 @@ class NotificationController extends Controller
      */
     public function ready(Request $request): JsonResponse
     {
-        $orders = Order::with(['table', 'items.product.category'])
+        $orders = Order::with([
+                'table:id,name',
+                'items' => fn($q) => $q
+                    ->where('destination', 'kitchen')
+                    ->select(['id', 'order_id', 'destination', 'quantity', 'product_id'])
+                    ->with([
+                        'product:id,name,category_id',
+                        'product.category:id,name',
+                    ]),
+            ])
+            ->select(['id', 'table_id', 'notification_ready'])
             ->where('notification_ready', true)
             ->whereHas('table', fn($q) => $q->where('user_id', Auth::user()->ownerUserId()))
             ->get()
             ->map(fn(Order $order) => [
                 'id'    => $order->id,
                 'table' => $order->table->name,
-                'items' => $order->items
-                    ->where('destination', 'kitchen')
-                    ->map(fn($item) => [
-                        'name'     => $item->product->name,
-                        'quantity' => $item->quantity,
-                        'is_tapa'  => $item->product->category?->name === 'Tapas',
-                    ])
-                    ->values(),
+                'items' => $order->items->map(fn($item) => [
+                    'name'     => $item->product->name,
+                    'quantity' => $item->quantity,
+                    'is_tapa'  => $item->product->category?->name === 'Tapas',
+                ])->values(),
             ])
             ->values();
 
