@@ -8,9 +8,6 @@
     x-data="{ show: true }"
     x-init="setTimeout(() => show = false, 5000)"
     x-show="show"
-    x-transition:enter="transition ease-out duration-300"
-    x-transition:enter-start="opacity-0 translate-y-4 scale-95"
-    x-transition:enter-end="opacity-100 translate-y-0 scale-100"
     x-transition:leave="transition ease-in duration-200"
     x-transition:leave-start="opacity-100 translate-y-0 scale-100"
     x-transition:leave-end="opacity-0 translate-y-4 scale-95"
@@ -18,7 +15,6 @@
     role="alert"
     aria-live="assertive"
     aria-atomic="true"
-    x-cloak
 >
     @if(session('success'))
     <div class="flex items-start gap-3
