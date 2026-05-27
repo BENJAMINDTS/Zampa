@@ -29,7 +29,7 @@
           <tr>
             <td class="hidden sm:table-cell px-4 sm:px-6 py-4 whitespace-nowrap">
               @if($product->image)
-              <img src="{{ asset('storage/' . $product->image) }}" alt="Foto de {{ $product->name }}" class="h-10 w-10 sm:h-12 sm:w-12 object-cover rounded-md">
+              <img src="{{ asset('storage/' . $product->image) }}" alt="Foto de {{ $product->name }}" loading="lazy" decoding="async" class="h-10 w-10 sm:h-12 sm:w-12 object-cover rounded-md">
               @else
               <span class="text-gray-400 text-sm">Sin imagen</span>
               @endif
