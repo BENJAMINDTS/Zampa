@@ -95,6 +95,61 @@ class TapasController extends Controller
             ? null
             : ($request->input('tapa_price') ?? null);
 
+        // — Estado anterior para detectar cambios por sección —
+        $config = TapaConfig::firstOrCreate(['user_id' => $userId]);
+        $config->load(['kitchenSchedules', 'businessSchedules']);
+
+        $oldKitchen  = $config->kitchenSchedules
+            ->map(fn ($s) => substr($s->opens_at, 0, 5) . '-' . substr($s->closes_at, 0, 5))
+            ->sort()->values()->all();
+        $oldBusiness = $config->businessSchedules
+            ->map(fn ($s) => substr($s->opens_at, 0, 5) . '-' . substr($s->closes_at, 0, 5))
+            ->sort()->values()->all();
+
+        $newKitchen  = collect($request->input('kitchen_schedules', []))
+            ->map(fn ($s) => $s['opens_at'] . '-' . $s['closes_at'])
+            ->sort()->values()->all();
+        $newBusiness = collect($request->input('business_schedules', []))
+            ->map(fn ($s) => $s['opens_at'] . '-' . $s['closes_at'])
+            ->sort()->values()->all();
+
+        $newCutoff      = (int) ($request->input('ordering_cutoff_minutes') ?? 0);
+        $newVariants    = $request->integer('max_tapa_variants');
+        $newExtraPrice  = $extraEnabled ? ($request->input('extra_tapa_price') ?? null) : null;
+        $user           = Auth::user();
+        $splitEnabled   = $request->boolean('split_payment_enabled');
+        $newMaxParts    = $splitEnabled ? ($request->input('split_payment_max_parts') ?: null) : null;
+
+        $changed = [];
+
+        if ($newBusiness !== $oldBusiness || $newCutoff !== (int) ($config->ordering_cutoff_minutes ?? 0)) {
+            $changed[] = 'Horario del negocio actualizado';
+        }
+
+        if ($newKitchen !== $oldKitchen) {
+            $changed[] = 'Horario de cocina actualizado';
+        }
+
+        if (
+            $tapasEnabled    !== (bool) $config->tapas_enabled    ||
+            $tapasFree       !== (bool) $config->tapas_free       ||
+            $resolvedMode    !== $config->price_mode              ||
+            $newVariants     !== (int) $config->max_tapa_variants  ||
+            (string) ($resolvedPrice ?? '') !== (string) ($config->tapa_price ?? '') ||
+            $extraEnabled    !== (bool) $config->extra_tapa_enabled ||
+            (string) ($newExtraPrice ?? '') !== (string) ($config->extra_tapa_price ?? '')
+        ) {
+            $changed[] = 'Sistema de tapas actualizado';
+        }
+
+        if (
+            $splitEnabled !== (bool) $user->split_payment_enabled ||
+            (string) ($newMaxParts ?? '') !== (string) ($user->split_payment_max_parts ?? '')
+        ) {
+            $changed[] = 'Cobro partido actualizado';
+        }
+
+        // — Persistir —
         if ($tapasEnabled) {
             Category::firstOrCreate(
                 ['user_id' => $userId, 'name' => 'Tapas'],
@@ -102,21 +157,17 @@ class TapasController extends Controller
             );
         }
 
-        $config = TapaConfig::updateOrCreate(
-            ['user_id' => $userId],
-            [
-                'tapas_enabled'           => $tapasEnabled,
-                'tapas_free'              => $tapasFree,
-                'price_mode'              => $resolvedMode,
-                'max_tapa_variants'       => $request->integer('max_tapa_variants'),
-                'tapa_price'              => $resolvedPrice,
-                'extra_tapa_enabled'      => $extraEnabled,
-                'extra_tapa_price'        => $extraEnabled ? ($request->input('extra_tapa_price') ?? null) : null,
-                'ordering_cutoff_minutes' => (int) ($request->input('ordering_cutoff_minutes') ?? 0),
-            ]
-        );
+        $config->update([
+            'tapas_enabled'           => $tapasEnabled,
+            'tapas_free'              => $tapasFree,
+            'price_mode'              => $resolvedMode,
+            'max_tapa_variants'       => $newVariants,
+            'tapa_price'              => $resolvedPrice,
+            'extra_tapa_enabled'      => $extraEnabled,
+            'extra_tapa_price'        => $newExtraPrice,
+            'ordering_cutoff_minutes' => $newCutoff,
+        ]);
 
-        // Reemplazar tramos de cocina
         $config->kitchenSchedules()->delete();
         foreach ($request->input('kitchen_schedules', []) as $slot) {
             $config->kitchenSchedules()->create([
@@ -126,7 +177,6 @@ class TapasController extends Controller
             ]);
         }
 
-        // Reemplazar tramos del negocio
         $config->businessSchedules()->delete();
         foreach ($request->input('business_schedules', []) as $slot) {
             $config->businessSchedules()->create([
@@ -136,16 +186,16 @@ class TapasController extends Controller
             ]);
         }
 
-        // Guardar cobro partido en el usuario
-        $splitEnabled = $request->boolean('split_payment_enabled');
-        Auth::user()->update([
+        $user->update([
             'split_payment_enabled'   => $splitEnabled,
-            'split_payment_max_parts' => $splitEnabled
-                ? ($request->input('split_payment_max_parts') ?: null)
-                : null,
+            'split_payment_max_parts' => $newMaxParts,
         ]);
 
+        $message = count($changed) > 0
+            ? implode(' · ', $changed) . '.'
+            : 'Sin cambios detectados.';
+
         return redirect()->route('negocio.config.edit')
-                         ->with('success', 'Configuración del negocio guardada correctamente.');
+                         ->with('success', $message);
     }
 }
