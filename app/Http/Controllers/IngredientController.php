@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Ingredient;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\Rule;
 
 /**
@@ -58,6 +59,7 @@ class IngredientController extends Controller
 
         $ownerId = Auth::user()->ownerUserId();
         Ingredient::create(array_merge($validated, ['user_id' => $ownerId]));
+        Cache::forget("menu:{$ownerId}");
 
         return redirect()->route('ingredients.index')->with('success', 'Ingrediente creado correctamente.');
     }
@@ -101,6 +103,7 @@ class IngredientController extends Controller
         ]);
 
         $ingredient->update($validated);
+        Cache::forget("menu:{$ingredient->user_id}");
 
         return redirect()->route('ingredients.index')->with('success', 'Ingrediente actualizado correctamente.');
     }
@@ -115,7 +118,9 @@ class IngredientController extends Controller
     {
         abort_if($ingredient->user_id !== Auth::user()->ownerUserId(), 403, 'Acceso denegado.');
 
+        $userId = $ingredient->user_id;
         $ingredient->delete();
+        Cache::forget("menu:{$userId}");
 
         return redirect()->route('ingredients.index')->with('success', 'Ingrediente eliminado correctamente.');
     }
