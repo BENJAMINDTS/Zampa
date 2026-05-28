@@ -36,7 +36,9 @@
                         </svg>
                     </div>
                     <div class="pt-0.5">
-                        <p class="text-sm font-medium text-red-800 dark:text-red-300">Corrige los siguientes errores:</p>
+                        <p class="text-sm font-medium text-red-800 dark:text-red-300">
+                            {{ $errors->count() === 1 ? 'Hay un campo que necesita tu atención:' : 'Revisa estos campos antes de guardar:' }}
+                        </p>
                         <ul class="mt-1 text-sm text-red-700 dark:text-red-400 list-disc list-inside space-y-0.5">
                             @foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach
                         </ul>
