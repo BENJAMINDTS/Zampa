@@ -272,17 +272,31 @@ export function registerTableMap() {
     });
 
     Alpine.store('qrModal', {
-        show:  false,
-        table: null,
+        show:   false,
+        table:  null,
+        qrSvg:  '',
 
         open(table) {
             this.table = table;
             this.show  = true;
+
+            const cached = Alpine.store('viewPanel')._qrCache[table.id];
+            if (cached) { this.qrSvg = cached; return; }
+
+            this.qrSvg = '';
+            fetch(`/mesas/${table.id}/qr?h=${table.unique_hash}`)
+                .then(r => r.text())
+                .then(svg => {
+                    Alpine.store('viewPanel')._qrCache[table.id] = svg;
+                    if (this.table?.id === table.id) this.qrSvg = svg;
+                })
+                .catch(() => {});
         },
 
         close() {
             this.show  = false;
             this.table = null;
+            this.qrSvg = '';
         },
     });
 

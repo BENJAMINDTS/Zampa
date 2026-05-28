@@ -1681,12 +1681,21 @@
             </button>
         </div>
 
-        {{-- QR SVG inline --}}
-        <div class="flex justify-center mb-4 p-3 bg-white rounded-xl border border-gray-200 dark:border-gray-700">
-            <img :src="`/mesas/${$store.qrModal.table?.id}/qr`"
-                 :alt="`Código QR de la mesa ${$store.qrModal.table?.name}`"
-                 class="w-48 h-48"
-                 x-show="$store.qrModal.table">
+        {{-- QR SVG inline desde caché prefetcheado --}}
+        <div class="flex justify-center mb-4 p-3 bg-white rounded-xl border border-gray-200 dark:border-gray-700"
+             :aria-label="`Código QR de la mesa ${$store.qrModal.table?.name ?? ''}`"
+             role="img">
+            <div x-show="$store.qrModal.qrSvg"
+                 x-html="$store.qrModal.qrSvg"
+                 class="w-48 h-48 [&>svg]:w-full [&>svg]:h-full">
+            </div>
+            <div x-show="!$store.qrModal.qrSvg && $store.qrModal.table"
+                 class="w-48 h-48 flex items-center justify-center">
+                <svg class="animate-spin w-8 h-8 text-indigo-400" aria-hidden="true" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                </svg>
+            </div>
         </div>
 
         {{-- URL de la carta --}}
