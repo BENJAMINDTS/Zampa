@@ -287,14 +287,12 @@ export function registerTableMap() {
     });
 
     Alpine.store('viewPanel', {
-        show:   false,
-        table:  null,
-        qrSvg:  '',
-        _ts:    0,
+        show:      false,
+        table:     null,
+        qrSvg:     '',
+        _qrCache:  {},
 
-        async open(table) {
-            this._ts   = Date.now();
-            this.qrSvg = '';
+        open(table) {
             // Spread into a plain object — the x-for proxy from tableMap loses
             // reactive tracking when stored outside its component scope.
             this.table = {
@@ -311,13 +309,20 @@ export function registerTableMap() {
             };
             this.show = true;
 
-            // unique_hash como cache-buster: misma mesa = misma URL = respuesta
-            // cacheada por el browser. Solo cambia si se regenera el QR.
-            try {
-                const res     = await fetch(`/mesas/${table.id}/qr?h=${table.unique_hash}`);
-                const svgText = await res.text();
-                if (this.table?.id === table.id) this.qrSvg = svgText;
-            } catch {}
+            if (this._qrCache[table.id]) {
+                this.qrSvg = this._qrCache[table.id];
+                return;
+            }
+
+            // Fallback: mesa no estaba en caché aún (carga en progreso o fallo previo).
+            this.qrSvg = '';
+            fetch(`/mesas/${table.id}/qr?h=${table.unique_hash}`)
+                .then(r => r.text())
+                .then(svg => {
+                    this._qrCache[table.id] = svg;
+                    if (this.table?.id === table.id) this.qrSvg = svg;
+                })
+                .catch(() => {});
         },
 
         close() {
@@ -422,9 +427,22 @@ export function registerTableMap() {
                         this.clampAllToCanvas();
                     }
                     this._applyOverviewZoom();
+                    this._prefetchQrSvgs();
                 });
                 this.pollStatuses();
                 setInterval(() => this.pollStatuses(), 25000);
+            },
+
+            _prefetchQrSvgs() {
+                const store = Alpine.store('viewPanel');
+                this.tables
+                    .filter(t => t.is_service_point !== false)
+                    .forEach(table => {
+                        fetch(`/mesas/${table.id}/qr?h=${table.unique_hash}`)
+                            .then(r => r.text())
+                            .then(svg => { store._qrCache[table.id] = svg; })
+                            .catch(() => {});
+                    });
             },
 
             canvasBounds(item, w, h) {
