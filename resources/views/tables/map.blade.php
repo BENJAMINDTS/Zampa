@@ -1795,15 +1795,29 @@
             </template>
         </div>
 
-        {{-- QR de la mesa --}}
+        {{-- QR de la mesa — SVG inline via fetch para evitar caché del navegador --}}
         <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-white p-4 flex flex-col items-center gap-3">
             <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 self-start">
                 Código QR
             </p>
-            <img x-show="$store.viewPanel.table"
-                 :src="$store.viewPanel.table ? `/mesas/${$store.viewPanel.table.id}/qr?_=${$store.viewPanel._ts}` : ''"
-                 :alt="$store.viewPanel.table ? `Código QR de ${$store.viewPanel.table.name}` : 'Código QR'"
-                 class="w-52 h-52">
+            <div class="w-52 h-52 flex items-center justify-center"
+                 :aria-label="$store.viewPanel.table ? `Código QR de ${$store.viewPanel.table.name}` : ''"
+                 role="img">
+                <div x-show="$store.viewPanel.qrSvg"
+                     x-html="$store.viewPanel.qrSvg"
+                     class="w-52 h-52 [&>svg]:w-full [&>svg]:h-full">
+                </div>
+                <div x-show="!$store.viewPanel.qrSvg && $store.viewPanel.table"
+                     class="flex items-center justify-center w-full h-full">
+                    <svg class="animate-spin w-8 h-8 text-indigo-400" aria-hidden="true"
+                         fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10"
+                                stroke="currentColor" stroke-width="4"/>
+                        <path class="opacity-75" fill="currentColor"
+                              d="M4 12a8 8 0 018-8v8z"/>
+                    </svg>
+                </div>
+            </div>
         </div>
 
         {{-- URL de la carta --}}

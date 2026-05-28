@@ -287,32 +287,43 @@ export function registerTableMap() {
     });
 
     Alpine.store('viewPanel', {
-        show:  false,
-        table: null,
-        _ts:   0,
+        show:   false,
+        table:  null,
+        qrSvg:  '',
+        _ts:    0,
 
-        open(table) {
-            this._ts   = Date.now();
+        async open(table) {
+            this._ts    = Date.now();
+            this.qrSvg  = '';
             // Spread into a plain object — the x-for proxy from tableMap loses
             // reactive tracking when stored outside its component scope.
-            this.table = {
-                id:          table.id,
-                name:        table.name,
-                unique_hash: table.unique_hash,
-                orderStatus: table.orderStatus,
-                shape:       table.shape,
-                floor:       table.floor     ?? 1,
-                zone_id:     table.zone_id   ?? null,
-                position_x:  table.position_x ?? 0,
-                position_y:  table.position_y ?? 0,
+            this.table  = {
+                id:               table.id,
+                name:             table.name,
+                unique_hash:      table.unique_hash,
+                orderStatus:      table.orderStatus,
+                shape:            table.shape,
+                floor:            table.floor      ?? 1,
+                zone_id:          table.zone_id    ?? null,
+                position_x:       table.position_x ?? 0,
+                position_y:       table.position_y ?? 0,
                 is_service_point: table.is_service_point,
             };
             this.show = true;
+
+            // Fetch SVG inline para evitar que el caché de imágenes del navegador
+            // muestre el QR de la mesa anterior.
+            try {
+                const res      = await fetch(`/mesas/${table.id}/qr?_=${this._ts}`);
+                const svgText  = await res.text();
+                if (this.table?.id === table.id) this.qrSvg = svgText;
+            } catch {}
         },
 
         close() {
             this.show  = false;
             this.table = null;
+            this.qrSvg = '';
         },
     });
 
