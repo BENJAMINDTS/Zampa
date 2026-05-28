@@ -984,8 +984,8 @@
                         :data-table-id="table.id"
                         class="table-item absolute group select-none touch-none"
                         tabindex="0"
-                        @focus="selectedId = table.id; editingTableId=null; editingTable=null; editingZoneId=null; editingZone=null; if (table.is_service_point !== false) Alpine.store('viewPanel').open(table);"
-                        @keydown.enter.space.prevent.stop="selectedId = table.id; editingTableId=null; editingTable=null; editingZoneId=null; editingZone=null; if (table.is_service_point !== false) Alpine.store('viewPanel').open(table);"
+                        @focus="selectedId = table.id; editingTableId=null; editingTable=null; editingZoneId=null; editingZone=null; if (!editMode && table.is_service_point !== false) Alpine.store('viewPanel').open(table);"
+                        @keydown.enter.space.prevent.stop="selectedId = table.id; editingTableId=null; editingTable=null; editingZoneId=null; editingZone=null; if (!editMode && table.is_service_point !== false) Alpine.store('viewPanel').open(table);"
                         :style="`left:${table.position_x}px; top:${table.position_y}px;
                                  width:${table.width}px; height:${table.height}px;
                                  transform: rotate(${table.rotation ?? 0}deg);
@@ -995,7 +995,7 @@
                                      : (floorsEnabled && currentView === 'general' ? 10 + ((table.floor ?? 1) - 1) * 10 : 10)};`"
                         @mouseenter="hoveredId = table.id"
                         @mouseleave="hoveredId = null"
-                        @click.stop="selectedId = table.id; editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null; if (table.is_service_point !== false) Alpine.store('viewPanel').open(table);"
+                        @click.stop="selectedId = table.id; editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null; if (!editMode && table.is_service_point !== false) Alpine.store('viewPanel').open(table);"
                         @contextmenu.prevent.stop="openContextMenu($event, table, 'table')"
                         @keydown.stop="if ($event.key === 'ContextMenu' || ($event.shiftKey && $event.key === 'F10')) openContextMenu($event, table, 'table')"
                         :aria-label="`Mesa ${table.name}`"
