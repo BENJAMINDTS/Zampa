@@ -289,8 +289,10 @@ export function registerTableMap() {
     Alpine.store('viewPanel', {
         show:  false,
         table: null,
+        _ts:   0,
 
         open(table) {
+            this._ts   = Date.now();
             this.table = table;
             this.show  = true;
         },

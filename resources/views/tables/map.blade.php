@@ -1800,11 +1800,10 @@
             <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 self-start">
                 Código QR
             </p>
-            <template x-if="$store.viewPanel.table">
-                <img :src="`/mesas/${$store.viewPanel.table.id}/qr`"
-                     :alt="`Código QR de ${$store.viewPanel.table.name}`"
-                     class="w-52 h-52">
-            </template>
+            <img x-show="$store.viewPanel.table"
+                 :src="$store.viewPanel.table ? `/mesas/${$store.viewPanel.table.id}/qr?_=${$store.viewPanel._ts}` : ''"
+                 :alt="$store.viewPanel.table ? `Código QR de ${$store.viewPanel.table.name}` : 'Código QR'"
+                 class="w-52 h-52">
         </div>
 
         {{-- URL de la carta --}}
