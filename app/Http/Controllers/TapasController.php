@@ -7,6 +7,7 @@ use App\Models\TapaConfig;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -190,6 +191,8 @@ class TapasController extends Controller
             'split_payment_enabled'   => $splitEnabled,
             'split_payment_max_parts' => $newMaxParts,
         ]);
+
+        Cache::forget("menu:{$userId}");
 
         $message = count($changed) > 0
             ? implode(' · ', $changed) . '.'

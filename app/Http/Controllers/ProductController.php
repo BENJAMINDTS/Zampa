@@ -11,6 +11,7 @@ use App\Models\Ingredient;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
@@ -99,6 +100,8 @@ class ProductController extends Controller
 
       return $product;
     });
+
+    Cache::forget("menu:{$validatedData['user_id']}");
 
     if ($request->boolean('configure_ingredients')) {
       return redirect()
@@ -199,6 +202,8 @@ class ProductController extends Controller
             }
         });
 
+        Cache::forget("menu:{$product->user_id}");
+
         return redirect()->route('products.index')->with('success', '¡Plato actualizado correctamente!');
 
     }
@@ -221,7 +226,9 @@ class ProductController extends Controller
 
         abort_if($product->user_id !== Auth::user()->ownerUserId(), 403);
 
+        $userId = $product->user_id;
         $product->delete();
+        Cache::forget("menu:{$userId}");
 
         return redirect()->route('products.index')->with('success', 'Plato retirado de la carta.');
 
@@ -272,6 +279,7 @@ class ProductController extends Controller
         );
 
         $product->ingredients()->sync($formatted);
+        Cache::forget("menu:{$product->user_id}");
 
         return redirect()
             ->route('products.edit', $product)
