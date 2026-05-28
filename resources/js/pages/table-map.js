@@ -293,8 +293,21 @@ export function registerTableMap() {
 
         open(table) {
             this._ts   = Date.now();
-            this.table = table;
-            this.show  = true;
+            // Spread into a plain object — the x-for proxy from tableMap loses
+            // reactive tracking when stored outside its component scope.
+            this.table = {
+                id:          table.id,
+                name:        table.name,
+                unique_hash: table.unique_hash,
+                orderStatus: table.orderStatus,
+                shape:       table.shape,
+                floor:       table.floor     ?? 1,
+                zone_id:     table.zone_id   ?? null,
+                position_x:  table.position_x ?? 0,
+                position_y:  table.position_y ?? 0,
+                is_service_point: table.is_service_point,
+            };
+            this.show = true;
         },
 
         close() {
