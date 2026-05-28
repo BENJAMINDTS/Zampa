@@ -293,11 +293,11 @@ export function registerTableMap() {
         _ts:    0,
 
         async open(table) {
-            this._ts    = Date.now();
-            this.qrSvg  = '';
+            this._ts   = Date.now();
+            this.qrSvg = '';
             // Spread into a plain object — the x-for proxy from tableMap loses
             // reactive tracking when stored outside its component scope.
-            this.table  = {
+            this.table = {
                 id:               table.id,
                 name:             table.name,
                 unique_hash:      table.unique_hash,
@@ -311,11 +311,11 @@ export function registerTableMap() {
             };
             this.show = true;
 
-            // Fetch SVG inline para evitar que el caché de imágenes del navegador
-            // muestre el QR de la mesa anterior.
+            // unique_hash como cache-buster: misma mesa = misma URL = respuesta
+            // cacheada por el browser. Solo cambia si se regenera el QR.
             try {
-                const res      = await fetch(`/mesas/${table.id}/qr?_=${this._ts}`);
-                const svgText  = await res.text();
+                const res     = await fetch(`/mesas/${table.id}/qr?h=${table.unique_hash}`);
+                const svgText = await res.text();
                 if (this.table?.id === table.id) this.qrSvg = svgText;
             } catch {}
         },
