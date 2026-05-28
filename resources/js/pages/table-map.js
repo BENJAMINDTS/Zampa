@@ -286,6 +286,21 @@ export function registerTableMap() {
         },
     });
 
+    Alpine.store('viewPanel', {
+        show:  false,
+        table: null,
+
+        open(table) {
+            this.table = table;
+            this.show  = true;
+        },
+
+        close() {
+            this.show  = false;
+            this.table = null;
+        },
+    });
+
     Alpine.store('deleteModal', {
         show:     false,
         table:    null,
@@ -1646,6 +1661,7 @@ export function registerTableMap() {
                 this.selectedId = null;
                 this.hoveredId  = null;
                 Alpine.store('qrModal').close();
+                Alpine.store('viewPanel').close();
                 Alpine.store('tableModal').cancel();
                 Alpine.store('deleteModal').resolve(false);
                 Alpine.store('sizeModal').resolve(false);
