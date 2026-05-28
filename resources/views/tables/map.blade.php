@@ -1735,6 +1735,7 @@
 {{-- Panel de vista de mesa: QR + identificativo (modo solo lectura) --}}
 <div x-data
      x-show="$store.viewPanel.show"
+     @click.outside="$store.viewPanel.close()"
      x-transition:enter="transition ease-out duration-250"
      x-transition:enter-start="translate-x-full opacity-0"
      x-transition:enter-end="translate-x-0 opacity-100"
