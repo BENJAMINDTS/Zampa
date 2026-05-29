@@ -340,7 +340,12 @@ export function registerTableMap() {
         },
 
         close() {
-            this.show  = false;
+            this.show = false;
+            // table y qrSvg se limpian en @after-leave para no
+            // eliminar el SVG antes de que termine la transición de cierre.
+        },
+
+        reset() {
             this.table = null;
             this.qrSvg = '';
         },

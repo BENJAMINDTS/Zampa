@@ -1656,7 +1656,8 @@
      role="dialog"
      aria-labelledby="qr-modal-title"
      @click="$store.qrModal.close()"
-     @keydown.escape.window="$store.qrModal.close()">
+     @keydown.escape.window="$store.qrModal.close()"
+     @after-leave="$store.qrModal.reset()">
 
     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-sm mx-4"
          x-transition:enter="transition ease-out duration-200"
