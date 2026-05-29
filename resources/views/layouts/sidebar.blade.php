@@ -11,8 +11,9 @@
            bg-white dark:bg-gray-900
            border-r border-gray-200 dark:border-gray-800
            transition-transform duration-200 ease-in-out
+           -translate-x-full
            lg:static lg:inset-auto lg:z-auto lg:!translate-x-0"
-    :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
+    :class="sidebarOpen ? '!translate-x-0' : ''"
     aria-label="Navegación principal">
 
     {{-- Logo --}}
