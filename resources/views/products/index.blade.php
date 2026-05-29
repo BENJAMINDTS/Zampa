@@ -8,25 +8,30 @@
     </div>
 
     @if(session('success'))
-    <div role="alert" class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
-      {{ session('success') }}
+    <div role="alert" aria-live="polite"
+         class="rounded-md bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700 p-4 mb-4 flex items-start gap-3">
+      <svg class="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+      <p class="text-sm text-emerald-800 dark:text-emerald-300">{{ session('success') }}</p>
     </div>
     @endif
 
-    <div class="bg-white shadow-md rounded-lg overflow-x-auto">
-      <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
+    <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-x-auto" role="region" aria-label="Listado de platos" tabindex="0">
+      <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+        <caption class="sr-only">Listado de platos de mi carta digital</caption>
+        <thead class="bg-gray-50 dark:bg-gray-700">
           <tr>
-            <th class="hidden sm:table-cell px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Imagen</th>
-            <th class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre</th>
-            <th class="hidden md:table-cell px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Precio</th>
-            <th class="hidden lg:table-cell px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Alérgenos</th>
-            <th class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acciones</th>
+            <th scope="col" class="hidden sm:table-cell px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Imagen</th>
+            <th scope="col" class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Nombre</th>
+            <th scope="col" class="hidden md:table-cell px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Precio</th>
+            <th scope="col" class="hidden lg:table-cell px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Alérgenos</th>
+            <th scope="col" class="px-4 sm:px-6 py-3 relative"><span class="sr-only">Acciones</span></th>
           </tr>
         </thead>
-        <tbody class="bg-white divide-y divide-gray-200">
+        <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
           @foreach($products as $product)
-          <tr>
+          <tr class="hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors">
             <td class="hidden sm:table-cell px-4 sm:px-6 py-4 whitespace-nowrap">
               @if($product->image)
               <img src="{{ asset('storage/' . $product->image) }}" alt="Foto de {{ $product->name }}" class="h-10 w-10 sm:h-12 sm:w-12 object-cover rounded-md">
@@ -61,12 +66,26 @@
               @endif
             </td>
             <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-medium">
-              <div class="flex flex-col sm:flex-row gap-2">
-                <a href="{{ route('products.edit', $product) }}" class="text-indigo-600 hover:text-indigo-900 bg-indigo-100 px-3 py-1 rounded text-center">Editar</a>
-                <form action="{{ route('products.destroy', $product) }}" method="POST" onsubmit="return confirm('¿Seguro que quieres borrar este plato?');">
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit" aria-label="Borrar plato {{ $product->name }}" class="w-full text-red-600 hover:text-red-900 bg-red-100 px-3 py-1 rounded">Borrar</button>
+              <div class="flex justify-end items-center gap-2">
+                <a href="{{ route('products.edit', $product) }}"
+                   aria-label="Editar plato {{ $product->name }}"
+                   class="inline-flex items-center gap-1 text-sm bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 border border-indigo-200 dark:border-indigo-700 py-1.5 px-3 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 transition">
+                  <svg class="h-3.5 w-3.5" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                  </svg>
+                  Editar
+                </a>
+                <form action="{{ route('products.destroy', $product) }}" method="POST" onsubmit="return confirm('¿Seguro que quieres borrar el plato {{ addslashes($product->name) }}?');">
+                  @csrf
+                  @method('DELETE')
+                  <button type="submit"
+                          aria-label="Borrar plato {{ $product->name }}"
+                          class="inline-flex items-center gap-1 text-sm bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/50 border border-red-200 dark:border-red-700 py-1.5 px-3 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1 transition">
+                    <svg class="h-3.5 w-3.5" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                    Borrar
+                  </button>
                 </form>
               </div>
             </td>

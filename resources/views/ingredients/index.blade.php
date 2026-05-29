@@ -9,10 +9,14 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="p-6 text-gray-900 dark:text-gray-100">
 
-        {{-- Alerta de éxito al guardar, editar o borrar --}}
+        {{-- Flash de éxito — triple redundancia: icono + color + texto --}}
         @if(session('success'))
-        <div role="alert" class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-6">
-          {{ session('success') }}
+        <div role="alert" aria-live="polite"
+             class="rounded-md bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700 p-4 mb-6 flex items-start gap-3">
+          <svg class="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <p class="text-sm text-emerald-800 dark:text-emerald-300">{{ session('success') }}</p>
         </div>
         @endif
 
