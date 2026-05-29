@@ -210,7 +210,7 @@
                 <div class="flex items-center gap-2">
                     <button type="button"
                             x-show="!editMode"
-                            @click="editMode = true; switchFloor(currentFloor)"
+                            @click="Alpine.store('viewPanel').close(); editMode = true; switchFloor(currentFloor)"
                             class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-white
                                    bg-amber-500 hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 transition-colors"
                             aria-label="Entrar en modo edición del mapa">
@@ -528,13 +528,13 @@
                 aria-label="Plano interactivo del restaurante. En modo edición: Tab navega entre elementos, Flechas mueven (Mayús = 1 px), Alt+Flechas redimensiona, R rota izquierda (Mayús = 1°), E rota derecha (Mayús = 1°), Supr elimina, Ctrl+Z deshace, Ctrl+Y rehace. En vértices: Tab navega, Flechas mueven el vértice activo."
                 :class="(editMode && currentView !== 'general' && !isPanning) ? 'cursor-grab' : ''"
                 @mousedown.self="startPan($event)"
-                @click="editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null; selectedId = null; closeContextMenu();"
+                @click="editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null; selectedId = null; closeContextMenu(); Alpine.store('viewPanel').close();"
                 @contextmenu.prevent="closeContextMenu()"
             >
 
-                {{-- Overlay modo visualización: bloquea interacción cuando no se está editando --}}
+                {{-- Overlay modo visualización: bloquea drag pero deja pasar clics a las mesas --}}
                 <div x-show="!readonly && !editMode"
-                     class="absolute inset-0 z-[90] rounded-xl cursor-default select-none"
+                     class="absolute inset-0 z-[90] rounded-xl select-none pointer-events-none"
                      aria-hidden="true">
                 </div>
 
@@ -984,8 +984,8 @@
                         :data-table-id="table.id"
                         class="table-item absolute group select-none touch-none"
                         tabindex="0"
-                        @focus="selectedId = table.id; editingTableId=null; editingTable=null; editingZoneId=null; editingZone=null;"
-                        @keydown.enter.space.prevent.stop="selectedId = table.id; editingTableId=null; editingTable=null; editingZoneId=null; editingZone=null;"
+                        @focus="selectedId = table.id; editingTableId=null; editingTable=null; editingZoneId=null; editingZone=null; if (!editMode && table.is_service_point !== false) Alpine.store('viewPanel').open(table);"
+                        @keydown.enter.space.prevent.stop="selectedId = table.id; editingTableId=null; editingTable=null; editingZoneId=null; editingZone=null; if (!editMode && table.is_service_point !== false) Alpine.store('viewPanel').open(table);"
                         :style="`left:${table.position_x}px; top:${table.position_y}px;
                                  width:${table.width}px; height:${table.height}px;
                                  transform: rotate(${table.rotation ?? 0}deg);
@@ -995,16 +995,17 @@
                                      : (floorsEnabled && currentView === 'general' ? 10 + ((table.floor ?? 1) - 1) * 10 : 10)};`"
                         @mouseenter="hoveredId = table.id"
                         @mouseleave="hoveredId = null"
-                        @click.stop="selectedId = table.id; editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null;"
+                        @click.stop="selectedId = table.id; editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null; if (!editMode && table.is_service_point !== false) Alpine.store('viewPanel').open(table);"
                         @contextmenu.prevent.stop="openContextMenu($event, table, 'table')"
                         @keydown.stop="if ($event.key === 'ContextMenu' || ($event.shiftKey && $event.key === 'F10')) openContextMenu($event, table, 'table')"
                         :aria-label="`Mesa ${table.name}`"
                     >
                         {{-- Fondo de la mesa (color según estado del pedido) --}}
                         <div class="w-full h-full relative flex items-center justify-center
-                                    border-2 shadow-md cursor-grab active:cursor-grabbing
-                                    transition-all duration-300 hover:shadow-lg"
+                                    border-2 shadow-md transition-all duration-300 hover:shadow-lg"
                              :class="{
+                                'cursor-grab active:cursor-grabbing': editMode,
+                                'cursor-pointer': !editMode,
                                 'rounded-full':    table.shape === 'round',
                                 'rounded-xl':      table.shape === 'square',
                                 'rounded-lg':      table.shape === 'rectangle',
@@ -1648,12 +1649,11 @@
      x-transition:enter="transition ease-out duration-200"
      x-transition:enter-start="opacity-0"
      x-transition:enter-end="opacity-100"
-     x-transition:leave="transition ease-in duration-150"
-     x-transition:leave-end="opacity-0"
      class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
      aria-modal="true"
      role="dialog"
      aria-labelledby="qr-modal-title"
+     @click="$store.qrModal.close()"
      @keydown.escape.window="$store.qrModal.close()">
 
     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-sm mx-4"
@@ -1680,12 +1680,21 @@
             </button>
         </div>
 
-        {{-- QR SVG inline --}}
-        <div class="flex justify-center mb-4 p-3 bg-white rounded-xl border border-gray-200 dark:border-gray-700">
-            <img :src="`/mesas/${$store.qrModal.table?.id}/qr`"
-                 :alt="`Código QR de la mesa ${$store.qrModal.table?.name}`"
-                 class="w-48 h-48"
-                 x-show="$store.qrModal.table">
+        {{-- QR SVG inline desde caché prefetcheado --}}
+        <div class="flex justify-center mb-4 p-3 bg-white rounded-xl border border-gray-200 dark:border-gray-700"
+             :aria-label="`Código QR de la mesa ${$store.qrModal.table?.name ?? ''}`"
+             role="img">
+            <div x-show="$store.qrModal.qrSvg"
+                 x-html="$store.qrModal.qrSvg"
+                 class="w-48 h-48 [&>svg]:w-full [&>svg]:h-full">
+            </div>
+            <div x-show="!$store.qrModal.qrSvg && $store.qrModal.table"
+                 class="w-48 h-48 flex items-center justify-center">
+                <svg class="animate-spin w-8 h-8 text-indigo-400" aria-hidden="true" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                </svg>
+            </div>
         </div>
 
         {{-- URL de la carta --}}
@@ -1719,6 +1728,176 @@
                 Descargar SVG
             </a>
         </div>
+    </div>
+</div>
+
+{{-- Panel de vista de mesa: QR + identificativo (modo solo lectura) --}}
+<div x-data
+     x-show="$store.viewPanel.show"
+     @click.outside="$store.viewPanel.close()"
+     x-transition:enter="transition ease-out duration-250"
+     x-transition:enter-start="translate-x-full opacity-0"
+     x-transition:enter-end="translate-x-0 opacity-100"
+     x-transition:leave="transition ease-in duration-200"
+     x-transition:leave-start="translate-x-0 opacity-100"
+     x-transition:leave-end="translate-x-full opacity-0"
+     class="fixed inset-y-0 right-0 w-80 sm:w-96 bg-white dark:bg-gray-800
+            shadow-2xl border-l border-gray-200 dark:border-gray-700
+            z-[95] flex flex-col overflow-y-auto"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="view-panel-title"
+     @keydown.escape.window="$store.viewPanel.close()">
+
+    {{-- Cabecera --}}
+    <div class="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-gray-700 shrink-0">
+        <div class="flex items-center gap-2.5 min-w-0">
+            <span class="w-3 h-3 rounded-full shrink-0"
+                  :class="{
+                      'bg-green-400':  !$store.viewPanel.table?.orderStatus || $store.viewPanel.table?.orderStatus === 'free',
+                      'bg-amber-500':  $store.viewPanel.table?.orderStatus === 'occupied',
+                      'bg-green-600 animate-pulse':  $store.viewPanel.table?.orderStatus === 'ready',
+                      'bg-blue-500 animate-pulse':   $store.viewPanel.table?.orderStatus === 'payment_pending',
+                  }"
+                  :aria-label="{free:'Libre',occupied:'Ocupada',ready:'Lista para servir',payment_pending:'Pago pendiente'}[$store.viewPanel.table?.orderStatus] ?? 'Libre'">
+            </span>
+            <h2 id="view-panel-title"
+                class="text-lg font-bold text-gray-900 dark:text-white truncate"
+                x-text="$store.viewPanel.table?.name ?? ''">
+            </h2>
+        </div>
+        <button type="button"
+                @click="$store.viewPanel.close()"
+                class="ml-2 w-8 h-8 shrink-0 rounded-full flex items-center justify-center
+                       text-gray-400 hover:text-gray-600 dark:hover:text-gray-200
+                       hover:bg-gray-100 dark:hover:bg-gray-700
+                       focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-colors"
+                aria-label="Cerrar panel de mesa">
+            <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+        </button>
+    </div>
+
+    {{-- Cuerpo --}}
+    <div class="flex-1 p-5 space-y-4 overflow-y-auto">
+
+        {{-- Chips: estado + planta --}}
+        <div class="flex flex-wrap gap-2">
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold"
+                  :class="{
+                      'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300': !$store.viewPanel.table?.orderStatus || $store.viewPanel.table?.orderStatus === 'free',
+                      'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300': $store.viewPanel.table?.orderStatus === 'occupied',
+                      'bg-green-200 text-green-900 dark:bg-green-800/40 dark:text-green-200': $store.viewPanel.table?.orderStatus === 'ready',
+                      'bg-blue-100  text-blue-800  dark:bg-blue-900/40  dark:text-blue-300':  $store.viewPanel.table?.orderStatus === 'payment_pending',
+                  }"
+                  x-text="{free:'Libre',occupied:'Ocupada',ready:'Lista para servir',payment_pending:'Pago pendiente'}[$store.viewPanel.table?.orderStatus] ?? 'Libre'">
+            </span>
+            <template x-if="floorsEnabled && $store.viewPanel.table?.floor">
+                <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium
+                             bg-indigo-50 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300">
+                    <svg aria-hidden="true" class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                    </svg>
+                    Planta <span x-text="$store.viewPanel.table?.floor"></span>
+                </span>
+            </template>
+        </div>
+
+        {{-- QR de la mesa — SVG inline via fetch para evitar caché del navegador --}}
+        <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-white p-4 flex flex-col items-center gap-3">
+            <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 self-start">
+                Código QR
+            </p>
+            <div class="w-52 h-52 flex items-center justify-center"
+                 :aria-label="$store.viewPanel.table ? `Código QR de ${$store.viewPanel.table.name}` : ''"
+                 role="img">
+                <div x-show="$store.viewPanel.qrSvg"
+                     x-html="$store.viewPanel.qrSvg"
+                     class="w-52 h-52 [&>svg]:w-full [&>svg]:h-full">
+                </div>
+                <div x-show="!$store.viewPanel.qrSvg && $store.viewPanel.table"
+                     class="flex items-center justify-center w-full h-full">
+                    <svg class="animate-spin w-8 h-8 text-indigo-400" aria-hidden="true"
+                         fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10"
+                                stroke="currentColor" stroke-width="4"/>
+                        <path class="opacity-75" fill="currentColor"
+                              d="M4 12a8 8 0 018-8v8z"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        {{-- URL de la carta --}}
+        <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 p-4">
+            <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2">
+                Enlace de la carta
+            </p>
+            <p class="text-xs text-indigo-600 dark:text-indigo-400 break-all font-mono leading-relaxed"
+               x-text="`${window.location.origin}/carta/${$store.viewPanel.table?.unique_hash ?? ''}`">
+            </p>
+        </div>
+
+        {{-- Identificativo de la estructura --}}
+        <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 px-4 py-3">
+            <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-3">
+                Identificativo
+            </p>
+            <dl class="space-y-2 text-sm">
+                <div class="flex justify-between items-center">
+                    <dt class="text-gray-500 dark:text-gray-400">ID interno</dt>
+                    <dd class="font-mono font-medium text-gray-900 dark:text-white"
+                        x-text="`#${$store.viewPanel.table?.id ?? '—'}`"></dd>
+                </div>
+                <div class="flex justify-between items-center">
+                    <dt class="text-gray-500 dark:text-gray-400">Forma</dt>
+                    <dd class="text-gray-900 dark:text-white"
+                        x-text="{square:'Cuadrada',round:'Redonda',rectangle:'Rectangular',bar:'Barra',stool:'Taburete'}[$store.viewPanel.table?.shape] ?? '—'"></dd>
+                </div>
+                <template x-if="$store.viewPanel.table && zoneFor($store.viewPanel.table)">
+                    <div class="flex justify-between items-center">
+                        <dt class="text-gray-500 dark:text-gray-400">Zona</dt>
+                        <dd class="text-gray-900 dark:text-white"
+                            x-text="zoneFor($store.viewPanel.table)?.name ?? '—'"></dd>
+                    </div>
+                </template>
+                <div class="flex justify-between items-center">
+                    <dt class="text-gray-500 dark:text-gray-400">Posición</dt>
+                    <dd class="font-mono text-xs text-gray-700 dark:text-gray-300"
+                        x-text="`(${$store.viewPanel.table?.position_x ?? 0}, ${$store.viewPanel.table?.position_y ?? 0})`"></dd>
+                </div>
+            </dl>
+        </div>
+
+    </div>
+
+    {{-- Pie: acciones --}}
+    <div class="px-5 py-4 border-t border-gray-200 dark:border-gray-700 space-y-2 shrink-0">
+        <a :href="`/mesas/${$store.viewPanel.table?.id}/qr/descargar`"
+           class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl
+                  text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700
+                  focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 transition-colors"
+           :aria-label="`Descargar QR de ${$store.viewPanel.table?.name}`">
+            <svg aria-hidden="true" class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/>
+            </svg>
+            Descargar QR
+        </a>
+        <a :href="`${window.location.origin}/carta/${$store.viewPanel.table?.unique_hash ?? ''}`"
+           target="_blank"
+           rel="noopener noreferrer"
+           class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl
+                  text-sm font-medium text-indigo-700 dark:text-indigo-300
+                  bg-indigo-50 dark:bg-indigo-900/30
+                  hover:bg-indigo-100 dark:hover:bg-indigo-900/50
+                  focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 transition-colors"
+           :aria-label="`Abrir carta digital de ${$store.viewPanel.table?.name} en nueva pestaña`">
+            <svg aria-hidden="true" class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+            </svg>
+            Ver carta digital
+        </a>
     </div>
 </div>
 

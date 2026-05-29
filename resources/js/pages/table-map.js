@@ -272,17 +272,77 @@ export function registerTableMap() {
     });
 
     Alpine.store('qrModal', {
-        show:  false,
-        table: null,
+        show:   false,
+        table:  null,
+        qrSvg:  '',
 
         open(table) {
             this.table = table;
             this.show  = true;
+
+            const cached = Alpine.store('viewPanel')._qrCache[table.id];
+            if (cached) { this.qrSvg = cached; return; }
+
+            this.qrSvg = '';
+            fetch(`/mesas/${table.id}/qr?h=${table.unique_hash}`)
+                .then(r => r.text())
+                .then(svg => {
+                    Alpine.store('viewPanel')._qrCache[table.id] = svg;
+                    if (this.table?.id === table.id) this.qrSvg = svg;
+                })
+                .catch(() => {});
         },
 
         close() {
             this.show  = false;
             this.table = null;
+            this.qrSvg = '';
+        },
+    });
+
+    Alpine.store('viewPanel', {
+        show:      false,
+        table:     null,
+        qrSvg:     '',
+        _qrCache:  {},
+
+        open(table) {
+            // Spread into a plain object — the x-for proxy from tableMap loses
+            // reactive tracking when stored outside its component scope.
+            this.table = {
+                id:               table.id,
+                name:             table.name,
+                unique_hash:      table.unique_hash,
+                orderStatus:      table.orderStatus,
+                shape:            table.shape,
+                floor:            table.floor      ?? 1,
+                zone_id:          table.zone_id    ?? null,
+                position_x:       table.position_x ?? 0,
+                position_y:       table.position_y ?? 0,
+                is_service_point: table.is_service_point,
+            };
+            this.show = true;
+
+            if (this._qrCache[table.id]) {
+                this.qrSvg = this._qrCache[table.id];
+                return;
+            }
+
+            // Fallback: mesa no estaba en caché aún (carga en progreso o fallo previo).
+            this.qrSvg = '';
+            fetch(`/mesas/${table.id}/qr?h=${table.unique_hash}`)
+                .then(r => r.text())
+                .then(svg => {
+                    this._qrCache[table.id] = svg;
+                    if (this.table?.id === table.id) this.qrSvg = svg;
+                })
+                .catch(() => {});
+        },
+
+        close() {
+            this.show  = false;
+            this.table = null;
+            this.qrSvg = '';
         },
     });
 
@@ -381,9 +441,22 @@ export function registerTableMap() {
                         this.clampAllToCanvas();
                     }
                     this._applyOverviewZoom();
+                    this._prefetchQrSvgs();
                 });
                 this.pollStatuses();
                 setInterval(() => this.pollStatuses(), 25000);
+            },
+
+            _prefetchQrSvgs() {
+                const store = Alpine.store('viewPanel');
+                this.tables
+                    .filter(t => t.is_service_point !== false)
+                    .forEach(table => {
+                        fetch(`/mesas/${table.id}/qr?h=${table.unique_hash}`)
+                            .then(r => r.text())
+                            .then(svg => { store._qrCache[table.id] = svg; })
+                            .catch(() => {});
+                    });
             },
 
             canvasBounds(item, w, h) {
@@ -1646,6 +1719,7 @@ export function registerTableMap() {
                 this.selectedId = null;
                 this.hoveredId  = null;
                 Alpine.store('qrModal').close();
+                Alpine.store('viewPanel').close();
                 Alpine.store('tableModal').cancel();
                 Alpine.store('deleteModal').resolve(false);
                 Alpine.store('sizeModal').resolve(false);
