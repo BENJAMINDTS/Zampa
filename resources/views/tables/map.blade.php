@@ -1649,15 +1649,12 @@
      x-transition:enter="transition ease-out duration-200"
      x-transition:enter-start="opacity-0"
      x-transition:enter-end="opacity-100"
-     x-transition:leave="transition ease-in duration-150"
-     x-transition:leave-end="opacity-0"
      class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
      aria-modal="true"
      role="dialog"
      aria-labelledby="qr-modal-title"
      @click="$store.qrModal.close()"
-     @keydown.escape.window="$store.qrModal.close()"
-     @after-leave="$store.qrModal.reset()">
+     @keydown.escape.window="$store.qrModal.close()">
 
     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-sm mx-4"
          x-transition:enter="transition ease-out duration-200"
