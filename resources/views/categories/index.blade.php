@@ -48,27 +48,22 @@
 
       <article class="flex flex-col bg-white dark:bg-gray-800
                        border border-gray-200 dark:border-gray-700
-                       rounded-xl shadow-md hover:shadow-lg
-                       transition-shadow duration-150 overflow-hidden"
+                       rounded-xl shadow-md hover:shadow-xl
+                       transition-shadow duration-200 overflow-hidden"
                aria-label="Categoría {{ $category->name }}">
-
-        {{-- Franja de color según destino --}}
-        <div class="h-1.5 w-full {{ $isKitchen ? 'bg-orange-500' : 'bg-blue-500' }}"></div>
 
         <div class="flex flex-col flex-1 p-5">
           {{-- Icono + nombre --}}
           <div class="flex items-start gap-3 mb-4">
             <span class="mt-0.5 p-2 rounded-lg shadow-sm
-                         {{ $isKitchen
-                             ? 'bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-700'
-                             : 'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700' }}"
+                         bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600"
                   aria-hidden="true">
               @if($isKitchen)
-              <svg class="h-5 w-5 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <svg class="h-5 w-5 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
               </svg>
               @else
-              <svg class="h-5 w-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <svg class="h-5 w-5 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
               </svg>
               @endif
@@ -78,9 +73,8 @@
                 {{ $category->name }}
               </h2>
               <span class="inline-flex items-center gap-1 mt-1 text-xs font-semibold px-2 py-0.5 rounded-full
-                           {{ $isKitchen
-                               ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300'
-                               : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' }}">
+                           bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300
+                           border border-gray-200 dark:border-gray-600">
                 {{ $isKitchen ? 'Cocina' : 'Barra' }}
               </span>
             </div>
