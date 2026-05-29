@@ -23,9 +23,7 @@
     {{-- Page heading (from named slot) --}}
     <div class="flex-1 min-w-0">
         @isset($header)
-            <div class="text-sm font-medium text-gray-700 dark:text-gray-300 truncate">
-                {{ $header }}
-            </div>
+            {{ $header }}
         @endisset
     </div>
 
