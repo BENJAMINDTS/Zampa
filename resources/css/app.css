@@ -1,3 +1,25 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+    :root {
+        --zampa-50:  #FDF6EC;
+        --zampa-100: #FAE8CA;
+        --zampa-200: #F5CE93;
+        --zampa-300: #EFAD55;
+        --zampa-400: #E7922A;
+        --zampa-500: #D97B1A;
+        --zampa-600: #B86315;
+        --zampa-700: #944E12;
+        --zampa-800: #763E12;
+        --zampa-900: #5E3311;
+        --zampa-950: #341A08;
+
+        --surface-50:  #F9F8F7;
+        --surface-100: #F1EFEC;
+        --surface-200: #E4E0DA;
+        --surface-900: #2C2825;
+        --surface-950: #1A1714;
+    }
+}
