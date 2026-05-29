@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="es" class="h-full">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>{{ config('app.name', 'Laravel') }}</title>
+        <title>{{ config('app.name', 'Zampa') }}</title>
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
@@ -13,6 +13,7 @@
 
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
+
         <style>[x-cloak]{display:none!important}</style>
 
         <!-- Dark mode: apply before paint to avoid flash -->
@@ -26,28 +27,49 @@
             })();
         </script>
     </head>
-    <body class="font-sans antialiased">
+    <body class="h-full font-sans antialiased bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100">
+
+        <!-- Skip to content -->
         <a href="#main-content"
-           class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-white text-indigo-700 px-4 py-2 rounded font-medium z-50">
+           class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4
+                  bg-white text-indigo-700 px-4 py-2 rounded font-medium z-50 shadow-md">
             Saltar al contenido principal
         </a>
-        <div class="min-h-screen bg-gray-100 dark:bg-gray-950">
-            @include('layouts.navigation')
 
-            <!-- Page Heading -->
-            @isset($header)
-                <header class="bg-white dark:bg-gray-800 shadow">
-                    <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-                        {{ $header }}
-                    </div>
-                </header>
-            @endisset
+        <div class="flex h-full"
+             x-data="{ sidebarOpen: false }"
+             @keydown.escape.window="sidebarOpen = false">
 
-            <!-- Page Content -->
-            <main id="main-content">
-                {{ $slot }}
-            </main>
+            <!-- Mobile overlay -->
+            <div x-show="sidebarOpen"
+                 x-cloak
+                 @click="sidebarOpen = false"
+                 x-transition:enter="transition ease-out duration-200"
+                 x-transition:enter-start="opacity-0"
+                 x-transition:enter-end="opacity-100"
+                 x-transition:leave="transition ease-in duration-150"
+                 x-transition:leave-start="opacity-100"
+                 x-transition:leave-end="opacity-0"
+                 class="fixed inset-0 z-20 bg-black/50 lg:hidden"
+                 aria-hidden="true">
+            </div>
+
+            <!-- Sidebar -->
+            @include('layouts.sidebar')
+
+            <!-- Main area -->
+            <div class="flex flex-col flex-1 min-w-0 overflow-hidden">
+
+                <!-- Topbar -->
+                @include('layouts.topbar')
+
+                <!-- Page Content -->
+                <main id="main-content" class="flex-1 overflow-y-auto">
+                    {{ $slot }}
+                </main>
+            </div>
         </div>
+
         <x-toast />
         @stack('scripts')
     </body>
