@@ -340,7 +340,10 @@ export function registerTableMap() {
         },
 
         close() {
-            this.show  = false;
+            this.show = false;
+        },
+
+        reset() {
             this.table = null;
             this.qrSvg = '';
         },
