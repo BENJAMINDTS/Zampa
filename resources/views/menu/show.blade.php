@@ -12,6 +12,18 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <meta name="stripe-key" content="{{ $stripePublicKey }}">
     <script src="https://js.stripe.com/v3/" defer></script>
+
+    <!-- Dark mode: apply before paint to avoid flash -->
+    <script>
+        (function () {
+            const saved = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if (saved === 'dark' || (!saved && prefersDark)) {
+                document.documentElement.classList.add('dark');
+            }
+        })();
+    </script>
+
     <style>
         /* ── Zampi Chatbot Animations ────────────────────────────── */
         @keyframes zampiSlideUp {
@@ -1722,7 +1734,8 @@
                         {{ $table->user->name }}
                     </h1>
                 </div>
-                <div class="text-right">
+                <div class="flex items-center gap-2">
+                    {{-- Badge de mesa --}}
                     <span class="inline-flex items-center gap-1 text-xs font-medium
                                  bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300
                                  px-2.5 py-1 rounded-full">
@@ -1732,6 +1745,38 @@
                         </svg>
                         {{ $table->name }}
                     </span>
+
+                    {{-- Toggle dark/light --}}
+                    <button x-data="{
+                                dark: localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches),
+                                toggle() {
+                                    this.dark = !this.dark;
+                                    document.documentElement.classList.toggle('dark', this.dark);
+                                    localStorage.setItem('theme', this.dark ? 'dark' : 'light');
+                                }
+                            }"
+                            @click="toggle()"
+                            :aria-label="dark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'"
+                            :aria-pressed="dark.toString()"
+                            class="p-1.5 rounded-full
+                                   bg-gray-100 dark:bg-gray-700
+                                   text-gray-500 dark:text-gray-300
+                                   hover:bg-gray-200 dark:hover:bg-gray-600
+                                   focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1
+                                   transition-colors duration-150">
+                        {{-- Sol: en dark mode --}}
+                        <svg x-show="dark" aria-hidden="true" class="h-4 w-4 text-amber-400"
+                             fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                  d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+                        </svg>
+                        {{-- Luna: en light mode --}}
+                        <svg x-show="!dark" aria-hidden="true" class="h-4 w-4"
+                             fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                  d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+                        </svg>
+                    </button>
                 </div>
             </div>
         </header>
