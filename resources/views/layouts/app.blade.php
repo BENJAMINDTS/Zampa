@@ -30,7 +30,7 @@
            class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-white text-indigo-700 px-4 py-2 rounded font-medium z-50">
             Saltar al contenido principal
         </a>
-        <div class="min-h-screen bg-gray-100 dark:bg-gray-900">
+        <div class="min-h-screen bg-gray-100 dark:bg-gray-950">
             @include('layouts.navigation')
 
             <!-- Page Heading -->
