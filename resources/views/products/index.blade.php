@@ -1,9 +1,13 @@
 <x-app-layout>
   <div class="max-w-6xl mx-auto px-4 sm:px-6 py-6 mt-4 sm:mt-10">
     <div class="flex justify-between items-center mb-4 sm:mb-6">
-      <h2 class="text-xl sm:text-2xl font-bold text-gray-800">Mi Carta Digital</h2>
-      <a href="{{ route('products.create') }}" class="bg-green-600 text-white px-3 py-2 sm:px-4 rounded-md hover:bg-green-700 text-sm sm:text-base">
-        + Añadir Plato
+      <h2 class="text-xl sm:text-2xl font-bold text-gray-800 dark:text-gray-100">Mi Carta Digital</h2>
+      <a href="{{ route('products.create') }}"
+         class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm py-2.5 px-4 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900 transition">
+        <svg class="h-4 w-4" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+        </svg>
+        Añadir Plato
       </a>
     </div>
 
@@ -31,21 +35,21 @@
         </thead>
         <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
           @foreach($products as $product)
-          <tr class="hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors">
+          <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
             <td class="hidden sm:table-cell px-4 sm:px-6 py-4 whitespace-nowrap">
               @if($product->image)
               <img src="{{ asset('storage/' . $product->image) }}" alt="Foto de {{ $product->name }}" class="h-10 w-10 sm:h-12 sm:w-12 object-cover rounded-md">
               @else
-              <span class="text-gray-400 text-sm">Sin imagen</span>
+              <span class="text-gray-400 dark:text-gray-500 text-sm">Sin imagen</span>
               @endif
             </td>
-            <td class="px-4 sm:px-6 py-4 whitespace-nowrap font-medium text-gray-900 text-sm sm:text-base">{{ $product->name }}</td>
-            <td class="hidden md:table-cell px-4 sm:px-6 py-4 text-gray-500">
+            <td class="px-4 sm:px-6 py-4 whitespace-nowrap font-medium text-gray-900 dark:text-gray-100 text-sm sm:text-base">{{ $product->name }}</td>
+            <td class="hidden md:table-cell px-4 sm:px-6 py-4 text-gray-600 dark:text-gray-300 text-sm">
               @if($product->variants->isNotEmpty())
-                <div class="text-sm mb-1">desde {{ number_format($product->getEffectivePrice(), 2, ',', '.') }} €</div>
+                <div class="mb-1">desde {{ number_format($product->getEffectivePrice(), 2, ',', '.') }} €</div>
                 <div class="flex flex-wrap gap-1">
                   @foreach($product->variants as $variant)
-                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 text-xs font-medium border border-indigo-200">
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 text-xs font-medium border border-indigo-200 dark:border-indigo-700">
                       {{ $variant->name }}&nbsp;·&nbsp;{{ number_format($variant->price, 2, ',', '.') }}&nbsp;€
                     </span>
                   @endforeach
@@ -62,7 +66,7 @@
                   @endforeach
                 </div>
               @else
-                <span class="text-gray-400 text-xs">Ninguno</span>
+                <span class="text-gray-400 dark:text-gray-500 text-xs">Ninguno</span>
               @endif
             </td>
             <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-medium">
