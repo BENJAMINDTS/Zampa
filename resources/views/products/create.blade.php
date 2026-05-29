@@ -114,10 +114,41 @@
         </select>
       </div>
 
-      <div>
+      <div x-data="{ preview: null, fileName: null }">
         <label for="image" class="block text-sm font-medium text-gray-700">Foto del plato (Max: 2MB)</label>
-        <input type="file" name="image" id="image" accept="image/jpeg, image/png, image/webp"
-               class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+
+        {{-- Preview de la imagen seleccionada --}}
+        <div x-show="preview" x-cloak class="mt-2 flex items-center gap-3">
+          <img :src="preview" alt="Vista previa de la foto"
+               class="h-20 w-20 object-cover rounded-md border border-gray-200 shadow-sm">
+          <div class="text-xs text-gray-500 dark:text-gray-400">
+            <p x-text="fileName" class="font-medium truncate max-w-[180px]"></p>
+            <button type="button"
+                    @click="preview = null; fileName = null; $refs.imageInput.value = ''"
+                    class="mt-1 text-red-500 hover:text-red-700 focus:outline-none focus:underline">
+              Quitar imagen
+            </button>
+          </div>
+        </div>
+
+        <input type="file"
+               name="image"
+               id="image"
+               x-ref="imageInput"
+               accept="image/jpeg,image/png,image/jpg,image/webp"
+               @change="
+                 const f = $event.target.files[0];
+                 if (f) { preview = URL.createObjectURL(f); fileName = f.name; }
+                 else   { preview = null; fileName = null; }
+               "
+               class="mt-2 block w-full text-sm text-gray-500 dark:text-gray-400
+                      file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0
+                      file:text-sm file:font-semibold
+                      file:bg-indigo-50 file:text-indigo-700
+                      hover:file:bg-indigo-100
+                      dark:file:bg-indigo-900/30 dark:file:text-indigo-400
+                      focus:outline-none">
+        <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">JPEG, PNG, WebP — máximo 2 MB</p>
       </div>
 
       <div class="flex flex-col sm:flex-row gap-3 pt-1">
