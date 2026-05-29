@@ -91,44 +91,34 @@
 
             <label class="cursor-pointer">
               <input type="radio" name="destination" value="kitchen" x-model="dest" class="sr-only">
-              <div class="flex flex-col items-center gap-2 p-4 rounded-xl border shadow-sm transition-all"
+              <div class="flex flex-col items-center gap-2 p-4 rounded-xl border bg-white dark:bg-gray-700 transition-all"
                    :class="dest === 'kitchen'
-                     ? 'border-orange-400 dark:border-orange-500 bg-orange-50 dark:bg-orange-900/20 shadow-md ring-2 ring-orange-400 ring-offset-1'
-                     : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 hover:shadow-md hover:border-orange-300'">
-                <span class="p-2 rounded-lg transition-colors"
-                      :class="dest === 'kitchen' ? 'bg-orange-100 dark:bg-orange-900/40' : 'bg-gray-100 dark:bg-gray-600'">
-                  <svg class="h-6 w-6 transition-colors"
-                       :class="dest === 'kitchen' ? 'text-orange-600 dark:text-orange-400' : 'text-gray-500 dark:text-gray-400'"
+                     ? 'border-gray-400 dark:border-gray-400 shadow-lg ring-2 ring-gray-400 dark:ring-gray-400 ring-offset-1'
+                     : 'border-gray-200 dark:border-gray-600 shadow-sm hover:shadow-md'">
+                <span class="p-2 rounded-lg bg-gray-100 dark:bg-gray-600 shadow-sm">
+                  <svg class="h-6 w-6 text-gray-700 dark:text-gray-200"
                        fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
                   </svg>
                 </span>
-                <span class="text-sm font-semibold"
-                      :class="dest === 'kitchen' ? 'text-orange-700 dark:text-orange-300' : 'text-gray-700 dark:text-gray-300'">
-                  Cocina
-                </span>
+                <span class="text-sm font-semibold text-gray-800 dark:text-gray-200">Cocina</span>
                 <span class="text-xs text-gray-500 dark:text-gray-400 text-center">Platos y postres</span>
               </div>
             </label>
 
             <label class="cursor-pointer">
               <input type="radio" name="destination" value="bar" x-model="dest" class="sr-only">
-              <div class="flex flex-col items-center gap-2 p-4 rounded-xl border shadow-sm transition-all"
+              <div class="flex flex-col items-center gap-2 p-4 rounded-xl border bg-white dark:bg-gray-700 transition-all"
                    :class="dest === 'bar'
-                     ? 'border-blue-400 dark:border-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-md ring-2 ring-blue-400 ring-offset-1'
-                     : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 hover:shadow-md hover:border-blue-300'">
-                <span class="p-2 rounded-lg transition-colors"
-                      :class="dest === 'bar' ? 'bg-blue-100 dark:bg-blue-900/40' : 'bg-gray-100 dark:bg-gray-600'">
-                  <svg class="h-6 w-6 transition-colors"
-                       :class="dest === 'bar' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'"
+                     ? 'border-gray-400 dark:border-gray-400 shadow-lg ring-2 ring-gray-400 dark:ring-gray-400 ring-offset-1'
+                     : 'border-gray-200 dark:border-gray-600 shadow-sm hover:shadow-md'">
+                <span class="p-2 rounded-lg bg-gray-100 dark:bg-gray-600 shadow-sm">
+                  <svg class="h-6 w-6 text-gray-700 dark:text-gray-200"
                        fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
                   </svg>
                 </span>
-                <span class="text-sm font-semibold"
-                      :class="dest === 'bar' ? 'text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-gray-300'">
-                  Barra
-                </span>
+                <span class="text-sm font-semibold text-gray-800 dark:text-gray-200">Barra</span>
                 <span class="text-xs text-gray-500 dark:text-gray-400 text-center">Bebidas y cócteles</span>
               </div>
             </label>
