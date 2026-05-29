@@ -1646,27 +1646,20 @@
 {{-- Modal de QR de mesa --}}
 <div x-data
      x-show="$store.qrModal.show"
-     x-transition:enter="transition ease-out duration-150"
+     x-transition:enter="transition ease-out duration-200"
      x-transition:enter-start="opacity-0"
      x-transition:enter-end="opacity-100"
-     x-transition:leave="transition ease-in duration-100"
-     x-transition:leave-start="opacity-100"
-     x-transition:leave-end="opacity-0"
      class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
      aria-modal="true"
      role="dialog"
      aria-labelledby="qr-modal-title"
      @click="$store.qrModal.close()"
-     @keydown.escape.window="$store.qrModal.close()"
-     @after-leave="$store.qrModal.reset()">
+     @keydown.escape.window="$store.qrModal.close()">
 
     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-sm mx-4"
-         x-transition:enter="transition ease-out duration-150"
+         x-transition:enter="transition ease-out duration-200"
          x-transition:enter-start="opacity-0 scale-95"
          x-transition:enter-end="opacity-100 scale-100"
-         x-transition:leave="transition ease-in duration-100"
-         x-transition:leave-start="opacity-100 scale-100"
-         x-transition:leave-end="opacity-0 scale-95"
          @click.stop>
 
         <div class="flex items-center justify-between mb-4">
@@ -1742,13 +1735,12 @@
 <div x-data
      x-show="$store.viewPanel.show"
      @click.outside="$store.viewPanel.close()"
-     x-transition:enter="transition ease-out duration-200"
+     x-transition:enter="transition ease-out duration-250"
      x-transition:enter-start="translate-x-full opacity-0"
      x-transition:enter-end="translate-x-0 opacity-100"
-     x-transition:leave="transition ease-in duration-150"
+     x-transition:leave="transition ease-in duration-200"
      x-transition:leave-start="translate-x-0 opacity-100"
      x-transition:leave-end="translate-x-full opacity-0"
-     @after-leave="$store.viewPanel.reset()"
      class="fixed inset-y-0 right-0 w-80 sm:w-96 bg-white dark:bg-gray-800
             shadow-2xl border-l border-gray-200 dark:border-gray-700
             z-[95] flex flex-col overflow-y-auto"
