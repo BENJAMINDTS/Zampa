@@ -184,6 +184,16 @@ class User extends Authenticatable
     }
 
     /**
+     * Obtiene la configuración del ticket PDF del restaurante.
+     *
+     * @return HasOne
+     */
+    public function ticketConfig(): HasOne
+    {
+        return $this->hasOne(TicketConfig::class);
+    }
+
+    /**
      * Obtiene el gerente (admin) al que pertenece este miembro de staff.
      *
      * @return BelongsTo

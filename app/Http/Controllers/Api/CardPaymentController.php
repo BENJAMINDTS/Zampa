@@ -145,6 +145,6 @@ class CardPaymentController extends Controller
             'tip'            => $validated['tip'] ?? 0,
         ]);
 
-        return response()->json(['success' => true]);
+        return response()->json(['success' => true, 'order_id' => $order->id]);
     }
 }

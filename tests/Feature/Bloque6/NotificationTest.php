@@ -130,7 +130,7 @@ it('bar panel initial html has no ready orders when notification_ready is false'
     $response = $this->actingAs($waiter)->get(route('bar.index'));
 
     $response->assertOk();
-    $response->assertSee('readyOrders: []', false);
+    $response->assertSee('<script id="bar-ready-orders" type="application/json">[]</script>', false);
 });
 
 // ─── Endpoint GET /notifications/bill-requests ────────────────────────────────

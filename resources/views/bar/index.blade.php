@@ -224,114 +224,6 @@
   </div>
 
   @push('scripts')
-  <script>
-    function billRequestPolling() {
-      return {
-        billOrders: [],
-
-        init() {
-          this.poll();
-          setInterval(() => this.poll(), 15000);
-        },
-
-        async poll() {
-          try {
-            const res  = await fetch('{{ route('notifications.bill.requests') }}', {
-              headers: { 'X-Requested-With': 'XMLHttpRequest' }
-            });
-            if (!res.ok) return;
-            const data = await res.json();
-            const payingIds = {};
-            this.billOrders.forEach(o => { if (o.paying) payingIds[o.id] = true; });
-            this.billOrders = data.orders.map(o => ({ ...o, paying: !!payingIds[o.id] }));
-          } catch {
-            // sin conexión — silencioso
-          }
-        },
-
-        async dismiss(id) {
-          const url = '{{ route('notifications.bill.dismiss', ['order' => '__ID__']) }}'.replace('__ID__', id);
-          try {
-            const res = await fetch(url, {
-              method:  'PATCH',
-              headers: {
-                'X-CSRF-TOKEN':     document.querySelector('meta[name="csrf-token"]').content,
-                'X-Requested-With': 'XMLHttpRequest',
-                'Accept':           'application/json',
-              },
-            });
-            if (!res.ok) return;
-            this.billOrders = this.billOrders.filter(o => o.id !== id);
-          } catch {
-            // red caída: mantener el ítem para que el siguiente poll refleje la BD
-          }
-        },
-
-        async cashPayment(order) {
-          order.paying = true;
-          try {
-            const url = '{{ url('/payments') }}/' + order.id + '/cash';
-            const res = await fetch(url, {
-              method:  'POST',
-              headers: {
-                'X-CSRF-TOKEN':     document.querySelector('meta[name="csrf-token"]').content,
-                'X-Requested-With': 'XMLHttpRequest',
-                'Accept':           'application/json',
-              },
-            });
-            if (res.ok) {
-              this.billOrders = this.billOrders.filter(o => o.id !== order.id);
-            }
-          } catch {
-            order.paying = false;
-          }
-        },
-      };
-    }
-  </script>
-  <script>
-    function notificationPolling() {
-      return {
-        readyOrders: @json($readyOrders),
-
-        init() {
-          this.poll();
-          setInterval(() => this.poll(), 20000);
-        },
-
-        async poll() {
-          try {
-            const res  = await fetch('{{ route('notifications.ready') }}', {
-              headers: { 'X-Requested-With': 'XMLHttpRequest' }
-            });
-            if (!res.ok) return;
-            const data = await res.json();
-            this.readyOrders = data.orders;
-          } catch {
-            // sin conexión — silencioso, el barPanel ya gestiona el indicador
-          }
-        },
-
-        async dismiss(id) {
-          const url = '{{ route('notifications.dismiss', ['order' => '__ID__']) }}'.replace('__ID__', id);
-          try {
-            const res = await fetch(url, {
-              method:  'PATCH',
-              headers: {
-                'X-CSRF-TOKEN':     document.querySelector('meta[name="csrf-token"]').content,
-                'X-Requested-With': 'XMLHttpRequest',
-                'Accept':           'application/json',
-              },
-            });
-            if (!res.ok) return;
-            this.readyOrders = this.readyOrders.filter(o => o.id !== id);
-          } catch {
-            // red caída: mantener el ítem para que el siguiente poll refleje la BD
-          }
-        },
-      };
-    }
-  </script>
   @php
     $ordersForJs = $orders->map(fn($o) => [
       'id'         => $o->id,
@@ -347,69 +239,20 @@
         'marking'      => false,
       ])->values(),
     ])->values();
+
+    $barUrls = [
+      'barPending'                   => route('bar.pending'),
+      'billRequests'                 => route('notifications.bill.requests'),
+      'billDismissTemplate'          => route('notifications.bill.dismiss', ['order' => '__ID__']),
+      'notificationsDismissTemplate' => route('notifications.dismiss', ['order' => '__ID__']),
+      'notificationsReady'           => route('notifications.ready'),
+      'payments'                     => url('/payments'),
+      'barItems'                     => url('/bar/items'),
+    ];
   @endphp
-  <script>
-    function barPanel() {
-      return {
-        orders: @json($ordersForJs),
-
-        polling: true,
-        lastUpdated: '--:--',
-        pollInterval: null,
-
-        init() {
-          this.tick();
-          this.pollInterval = setInterval(() => this.tick(), 5000);
-        },
-
-        async tick() {
-          try {
-            const res  = await fetch('{{ route('bar.pending') }}', {
-              headers: { 'X-Requested-With': 'XMLHttpRequest' }
-            });
-            const data = await res.json();
-
-            const markingIds = {};
-            this.orders.forEach(o => o.items.forEach(i => { if (i.marking) markingIds[i.id] = true; }));
-
-            this.orders = data.orders.map(o => ({
-              ...o,
-              all_ready: false,
-              items: o.items.map(i => ({ ...i, marking: !!markingIds[i.id] })),
-            }));
-
-            this.polling     = true;
-            this.lastUpdated = new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-          } catch {
-            this.polling = false;
-          }
-        },
-
-        async markReady(item, order) {
-          item.marking = true;
-          try {
-            const res = await fetch(`{{ url('/bar/items') }}/${item.id}`, {
-              method:  'PATCH',
-              headers: {
-                'X-CSRF-TOKEN':     document.querySelector('meta[name="csrf-token"]').content,
-                'X-Requested-With': 'XMLHttpRequest',
-                'Accept':           'application/json',
-              },
-            });
-            const data = await res.json();
-
-            order.items = order.items.filter(i => i.id !== item.id);
-
-            if (data.all_ready) {
-              order.all_ready = true;
-            }
-          } catch {
-            item.marking = false;
-          }
-        },
-      };
-    }
-  </script>
+  <script id="bar-urls" type="application/json">@json($barUrls)</script>
+  <script id="bar-ready-orders" type="application/json">@json($readyOrders)</script>
+  <script id="bar-init" type="application/json">@json($ordersForJs)</script>
   @endpush
 
 </x-app-layout>

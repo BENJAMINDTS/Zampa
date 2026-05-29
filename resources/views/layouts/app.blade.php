@@ -13,6 +13,7 @@
 
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
+        <style>[x-cloak]{display:none!important}</style>
 
         <!-- Dark mode: apply before paint to avoid flash -->
         <script>
@@ -47,40 +48,7 @@
                 {{ $slot }}
             </main>
         </div>
+        <x-toast />
         @stack('scripts')
-        <script>
-        function kitchenBadge(url) {
-            return {
-                count: 0,
-                init() {
-                    this.fetch();
-                    setInterval(() => this.fetch(), 10000);
-                },
-                async fetch() {
-                    try {
-                        const res = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
-                        const data = await res.json();
-                        this.count = data.pending_count ?? 0;
-                    } catch {}
-                },
-            };
-        }
-        function barBadge(url) {
-            return {
-                count: 0,
-                init() {
-                    this.fetch();
-                    setInterval(() => this.fetch(), 10000);
-                },
-                async fetch() {
-                    try {
-                        const res = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
-                        const data = await res.json();
-                        this.count = data.pending_count ?? 0;
-                    } catch {}
-                },
-            };
-        }
-        </script>
     </body>
 </html>

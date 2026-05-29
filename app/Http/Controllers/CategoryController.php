@@ -6,6 +6,7 @@ use App\Models\Category;
 use App\Models\TapaConfig;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
 
@@ -60,6 +61,7 @@ class CategoryController extends Controller
         // 2. Crear la categoría bajo el propietario del restaurante
         $ownerId = Auth::user()->ownerUserId();
         Category::create(array_merge($validated, ['user_id' => $ownerId]));
+        Cache::forget("menu:{$ownerId}");
 
         // 3. Redirigir al listado con mensaje de éxito
         return redirect()->route('categories.index')->with('success', 'Categoría creada correctamente.');
@@ -115,6 +117,7 @@ class CategoryController extends Controller
         }
 
         $category->update($validated);
+        Cache::forget("menu:{$category->user_id}");
 
         return redirect()->route('categories.index')->with('success', '¡Categoría actualizada correctamente!');
     }
@@ -137,7 +140,9 @@ class CategoryController extends Controller
             }
         }
 
+        $userId = $category->user_id;
         $category->delete();
+        Cache::forget("menu:{$userId}");
 
         return redirect()->route('categories.index')->with('success', 'Categoría eliminada.');
     }

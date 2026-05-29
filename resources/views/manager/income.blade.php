@@ -203,6 +203,11 @@
                                                    text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                             Total cobrado
                                         </th>
+                                        <th scope="col"
+                                            class="px-5 py-3 text-right text-xs font-medium
+                                                   text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                            Ticket
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-100 dark:divide-gray-700/60">
@@ -266,6 +271,28 @@
                                             <td class="px-5 py-4 text-sm text-right font-semibold
                                                        text-gray-900 dark:text-white whitespace-nowrap tabular-nums">
                                                 {{ number_format($order->total + $order->tip, 2, ',', '.') }}&nbsp;€
+                                            </td>
+                                            <td class="px-5 py-4 text-right whitespace-nowrap">
+                                                <a href="{{ route('ticket.reprint', $order->id) }}"
+                                                   target="_blank"
+                                                   rel="noopener noreferrer"
+                                                   class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg
+                                                          text-xs font-medium
+                                                          bg-gray-100 dark:bg-gray-700
+                                                          text-gray-700 dark:text-gray-300
+                                                          hover:bg-indigo-100 dark:hover:bg-indigo-900/40
+                                                          hover:text-indigo-700 dark:hover:text-indigo-300
+                                                          transition-colors focus:outline-none
+                                                          focus:ring-2 focus:ring-indigo-500"
+                                                   aria-label="Reimprimir ticket del pedido #{{ $order->id }}">
+                                                    <svg aria-hidden="true" class="w-3.5 h-3.5 shrink-0"
+                                                         fill="none" stroke="currentColor"
+                                                         stroke-width="2" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                                              d="M12 16v-8m0 8l-3-3m3 3l3-3M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2"/>
+                                                    </svg>
+                                                    PDF
+                                                </a>
                                             </td>
                                         </tr>
                                     @endforeach

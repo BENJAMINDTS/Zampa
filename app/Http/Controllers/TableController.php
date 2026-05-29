@@ -9,6 +9,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
@@ -495,13 +496,18 @@ class TableController extends Controller
     {
         abort_if($table->user_id !== Auth::user()->ownerUserId(), 403, 'Acceso denegado.');
 
-        $url = route('menu.show', $table->unique_hash);
-        $svg = QrCode::format('svg')
-            ->size(200)
-            ->margin(1)
-            ->generate($url);
+        $svg = Cache::rememberForever(
+            "qr_svg_{$table->unique_hash}",
+            fn () => (string) QrCode::format('svg')
+                ->size(200)
+                ->margin(1)
+                ->generate(route('menu.show', $table->unique_hash))
+        );
 
-        return response($svg, 200, ['Content-Type' => 'image/svg+xml']);
+        return response($svg, 200, [
+            'Content-Type'  => 'image/svg+xml',
+            'Cache-Control' => 'private, max-age=31536000, immutable',
+        ]);
     }
 
     /**
@@ -538,6 +544,7 @@ class TableController extends Controller
     {
         abort_if($table->user_id !== Auth::user()->ownerUserId(), 403, 'Acceso denegado.');
 
+        Cache::forget("qr_svg_{$table->unique_hash}");
         $table->update(['unique_hash' => Str::uuid()->toString()]);
 
         return redirect()

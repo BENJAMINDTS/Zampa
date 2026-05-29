@@ -96,6 +96,7 @@
               @if($product->image)
                 <img src="{{ asset('storage/' . $product->image) }}"
                      alt="Foto de {{ $product->name }}"
+                     loading="lazy" decoding="async"
                      class="h-10 w-10 sm:h-12 sm:w-12 object-cover rounded-md">
               @else
                 <div class="h-10 w-10 sm:h-12 sm:w-12 rounded-md bg-gray-100 dark:bg-gray-700 flex items-center justify-center"

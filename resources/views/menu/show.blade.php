@@ -268,6 +268,16 @@
             'barItemsCount' => (int) $barItemsCount,
             'kitchenOpen'   => $kitchenOpen,
         ];
+
+        $menuContext = [
+            'tableHash'           => $table->unique_hash,
+            'hasActiveOrder'      => $hasActiveOrder,
+            'billRequested'       => $billRequested,
+            'activeOrderTotal'    => (float) $activeOrderTotal,
+            'originalOrderTotal'  => (float) $originalOrderTotal,
+            'splitPaymentEnabled' => $splitPaymentEnabled,
+            'splitPaymentMaxParts'=> $splitPaymentMaxParts,
+        ];
     @endphp
 
     {{-- Los datos se inyectan en un <script> separado para evitar conflictos
@@ -276,1438 +286,7 @@
     <script id="tapa-config" type="application/json">@json($tapaConfigForAlpine)</script>
     <script id="tapa-products" type="application/json">@json($tapaProductsForAlpine)</script>
     <script id="order-items" type="application/json">@json($activeOrderItemsForAlpine)</script>
-
-    <script>
-        document.addEventListener('alpine:init', () => {
-            const raw  = document.getElementById('menu-products');
-            const list = raw ? JSON.parse(raw.textContent) : [];
-
-            const rawTapa      = document.getElementById('tapa-config');
-            const tapaConfig   = rawTapa ? JSON.parse(rawTapa.textContent) : {};
-            const rawTapaProd  = document.getElementById('tapa-products');
-            const tapaProdList = rawTapaProd ? JSON.parse(rawTapaProd.textContent) : [];
-
-            // ── Carrito global ──────────────────────────────────────────
-            Alpine.store('cart', {
-                items:   [],
-                open:    false,
-                sending: false,
-                sent:    false,
-                error:   null,
-                tableHash: '{{ $table->unique_hash }}',
-
-                showTapaModal:  false,
-                tapaConfig:     tapaConfig,
-                tapaProducts:   tapaProdList,
-                _barItemsCount: tapaConfig.barItemsCount ?? 0,
-                _variantsUsed:  tapaConfig.variantsUsed  ?? 0,
-
-                add(product) {
-                    const key      = product.id + ':none';
-                    const existing = this.items.find(i => i._key === key);
-                    if (existing) {
-                        existing.quantity++;
-                    } else {
-                        this.items.push({
-                            _key:        key,
-                            productId:   product.id,
-                            variantId:   null,
-                            variantName: null,
-                            name:        product.name,
-                            price:       product.price,
-                            quantity:    1,
-                            destination: product.destination ?? null,
-                            mods:        [],
-                            removable:   product.removable || [],
-                            extras:      product.extras    || [],
-                        });
-                    }
-                    if (product.destination === 'bar') {
-                        this._barItemsCount++;
-                        this._checkTapaSuggestion();
-                    }
-                },
-
-                addWithVariant(productId, variantId, variantName, variantPrice, productData) {
-                    const key      = productId + ':' + variantId;
-                    const existing = this.items.find(i => i._key === key);
-                    if (existing) {
-                        existing.quantity++;
-                    } else {
-                        this.items.push({
-                            _key:        key,
-                            productId:   productId,
-                            variantId:   variantId,
-                            variantName: variantName,
-                            name:        (productData?.name ?? '') + ' — ' + variantName,
-                            price:       variantPrice,
-                            quantity:    1,
-                            destination: productData?.destination ?? null,
-                            mods:        [],
-                            removable:   [],
-                            extras:      [],
-                        });
-                    }
-                    if (productData?.destination === 'bar') {
-                        this._barItemsCount++;
-                        this._checkTapaSuggestion();
-                    }
-                },
-
-                _checkTapaSuggestion() {
-                    const cfg = this.tapaConfig;
-                    if (!cfg.enabled)                             return;
-                    if (!cfg.kitchenOpen)                         return;
-                    if (this._barItemsCount <= 0)                 return;
-                    if (this._variantsUsed >= cfg.maxVariants)    return;
-                    if (this.tapaProducts.length === 0)           return;
-                    this.showTapaModal = true;
-                },
-
-                closeTapaModal() {
-                    this.showTapaModal = false;
-                },
-
-                addTapa(tapaProduct) {
-                    // tapaProduct.price ya viene resuelto por getPriceForProduct() en el backend
-                    this.add({
-                        id:          tapaProduct.id,
-                        name:        tapaProduct.name,
-                        price:       tapaProduct.price,
-                        destination: 'kitchen',
-                        removable:   [],
-                        extras:      [],
-                    });
-                    this._variantsUsed++;
-                    this.showTapaModal = false;
-                },
-
-                inc(key) {
-                    const item = this.items.find(i => i._key === key);
-                    if (item) item.quantity++;
-                },
-
-                dec(key) {
-                    const idx = this.items.findIndex(i => i._key === key);
-                    if (idx === -1) return;
-                    this.items[idx].quantity--;
-                    if (this.items[idx].quantity <= 0) this.items.splice(idx, 1);
-                },
-
-                toggleRemove(key, ing) {
-                    const item = this.items.find(i => i._key === key);
-                    if (!item) return;
-                    const i = item.mods.findIndex(m => m.ingredientId === ing.id && m.action === 'remove');
-                    if (i === -1) item.mods.push({ ingredientId: ing.id, name: ing.name, action: 'remove', amountCharged: 0 });
-                    else          item.mods.splice(i, 1);
-                },
-
-                toggleExtra(key, ing) {
-                    const item = this.items.find(i => i._key === key);
-                    if (!item) return;
-                    const i = item.mods.findIndex(m => m.ingredientId === ing.id && m.action === 'add');
-                    if (i === -1) item.mods.push({ ingredientId: ing.id, name: ing.name, action: 'add', amountCharged: ing.price });
-                    else          item.mods.splice(i, 1);
-                },
-
-                hasMod(key, ingId, action) {
-                    const item = this.items.find(i => i._key === key);
-                    return item ? item.mods.some(m => m.ingredientId === ingId && m.action === action) : false;
-                },
-
-                lineTotal(item) {
-                    const extra = item.mods.filter(m => m.action === 'add').reduce((s, m) => s + m.amountCharged, 0);
-                    return (item.price + extra) * item.quantity;
-                },
-
-                get total() {
-                    return this.items.reduce((s, item) => s + this.lineTotal(item), 0);
-                },
-
-                get count() {
-                    return this.items.reduce((s, i) => s + i.quantity, 0);
-                },
-
-                get sendLabel() {
-                    const dests = [...new Set(this.items.map(i => i.destination).filter(Boolean))];
-                    if (dests.length === 1 && dests[0] === 'bar')     return '🍺 Enviar pedido a barra';
-                    if (dests.length === 1 && dests[0] === 'kitchen') return '🍽️ Enviar pedido a cocina';
-                    return '🛎️ Enviar pedido';
-                },
-
-                fmt(n) {
-                    return n.toFixed(2).replace('.', ',') + ' €';
-                },
-
-                async send() {
-                    if (!this.items.length || this.sending) return;
-                    this.sending = true;
-                    this.error   = null;
-                    try {
-                        const res = await fetch('/api/v1/orders', {
-                            method:  'POST',
-                            headers: {
-                                'Content-Type':  'application/json',
-                                'Accept':        'application/json',
-                                'X-CSRF-TOKEN':  document.querySelector('meta[name="csrf-token"]')?.content ?? '',
-                            },
-                            body: JSON.stringify({
-                                table_hash: this.tableHash,
-                                items: this.items.map(item => ({
-                                    product_id:    item.productId,
-                                    variant_id:    item.variantId ?? null,
-                                    quantity:      item.quantity,
-                                    modifications: item.mods.map(m => ({
-                                        ingredient_id:  m.ingredientId,
-                                        action:         m.action,
-                                        amount_charged: m.amountCharged,
-                                    })),
-                                })),
-                            }),
-                        });
-                        const data = await res.json();
-                        if (res.ok && data.success) {
-                            const bill             = Alpine.store('bill');
-                            bill.active            = true;
-                            bill.requested         = false;
-                            bill.method            = null;
-                            bill.paymentDone       = false;
-                            bill.orderTotal        = parseFloat(data.total) || 0;
-                            bill.grandTotal        = parseFloat(data.total) || 0;
-                            bill.originalOrderTotal = parseFloat(data.total) || 0;
-                            this.sent  = true;
-                            this.items = [];
-                            this.open  = false;
-                        } else {
-                            this.error = data.message ?? 'Error al enviar el pedido.';
-                        }
-                    } catch {
-                        this.error = 'Error de conexión. Inténtalo de nuevo.';
-                    } finally {
-                        this.sending = false;
-                    }
-                },
-            });
-
-            Alpine.data('menuFilters', () => ({
-                products: list,
-                activeAllergens: [],
-                activeDestination: null,
-                activeCategory: null,    // ID de categoría seleccionada, null = todas
-
-                /**
-                 * Activa o desactiva la exclusión de un alérgeno.
-                 * "Sin X" = ocultar productos que CONTENGAN el alérgeno X.
-                 */
-                toggleAllergen(id) {
-                    const idx = this.activeAllergens.indexOf(id);
-                    if (idx === -1) {
-                        this.activeAllergens.push(id);
-                    } else {
-                        this.activeAllergens.splice(idx, 1);
-                    }
-                },
-
-                /**
-                 * Activa/desactiva el filtro de destino (toggle).
-                 */
-                setDestination(dest) {
-                    this.activeDestination = this.activeDestination === dest ? null : dest;
-                    if (this.activeCategory !== null && !this.isCategoryVisible(this.activeCategory)) {
-                        this.activeCategory = null;
-                    }
-                    this.activeAllergens = this.activeAllergens.filter(a => this.visibleAllergenKeys.includes(a));
-                },
-
-                /**
-                 * Filtra por categoría. Al pulsar la misma dos veces se desactiva (toggle).
-                 * Muestra ÚNICAMENTE los productos de esa categoría.
-                 */
-                setCategory(id) {
-                    this.activeCategory = this.activeCategory === id ? null : id;
-                },
-
-                /**
-                 * Un producto es visible si pasa los tres filtros:
-                 *  - Su categoría coincide con activeCategory (si hay alguna activa).
-                 *  - Su destino coincide con activeDestination (si hay alguno activo).
-                 *  - No contiene ninguno de los alérgenos excluidos.
-                 */
-                isProductVisible(productId) {
-                    const p = this.products.find(item => item.id === productId);
-                    if (!p) return true;
-                    if (this.activeCategory !== null && p.categoryId !== this.activeCategory) return false;
-                    if (this.activeDestination !== null && p.destination !== this.activeDestination) return false;
-                    if (this.activeAllergens.some(type => p.allergenTypes.includes(type))) return false;
-                    return true;
-                },
-
-                /**
-                 * Una sección de categoría es visible si:
-                 *  - No hay filtro de categoría activo, o es la categoría seleccionada.
-                 *  - Al menos uno de sus productos pasa los demás filtros.
-                 */
-                isCategoryVisible(categoryId) {
-                    if (this.activeCategory !== null && this.activeCategory !== categoryId) return false;
-                    const items = this.products.filter(p => p.categoryId === categoryId);
-                    if (items.length === 0) return true;
-                    return items.some(p => this.isProductVisible(p.id));
-                },
-
-                get visibleAllergenKeys() {
-                    return [...new Set(
-                        this.products
-                            .filter(p => this.activeDestination === null || p.destination === this.activeDestination)
-                            .flatMap(p => p.allergenTypes)
-                    )];
-                },
-
-                get visibleCount() {
-                    return this.products.filter(p => this.isProductVisible(p.id)).length;
-                },
-
-                get hasActiveFilters() {
-                    return this.activeAllergens.length > 0
-                        || this.activeDestination !== null
-                        || this.activeCategory !== null;
-                },
-
-                clearAll() {
-                    this.activeAllergens = [];
-                    this.activeDestination = null;
-                    this.activeCategory = null;
-                },
-            }));
-
-            // ── Estado global del chat ───────────────────────────────────
-            Alpine.store('chat', { open: false });
-
-            // ── Solicitud de cuenta ──────────────────────────────────────
-            Alpine.store('bill', {
-                active:      @json($hasActiveOrder),
-                requested:   @json($billRequested),
-                sending:     false,
-                error:       null,
-                choosing:    false,
-                method:      null,
-                tableHash:   '{{ $table->unique_hash }}',
-
-                // Estado de la pantalla de propina
-                showingTip:  false,
-                tipAmount:   0,
-                tipPercent:  null,
-                orderTotal:         @json((float) $activeOrderTotal),
-                originalOrderTotal: @json((float) $originalOrderTotal),
-                grandTotal:         @json((float) $activeOrderTotal),
-
-                // Estado de pago con tarjeta
-                payingCard:   false,
-                stripeReady:  false,
-                stripeError:  null,
-                stripeTotal:  0,
-                paymentDone:  false,
-                _stripe:      null,
-                _elements:    null,
-
-                // Cobro partido
-                splitEnabled:           @json($splitPaymentEnabled),
-                splitMaxParts:          @json($splitPaymentMaxParts),
-                splitEquitativeLocked:  false,
-                showingSplit:           false,
-                splitMode:              null,
-                splitShowItems:    false,
-                splitShowEq:       false,
-                splitItems:        [],
-                splitSelected:     [],
-                splitPeople:       2,
-                splitPayingCard:   false,
-                splitStripeReady:  false,
-                splitStripeError:  null,
-                splitStripeTotal:  0,
-                splitStripeTip:    0,
-                _splitStripe:      null,
-                _splitElements:    null,
-
-                // Propina para efectivo
-                showingCashTip:    false,
-                cashTipAmount:     0,
-                cashTipPercent:    null,
-                cashGrandTotal:    0,
-
-                // Propina para cobro partido
-                showingSplitTip:    false,
-                splitTipAmount:     0,
-                splitTipPercent:    null,
-                splitTipBase:       0,
-                splitTipType:       null,
-                splitTipItemIds:    [],
-                splitTipGrandTotal: 0,
-
-                open() {
-                    if (this.requested || this.sending) return;
-                    this.error    = null;
-                    this.choosing = true;
-                },
-
-                close() {
-                    this.choosing = false;
-                },
-
-                // Pago en efectivo: envía la solicitud de cuenta al camarero
-                async requestCash() {
-                    if (this.requested || this.sending) return;
-                    this.choosing = false;
-                    this.sending  = true;
-                    this.error    = null;
-                    try {
-                        const res = await fetch('/api/v1/bill-request/' + this.tableHash, {
-                            method:  'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Accept':       'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
-                            },
-                            body: JSON.stringify({ payment_method: 'cash', tip: this.cashTipAmount }),
-                        });
-                        const data = await res.json();
-                        if (res.ok && data.success) {
-                            this.requested = true;
-                            this.method    = 'cash';
-                        } else {
-                            if (res.status === 404) this.active = false;
-                            this.error = data.message ?? 'Error al solicitar la cuenta.';
-                        }
-                    } catch {
-                        this.error = 'Error de conexión. Inténtalo de nuevo.';
-                    } finally {
-                        this.sending = false;
-                    }
-                },
-
-                // Paso 1 — Pago con tarjeta: obtiene el total actual y abre la pantalla de propina
-                async openCardPayment() {
-                    this.choosing = false;
-                    try {
-                        const res  = await fetch('/api/v1/payment/' + this.tableHash + '/total', {
-                            headers: { 'Accept': 'application/json' },
-                        });
-                        const data = await res.json();
-                        if (!res.ok || !data.success) {
-                            this.active = false;
-                            this.error  = data.message ?? 'No hay un pedido activo.';
-                            return;
-                        }
-                        this.orderTotal = parseFloat(data.total) || 0;
-                        this.grandTotal = parseFloat(data.total) || 0;
-                    } catch {
-                        // si falla el fetch se usa el total cacheado en page load
-                    }
-                    this.tipAmount  = 0;
-                    this.tipPercent = null;
-                    this.showingTip = true;
-                },
-
-                // Selecciona un porcentaje de propina predefinido
-                setTipPercent(pct) {
-                    this.tipPercent = pct;
-                    this.tipAmount  = Math.round(this.orderTotal * pct) / 100;
-                    this.grandTotal = this.orderTotal + this.tipAmount;
-                },
-
-                // Actualiza la propina desde el input personalizado
-                updateCustomTip(value) {
-                    this.tipPercent = null;
-                    const parsed    = parseFloat(value) || 0;
-                    this.tipAmount  = Math.max(0, Math.round(parsed * 100) / 100);
-                    this.grandTotal = this.orderTotal + this.tipAmount;
-                },
-
-                // Cierra la pantalla de propina y vuelve a elegir método de pago
-                closeTip() {
-                    this.showingTip = false;
-                    this.tipAmount  = 0;
-                    this.tipPercent = null;
-                    this.choosing   = true;
-                },
-
-                // Paso 2 — Crea el PaymentIntent con la propina y abre Stripe Elements
-                async proceedToStripe() {
-                    this.showingTip  = false;
-                    this.payingCard  = true;
-                    this.stripeReady = false;
-                    this.stripeError = null;
-                    this.sending     = true;
-                    try {
-                        const res = await fetch('/api/v1/payment/' + this.tableHash + '/intent', {
-                            method:  'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Accept':       'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
-                            },
-                            body: JSON.stringify({ tip: this.tipAmount }),
-                        });
-                        const data = await res.json();
-                        if (!res.ok) {
-                            this.stripeError = data.message ?? 'No se pudo iniciar el pago.';
-                            this.payingCard  = false;
-                            return;
-                        }
-                        this.stripeTotal = data.grand_total;
-                        this.grandTotal  = data.grand_total;
-                        requestAnimationFrame(() => requestAnimationFrame(() => this._mountStripe(data.client_secret)));
-                    } catch {
-                        this.stripeError = 'Error de conexión al iniciar el pago.';
-                        this.payingCard  = false;
-                    } finally {
-                        this.sending = false;
-                    }
-                },
-
-                _mountStripe(clientSecret) {
-                    const pk = document.querySelector('meta[name="stripe-key"]')?.content ?? '';
-                    if (!pk || !window.Stripe) {
-                        this.stripeError = 'Stripe no disponible. Recarga la página.';
-                        this.payingCard  = false;
-                        return;
-                    }
-                    try {
-                        this._stripe   = Stripe(pk);
-                        this._elements = this._stripe.elements({ clientSecret, locale: 'es' });
-                        const el = this._elements.create('payment');
-                        el.mount('#stripe-payment-element');
-                        el.on('ready', () => { this.stripeReady = true; });
-                    } catch (e) {
-                        this.stripeError = 'Error al cargar el formulario de pago. Inténtalo de nuevo.';
-                        this.payingCard  = false;
-                    }
-                },
-
-                closeCardPayment() {
-                    this.payingCard  = false;
-                    this.stripeError = null;
-                    this._elements   = null;
-                    this._stripe     = null;
-                },
-
-                async submitCardPayment() {
-                    if (!this._stripe || !this._elements || this.sending) return;
-                    this.sending     = true;
-                    this.stripeError = null;
-                    try {
-                        const { error, paymentIntent } = await this._stripe.confirmPayment({
-                            elements:      this._elements,
-                            confirmParams: { return_url: window.location.href },
-                            redirect:      'if_required',
-                        });
-                        if (error) {
-                            this.stripeError = error.message;
-                            return;
-                        }
-                        if (paymentIntent && paymentIntent.status === 'succeeded') {
-                            const res = await fetch('/api/v1/payment/' + this.tableHash + '/confirm', {
-                                method:  'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'Accept':       'application/json',
-                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
-                                },
-                                body: JSON.stringify({ payment_intent_id: paymentIntent.id, tip: this.tipAmount }),
-                            });
-                            const data = await res.json();
-                            if (res.ok && data.success) {
-                                this.payingCard  = false;
-                                this.paymentDone = true;
-                                this.requested   = true;
-                                this.active      = false;
-                                this.method      = 'card';
-                            } else {
-                                this.stripeError = data.message ?? 'Error al confirmar el pago.';
-                            }
-                        }
-                    } catch {
-                        this.stripeError = 'Error de conexión. Inténtalo de nuevo.';
-                    } finally {
-                        this.sending = false;
-                    }
-                },
-
-                // ── Cobro partido ─────────────────────────────────────────
-                async _loadSplitItems() {
-                    try {
-                        const res  = await fetch('/api/v1/payment/' + this.tableHash + '/split/items', {
-                            headers: { 'Accept': 'application/json' },
-                        });
-                        const data = await res.json();
-                        if (res.ok && data.success) {
-                            this.splitItems            = data.items;
-                            this.splitEquitativeLocked = data.equitative_locked ?? false;
-                        } else {
-                            this.splitItems = [];
-                        }
-                    } catch {
-                        this.splitItems = [];
-                    }
-                    this.splitSelected = [];
-                },
-
-                isItemSelected(id) {
-                    return this.splitSelected.includes(id);
-                },
-
-                toggleSplitItem(id, claimed) {
-                    if (claimed) return;
-                    const idx = this.splitSelected.indexOf(id);
-                    if (idx === -1) this.splitSelected.push(id);
-                    else            this.splitSelected.splice(idx, 1);
-                },
-
-                get splitItemsTotal() {
-                    const sel = this.splitSelected;
-                    return this.splitItems
-                        .filter(i => sel.includes(i.id))
-                        .reduce((sum, i) => sum + i.total, 0);
-                },
-
-                get splitMyPart() {
-                    const p = Math.max(2, parseInt(this.splitPeople) || 2);
-                    return this.originalOrderTotal / p;
-                },
-
-                openSplit() {
-                    if (this.requested || this.sending) return;
-                    this.choosing     = false;
-                    this.showingSplit = true;
-                },
-
-                closeSplitSelector() {
-                    this.showingSplit = false;
-                },
-
-                async openSplitItems() {
-                    this.showingSplit = false;
-                    this.splitMode      = 'items';
-                    this.splitShowItems = true;
-                    await this._loadSplitItems();
-                },
-
-                closeSplitItems() {
-                    this.splitShowItems = false;
-                    this.splitMode      = null;
-                    this.splitSelected  = [];
-                },
-
-                openSplitEq() {
-                    this.showingSplit = false;
-                    this.splitMode    = 'equitable';
-                    this.splitPeople  = 2;
-                    this.splitShowEq  = true;
-                },
-
-                closeSplitEq() {
-                    this.splitShowEq = false;
-                    this.splitMode   = null;
-                },
-
-                // Propina para efectivo
-                openCashTip() {
-                    this.choosing       = false;
-                    this.cashTipAmount  = 0;
-                    this.cashTipPercent = null;
-                    this.cashGrandTotal = this.orderTotal;
-                    this.showingCashTip = true;
-                },
-
-                setCashTipPercent(pct) {
-                    this.cashTipPercent = pct;
-                    this.cashTipAmount  = Math.round(this.orderTotal * pct) / 100;
-                    this.cashGrandTotal = this.orderTotal + this.cashTipAmount;
-                },
-
-                updateCustomCashTip(value) {
-                    this.cashTipPercent = null;
-                    const parsed        = parseFloat(value) || 0;
-                    this.cashTipAmount  = Math.max(0, Math.round(parsed * 100) / 100);
-                    this.cashGrandTotal = this.orderTotal + this.cashTipAmount;
-                },
-
-                closeCashTip() {
-                    this.showingCashTip = false;
-                    this.cashTipAmount  = 0;
-                    this.cashTipPercent = null;
-                    this.choosing       = true;
-                },
-
-                async confirmCashPayment() {
-                    this.showingCashTip = false;
-                    await this.requestCash();
-                },
-
-                // Propina para cobro partido
-                openSplitTip(amount, type, itemIds) {
-                    this.splitTipBase       = amount;
-                    this.splitTipType       = type;
-                    this.splitTipItemIds    = itemIds || [];
-                    this.splitTipAmount     = 0;
-                    this.splitTipPercent    = null;
-                    this.splitTipGrandTotal = amount;
-                    this.splitShowItems     = false;
-                    this.splitShowEq        = false;
-                    this.showingSplitTip    = true;
-                },
-
-                setSplitTipPercent(pct) {
-                    this.splitTipPercent    = pct;
-                    this.splitTipAmount     = Math.round(this.splitTipBase * pct) / 100;
-                    this.splitTipGrandTotal = this.splitTipBase + this.splitTipAmount;
-                },
-
-                updateCustomSplitTip(value) {
-                    this.splitTipPercent    = null;
-                    const parsed            = parseFloat(value) || 0;
-                    this.splitTipAmount     = Math.max(0, Math.round(parsed * 100) / 100);
-                    this.splitTipGrandTotal = this.splitTipBase + this.splitTipAmount;
-                },
-
-                closeSplitTip() {
-                    this.showingSplitTip = false;
-                    this.splitTipAmount  = 0;
-                    this.splitTipPercent = null;
-                    if (this.splitTipType === 'items') {
-                        this.splitShowItems = true;
-                    } else {
-                        this.splitShowEq = true;
-                    }
-                },
-
-                async confirmSplitTip() {
-                    this.showingSplitTip = false;
-                    await this.proceedSplitPayment(
-                        this.splitTipGrandTotal,
-                        this.splitTipType,
-                        this.splitTipItemIds,
-                        this.splitTipAmount
-                    );
-                },
-
-                async proceedSplitPayment(amount, type, itemIds, tip = 0) {
-                    const ids = itemIds || [];
-                    this.splitShowItems   = false;
-                    this.splitShowEq      = false;
-                    this.splitPayingCard  = true;
-                    this.splitStripeReady = false;
-                    this.splitStripeError = null;
-                    this.sending          = true;
-                    try {
-                        const url  = type === 'items'
-                            ? '/api/v1/payment/' + this.tableHash + '/split/pay-items'
-                            : '/api/v1/payment/' + this.tableHash + '/split/pay-eq';
-                        const body = type === 'items'
-                            ? { item_ids: ids, tip: tip }
-                            : { people: Math.max(2, parseInt(this.splitPeople) || 2), part_number: 1, tip: tip };
-                        const res = await fetch(url, {
-                            method:  'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Accept':       'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
-                            },
-                            body: JSON.stringify(body),
-                        });
-                        const data = await res.json();
-                        if (!res.ok) {
-                            this.splitStripeError = data.message ?? 'No se pudo iniciar el pago parcial.';
-                            this.splitPayingCard  = false;
-                            return;
-                        }
-                        this.splitStripeTotal = data.amount ?? amount;
-                        this.splitStripeTip   = tip;
-                        requestAnimationFrame(() => requestAnimationFrame(() => this._mountSplitStripe(data.client_secret)));
-                    } catch {
-                        this.splitStripeError = 'Error de conexión al iniciar el pago.';
-                        this.splitPayingCard  = false;
-                    } finally {
-                        this.sending = false;
-                    }
-                },
-
-                _mountSplitStripe(clientSecret) {
-                    const pk = document.querySelector('meta[name="stripe-key"]')?.content ?? '';
-                    if (!pk || !window.Stripe) {
-                        this.splitStripeError = 'Stripe no disponible. Recarga la página.';
-                        this.splitPayingCard  = false;
-                        return;
-                    }
-                    try {
-                        this._splitStripe   = Stripe(pk);
-                        this._splitElements = this._splitStripe.elements({ clientSecret, locale: 'es' });
-                        const el = this._splitElements.create('payment');
-                        el.mount('#split-stripe-element');
-                        el.on('ready', () => { this.splitStripeReady = true; });
-                    } catch {
-                        this.splitStripeError = 'Error al cargar el formulario de pago.';
-                        this.splitPayingCard  = false;
-                    }
-                },
-
-                closeSplitPayment() {
-                    this.splitPayingCard  = false;
-                    this.splitStripeError = null;
-                    this.splitMode        = null;
-                    this._splitElements   = null;
-                    this._splitStripe     = null;
-                },
-
-                async submitSplitPayment() {
-                    if (!this._splitStripe || !this._splitElements || this.sending) return;
-                    this.sending          = true;
-                    this.splitStripeError = null;
-                    try {
-                        const { error, paymentIntent } = await this._splitStripe.confirmPayment({
-                            elements:      this._splitElements,
-                            confirmParams: { return_url: window.location.href },
-                            redirect:      'if_required',
-                        });
-                        if (error) {
-                            this.splitStripeError = error.message;
-                            return;
-                        }
-                        if (paymentIntent && paymentIntent.status === 'succeeded') {
-                            const res = await fetch('/api/v1/payment/' + this.tableHash + '/split/confirm', {
-                                method:  'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'Accept':       'application/json',
-                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
-                                },
-                                body: JSON.stringify({ payment_intent_id: paymentIntent.id, type: this.splitMode }),
-                            });
-                            const data = await res.json();
-                            if (res.ok && data.success) {
-                                this.splitPayingCard = false;
-                                const basePaid       = this.splitStripeTotal - (this.splitStripeTip || 0);
-                                this.orderTotal      = Math.max(0, this.orderTotal - basePaid);
-                                this.grandTotal      = this.orderTotal;
-                                if (data.fully_paid) {
-                                    this.paymentDone = true;
-                                    this.requested   = true;
-                                    this.active      = false;
-                                }
-                            } else {
-                                this.splitStripeError = data.message ?? 'Error al confirmar el pago.';
-                            }
-                        }
-                    } catch {
-                        this.splitStripeError = 'Error de conexión. Inténtalo de nuevo.';
-                    } finally {
-                        this.sending = false;
-                    }
-                },
-            });
-
-            // ── Widget de chat IA (Zampi Design System) ──────────────────
-            Alpine.data('chatWidget', () => ({
-                open:           false,
-                conversationId: null,
-                messages:       [],
-                input:          '',
-                sending:        false,
-                isTyping:       false,
-                closed:         false,
-                error:          null,
-                menuData:       null,
-                msgSeq:         0,
-                _now:           Date.now(),
-                _ticker:        null,
-                cartNotifs:     [],
-                cartNotifSeq:   0,
-
-                /* Vista unificada del carrito — lee del store global */
-                get chatCart() {
-                    return Alpine.store('cart').items.map(i => ({
-                        id:    i.productId,
-                        name:  i.name,
-                        price: i.price,
-                        qty:   i.quantity,
-                    }));
-                },
-
-                init() {
-                    this._ticker = setInterval(() => { this._now = Date.now(); }, 30000);
-
-                    // Scroll al fondo cada vez que la barra del carrito aparece o desaparece
-                    let _prevCartVisible = false;
-                    this.$watch(() => Alpine.store('cart').count, (count) => {
-                        const visible = count > 0;
-                        if (visible !== _prevCartVisible) {
-                            _prevCartVisible = visible;
-                            this.scrollBottom();
-                        }
-                    });
-                },
-                destroy() {
-                    clearInterval(this._ticker);
-                },
-
-                formatTime(ts) {
-                    if (!ts) return '';
-                    const diff = this._now - ts;
-                    if (diff < 60000) return 'Ahora';
-                    const d = new Date(ts);
-                    return d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0');
-                },
-
-                get tableHash() { return Alpine.store('cart').tableHash; },
-                get cartCount()  { return Alpine.store('cart').count; },
-                get cartTotal()  { return Alpine.store('cart').total; },
-                get cartTotalStr() {
-                    return '$' + this.cartTotal.toFixed(2).replace('.', ',');
-                },
-
-                /* ── Apertura / cierre ── */
-                async openChat() {
-                    this.open = true;
-                    Alpine.store('chat').open = true;
-                    document.body.style.overflow = 'hidden';
-                    this.$nextTick(() => {
-                        this.$refs.chatInput?.focus();
-                        this.scrollBottom();
-                    });
-                    if (!this.menuData) await this.loadMenu();
-                    if (!this.conversationId) await this.initConversation();
-                },
-
-                closeChat() {
-                    this.open = false;
-                    Alpine.store('chat').open = false;
-                    document.body.style.overflow = '';
-                },
-
-                /* ── Carga del menú desde la API ── */
-                async loadMenu() {
-                    try {
-                        const res = await fetch('/api/v1/menu/' + this.tableHash, {
-                            headers: { 'Accept': 'application/json' },
-                        });
-                        if (res.ok) {
-                            const data = await res.json();
-                            if (data.success) this.menuData = data.data;
-                        }
-                    } catch { /* falla silenciosamente */ }
-                },
-
-                /* ── Inicio de conversación ── */
-                async initConversation() {
-                    const cats = this.menuData?.categories ?? [];
-                    const qrs  = cats.map(c => this.getCategoryEmoji(c.name) + ' ' + c.name);
-
-                    this.pushMsg({ type: 'system',
-                        text: (this.menuData?.table ?? 'Mesa') + ' · ' + (this.menuData?.restaurant ?? '') });
-                    this.pushMsg({ type: 'bot',
-                        text: '¡Hola! Soy Zampi, tu asistente de pedidos 🍔 ¿Qué te apetece hoy?',
-                        quickReplies: qrs.length ? [...qrs, 'Ver mi pedido'] : ['Ver mi pedido'] });
-
-                    /* Inicia conversación IA en segundo plano */
-                    try {
-                        const res = await fetch('/api/v1/chat/' + this.tableHash + '/start', {
-                            method:  'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Accept':       'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
-                            },
-                        });
-                        const data = await res.json();
-                        if (res.ok && data.success) this.conversationId = data.data.conversation_id;
-                    } catch { /* silent */ }
-                },
-
-                /* ── Mensajes ── */
-                pushMsg(msg) {
-                    this.msgSeq++;
-                    this.messages.push({ _id: this.msgSeq, ...msg });
-                    this.$nextTick(() => this.scrollBottom());
-                },
-
-                async botDelay(text, extra = {}, ms = 880) {
-                    this.isTyping = true;
-                    await new Promise(r => setTimeout(r, ms + Math.random() * 350));
-                    this.isTyping = false;
-                    this.pushMsg({ type: 'bot', text, ...extra });
-                },
-
-                /* ── Quick replies ── */
-                handleQuickReply(label) {
-                    if (this.isTyping || this.sending) return;
-                    this.pushMsg({ type: 'user', text: label, time: Date.now() });
-
-                    const cats    = this.menuData?.categories ?? [];
-                    const matched = cats.find(c => label === this.getCategoryEmoji(c.name) + ' ' + c.name || c.name === label);
-
-                    if (matched) {
-                        this.showCategoryCards(matched);
-                    } else if (label === 'Ver mi pedido') {
-                        this.showCartSummary();
-                    } else if (label === 'Confirmar pedido') {
-                        Alpine.store('cart').open = true;
-                    } else if (label === 'Seguir eligiendo') {
-                        const qrs = cats.map(c => this.getCategoryEmoji(c.name) + ' ' + c.name);
-                        this.botDelay('¿Qué más te gustaría pedir?',
-                            { quickReplies: [...qrs, 'Ver mi pedido'] });
-                    } else if (label === '📋 Nuevo pedido') {
-                        Alpine.store('cart').items = [];
-                        const qrs = cats.map(c => this.getCategoryEmoji(c.name) + ' ' + c.name);
-                        this.botDelay('¡Claro! ¿Qué te gustaría pedir?',
-                            { quickReplies: [...qrs, 'Ver mi pedido'] });
-                    } else {
-                        this.sendToAI(label);
-                    }
-                },
-
-                /* ── Tarjetas de categoría ── */
-                showCategoryCards(category) {
-                    const emoji = this.getCategoryEmoji(category.name);
-                    const cards = category.products.map(p => ({
-                        id:    p.id,
-                        name:  p.name,
-                        desc:  p.description || '',
-                        price: p.price,
-                        emoji,
-                    }));
-                    this.botDelay(
-                        'Aquí tienes nuestra selección de ' + category.name + ' 😋',
-                        { cards, quickReplies: ['Ver mi pedido', 'Confirmar pedido'] }
-                    );
-                },
-
-                /* ── Carrito del chat ── */
-                /* ── Gestión del carrito del chat ── */
-                cartQty(id) {
-                    return Alpine.store('cart').items.find(i => i.productId === id)?.quantity ?? 0;
-                },
-
-                addToCart(card) {
-                    const id = card.id ?? card.productId;
-                    let destination = 'kitchen';
-                    const cat = (this.menuData?.categories ?? []).find(c => c.products.some(p => p.id === id));
-                    if (cat) destination = cat.destination;
-                    Alpine.store('cart').add({ id, name: card.name, price: card.price, destination, removable: [], extras: [] });
-                },
-
-                decreaseQty(card) {
-                    const key = card._key ?? ((card.id ?? card.productId) + ':none');
-                    Alpine.store('cart').dec(key);
-                },
-
-                decreaseQtyMin1(item) {
-                    const existing = Alpine.store('cart').items.find(i => i.productId === item.id);
-                    if (!existing || existing.quantity <= 1) return;
-                    existing.quantity--;
-                },
-
-                showCartNotif(name) {
-                    const id = ++this.cartNotifSeq;
-                    if (this.cartNotifs.length >= 3) this.cartNotifs.shift();
-                    this.cartNotifs.push({ id, name, leaving: false });
-                    setTimeout(() => {
-                        const notif = this.cartNotifs.find(n => n.id === id);
-                        if (notif) notif.leaving = true;
-                        setTimeout(() => {
-                            this.cartNotifs = this.cartNotifs.filter(n => n.id !== id);
-                        }, 250);
-                    }, 2500);
-                },
-
-                removeCartItem(id) {
-                    const item = Alpine.store('cart').items.find(i => i.productId === id);
-                    Alpine.store('cart').items = Alpine.store('cart').items.filter(i => i.productId !== id);
-                    if (item) {
-                        this.showCartNotif(item.name);
-                        const qrs = (this.menuData?.categories ?? []).map(c => this.getCategoryEmoji(c.name) + ' ' + c.name);
-                        this.pushMsg({ type: 'bot',
-                            text: '🗑️ ' + item.name + ' eliminado del pedido.',
-                            quickReplies: Alpine.store('cart').items.length ? ['Ver mi pedido', 'Confirmar pedido', ...qrs] : qrs,
-                        });
-                    }
-                },
-
-                showCartSummary() {
-                    if (!this.chatCart.length) {
-                        const qrs = (this.menuData?.categories ?? []).map(c => this.getCategoryEmoji(c.name) + ' ' + c.name);
-                        this.botDelay('Tu pedido está vacío. ¡Elige algo primero! 😊', { quickReplies: qrs });
-                        return;
-                    }
-                    this.botDelay('¡Aquí está tu pedido! ¿Confirmamos? 🛒', {
-                        cartLive: true,
-                        quickReplies: ['Confirmar pedido', 'Seguir eligiendo'],
-                    });
-                },
-
-                /* ── Confirmación del pedido ── */
-                async confirmOrder() {
-                    if (!this.chatCart.length) {
-                        this.botDelay('No hay nada en tu pedido. ¡Elige algo primero!');
-                        return;
-                    }
-                    this.sending  = true;
-                    this.isTyping = true;
-                    this.error    = null;
-
-                    try {
-                        const res = await fetch('/api/v1/orders', {
-                            method:  'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Accept':       'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
-                            },
-                            body: JSON.stringify({
-                                table_hash: this.tableHash,
-                                items: this.chatCart.map(i => ({
-                                    product_id:    i.id,
-                                    quantity:      i.qty,
-                                    modifications: [],
-                                })),
-                            }),
-                        });
-                        const data = await res.json();
-                        this.isTyping = false;
-
-                        if (res.ok && data.success) {
-                            Alpine.store('cart').items = [];
-                            const bill       = Alpine.store('bill');
-                            bill.active      = true;
-                            bill.requested   = false;
-                            bill.method      = null;
-                            bill.paymentDone = false;
-                            this.pushMsg({ type: 'system',
-                                text: '✅ Pedido #' + data.order_id + ' confirmado — en preparación' });
-                            this.pushMsg({ type: 'bot',
-                                text: '¡Tu pedido está en camino! En unos minutos te lo llevamos a la mesa 🚀',
-                                quickReplies: ['📋 Nuevo pedido'] });
-                        } else {
-                            this.isTyping = false;
-                            this.error = data.message ?? 'Error al confirmar el pedido.';
-                        }
-                    } catch {
-                        this.isTyping = false;
-                        this.error = 'Error de conexión. Inténtalo de nuevo.';
-                    } finally {
-                        this.sending = false;
-                        this.$nextTick(() => this.scrollBottom());
-                    }
-                },
-
-                /* ── Envío de texto libre ── */
-                async sendMessage() {
-                    const text = this.input.trim();
-                    if (!text || this.sending || this.isTyping) return;
-                    this.input = '';
-                    this.pushMsg({ type: 'user', text, time: Date.now() });
-
-                    /* Detectar keywords locales primero */
-                    const lower = text.toLowerCase();
-                    const cats  = this.menuData?.categories ?? [];
-                    const matched = cats.find(c => c.name.toLowerCase() === lower);
-                    if (matched)                                   { this.showCategoryCards(matched); return; }
-                    if (lower.includes('mi pedido') ||
-                        lower.includes('ver pedido') ||
-                        lower.includes('carrito'))                 { this.showCartSummary(); return; }
-                    if (lower.includes('confirmar') &&
-                        lower.includes('pedido'))                  { this.confirmOrder(); return; }
-
-                    /* Detectar intención de eliminar producto del pedido */
-                    if (this.tryRemoveByName(lower, text)) return;
-
-                    /* Detectar producto por nombre con intención de pedido */
-                    if (this.tryAddByName(lower)) return;
-
-                    await this.sendToAI(text);
-                },
-
-                /* ── Eliminar producto del pedido por texto ── */
-                tryRemoveByName(lower, originalText) {
-                    if (!this.chatCart.length) return false;
-                    const norm = s => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-                    const removePatterns = [/\b(quita|quitar|elimina|eliminar|borra|borrar|saca|sacar|cancela|cancelar|no quiero|sin )\b/];
-                    if (!removePatterns.some(p => p.test(norm(lower)))) return false;
-
-                    const nl = norm(lower);
-                    for (const item of this.chatCart) {
-                        const words = norm(item.name).split(/\s+/).filter(w => w.length > 3);
-                        if (words.some(w => nl.includes(w))) {
-                            Alpine.store('cart').items = Alpine.store('cart').items.filter(i => i.productId !== item.id);
-                            const qrs = (this.menuData?.categories ?? []).map(c => this.getCategoryEmoji(c.name) + ' ' + c.name);
-                            this.pushMsg({ type: 'bot',
-                                text: '🗑️ ' + item.name + ' eliminado del pedido. ¿Seguimos? 😊',
-                                quickReplies: this.chatCart.length ? ['Ver mi pedido', 'Confirmar pedido', ...qrs] : qrs,
-                            });
-                            return true;
-                        }
-                    }
-                    return false;
-                },
-
-                /* ── Añadir producto por nombre escrito en el chat ── */
-                tryAddByName(lower) {
-                    if (!this.menuData) return false;
-
-                    /* 1. Bloquear contextos que NO son pedidos */
-                    const blockPatterns = [
-                        /\b(modifica|cambia|actualiza|edita|borra|elimina|quita)\b/,
-                        /\b(precio|coste|cuesta|cu[aá]nto|vale|valor)\b/,
-                        /[¿?]/,
-                        /\b(qu[eé]|cu[aá]l|c[oó]mo|cu[aá]ndo|d[oó]nde|cu[aá]ntos)\b/,
-                        /\b(lleva|tiene|contiene|incluye|hay)\b/,
-                        /\b(alergi[ao]|al[eé]rgeno|intolerancia|gluten|lactosa)\b/,
-                        /\b(ingrediente|receta|composici[oó]n|preparaci[oó]n)\b/,
-                        /\b(informaci[oó]n|info|saber|conocer|explicar|describir|d[eé]cuéntame)\b/,
-                        /\bno\s+(quiero|me|le|pido|necesito)\b/,
-                        /\b(s[oó]lo|solo|sin)\s+\w/,
-                    ];
-                    if (blockPatterns.some(p => p.test(lower))) return false;
-
-                    /* 2. Intención de pedido explícita (word-boundary) */
-                    const intentPatterns = [
-                        /\b(quiero|quisiera|deseo)\b/,
-                        /\b(dame|deme|tr[aá]eme|trae)\b/,
-                        /\b(ponme|pon|ponednos)\b/,
-                        /\b(agrega|agr[eé]game|a[ñn]ade|a[ñn][aá]deme)\b/,
-                        /\b(pido|pedimos|pedir)\b/,
-                        /\b(necesito|necesitamos)\b/,
-                        /\bme\s+(pones|traes|das|puedes\s+traer)\b/,
-                    ];
-                    /* Pedido implícito: mensaje corto que empieza por cantidad + nombre */
-                    const quantityOnlyIntent = lower.trim().length < 45
-                        && /^(un[ao]?|dos|tres|cuatro|cinco|[1-5])\s+\w/.test(lower.trim());
-                    if (!intentPatterns.some(p => p.test(lower)) && !quantityOnlyIntent) return false;
-
-                    /* 3. Buscar producto con word-boundary cuando sea posible */
-                    const allProducts = this.menuData.categories.flatMap(c =>
-                        c.products.map(p => ({ id: p.id, name: p.name, price: p.price,
-                            destination: c.destination,
-                            emoji: this.getCategoryEmoji(c.name) }))
-                    );
-                    const found = allProducts.find(p => {
-                        const name = p.name.toLowerCase();
-                        const esc  = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                        return new RegExp(`\\b${esc}\\b`).test(lower) || lower === name;
-                    });
-                    if (!found) return false;
-
-                    /* 4. Parsear cantidad con word-boundary */
-                    const numWords = { uno: 1, una: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5 };
-                    let qty = 1;
-                    const digitMatch = lower.match(/\b([1-5])\b/);
-                    if (digitMatch) {
-                        qty = parseInt(digitMatch[1]);
-                    } else {
-                        for (const [word, num] of Object.entries(numWords)) {
-                            if (new RegExp(`\\b${word}\\b`).test(lower)) { qty = num; break; }
-                        }
-                    }
-
-                    /* 5. Añadir al carrito unificado */
-                    const existingStore = Alpine.store('cart').items.find(i => i.productId === found.id);
-                    if (existingStore) {
-                        existingStore.quantity += qty;
-                    } else {
-                        for (let _i = 0; _i < qty; _i++) {
-                            Alpine.store('cart').add({ id: found.id, name: found.name, price: found.price, destination: found.destination || 'kitchen', removable: [], extras: [] });
-                        }
-                    }
-
-                    /* 6. Respuesta inmediata del bot */
-                    const cats = this.menuData.categories;
-                    this.pushMsg({
-                        type: 'bot',
-                        text: '✅ ' + (qty > 1 ? qty + '× ' : '') + found.name + ' añadido al pedido. ¿Algo más?',
-                        quickReplies: [...cats.map(c => this.getCategoryEmoji(c.name) + ' ' + c.name), 'Ver mi pedido', 'Confirmar pedido'],
-                    });
-                    return true;
-                },
-
-                /* ── Llamada a la IA ── */
-                async sendToAI(text) {
-                    if (!this.conversationId || this.closed) {
-                        const cats = this.menuData?.categories ?? [];
-                        this.botDelay('Por favor elige una categoría para empezar 😊',
-                            { quickReplies: [...cats.map(c => this.getCategoryEmoji(c.name) + ' ' + c.name), 'Ver mi pedido'] });
-                        return;
-                    }
-                    this.sending  = true;
-                    this.isTyping = true;
-                    this.error    = null;
-
-                    try {
-                        const res = await fetch('/api/v1/chat/' + this.conversationId + '/message', {
-                            method:  'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Accept':       'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
-                            },
-                            body: JSON.stringify({ message: text }),
-                        });
-                        const data = await res.json();
-                        this.isTyping = false;
-
-                        if (res.ok && data.success) {
-                            const cats  = this.menuData?.categories ?? [];
-                            const qrs   = cats.map(c => this.getCategoryEmoji(c.name) + ' ' + c.name);
-                            const cards = (data.data.cards ?? []).map(c => {
-                                const matchedCat = cats.find(cat => cat.products.some(p => p.id === c.id));
-                                return {
-                                    id:          c.id,
-                                    name:        c.name,
-                                    price:       c.price,
-                                    description: c.description,
-                                    image:       c.image ?? null,
-                                    allergens:   (c.allergens ?? []).map(a => ({
-                                        name: a,
-                                        ...this.getAllergenIcon(a),
-                                    })),
-                                    foodIcon: this.getFoodIcon(matchedCat?.name ?? '', c.name),
-                                    emoji:    this.getCategoryEmoji(matchedCat?.name ?? ''),
-                                };
-                            });
-                            this.pushMsg({
-                                type:         'bot',
-                                text:         data.data.reply,
-                                cards:        cards.length ? cards : undefined,
-                                quickReplies: [...qrs, 'Confirmar pedido'],
-                            });
-                            if (data.data.closed) this.closed = true;
-                        } else {
-                            this.error = data.message ?? 'Error al enviar el mensaje.';
-                        }
-                    } catch {
-                        this.isTyping = false;
-                        this.error = 'Error de conexión. Inténtalo de nuevo.';
-                    } finally {
-                        this.sending = false;
-                        this.$nextTick(() => this.scrollBottom());
-                    }
-                },
-
-                /* ── Emoji representativo por nombre de categoría ── */
-                getCategoryEmoji(name) {
-                    const s = (name || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-                    if (/pizza/.test(s))                                          return '🍕';
-                    if (/burger|hamburgues/.test(s))                              return '🍔';
-                    if (/pasta|espaguet|fettuccin|lasana|canelones|carbonara/.test(s)) return '🍝';
-                    if (/paella|arroz|risotto/.test(s))                           return '🍚';
-                    if (/ensalada|salad/.test(s))                                 return '🥗';
-                    if (/sopa|crema|caldo|gazpacho/.test(s))                      return '🥣';
-                    if (/postre|dulce|helado|tarta|bizcocho|mousse|flan|brownie/.test(s)) return '🍰';
-                    if (/cerveza|beer|cana|birra|caña/.test(s))                   return '🍺';
-                    if (/vino|wine|cava|champan|prosecco|sangria/.test(s))        return '🍷';
-                    if (/coctel|cocktail|mojito|margarita|daiquiri|gin/.test(s))  return '🍹';
-                    if (/bebida|refresco|agua|zumo|juice|batido|cola|limonad|cafe/.test(s)) return '🥤';
-                    if (/sushi|maki|nigiri|temaki/.test(s))                       return '🍣';
-                    if (/bocadillo|sandwich|bocata|baguet|wrap/.test(s))          return '🥪';
-                    if (/tapa|tapas|pincho|montadito|racion/.test(s))             return '🍢';
-                    if (/entrante|aperitivo|starter/.test(s))                     return '🫔';
-                    if (/carne|ternera|pollo|pavo|cordero|parrilla|filete|chulet/.test(s)) return '🥩';
-                    if (/pescado|merluza|bacalao|salmon|atun|dorada|lubina/.test(s)) return '🐟';
-                    if (/marisco|gamba|langosta|pulpo|calamar|mejillo/.test(s))   return '🦞';
-                    if (/vegano|vegetarian|vegan|veggie/.test(s))                 return '🥦';
-                    if (/combo|menu del dia|menu|oferta/.test(s))                 return '🎯';
-                    return '🍽️';
-                },
-
-                /* ── Icono por tipo de alimento (categoría del producto) ── */
-                getFoodIcon(categoryName, productName) {
-                    const norm = s => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-                    const s = norm(categoryName) + ' ' + norm(productName);
-                    if (/pizza/.test(s))                                                               return { svgId: 'pizza',     label: 'Pizza' };
-                    if (/burger|hamburgues/.test(s))                                                   return { svgId: 'burger',    label: 'Hamburguesa' };
-                    if (/pasta|espaguet|fettuccin|lasana|canelones|macarron|carbonara|bolonesa/.test(s)) return { svgId: 'pasta',   label: 'Pasta' };
-                    if (/paella|arroz|risotto/.test(s))                                                return { svgId: 'rice',      label: 'Arroz' };
-                    if (/ensalada|salad/.test(s))                                                      return { svgId: 'salad',     label: 'Ensalada' };
-                    if (/sopa|crema|caldo|gazpacho|vichyssoise|consomme/.test(s))                      return { svgId: 'soup',      label: 'Sopa' };
-                    if (/tapa|tapas|pincho|montadito|ración|racion/.test(s))                           return { svgId: 'tapas',     label: 'Tapas' };
-                    if (/entrante|aperitivo|starter/.test(s))                                          return { svgId: 'starter',   label: 'Entrante' };
-                    if (/postre|dulce|helado|tarta|bizcocho|mousse|flan|brownie|crepe|tiramisu/.test(s)) return { svgId: 'dessert', label: 'Postre' };
-                    if (/cerveza|beer|cana|birra|copa de|caña/.test(s))                                return { svgId: 'beer',      label: 'Cerveza' };
-                    if (/vino|wine|cava|champan|prosecco|sangria/.test(s))                             return { svgId: 'wine',      label: 'Vino' };
-                    if (/coctel|cocktail|mojito|margarita|daiquiri|gin|combinado|destilado/.test(s))   return { svgId: 'cocktail',  label: 'Cóctel' };
-                    if (/bebida|refresco|agua|zumo|juice|batido|smoothie|cola|limonad|infusion|cafe/.test(s)) return { svgId: 'drink', label: 'Bebida' };
-                    if (/sushi|maki|nigiri|temaki|onigiri|japon/.test(s))                              return { svgId: 'sushi',     label: 'Sushi' };
-                    if (/bocadillo|sandwich|bocata|baguet|wrap|sub/.test(s))                           return { svgId: 'sandwich',  label: 'Bocadillo' };
-                    if (/carne|ternera|vaca|cerdo|pollo|pavo|cordero|parrilla|grill|asado|filete|costill|entrecot|chulet/.test(s)) return { svgId: 'meat', label: 'Carne' };
-                    if (/pescado|merluza|bacalao|salmon|atun|dorada|lubina|lenguado|rodaballo/.test(s)) return { svgId: 'fish-dish', label: 'Pescado' };
-                    if (/marisco|gamba|langosta|pulpo|calamar|sepia|almeja|mejillo|ostra|bogavante|chipiro/.test(s)) return { svgId: 'seafood', label: 'Marisco' };
-                    if (/vegano|vegetarian|vegan|veggie/.test(s))                                      return { svgId: 'vegan',     label: 'Vegano' };
-                    return null;
-                },
-
-                /* ── Mapeo de alérgenos UE (Reglamento 1169/2011) ── */
-                getAllergenIcon(name) {
-                    const n = name.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-                    if (/gluten|trigo|cebada|centeno|avena|espelta|kamut|harina/.test(n))
-                        return { svgId: 'gluten',      label: 'Gluten' };
-                    if (/crustaceo|gamba|langosta|langostino|cangrejo|bogavante|cigala/.test(n))
-                        return { svgId: 'crustaceans', label: 'Crustáceos' };
-                    if (/huevo|yema|clara|ovoalbumina/.test(n))
-                        return { svgId: 'egg',         label: 'Huevo' };
-                    if (/pescado|merluza|bacalao|salmon|atun|anchoa|sardina|boqueron|lenguado|dorada|lubina/.test(n))
-                        return { svgId: 'fish',        label: 'Pescado' };
-                    if (/cacahuete|mani/.test(n))
-                        return { svgId: 'peanuts',     label: 'Cacahuetes' };
-                    if (/soja|soya|tofu|edamame/.test(n))
-                        return { svgId: 'soy',         label: 'Soja' };
-                    if (/leche|lacteo|lactosa|queso|mantequilla|nata|yogur|suero|caseina/.test(n))
-                        return { svgId: 'milk',        label: 'Lácteos' };
-                    if (/nuez|nueces|almendra|avellana|pistacho|anacardo|macadamia|pacana|brasil|castana/.test(n))
-                        return { svgId: 'nuts',        label: 'Frutos secos' };
-                    if (/apio/.test(n))
-                        return { svgId: 'celery',      label: 'Apio' };
-                    if (/mostaza/.test(n))
-                        return { svgId: 'mustard',     label: 'Mostaza' };
-                    if (/sesamo|tahini|tahina/.test(n))
-                        return { svgId: 'sesame',      label: 'Sésamo' };
-                    if (/sulfit|azufre|so2|dioxido/.test(n))
-                        return { svgId: 'sulphites',   label: 'Sulfitos' };
-                    if (/altramuz|lupino|lupina/.test(n))
-                        return { svgId: 'lupin',       label: 'Altramuces' };
-                    if (/molusco|calamar|pulpo|ostra|almeja|mejillon|sepia|chipiro/.test(n))
-                        return { svgId: 'molluscs',    label: 'Moluscos' };
-                    return { svgId: null, label: name };
-                },
-
-                /* ── Estilos diferenciados para quick replies ── */
-                getQrStyle(qr) {
-                    const base = 'border-radius:9999px; padding:5px 12px; font-size:12px; font-family:\'Space Grotesk\',sans-serif; font-weight:600; cursor:pointer; transition:all 150ms ease; border:1px solid; ';
-                    if (qr === 'Confirmar pedido')
-                        return base + 'background:rgba(34,197,94,0.18); color:#22C55E; border-color:rgba(34,197,94,0.5);';
-                    if (qr === 'Ver mi pedido')
-                        return base + 'background:rgba(34,211,238,0.15); color:#22D3EE; border-color:rgba(34,211,238,0.45);';
-                    return base + 'background:rgba(46,80,176,0.22); color:#8FA8E8; border-color:rgba(46,80,176,0.5);';
-                },
-
-                onQrEnter(el, qr) {
-                    if (qr === 'Confirmar pedido') { el.style.background = '#16A34A'; el.style.color = '#fff'; }
-                    else if (qr === 'Ver mi pedido') { el.style.background = '#0891B2'; el.style.color = '#fff'; }
-                    else { el.style.background = '#1A3380'; el.style.color = '#fff'; }
-                },
-
-                onQrLeave(el, qr) {
-                    if (qr === 'Confirmar pedido') { el.style.background = 'rgba(34,197,94,0.18)'; el.style.color = '#22C55E'; }
-                    else if (qr === 'Ver mi pedido') { el.style.background = 'rgba(34,211,238,0.15)'; el.style.color = '#22D3EE'; }
-                    else { el.style.background = 'rgba(46,80,176,0.22)'; el.style.color = '#8FA8E8'; }
-                },
-
-                scrollBottom() {
-                    this.$nextTick(() => {
-                        requestAnimationFrame(() => {
-                            this.$refs.chatEnd?.scrollIntoView({ block: 'end' });
-                        });
-                    });
-                },
-            }));
-        });
-    </script>
+    <script id="menu-context" type="application/json">@json($menuContext)</script>
 </head>
 
 <body class="font-sans antialiased bg-gray-200 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen">
@@ -2519,7 +1098,7 @@
                         <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
                         </svg>
-                        <span x-text="$store.bill.paymentDone ? '¡Pago completado!' : ($store.bill.method === 'cash' ? 'Cuenta solicitada · Efectivo' : 'Cuenta solicitada · Tarjeta')"></span>
+                        <span x-text="$store.bill.paymentDone ? '¡Pago completado!' : ($store.bill.method === 'cash' ? 'Cuenta solicitada · Efectivo' : ($store.bill.method === 'mixed' ? 'Tarjeta pagada · Espera al camarero' : 'Cuenta solicitada · Tarjeta'))"></span>
                     </span>
                 </template>
             </button>
@@ -2527,6 +1106,23 @@
                 <p class="mt-1 text-xs text-red-600 bg-white rounded px-2 py-1 shadow"
                    role="alert"
                    x-text="$store.bill.error"></p>
+            </template>
+            <template x-if="$store.bill.paymentDone && $store.bill.paidOrderId">
+                <a :href="$store.bill.ticketDownloadBase + '/' + $store.bill.paidOrderId + '/download?hash=' + $store.bill.tableHash"
+                   target="_blank"
+                   rel="noopener noreferrer"
+                   class="mt-2 w-full flex items-center justify-center gap-2 rounded-xl
+                          bg-white/20 hover:bg-white/30 text-white text-sm font-medium
+                          py-2.5 px-4 transition-colors focus:outline-none
+                          focus:ring-2 focus:ring-white/50"
+                   :aria-label="'Descargar ticket del pedido #' + $store.bill.paidOrderId">
+                    <svg aria-hidden="true" class="w-4 h-4 shrink-0" fill="none"
+                         stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                              d="M12 16v-8m0 8l-3-3m3 3l3-3M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2"/>
+                    </svg>
+                    Descargar ticket
+                </a>
             </template>
         </div>
 
@@ -2584,9 +1180,23 @@
                     </button>
                 </div>
 
+                {{-- Cobro mixto (efectivo + tarjeta) --}}
+                <div class="mt-3">
+                    <button type="button"
+                            @click="$store.bill.openMixed()"
+                            class="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl
+                                   bg-gray-50 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700
+                                   hover:border-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20
+                                   transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500">
+                        <span class="text-xl" aria-hidden="true">💵💳</span>
+                        <span class="font-semibold text-sm text-gray-800 dark:text-gray-200">Cobro mixto</span>
+                        <span class="text-xs text-gray-400 dark:text-gray-500">(efectivo + tarjeta)</span>
+                    </button>
+                </div>
+
                 {{-- Cobro partido (solo si está habilitado para este restaurante) --}}
                 <template x-if="$store.bill.splitEnabled">
-                    <div class="mt-4 space-y-2">
+                    <div class="mt-3 space-y-2">
                         <div class="flex items-center gap-2">
                             <div class="flex-1 h-px bg-gray-200 dark:bg-gray-700"></div>
                             <span class="text-xs font-medium text-gray-400 dark:text-gray-500 whitespace-nowrap px-2">o paga tu parte</span>
@@ -3552,6 +2162,329 @@
             </div>
         </div>{{-- /split stripe sheet --}}
 
+        {{-- ── Sheet: cobro mixto — selector de importe ───────────── --}}
+        <div x-show="$store.bill.showingMixed"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
+             @click.self="$store.bill.closeMixed()"
+             @keydown.escape.window="$store.bill.closeMixed()"
+             aria-modal="true" role="dialog" aria-label="Cobro mixto — elige importe en efectivo">
+
+            <div x-show="$store.bill.showingMixed"
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="translate-y-full"
+                 x-transition:enter-end="translate-y-0"
+                 x-transition:leave="transition ease-in duration-200"
+                 x-transition:leave-start="translate-y-0"
+                 x-transition:leave-end="translate-y-full"
+                 class="absolute bottom-0 left-0 right-0 bg-white dark:bg-gray-900
+                        rounded-t-2xl shadow-2xl px-5 pb-8 pt-4">
+
+                <div class="w-10 h-1 rounded-full bg-gray-300 dark:bg-gray-600 mx-auto mb-5"></div>
+
+                <div class="flex items-center justify-between mb-5">
+                    <button type="button" @click="$store.bill.closeMixed()"
+                            class="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 focus:outline-none focus:underline"
+                            aria-label="Volver a métodos de pago">
+                        ← Volver
+                    </button>
+                    <h2 class="text-lg font-bold text-gray-900 dark:text-white">Cobro mixto</h2>
+                    <div class="w-14"></div>
+                </div>
+
+                <p class="text-sm text-gray-500 dark:text-gray-400 text-center mb-6">
+                    Elige cuánto pagas en efectivo. El resto se cobrará con tarjeta.
+                </p>
+
+                {{-- Total del pedido --}}
+                <div class="bg-gray-50 dark:bg-gray-800 rounded-xl px-4 py-3 mb-5 flex justify-between items-center">
+                    <span class="text-sm text-gray-500 dark:text-gray-400">Total del pedido</span>
+                    <span class="font-bold text-gray-900 dark:text-white"
+                          x-text="$store.bill.orderTotal.toFixed(2).replace('.', ',') + ' €'"></span>
+                </div>
+
+                {{-- Slider de importe en efectivo --}}
+                <div class="mb-5">
+                    <label for="mixed-cash-input" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Importe en efectivo
+                    </label>
+                    <div class="flex items-center gap-3">
+                        <input type="range"
+                               id="mixed-cash-slider"
+                               :min="0.01"
+                               :max="($store.bill.orderTotal - 0.50).toFixed(2)"
+                               step="0.01"
+                               x-model="$store.bill.mixedCashAmount"
+                               class="flex-1 accent-amber-500"
+                               aria-label="Importe en efectivo">
+                        <div class="relative w-28">
+                            <input type="number"
+                                   id="mixed-cash-input"
+                                   :min="0.01"
+                                   :max="($store.bill.orderTotal - 0.50).toFixed(2)"
+                                   step="0.01"
+                                   x-model="$store.bill.mixedCashAmount"
+                                   class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 pr-7
+                                          text-sm text-right bg-white dark:bg-gray-800 dark:text-white
+                                          focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                                   aria-label="Importe exacto en efectivo">
+                            <span class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 text-sm">€</span>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Resumen del desglose --}}
+                <div class="rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 px-4 py-3 mb-6 space-y-2">
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-600 dark:text-gray-300 flex items-center gap-1">
+                            <span aria-hidden="true">💵</span> Pagas en efectivo
+                        </span>
+                        <span class="font-semibold text-gray-900 dark:text-white"
+                              x-text="parseFloat($store.bill.mixedCashAmount || 0).toFixed(2).replace('.', ',') + ' €'"></span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-600 dark:text-gray-300 flex items-center gap-1">
+                            <span aria-hidden="true">💳</span> Pagas con tarjeta
+                        </span>
+                        <span class="font-semibold text-gray-900 dark:text-white"
+                              x-text="$store.bill.mixedCardAmount.toFixed(2).replace('.', ',') + ' €'"></span>
+                    </div>
+                </div>
+
+                <template x-if="!$store.bill.mixedCashValid">
+                    <p class="text-xs text-amber-600 dark:text-amber-400 text-center mb-3" role="alert">
+                        El importe con tarjeta debe ser al menos 0,50 €.
+                    </p>
+                </template>
+
+                <button type="button"
+                        @click="$store.bill.openMixedTip()"
+                        :disabled="!$store.bill.mixedCashValid || $store.bill.sending"
+                        class="w-full py-3.5 rounded-xl bg-amber-500 hover:bg-amber-600 disabled:opacity-50
+                               text-white font-bold text-base shadow-sm transition-colors
+                               focus:outline-none focus:ring-4 focus:ring-amber-300">
+                    Continuar → Añadir propina
+                </button>
+
+                <button type="button"
+                        @click="$store.bill.closeMixed()"
+                        class="w-full mt-3 py-2.5 rounded-xl text-sm font-medium text-gray-500 dark:text-gray-400
+                               hover:text-gray-700 dark:hover:text-gray-200 focus:outline-none focus:underline transition-colors">
+                    Cancelar
+                </button>
+            </div>
+        </div>{{-- /mixed selector sheet --}}
+
+        {{-- ── Sheet: cobro mixto — propina (sobre la parte de tarjeta) ── --}}
+        <div x-show="$store.bill.showingMixedTip"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
+             @click.self="$store.bill.closeMixedTip()"
+             @keydown.escape.window="$store.bill.closeMixedTip()"
+             aria-modal="true" role="dialog" aria-label="Añadir propina al pago con tarjeta">
+
+            <div x-show="$store.bill.showingMixedTip"
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="translate-y-full"
+                 x-transition:enter-end="translate-y-0"
+                 x-transition:leave="transition ease-in duration-200"
+                 x-transition:leave-start="translate-y-0"
+                 x-transition:leave-end="translate-y-full"
+                 class="absolute bottom-0 left-0 right-0 bg-white dark:bg-gray-900
+                        rounded-t-2xl shadow-2xl px-5 pb-8 pt-4">
+
+                <div class="w-10 h-1 rounded-full bg-gray-300 dark:bg-gray-600 mx-auto mb-5"></div>
+
+                <div class="flex items-center justify-between mb-5">
+                    <button type="button" @click="$store.bill.closeMixedTip()"
+                            class="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 focus:outline-none focus:underline"
+                            aria-label="Volver a cobro mixto">
+                        ← Volver
+                    </button>
+                    <h2 class="text-lg font-bold text-gray-900 dark:text-white">Propina (tarjeta)</h2>
+                    <div class="w-14"></div>
+                </div>
+
+                <p class="text-sm text-gray-500 dark:text-gray-400 text-center mb-4">
+                    ¿Quieres añadir propina al pago con tarjeta?
+                </p>
+
+                <div class="grid grid-cols-4 gap-2 mb-4">
+                    <template x-for="pct in [5, 10, 15, 20]" :key="pct">
+                        <button type="button"
+                                @click="$store.bill.setMixedTipPercent(pct)"
+                                :class="$store.bill.mixedTipPercent === pct
+                                    ? 'bg-amber-500 text-white border-amber-500'
+                                    : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-amber-400'"
+                                class="py-2.5 rounded-xl border-2 text-sm font-semibold transition-colors
+                                       focus:outline-none focus:ring-2 focus:ring-amber-400"
+                                :aria-pressed="$store.bill.mixedTipPercent === pct"
+                                :aria-label="'Propina ' + pct + '%'">
+                            <span x-text="pct + '%'"></span>
+                        </button>
+                    </template>
+                </div>
+
+                <div class="relative mb-5">
+                    <input type="number"
+                           min="0" max="500" step="0.01"
+                           placeholder="0,00"
+                           @input="$store.bill.updateCustomMixedTip($event.target.value)"
+                           class="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-3 pr-10
+                                  text-sm bg-white dark:bg-gray-800 dark:text-white
+                                  focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                           aria-label="Importe personalizado de propina">
+                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">€</span>
+                </div>
+
+                <div class="bg-gray-50 dark:bg-gray-800 rounded-xl px-4 py-3 mb-5 space-y-2">
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-500 dark:text-gray-400">Pago con tarjeta</span>
+                        <span x-text="$store.bill.mixedTipBase.toFixed(2).replace('.', ',') + ' €'"
+                              class="font-medium text-gray-700 dark:text-gray-300"></span>
+                    </div>
+                    <template x-if="$store.bill.mixedTipAmount > 0">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500 dark:text-gray-400">Propina</span>
+                            <span class="font-medium text-gray-700 dark:text-gray-300"
+                                  x-text="'+ ' + $store.bill.mixedTipAmount.toFixed(2).replace('.', ',') + ' €'"></span>
+                        </div>
+                    </template>
+                    <div class="flex justify-between text-base font-bold border-t border-gray-200 dark:border-gray-700 pt-2">
+                        <span class="text-gray-900 dark:text-white">Total con tarjeta</span>
+                        <span class="text-amber-600 dark:text-amber-400"
+                              x-text="$store.bill.mixedTipGrandTotal.toFixed(2).replace('.', ',') + ' €'"></span>
+                    </div>
+                </div>
+
+                <button type="button"
+                        @click="$store.bill.confirmMixedTip()"
+                        :disabled="$store.bill.sending"
+                        class="w-full py-3.5 rounded-xl bg-amber-500 hover:bg-amber-600 disabled:opacity-60
+                               text-white font-bold text-base shadow-sm transition-colors
+                               focus:outline-none focus:ring-4 focus:ring-amber-300">
+                    <span x-show="!$store.bill.sending">
+                        <span x-show="$store.bill.mixedTipAmount > 0"
+                              x-text="'💳 Pagar ' + $store.bill.mixedTipGrandTotal.toFixed(2).replace(\'.\', \',\') + ' € con tarjeta'"></span>
+                        <span x-show="$store.bill.mixedTipAmount <= 0">💳 Pagar sin propina</span>
+                    </span>
+                    <span x-show="$store.bill.sending" class="flex items-center justify-center gap-2">
+                        <svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+                        </svg>
+                        Procesando...
+                    </span>
+                </button>
+
+                <button type="button"
+                        @click="$store.bill.closeMixedTip()"
+                        class="w-full mt-3 py-2.5 rounded-xl text-sm font-medium text-gray-500 dark:text-gray-400
+                               hover:text-gray-700 dark:hover:text-gray-200 focus:outline-none focus:underline transition-colors">
+                    Cancelar
+                </button>
+            </div>
+        </div>{{-- /mixed tip sheet --}}
+
+        {{-- ── Sheet: cobro mixto — pago con tarjeta (Stripe) ─────── --}}
+        <div x-show="$store.bill.mixedPayingCard"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
+             @click.self="$store.bill.closeMixedPayment()"
+             @keydown.escape.window="$store.bill.closeMixedPayment()"
+             aria-modal="true" role="dialog" aria-label="Pago con tarjeta — cobro mixto">
+
+            <div x-show="$store.bill.mixedPayingCard"
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="translate-y-full"
+                 x-transition:enter-end="translate-y-0"
+                 x-transition:leave="transition ease-in duration-200"
+                 x-transition:leave-start="translate-y-0"
+                 x-transition:leave-end="translate-y-full"
+                 class="absolute bottom-0 left-0 right-0 bg-white dark:bg-gray-900
+                        rounded-t-2xl shadow-2xl px-5 pb-8 pt-4">
+
+                <div class="w-10 h-1 rounded-full bg-gray-300 dark:bg-gray-600 mx-auto mb-5"></div>
+
+                <div class="flex items-center justify-between mb-5">
+                    <button type="button" @click="$store.bill.closeMixedPayment()"
+                            class="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 focus:outline-none focus:underline"
+                            aria-label="Volver">← Volver</button>
+                    <h2 class="text-lg font-bold text-gray-900 dark:text-white">Pago con tarjeta</h2>
+                    <div class="w-14"></div>
+                </div>
+
+                {{-- Resumen antes de pagar --}}
+                <div class="bg-amber-50 dark:bg-amber-900/20 rounded-xl px-4 py-3 mb-5 space-y-1">
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                            <span aria-hidden="true">💵</span> Efectivo al camarero
+                        </span>
+                        <span class="font-semibold text-gray-800 dark:text-white"
+                              x-text="parseFloat($store.bill.mixedCashAmount || 0).toFixed(2).replace('.', ',') + ' €'"></span>
+                    </div>
+                    <div class="flex justify-between text-sm font-bold">
+                        <span class="text-gray-700 dark:text-gray-200 flex items-center gap-1">
+                            <span aria-hidden="true">💳</span> Cargo tarjeta ahora
+                        </span>
+                        <span class="text-amber-600 dark:text-amber-400"
+                              x-text="$store.bill.mixedStripeTotal.toFixed(2).replace('.', ',') + ' €'"></span>
+                    </div>
+                </div>
+
+                <template x-if="$store.bill.mixedStripeError">
+                    <p class="mb-3 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20
+                               rounded-lg px-4 py-2"
+                       role="alert"
+                       x-text="$store.bill.mixedStripeError"></p>
+                </template>
+
+                <div id="mixed-stripe-element" class="mb-5 min-h-[120px]"></div>
+
+                <div x-show="!$store.bill.mixedStripeReady"
+                     class="flex items-center justify-center py-6 text-sm text-gray-400 gap-2">
+                    <svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+                    </svg>
+                    Cargando formulario...
+                </div>
+
+                <button type="button"
+                        @click="$store.bill.submitMixedPayment()"
+                        :disabled="!$store.bill.mixedStripeReady || $store.bill.sending"
+                        x-show="$store.bill.mixedStripeReady"
+                        class="w-full py-3.5 rounded-xl bg-amber-500 hover:bg-amber-600 disabled:opacity-60
+                               text-white font-bold text-base shadow-sm transition-colors
+                               focus:outline-none focus:ring-4 focus:ring-amber-300">
+                    <span x-show="!$store.bill.sending"
+                          x-text="'💳 Pagar ' + $store.bill.mixedStripeTotal.toFixed(2).replace(\'.\', \',\') + ' €'"></span>
+                    <span x-show="$store.bill.sending" class="flex items-center justify-center gap-2">
+                        <svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+                        </svg>
+                        Procesando...
+                    </span>
+                </button>
+            </div>
+        </div>{{-- /mixed stripe sheet --}}
+
         {{-- ── FAB Carrito ─────────────────────────────────────────── --}}
         <div class="fixed bottom-6 right-4 z-50"
              x-show="$store.cart.count > 0 && !$store.chat.open"
@@ -4110,6 +3043,8 @@
                                         <div class="flex-shrink-0">
                                             <img src="{{ Storage::url($product->image) }}"
                                                  alt="Foto de {{ $product->name }}"
+                                                 loading="lazy"
+                                                 decoding="async"
                                                  class="h-20 w-20 sm:h-24 sm:w-24 object-cover rounded-lg">
                                         </div>
                                     @endif

@@ -62,7 +62,10 @@ class KitchenController extends Controller
     {
         abort_if(! Auth::user()->canAccessKitchen(), 403, 'Acceso denegado.');
 
-        $orders = $this->getActiveOrders()
+        $rawOrders    = $this->getActiveOrders();
+        $pendingCount = $rawOrders->where('status', 'pending')->count();
+
+        $orders = $rawOrders
             ->map(fn(Order $order) => [
                 'id'         => $order->id,
                 'table_name' => $order->table->name,
@@ -84,11 +87,6 @@ class KitchenController extends Controller
             ])
             ->filter(fn($order) => count($order['items']) > 0)
             ->values();
-
-        $ownerId      = Auth::user()->ownerUserId();
-        $pendingCount = Order::whereHas('table', fn($q) => $q->where('user_id', $ownerId))
-            ->where('status', 'pending')
-            ->count();
 
         return response()->json([
             'orders'        => $orders,

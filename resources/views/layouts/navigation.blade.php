@@ -3,7 +3,7 @@
     @php
         $cartaActive   = request()->routeIs('categories.*', 'ingredients.*', 'products.*', 'daily-menus.*');
         $localActive   = request()->routeIs('tables.*', 'zones.*', 'staff.*');
-        $negocioActive = request()->routeIs('tapas.*', 'negocio.*', 'manager.*');
+        $negocioActive = request()->routeIs('tapas.*', 'negocio.*', 'manager.*', 'ticket-config.*');
     @endphp
 
     <!-- Primary Navigation Menu -->
@@ -155,6 +155,9 @@
                                 </x-dropdown-link>
                                 <x-dropdown-link role="menuitem" :href="route('manager.income')" :active="request()->routeIs('manager.*')">
                                     {{ __('Ingresos') }}
+                                </x-dropdown-link>
+                                <x-dropdown-link role="menuitem" :href="route('ticket-config.edit')" :active="request()->routeIs('ticket-config.*')">
+                                    {{ __('Ticket PDF') }}
                                 </x-dropdown-link>
                             </div>
                         </div>
@@ -319,6 +322,9 @@
                 </x-responsive-nav-link>
                 <x-responsive-nav-link :href="route('manager.income')" :active="request()->routeIs('manager.*')">
                     {{ __('Ingresos') }}
+                </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('ticket-config.edit')" :active="request()->routeIs('ticket-config.*')">
+                    {{ __('Ticket PDF') }}
                 </x-responsive-nav-link>
 
                 @endif

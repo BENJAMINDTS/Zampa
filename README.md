@@ -181,9 +181,36 @@ php artisan make:factory NombreFactory --model=Nombre
 
 ---
 
+## Despliegue en producción
+
+Ejecutar estos comandos después de cada deploy para activar las optimizaciones de rendimiento de Laravel:
+
+```bash
+# Compilar assets
+npm run build
+
+# Cachés de framework (mejoran el arranque en producción)
+php artisan optimize
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+php artisan event:cache
+
+# Migraciones
+php artisan migrate --force
+```
+
+Para limpiar todas las cachés durante el desarrollo o tras un deploy fallido:
+
+```bash
+php artisan optimize:clear
+```
+
+---
+
 ## Progreso del desarrollo
 
-**Progreso global: 93%** (57/63 sub-bloques completados)
+**Progreso global: 89%** (63/71 sub-bloques completados)
 
 | Sub-bloque | Descripción | Estado |
 | ---------- | ----------- | ------ |
@@ -248,6 +275,12 @@ php artisan make:factory NombreFactory --model=Nombre
 | 16.3 | Carta pública — Modo A (por ítems) y Modo B (equitativo) | Completado |
 | 16.4 | `SplitPaymentController` + tabla `order_item_payments` + PaymentIntents independientes | Completado |
 | 16.5 | Tests completos del Bloque 16 (62 Feature + 6 Unit) | Completado |
+| 17.1 | Migración y modelo `TicketConfig` (logo, tax_id, footer_text, template) | Completado |
+| 17.2 | Panel del gerente — configurar ticket PDF (logo, datos fiscales, plantilla, preview) | Completado |
+| 17.3 | `TicketPdfService` con barryvdh/laravel-dompdf | Completado |
+| 17.4 | Plantillas Blade para DomPDF: `classic`, `modern`, `minimal` | Completado |
+| 17.5 | Descarga desde carta pública y reimpresión desde panel del gerente | Completado |
+| 17.6 | Tests del Bloque 17 (23 Feature TicketConfig + 11 Feature Download + 15 Unit) | Completado |
 | 11.1 | Design system (colores Zampa, tipografía, tokens Tailwind) | Pendiente |
 | 11.2 | Layout principal y navegación (sidebar, topbar, dark mode) | Pendiente |
 | 11.3 | Vistas del panel admin | Pendiente |

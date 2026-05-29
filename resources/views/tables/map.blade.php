@@ -4,37 +4,6 @@
  | @author AyrtonAlania
  | @author SebastianBCF
 --}}
-<style>
-@keyframes zampa-selected-pulse {
-    0%, 100% { box-shadow: 0 0 0 2px rgba(99,102,241,0.85), 0 0 0 5px rgba(99,102,241,0.25); }
-    50%       { box-shadow: 0 0 0 3px rgba(99,102,241,0.55), 0 0 0 9px rgba(99,102,241,0.08); }
-}
-.zampa-selected {
-    animation: zampa-selected-pulse 1.4s ease-in-out infinite;
-}
-kbd {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 1.5rem;
-    padding: 0.1rem 0.35rem;
-    border-radius: 0.25rem;
-    border: 1px solid #d1d5db;
-    background: #f9fafb;
-    color: #374151;
-    font-family: ui-monospace, monospace;
-    font-size: 0.72rem;
-    font-weight: 600;
-    line-height: 1.4;
-    box-shadow: 0 1px 0 1px #d1d5db;
-}
-.dark kbd {
-    border-color: #4b5563;
-    background: #1f2937;
-    color: #e5e7eb;
-    box-shadow: 0 1px 0 1px #4b5563;
-}
-</style>
 
 <x-app-layout>
 <div
@@ -241,7 +210,7 @@ kbd {
                 <div class="flex items-center gap-2">
                     <button type="button"
                             x-show="!editMode"
-                            @click="editMode = true; switchFloor(currentFloor)"
+                            @click="Alpine.store('viewPanel').close(); editMode = true; switchFloor(currentFloor)"
                             class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-white
                                    bg-amber-500 hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 transition-colors"
                             aria-label="Entrar en modo edición del mapa">
@@ -559,13 +528,13 @@ kbd {
                 aria-label="Plano interactivo del restaurante. En modo edición: Tab navega entre elementos, Flechas mueven (Mayús = 1 px), Alt+Flechas redimensiona, R rota izquierda (Mayús = 1°), E rota derecha (Mayús = 1°), Supr elimina, Ctrl+Z deshace, Ctrl+Y rehace. En vértices: Tab navega, Flechas mueven el vértice activo."
                 :class="(editMode && currentView !== 'general' && !isPanning) ? 'cursor-grab' : ''"
                 @mousedown.self="startPan($event)"
-                @click="editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null; selectedId = null; closeContextMenu();"
+                @click="editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null; selectedId = null; closeContextMenu(); Alpine.store('viewPanel').close();"
                 @contextmenu.prevent="closeContextMenu()"
             >
 
-                {{-- Overlay modo visualización: bloquea interacción cuando no se está editando --}}
+                {{-- Overlay modo visualización: bloquea drag pero deja pasar clics a las mesas --}}
                 <div x-show="!readonly && !editMode"
-                     class="absolute inset-0 z-[90] rounded-xl cursor-default select-none"
+                     class="absolute inset-0 z-[90] rounded-xl select-none pointer-events-none"
                      aria-hidden="true">
                 </div>
 
@@ -1015,8 +984,8 @@ kbd {
                         :data-table-id="table.id"
                         class="table-item absolute group select-none touch-none"
                         tabindex="0"
-                        @focus="selectedId = table.id; editingTableId=null; editingTable=null; editingZoneId=null; editingZone=null;"
-                        @keydown.enter.space.prevent.stop="selectedId = table.id; editingTableId=null; editingTable=null; editingZoneId=null; editingZone=null;"
+                        @focus="selectedId = table.id; editingTableId=null; editingTable=null; editingZoneId=null; editingZone=null; if (!editMode && table.is_service_point !== false) Alpine.store('viewPanel').open(table);"
+                        @keydown.enter.space.prevent.stop="selectedId = table.id; editingTableId=null; editingTable=null; editingZoneId=null; editingZone=null; if (!editMode && table.is_service_point !== false) Alpine.store('viewPanel').open(table);"
                         :style="`left:${table.position_x}px; top:${table.position_y}px;
                                  width:${table.width}px; height:${table.height}px;
                                  transform: rotate(${table.rotation ?? 0}deg);
@@ -1026,16 +995,17 @@ kbd {
                                      : (floorsEnabled && currentView === 'general' ? 10 + ((table.floor ?? 1) - 1) * 10 : 10)};`"
                         @mouseenter="hoveredId = table.id"
                         @mouseleave="hoveredId = null"
-                        @click.stop="selectedId = table.id; editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null;"
+                        @click.stop="selectedId = table.id; editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null; if (!editMode && table.is_service_point !== false) Alpine.store('viewPanel').open(table);"
                         @contextmenu.prevent.stop="openContextMenu($event, table, 'table')"
                         @keydown.stop="if ($event.key === 'ContextMenu' || ($event.shiftKey && $event.key === 'F10')) openContextMenu($event, table, 'table')"
                         :aria-label="`Mesa ${table.name}`"
                     >
                         {{-- Fondo de la mesa (color según estado del pedido) --}}
                         <div class="w-full h-full relative flex items-center justify-center
-                                    border-2 shadow-md cursor-grab active:cursor-grabbing
-                                    transition-all duration-300 hover:shadow-lg"
+                                    border-2 shadow-md transition-all duration-300 hover:shadow-lg"
                              :class="{
+                                'cursor-grab active:cursor-grabbing': editMode,
+                                'cursor-pointer': !editMode,
                                 'rounded-full':    table.shape === 'round',
                                 'rounded-xl':      table.shape === 'square',
                                 'rounded-lg':      table.shape === 'rectangle',
@@ -1679,12 +1649,11 @@ kbd {
      x-transition:enter="transition ease-out duration-200"
      x-transition:enter-start="opacity-0"
      x-transition:enter-end="opacity-100"
-     x-transition:leave="transition ease-in duration-150"
-     x-transition:leave-end="opacity-0"
      class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
      aria-modal="true"
      role="dialog"
      aria-labelledby="qr-modal-title"
+     @click="$store.qrModal.close()"
      @keydown.escape.window="$store.qrModal.close()">
 
     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-sm mx-4"
@@ -1711,12 +1680,21 @@ kbd {
             </button>
         </div>
 
-        {{-- QR SVG inline --}}
-        <div class="flex justify-center mb-4 p-3 bg-white rounded-xl border border-gray-200 dark:border-gray-700">
-            <img :src="`/mesas/${$store.qrModal.table?.id}/qr`"
-                 :alt="`Código QR de la mesa ${$store.qrModal.table?.name}`"
-                 class="w-48 h-48"
-                 x-show="$store.qrModal.table">
+        {{-- QR SVG inline desde caché prefetcheado --}}
+        <div class="flex justify-center mb-4 p-3 bg-white rounded-xl border border-gray-200 dark:border-gray-700"
+             :aria-label="`Código QR de la mesa ${$store.qrModal.table?.name ?? ''}`"
+             role="img">
+            <div x-show="$store.qrModal.qrSvg"
+                 x-html="$store.qrModal.qrSvg"
+                 class="w-48 h-48 [&>svg]:w-full [&>svg]:h-full">
+            </div>
+            <div x-show="!$store.qrModal.qrSvg && $store.qrModal.table"
+                 class="w-48 h-48 flex items-center justify-center">
+                <svg class="animate-spin w-8 h-8 text-indigo-400" aria-hidden="true" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                </svg>
+            </div>
         </div>
 
         {{-- URL de la carta --}}
@@ -1750,6 +1728,176 @@ kbd {
                 Descargar SVG
             </a>
         </div>
+    </div>
+</div>
+
+{{-- Panel de vista de mesa: QR + identificativo (modo solo lectura) --}}
+<div x-data
+     x-show="$store.viewPanel.show"
+     @click.outside="$store.viewPanel.close()"
+     x-transition:enter="transition ease-out duration-250"
+     x-transition:enter-start="translate-x-full opacity-0"
+     x-transition:enter-end="translate-x-0 opacity-100"
+     x-transition:leave="transition ease-in duration-200"
+     x-transition:leave-start="translate-x-0 opacity-100"
+     x-transition:leave-end="translate-x-full opacity-0"
+     class="fixed inset-y-0 right-0 w-80 sm:w-96 bg-white dark:bg-gray-800
+            shadow-2xl border-l border-gray-200 dark:border-gray-700
+            z-[95] flex flex-col overflow-y-auto"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="view-panel-title"
+     @keydown.escape.window="$store.viewPanel.close()">
+
+    {{-- Cabecera --}}
+    <div class="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-gray-700 shrink-0">
+        <div class="flex items-center gap-2.5 min-w-0">
+            <span class="w-3 h-3 rounded-full shrink-0"
+                  :class="{
+                      'bg-green-400':  !$store.viewPanel.table?.orderStatus || $store.viewPanel.table?.orderStatus === 'free',
+                      'bg-amber-500':  $store.viewPanel.table?.orderStatus === 'occupied',
+                      'bg-green-600 animate-pulse':  $store.viewPanel.table?.orderStatus === 'ready',
+                      'bg-blue-500 animate-pulse':   $store.viewPanel.table?.orderStatus === 'payment_pending',
+                  }"
+                  :aria-label="{free:'Libre',occupied:'Ocupada',ready:'Lista para servir',payment_pending:'Pago pendiente'}[$store.viewPanel.table?.orderStatus] ?? 'Libre'">
+            </span>
+            <h2 id="view-panel-title"
+                class="text-lg font-bold text-gray-900 dark:text-white truncate"
+                x-text="$store.viewPanel.table?.name ?? ''">
+            </h2>
+        </div>
+        <button type="button"
+                @click="$store.viewPanel.close()"
+                class="ml-2 w-8 h-8 shrink-0 rounded-full flex items-center justify-center
+                       text-gray-400 hover:text-gray-600 dark:hover:text-gray-200
+                       hover:bg-gray-100 dark:hover:bg-gray-700
+                       focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-colors"
+                aria-label="Cerrar panel de mesa">
+            <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+        </button>
+    </div>
+
+    {{-- Cuerpo --}}
+    <div class="flex-1 p-5 space-y-4 overflow-y-auto">
+
+        {{-- Chips: estado + planta --}}
+        <div class="flex flex-wrap gap-2">
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold"
+                  :class="{
+                      'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300': !$store.viewPanel.table?.orderStatus || $store.viewPanel.table?.orderStatus === 'free',
+                      'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300': $store.viewPanel.table?.orderStatus === 'occupied',
+                      'bg-green-200 text-green-900 dark:bg-green-800/40 dark:text-green-200': $store.viewPanel.table?.orderStatus === 'ready',
+                      'bg-blue-100  text-blue-800  dark:bg-blue-900/40  dark:text-blue-300':  $store.viewPanel.table?.orderStatus === 'payment_pending',
+                  }"
+                  x-text="{free:'Libre',occupied:'Ocupada',ready:'Lista para servir',payment_pending:'Pago pendiente'}[$store.viewPanel.table?.orderStatus] ?? 'Libre'">
+            </span>
+            <template x-if="floorsEnabled && $store.viewPanel.table?.floor">
+                <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium
+                             bg-indigo-50 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300">
+                    <svg aria-hidden="true" class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                    </svg>
+                    Planta <span x-text="$store.viewPanel.table?.floor"></span>
+                </span>
+            </template>
+        </div>
+
+        {{-- QR de la mesa — SVG inline via fetch para evitar caché del navegador --}}
+        <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-white p-4 flex flex-col items-center gap-3">
+            <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 self-start">
+                Código QR
+            </p>
+            <div class="w-52 h-52 flex items-center justify-center"
+                 :aria-label="$store.viewPanel.table ? `Código QR de ${$store.viewPanel.table.name}` : ''"
+                 role="img">
+                <div x-show="$store.viewPanel.qrSvg"
+                     x-html="$store.viewPanel.qrSvg"
+                     class="w-52 h-52 [&>svg]:w-full [&>svg]:h-full">
+                </div>
+                <div x-show="!$store.viewPanel.qrSvg && $store.viewPanel.table"
+                     class="flex items-center justify-center w-full h-full">
+                    <svg class="animate-spin w-8 h-8 text-indigo-400" aria-hidden="true"
+                         fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10"
+                                stroke="currentColor" stroke-width="4"/>
+                        <path class="opacity-75" fill="currentColor"
+                              d="M4 12a8 8 0 018-8v8z"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        {{-- URL de la carta --}}
+        <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 p-4">
+            <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2">
+                Enlace de la carta
+            </p>
+            <p class="text-xs text-indigo-600 dark:text-indigo-400 break-all font-mono leading-relaxed"
+               x-text="`${window.location.origin}/carta/${$store.viewPanel.table?.unique_hash ?? ''}`">
+            </p>
+        </div>
+
+        {{-- Identificativo de la estructura --}}
+        <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 px-4 py-3">
+            <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-3">
+                Identificativo
+            </p>
+            <dl class="space-y-2 text-sm">
+                <div class="flex justify-between items-center">
+                    <dt class="text-gray-500 dark:text-gray-400">ID interno</dt>
+                    <dd class="font-mono font-medium text-gray-900 dark:text-white"
+                        x-text="`#${$store.viewPanel.table?.id ?? '—'}`"></dd>
+                </div>
+                <div class="flex justify-between items-center">
+                    <dt class="text-gray-500 dark:text-gray-400">Forma</dt>
+                    <dd class="text-gray-900 dark:text-white"
+                        x-text="{square:'Cuadrada',round:'Redonda',rectangle:'Rectangular',bar:'Barra',stool:'Taburete'}[$store.viewPanel.table?.shape] ?? '—'"></dd>
+                </div>
+                <template x-if="$store.viewPanel.table && zoneFor($store.viewPanel.table)">
+                    <div class="flex justify-between items-center">
+                        <dt class="text-gray-500 dark:text-gray-400">Zona</dt>
+                        <dd class="text-gray-900 dark:text-white"
+                            x-text="zoneFor($store.viewPanel.table)?.name ?? '—'"></dd>
+                    </div>
+                </template>
+                <div class="flex justify-between items-center">
+                    <dt class="text-gray-500 dark:text-gray-400">Posición</dt>
+                    <dd class="font-mono text-xs text-gray-700 dark:text-gray-300"
+                        x-text="`(${$store.viewPanel.table?.position_x ?? 0}, ${$store.viewPanel.table?.position_y ?? 0})`"></dd>
+                </div>
+            </dl>
+        </div>
+
+    </div>
+
+    {{-- Pie: acciones --}}
+    <div class="px-5 py-4 border-t border-gray-200 dark:border-gray-700 space-y-2 shrink-0">
+        <a :href="`/mesas/${$store.viewPanel.table?.id}/qr/descargar`"
+           class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl
+                  text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700
+                  focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 transition-colors"
+           :aria-label="`Descargar QR de ${$store.viewPanel.table?.name}`">
+            <svg aria-hidden="true" class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/>
+            </svg>
+            Descargar QR
+        </a>
+        <a :href="`${window.location.origin}/carta/${$store.viewPanel.table?.unique_hash ?? ''}`"
+           target="_blank"
+           rel="noopener noreferrer"
+           class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl
+                  text-sm font-medium text-indigo-700 dark:text-indigo-300
+                  bg-indigo-50 dark:bg-indigo-900/30
+                  hover:bg-indigo-100 dark:hover:bg-indigo-900/50
+                  focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 transition-colors"
+           :aria-label="`Abrir carta digital de ${$store.viewPanel.table?.name} en nueva pestaña`">
+            <svg aria-hidden="true" class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+            </svg>
+            Ver carta digital
+        </a>
     </div>
 </div>
 
@@ -2171,2315 +2319,28 @@ kbd {
 {{-- interact.js CDN --}}
 <script src="https://cdn.jsdelivr.net/npm/interactjs@1.10.27/dist/interact.min.js"></script>
 
-<script>
-document.addEventListener('alpine:init', () => {
 
-    // ── Store para el modal de atajos de teclado ─────────────────────────────
-    Alpine.store('helpModal', { show: false });
-
-    // ── Store para el modal de nombre de nueva mesa ───────────────────────────
-    Alpine.store('tableModal', {
-        open:     false,
-        name:     '',
-        mode:     'table',
-        _resolve: null,
-
-        prompt(mode = 'table') {
-            this.name = '';
-            this.mode = mode;
-            this.open = true;
-            return new Promise(resolve => { this._resolve = resolve; });
-        },
-
-        confirm() {
-            if (this.mode === 'zone' && !this.name.trim()) return;
-            const name = this.name.trim();
-            this.open = false;
-            this._resolve?.(name);
-        },
-
-        cancel() {
-            this.open = false;
-            this._resolve?.(null);
-        },
-    });
-
-    // ── Store para el modal de QR de mesa ────────────────────────────────────
-    Alpine.store('qrModal', {
-        show:  false,
-        table: null,
-
-        open(table) {
-            this.table = table;
-            this.show  = true;
-        },
-
-        close() {
-            this.show  = false;
-            this.table = null;
-        },
-    });
-
-    // ── Store para el modal de confirmación de borrado ────────────────────────
-    Alpine.store('deleteModal', {
-        show:     false,
-        table:    null,
-        _resolve: null,
-
-        prompt(table) {
-            this.table = table;
-            this.show  = true;
-            return new Promise(resolve => { this._resolve = resolve; });
-        },
-
-        resolve(confirmed) {
-            this.show = false;
-            this._resolve?.(confirmed);
-            this.table    = null;
-            this._resolve = null;
-        },
-    });
-
-    // ── Store para el modal de confirmación de cambio de tamaño ─────────────
-    Alpine.store('sizeModal', {
-        show:     false,
-        label:    '',
-        isShrink: false,
-        _resolve: null,
-
-        prompt(label, isShrink) {
-            this.label    = label;
-            this.isShrink = isShrink;
-            this.show     = true;
-            return new Promise(resolve => { this._resolve = resolve; });
-        },
-
-        resolve(confirmed) {
-            this.show     = false;
-            this._resolve?.(confirmed);
-            this._resolve = null;
-        },
-    });
-
-    // ── Componente principal del mapa ─────────────────────────────────────────
-    Alpine.data('tableMap', () => ({
-        tables:                @json($tables),
-        elements:              @json($elements),
-        zones:                 @json($zones),
-        floorWidth:            {{ $floorWidth }},
-        floorHeight:           {{ $floorHeight }},
-        floorsEnabled:         {{ $floorsEnabled ? 'true' : 'false' }},
-        floorCount:            {{ $floorCount }},
-        floorCanvasSizes:      @json($floorCanvasSizes),
-        currentFloor:          1,
-        currentView:           'floor',
-        readonly:              {{ $readonly ? 'true' : 'false' }},
-        editMode:              false,
-        canvasZoom:            1,
-        isDraggingFromPalette: false,
-        currentDragShape:      null,
-        isDraggingZone:        false,
-        editingTableId:        null,
-        editingTable:          null,
-        editPanelPos:          { x: 0, y: 0 },
-        editingZoneId:         null,
-        editingZone:           null,
-        editZonePanelPos:      { x: 0, y: 0 },
-        _editBtnEl:            null,
-        _zoneBtnEl:            null,
-        isRotating:            false,
-        rotatingId:            null,
-        draggingId:            null,
-        resizingId:            null,
-        hoveredId:             null,
-        selectedId:            null,
-        isRotatingZone:        false,
-        zoneColor:             '#6366f1',
-        toast:                 { show: false, msg: '', error: false, _timer: null },
-        rotTooltip:            { show: false, x: 0, y: 0, deg: 0 },
-        undoStack:             [],
-        redoStack:             [],
-        isPanning:             false,
-        focusedVertexIdx:      null,
-        contextMenu:           { show: false, x: 0, y: 0, type: null, item: null },
-
-        init() {
-            this.$nextTick(() => {
-                if (!this.readonly) {
-                    this.initTableInteract();
-                    this.initZoneInteract();
-                    this.initPaletteInteract();
-                    this.clampAllToCanvas();
-                }
-                this._applyOverviewZoom();
-            });
-
-
-            // Polling de estados: actualiza orderStatus de cada mesa cada 25 s.
-            this.pollStatuses();
-            setInterval(() => this.pollStatuses(), 25000);
-        },
-
-        // Devuelve los límites de posición válidos para un item considerando su rotación.
-        // position_x/y pueden ser negativos en elementos más altos que anchos rotados 90°.
-        canvasBounds(item, w, h) {
-            const canvasW = w ?? this.floorWidth;
-            const canvasH = h ?? this.floorHeight;
-            const rad   = (item.rotation ?? 0) * Math.PI / 180;
-            const cos   = Math.abs(Math.cos(rad));
-            const sin   = Math.abs(Math.sin(rad));
-            const hw    = item.width  / 2;
-            const hh    = item.height / 2;
-            const halfW = hw * cos + hh * sin;
-            const halfH = hw * sin + hh * cos;
-            return {
-                minX: halfW - hw,
-                maxX: canvasW - hw - halfW,
-                minY: halfH - hh,
-                maxY: canvasH - hh - halfH,
-            };
-        },
-
-        // Devuelve el tamaño del canvas de la planta de un item.
-        sizeForItem(item) {
-            const floor = this.floorsEnabled ? (item.floor ?? 1) : 1;
-            return this.floorCanvasSizes[floor] ?? { width: this.floorWidth, height: this.floorHeight };
-        },
-
-        // Recupera estructuras y zonas que hayan quedado fuera del canvas y persiste la corrección.
-        async clampAllToCanvas() {
-            for (const item of [...this.tables, ...this.elements]) {
-                const { width: w, height: h } = this.sizeForItem(item);
-                const { minX, maxX, minY, maxY } = this.canvasBounds(item, w, h);
-                const cx = Math.max(minX, Math.min(maxX, item.position_x));
-                const cy = Math.max(minY, Math.min(maxY, item.position_y));
-                if (cx !== item.position_x || cy !== item.position_y) {
-                    await this.persistPosition(item.id, cx, cy, item.width, item.height);
-                }
-            }
-            for (const zone of this.zones) {
-                const { width: w, height: h } = this.sizeForItem(zone);
-                const maxX = Math.max(0, w - zone.width);
-                const maxY = Math.max(0, h - zone.height);
-                const cx   = Math.max(0, Math.min(maxX, zone.position_x));
-                const cy   = Math.max(0, Math.min(maxY, zone.position_y));
-                if (cx !== zone.position_x || cy !== zone.position_y) {
-                    zone.position_x = cx;
-                    zone.position_y = cy;
-                    await this.persistZonePosition(zone.id, cx, cy);
-                }
-            }
-        },
-
-        async pollStatuses() {
-            try {
-                const res = await fetch('{{ route("tables.map.statuses") }}', {
-                    headers: { Accept: 'application/json' },
-                });
-                if (!res.ok) return;
-                const data = await res.json();
-                data.forEach(s => {
-                    const t = this.tables.find(t => t.id === s.id);
-                    if (t) t.orderStatus = s.orderStatus;
-                });
-            } catch {}
-        },
-
-        // ── Solicitar cambio de tamaño con confirmación previa ───────────────
-        async requestCanvasSize(w, h, label) {
-            const cur      = this.floorCanvasSizes[this.floorsEnabled ? this.currentFloor : 1]
-                             ?? { width: this.floorWidth, height: this.floorHeight };
-            if (w === cur.width && h === cur.height) return;
-            const isShrink = w < cur.width || h < cur.height;
-            const confirmed = await Alpine.store('sizeModal').prompt(label, isShrink);
-            if (!confirmed) return;
-            this.setCanvasSize(w, h);
-        },
-
-        // ── Cambiar tamaño del lienzo y persistir en BD ───────────────────────
-        async setCanvasSize(w, h) {
-            this.pushUndo();
-            const floor    = this.floorsEnabled ? this.currentFloor : 1;
-            const prevW    = this.floorWidth;
-            const prevH    = this.floorHeight;
-            const prevSize = this.floorCanvasSizes[floor] ? { ...this.floorCanvasSizes[floor] } : { width: prevW, height: prevH };
-
-            this.floorWidth  = w;
-            this.floorHeight = h;
-            this.floorCanvasSizes[floor] = { width: w, height: h };
-
-            // Clamp visual inmediato: empuja estructuras al borde sin esperar al servidor
-            const snapshots = [];
-            if (w < prevW || h < prevH) {
-                for (const item of [...this.tables, ...this.elements]) {
-                    const { width: sw, height: sh } = this.sizeForItem(item);
-                    const { minX, maxX, minY, maxY } = this.canvasBounds(item, sw, sh);
-                    const cx = Math.max(minX, Math.min(maxX, item.position_x));
-                    const cy = Math.max(minY, Math.min(maxY, item.position_y));
-                    if (cx !== item.position_x || cy !== item.position_y) {
-                        snapshots.push({ item, prevX: item.position_x, prevY: item.position_y });
-                        item.position_x = cx;
-                        item.position_y = cy;
-                    }
-                }
-                for (const zone of this.zones) {
-                    const { width: sw, height: sh } = this.sizeForItem(zone);
-                    const maxX = Math.max(0, sw - zone.width);
-                    const maxY = Math.max(0, sh - zone.height);
-                    const cx   = Math.max(0, Math.min(maxX, zone.position_x));
-                    const cy   = Math.max(0, Math.min(maxY, zone.position_y));
-                    if (cx !== zone.position_x || cy !== zone.position_y) {
-                        snapshots.push({ item: zone, prevX: zone.position_x, prevY: zone.position_y, isZone: true });
-                        zone.position_x = cx;
-                        zone.position_y = cy;
-                    }
-                }
-            }
-
-            try {
-                const res = await fetch('{{ route("tables.canvas.update") }}', {
-                    method:  'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                        'Accept':       'application/json',
-                    },
-                    body: JSON.stringify({ floor_width: w, floor_height: h, floor }),
-                });
-
-                const json = await res.json();
-
-                if (!res.ok || !json.success) {
-                    this.floorWidth  = prevW;
-                    this.floorHeight = prevH;
-                    this.floorCanvasSizes[floor] = prevSize;
-                    for (const { item, prevX, prevY } of snapshots) {
-                        item.position_x = prevX;
-                        item.position_y = prevY;
-                    }
-                    this.showToast(json.message ?? 'Error al guardar el tamaño.', true);
-                    return;
-                }
-
-                this.showToast(`Plano ${w} × ${h} px guardado.`);
-                // Persistir en BD las posiciones ya aplicadas visualmente
-                for (const { item, isZone } of snapshots) {
-                    if (isZone) {
-                        await this.persistZonePosition(item.id, item.position_x, item.position_y);
-                    } else {
-                        await this.persistPosition(item.id, item.position_x, item.position_y, item.width, item.height);
-                    }
-                }
-            } catch {
-                this.floorWidth  = prevW;
-                this.floorHeight = prevH;
-                this.floorCanvasSizes[floor] = prevSize;
-                for (const { item, prevX, prevY } of snapshots) {
-                    item.position_x = prevX;
-                    item.position_y = prevY;
-                }
-                this.showToast('Error de red al guardar el tamaño.', true);
-            }
-        },
-
-        // ── Toast ─────────────────────────────────────────────────────────────
-        showToast(msg, error = false) {
-            clearTimeout(this.toast._timer);
-            this.toast = { show: true, msg, error, _timer: null };
-            this.toast._timer = setTimeout(() => { this.toast.show = false; }, 3000);
-        },
-
-        // ── Colisión exacta: SAT (OBB vs OBB) + círculo vs OBB ───────────────
-
-        // Devuelve los 4 vértices de un rectángulo rotado en coordenadas mundo.
-        rectCorners(item) {
-            const rad = (item.rotation ?? 0) * Math.PI / 180;
-            const cos = Math.cos(rad), sin = Math.sin(rad);
-            const cx  = item.position_x + item.width  / 2;
-            const cy  = item.position_y + item.height / 2;
-            const hw  = item.width  / 2, hh = item.height / 2;
-            return [
-                { x: cx + hw*cos - hh*sin, y: cy + hw*sin + hh*cos },
-                { x: cx - hw*cos - hh*sin, y: cy - hw*sin + hh*cos },
-                { x: cx - hw*cos + hh*sin, y: cy - hw*sin - hh*cos },
-                { x: cx + hw*cos + hh*sin, y: cy + hw*sin - hh*cos },
-            ];
-        },
-
-        // Proyecta una lista de vértices sobre un eje normalizado → { min, max }.
-        projectOnAxis(corners, axis) {
-            let min = Infinity, max = -Infinity;
-            for (const c of corners) {
-                const p = c.x * axis.x + c.y * axis.y;
-                if (p < min) min = p;
-                if (p > max) max = p;
-            }
-            return { min, max };
-        },
-
-        // SAT entre dos OBBs: exacto a cualquier ángulo.
-        obbOverlaps(a, b) {
-            const ca = this.rectCorners(a);
-            const cb = this.rectCorners(b);
-            const ra = (a.rotation ?? 0) * Math.PI / 180;
-            const rb = (b.rotation ?? 0) * Math.PI / 180;
-            const axes = [
-                { x:  Math.cos(ra), y: Math.sin(ra) },
-                { x: -Math.sin(ra), y: Math.cos(ra) },
-                { x:  Math.cos(rb), y: Math.sin(rb) },
-                { x: -Math.sin(rb), y: Math.cos(rb) },
-            ];
-            for (const ax of axes) {
-                const pa = this.projectOnAxis(ca, ax);
-                const pb = this.projectOnAxis(cb, ax);
-                if (pa.max <= pb.min || pb.max <= pa.min) return false;
-            }
-            return true;
-        },
-
-        // Círculo vs OBB rotado: transforma el centro al espacio local del rect.
-        circleObbOverlaps(circle, rect) {
-            const cx  = circle.position_x + circle.width  / 2;
-            const cy  = circle.position_y + circle.height / 2;
-            const cr  = circle.width / 2;
-            const rad = (rect.rotation ?? 0) * Math.PI / 180;
-            const cos = Math.cos(rad), sin = Math.sin(rad);
-            const rx  = rect.position_x + rect.width  / 2;
-            const ry  = rect.position_y + rect.height / 2;
-            // Centro del círculo en espacio local del rect
-            const lx  = (cx - rx) * cos + (cy - ry) * sin;
-            const ly  = -(cx - rx) * sin + (cy - ry) * cos;
-            const hw  = rect.width / 2, hh = rect.height / 2;
-            const dx  = lx - Math.max(-hw, Math.min(hw, lx));
-            const dy  = ly - Math.max(-hh, Math.min(hh, ly));
-            return (dx * dx + dy * dy) < cr * cr;
-        },
-
-        overlaps(a, b) {
-            const aRound = a.shape === 'round' || a.shape === 'stool';
-            const bRound = b.shape === 'round' || b.shape === 'stool';
-            if (aRound && bRound) {
-                const dx = (a.position_x + a.width  / 2) - (b.position_x + b.width  / 2);
-                const dy = (a.position_y + a.height / 2) - (b.position_y + b.height / 2);
-                const r  = a.width / 2 + b.width / 2;
-                return (dx * dx + dy * dy) < r * r;
-            }
-            if (aRound) return this.circleObbOverlaps(a, b);
-            if (bRound) return this.circleObbOverlaps(b, a);
-            return this.obbOverlaps(a, b);
-        },
-
-        // Vértices locales de zona → coordenadas mundo (con rotación del div).
-        polygonWorldCorners(zone) {
-            if (!zone.vertices || zone.vertices.length < 3) return this.rectCorners(zone);
-            const rad = (zone.rotation ?? 0) * Math.PI / 180;
-            const cos = Math.cos(rad), sin = Math.sin(rad);
-            const cx  = zone.position_x + zone.width  / 2;
-            const cy  = zone.position_y + zone.height / 2;
-            return zone.vertices.map(v => {
-                const wx = zone.position_x + v.x - cx;
-                const wy = zone.position_y + v.y - cy;
-                return { x: cx + wx * cos - wy * sin, y: cy + wx * sin + wy * cos };
-            });
-        },
-
-        // Intersección de segmentos (p1→p2) ∩ (p3→p4).
-        segmentsIntersect(p1, p2, p3, p4) {
-            const dx1 = p2.x - p1.x, dy1 = p2.y - p1.y;
-            const dx2 = p4.x - p3.x, dy2 = p4.y - p3.y;
-            const cross = dx1 * dy2 - dy1 * dx2;
-            if (Math.abs(cross) < 1e-10) return false;
-            const t = ((p3.x - p1.x) * dy2 - (p3.y - p1.y) * dx2) / cross;
-            const u = ((p3.x - p1.x) * dy1 - (p3.y - p1.y) * dx1) / cross;
-            return t >= 0 && t <= 1 && u >= 0 && u <= 1;
-        },
-
-        // Punto dentro de polígono arbitrario (ray-casting, funciona con cóncavos).
-        pointInPolygon(pt, poly) {
-            let inside = false;
-            const n = poly.length;
-            for (let i = 0, j = n - 1; i < n; j = i++) {
-                const xi = poly[i].x, yi = poly[i].y;
-                const xj = poly[j].x, yj = poly[j].y;
-                if (((yi > pt.y) !== (yj > pt.y)) &&
-                    (pt.x < (xj - xi) * (pt.y - yi) / (yj - yi) + xi)) {
-                    inside = !inside;
-                }
-            }
-            return inside;
-        },
-
-        // Solapamiento entre dos polígonos arbitrarios (convexos O cóncavos).
-        // Detecta: aristas que se cruzan + un polígono contenido dentro del otro.
-        polygonOverlaps(polyA, polyB) {
-            const na = polyA.length, nb = polyB.length;
-            for (let i = 0; i < na; i++) {
-                for (let j = 0; j < nb; j++) {
-                    if (this.segmentsIntersect(polyA[i], polyA[(i + 1) % na], polyB[j], polyB[(j + 1) % nb])) return true;
-                }
-            }
-            if (this.pointInPolygon(polyA[0], polyB)) return true;
-            if (this.pointInPolygon(polyB[0], polyA)) return true;
-            return false;
-        },
-
-        // Devuelve true si una zona colisiona con otra zona del mismo plano.
-        // Zona sobre mesa: PERMITIDO. Solo zona ↔ zona está prohibido.
-        hasZoneCollision(zone) {
-            if (this.floorsEnabled && this.currentView === 'general') return false;
-            const selfId    = zone.id ?? null;
-            const zoneFloor = this.floorsEnabled ? (zone.floor ?? this.currentFloor) : null;
-            const sameFloor = (z) => !this.floorsEnabled || (z.floor ?? 1) === (zoneFloor ?? 1);
-            const cornersA  = this.polygonWorldCorners(zone);
-            return this.zones.filter(sameFloor).some(z => {
-                if (z.id === selfId) return false;
-                return this.polygonOverlaps(cornersA, this.polygonWorldCorners(z));
-            });
-        },
-
-        // Devuelve true si el item colisiona con elementos prohibidos.
-        // Mesas ↔ mesas: prohibido. Mesas ↔ especiales: prohibido.
-        // Especiales ↔ especiales: prohibido. Zonas: siempre permitidas.
-        // En vista general con plantas activas: solapamiento libre entre plantas.
-        hasCollision(item) {
-            if (this.floorsEnabled && this.currentView === 'general') return false;
-
-            const isSpecial = ['bar', 'stool'].includes(item.shape);
-            const selfId    = item.id ?? null;
-            const itemFloor = this.floorsEnabled ? (item.floor ?? this.currentFloor) : null;
-            const sameFloor = (other) => !this.floorsEnabled || (other.floor ?? 1) === (itemFloor ?? 1);
-
-            if (isSpecial) {
-                return this.tables.filter(sameFloor).some(t => this.overlaps(item, t)) ||
-                       this.elements.filter(sameFloor).some(e => e.id !== selfId && this.overlaps(item, e));
-            }
-            return this.tables.filter(sameFloor).some(t => t.id !== selfId && this.overlaps(item, t)) ||
-                   this.elements.filter(sameFloor).some(e => this.overlaps(item, e));
-        },
-
-        // ── Historial de cambios (Undo) ───────────────────────────────────────
-        snapshot() {
-            return {
-                floorWidth:       this.floorWidth,
-                floorHeight:      this.floorHeight,
-                floorCanvasSizes: JSON.parse(JSON.stringify(this.floorCanvasSizes)),
-                canvasZoom:       this.canvasZoom,
-                tables:   this.tables.map(t  => ({ id: t.id,  position_x: t.position_x,  position_y: t.position_y,  width: t.width,  height: t.height,  rotation: t.rotation  ?? 0 })),
-                elements: this.elements.map(e => ({ id: e.id,  position_x: e.position_x,  position_y: e.position_y,  width: e.width,  height: e.height,  rotation: e.rotation  ?? 0, vertices: e.vertices ? JSON.parse(JSON.stringify(e.vertices)) : null })),
-                zones:    this.zones.map(z    => ({ id: z.id,  position_x: z.position_x,  position_y: z.position_y,  width: z.width,  height: z.height,  rotation: z.rotation  ?? 0, color: z.color, vertices: z.vertices ? JSON.parse(JSON.stringify(z.vertices)) : null })),
-            };
-        },
-
-        pushUndo() {
-            this.undoStack.push(this.snapshot());
-            if (this.undoStack.length > 20) this.undoStack.shift();
-            this.redoStack = [];
-        },
-
-        async undo() {
-            if (!this.undoStack.length) return;
-            this.redoStack.push(this.snapshot());
-            if (this.redoStack.length > 20) this.redoStack.shift();
-            await this._applySnapshot(this.undoStack.pop());
-        },
-
-        async redo() {
-            if (!this.redoStack.length) return;
-            this.undoStack.push(this.snapshot());
-            if (this.undoStack.length > 20) this.undoStack.shift();
-            await this._applySnapshot(this.redoStack.pop());
-        },
-
-        async _applySnapshot(snap) {
-            const floor = this.floorsEnabled ? this.currentFloor : 1;
-
-            const canvasSizeChanged =
-                snap.floorWidth  !== this.floorWidth  ||
-                snap.floorHeight !== this.floorHeight  ||
-                JSON.stringify(snap.floorCanvasSizes) !== JSON.stringify(this.floorCanvasSizes);
-
-            this.canvasZoom       = snap.canvasZoom;
-            this.floorWidth       = snap.floorWidth;
-            this.floorHeight      = snap.floorHeight;
-            this.floorCanvasSizes = snap.floorCanvasSizes;
-
-            const toPersistItems = [];
-            const toPersistZones = [];
-
-            for (const s of snap.tables) {
-                const t = this.tables.find(t => t.id === s.id);
-                if (!t) continue;
-                if (t.position_x !== s.position_x || t.position_y !== s.position_y ||
-                    t.width !== s.width || t.height !== s.height || (t.rotation ?? 0) !== s.rotation) {
-                    t.position_x = s.position_x; t.position_y = s.position_y;
-                    t.width      = s.width;       t.height     = s.height;
-                    t.rotation   = s.rotation;
-                    toPersistItems.push(t);
-                }
-            }
-            for (const s of snap.elements) {
-                const e = this.elements.find(e => e.id === s.id);
-                if (!e) continue;
-                const posChg  = e.position_x !== s.position_x || e.position_y !== s.position_y ||
-                                e.width !== s.width || e.height !== s.height || (e.rotation ?? 0) !== s.rotation;
-                const vertChg = JSON.stringify(e.vertices ?? null) !== JSON.stringify(s.vertices ?? null);
-                if (posChg || vertChg) {
-                    e.position_x = s.position_x; e.position_y = s.position_y;
-                    e.width      = s.width;       e.height     = s.height;
-                    e.rotation   = s.rotation;
-                    if (vertChg) e.vertices = s.vertices ? JSON.parse(JSON.stringify(s.vertices)) : null;
-                    toPersistItems.push({ item: e, vertChg });
-                }
-            }
-            for (const s of snap.zones) {
-                const z = this.zones.find(z => z.id === s.id);
-                if (!z) continue;
-                const posChg  = z.position_x !== s.position_x || z.position_y !== s.position_y ||
-                                z.width !== s.width || z.height !== s.height ||
-                                (z.rotation ?? 0) !== s.rotation || z.color !== s.color;
-                const vertChg = JSON.stringify(z.vertices ?? null) !== JSON.stringify(s.vertices ?? null);
-                if (posChg || vertChg) {
-                    z.position_x = s.position_x; z.position_y = s.position_y;
-                    z.width      = s.width;       z.height     = s.height;
-                    z.rotation   = s.rotation;    z.color      = s.color;
-                    if (vertChg) z.vertices = s.vertices ? JSON.parse(JSON.stringify(s.vertices)) : null;
-                    toPersistZones.push({ zone: z, vertChg });
-                }
-            }
-
-            if (canvasSizeChanged) {
-                try {
-                    await fetch('{{ route("tables.canvas.update") }}', {
-                        method:  'PATCH',
-                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 'Accept': 'application/json' },
-                        body: JSON.stringify({ floor_width: snap.floorWidth, floor_height: snap.floorHeight, floor }),
-                    });
-                } catch {}
-            }
-            for (const { item, vertChg } of toPersistItems) {
-                await this.persistPosition(item.id, item.position_x, item.position_y, item.width, item.height);
-                if (vertChg && item.vertices) await this.persistBarVertices(item.id, item.vertices);
-            }
-            for (const { zone: z, vertChg } of toPersistZones) {
-                try {
-                    await fetch(`/zonas/${z.id}`, {
-                        method:  'PATCH',
-                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 'Accept': 'application/json' },
-                        body: JSON.stringify({ position_x: z.position_x, position_y: z.position_y, width: z.width, height: z.height, rotation: z.rotation }),
-                    });
-                } catch {}
-                if (vertChg) await this.persistZoneVertices(z.id, z.vertices ?? []);
-            }
-        },
-
-        // ── Interactividad de mesas existentes ────────────────────────────────
-        initTableInteract() {
-            interact('.table-item').unset();
-
-            interact('.table-item')
-                .draggable({
-                    ignoreFrom:  '.rotation-handle, .resize-handle',
-                    inertia:    false,
-                    autoScroll: true,
-                    listeners: {
-                        start: (event) => {
-                            if (this.floorsEnabled && this.currentView === 'general') { event.interaction.stop(); return; }
-                            if (!this.editMode) { event.interaction.stop(); return; }
-                            this.pushUndo();
-                            const el   = event.target;
-                            const id   = parseInt(el.dataset.tableId);
-                            const item = this.tables.find(t => t.id === id) ?? this.elements.find(e => e.id === id);
-                            this.closeEditPanels();
-                            this.draggingId      = id;
-                            el._startedColliding = item ? this.hasCollision(item) : false;
-                        },
-                        move: (event) => {
-                            const el   = event.target;
-                            const id   = parseInt(el.dataset.tableId);
-                            const item = this.tables.find(t => t.id === id) ?? this.elements.find(e => e.id === id);
-
-                            const curX = parseFloat(el.style.left) || 0;
-                            const curY = parseFloat(el.style.top)  || 0;
-
-                            // Clamp al canvas considerando rotación visual del elemento
-                            const { minX, maxX, minY, maxY } = item
-                                ? this.canvasBounds(item)
-                                : { minX: 0, maxX: this.floorWidth - 100, minY: 0, maxY: this.floorHeight - 100 };
-                            const propX = Math.max(minX, Math.min(maxX, Math.round(curX + event.dx / this.canvasZoom)));
-                            const propY = Math.max(minY, Math.min(maxY, Math.round(curY + event.dy / this.canvasZoom)));
-
-                            if (!item) {
-                                el.style.left = `${propX}px`;
-                                el.style.top  = `${propY}px`;
-                                return;
-                            }
-
-                            // Si arrancó en colisión, movimiento libre hasta que salga — luego restringe
-                            if (el._startedColliding) {
-                                item.position_x = propX;
-                                item.position_y = propY;
-                                el.style.left   = `${propX}px`;
-                                el.style.top    = `${propY}px`;
-                                if (!this.hasCollision(item)) el._startedColliding = false;
-                                return;
-                            }
-
-                            // Axis-split: intenta mover en X e Y juntos, luego por separado
-                            const testXY = { ...item, position_x: propX, position_y: propY };
-                            const testX  = { ...item, position_x: propX, position_y: item.position_y };
-                            const testY  = { ...item, position_x: item.position_x, position_y: propY };
-
-                            let newX = item.position_x;
-                            let newY = item.position_y;
-
-                            if (!this.hasCollision(testXY)) {
-                                newX = propX; newY = propY;
-                            } else if (!this.hasCollision(testX)) {
-                                newX = propX;
-                            } else if (!this.hasCollision(testY)) {
-                                newY = propY;
-                            }
-
-                            item.position_x = newX;
-                            item.position_y = newY;
-                            el.style.left   = `${newX}px`;
-                            el.style.top    = `${newY}px`;
-                        },
-                        end: (event) => {
-                            const el = event.target;
-                            const id = parseInt(el.dataset.tableId);
-                            const x  = Math.round(parseFloat(el.style.left) || 0);
-                            const y  = Math.round(parseFloat(el.style.top)  || 0);
-                            const w  = Math.round(parseFloat(el.style.width)  || 100);
-                            const h  = Math.round(parseFloat(el.style.height) || 100);
-                            this.draggingId = null;
-                            this.persistPosition(id, x, y, w, h);
-                        },
-                    },
-                })
-                ;
-        },
-
-        // ── Reinicializar interact después de añadir una mesa ─────────────────
-        reinitInteract() {
-            this.$nextTick(() => this.initTableInteract());
-        },
-
-        // ── Interactividad de zonas (drag nativo Alpine para mover) ──────────
-        initZoneInteract() {
-            interact('.zone-item').unset();
-        },
-
-        reinitZoneInteract() {
-            this.$nextTick(() => this.initZoneInteract());
-        },
-
-        // ── Drag nativo de zona: DOM directo + RAF throttle + corners precalculados ─
-        startZoneDrag(event, zone) {
-            if (!this.editMode) return;
-            this.pushUndo();
-            const startMX = event.clientX;
-            const startMY = event.clientY;
-            const startPx = zone.position_x;
-            const startPy = zone.position_y;
-            const zoneEl  = this.$refs.canvas.querySelector(`[data-zone-id="${zone.id}"]`);
-
-            this.closeEditPanels();
-            this.draggingId            = zone.id;
-            document.body.style.cursor = 'grabbing';
-
-            let curX = startPx, curY = startPy;
-            let latestMX = event.clientX, latestMY = event.clientY;
-            let rafPending = false;
-
-            const processFrame = () => {
-                rafPending = false;
-                const maxX = Math.max(0, this.floorWidth  - zone.width);
-                const maxY = Math.max(0, this.floorHeight - zone.height);
-                curX = Math.max(0, Math.min(maxX, startPx + (latestMX - startMX) / this.canvasZoom));
-                curY = Math.max(0, Math.min(maxY, startPy + (latestMY - startMY) / this.canvasZoom));
-                if (zoneEl) { zoneEl.style.left = `${curX}px`; zoneEl.style.top = `${curY}px`; }
-            };
-
-            const onMove = (e) => {
-                latestMX = e.clientX; latestMY = e.clientY;
-                if (!rafPending) { rafPending = true; requestAnimationFrame(processFrame); }
-            };
-
-            const onUp = async () => {
-                document.removeEventListener('mousemove', onMove);
-                document.removeEventListener('mouseup',   onUp);
-                document.body.style.cursor = '';
-                curX = Math.round(curX); curY = Math.round(curY);
-                zone.position_x = curX;
-                zone.position_y = curY;
-                this.draggingId = null;
-                if (this.hasZoneCollision(zone)) {
-                    this.showToast('No se puede colocar aquí: la zona colisiona con otra zona.', true);
-                    this.undoStack.pop();
-                    zone.position_x = startPx;
-                    zone.position_y = startPy;
-                    if (zoneEl) { zoneEl.style.left = `${startPx}px`; zoneEl.style.top = `${startPy}px`; }
-                    return;
-                }
-                await this.persistZonePosition(zone.id, curX, curY);
-            };
-
-            document.addEventListener('mousemove', onMove);
-            document.addEventListener('mouseup',   onUp);
-        },
-
-        // ── Rotación libre de zona arrastrando el handle ─────────────────────
-        startZoneRotation(event, zone) {
-            if (!this.editMode) return;
-            this.pushUndo();
-            const canvasRect = this.$refs.canvas.getBoundingClientRect();
-            const centerX    = canvasRect.left + (zone.position_x + zone.width  / 2) * this.canvasZoom;
-            const centerY    = canvasRect.top  + (zone.position_y + zone.height / 2) * this.canvasZoom;
-
-            this.closeEditPanels();
-            this.isRotating            = true;
-            this.rotatingId            = zone.id;
-            this.rotTooltip.show       = true;
-            document.body.style.cursor = "url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2720%27 height=%2720%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27M21 2v6h-6%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M3 12a9 9 0 0 1 15-6.7L21 8%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M3 22v-6h6%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M21 12a9 9 0 0 1-15 6.7L3 16%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M21 2v6h-6%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M3 12a9 9 0 0 1 15-6.7L21 8%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M3 22v-6h6%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M21 12a9 9 0 0 1-15 6.7L3 16%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3C/svg%3E') 10 10, grabbing";
-
-            let lastValidRotation = zone.rotation ?? 0;
-
-            const onMove = (e) => {
-                const dx       = e.clientX - centerX;
-                const dy       = e.clientY - centerY;
-                let   angle    = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
-                angle = ((angle % 360) + 360) % 360;
-                const proposed = Math.round(angle);
-                const testItem = { ...zone, rotation: proposed };
-                if (!this.hasZoneCollision(testItem)) {
-                    zone.rotation     = proposed;
-                    lastValidRotation = proposed;
-                } else {
-                    zone.rotation = lastValidRotation;
-                }
-                this.rotTooltip.x   = e.clientX;
-                this.rotTooltip.y   = e.clientY;
-                this.rotTooltip.deg = zone.rotation;
-            };
-
-            const onUp = async () => {
-                document.removeEventListener('mousemove', onMove);
-                document.removeEventListener('mouseup',   onUp);
-                this.isRotating            = false;
-                this.rotatingId            = null;
-                this.rotTooltip.show       = false;
-                document.body.style.cursor = '';
-                await this.persistZoneRotation(zone.id, zone.rotation ?? 0);
-            };
-
-            document.addEventListener('mousemove', onMove);
-            document.addEventListener('mouseup',   onUp);
-        },
-
-        // ── Drag nativo de elemento especial (barra/taburete) ────────────────
-        startElementDrag(event, element) {
-            if (this.floorsEnabled && this.currentView === 'general') return;
-            if (!this.editMode) return;
-            this.pushUndo();
-            const startPx = element.position_x;
-            const startPy = element.position_y;
-            const startMX = event.clientX;
-            const startMY = event.clientY;
-
-            this.closeEditPanels();
-            this.draggingId            = element.id;
-            document.body.style.cursor = 'grabbing';
-
-            // Si el elemento ya está en colisión al iniciar, permitir movimiento libre hasta salir
-            let startedColliding = this.hasCollision(element);
-
-            const onMove = (e) => {
-                const { minX, maxX, minY, maxY } = this.canvasBounds(element);
-
-                const propX = Math.max(minX, Math.min(maxX, Math.round(startPx + (e.clientX - startMX) / this.canvasZoom)));
-                const propY = Math.max(minY, Math.min(maxY, Math.round(startPy + (e.clientY - startMY) / this.canvasZoom)));
-
-                if (startedColliding) {
-                    element.position_x = propX;
-                    element.position_y = propY;
-                    if (!this.hasCollision(element)) startedColliding = false;
-                    return;
-                }
-
-                // Axis-split: intenta mover ambos ejes, luego cada uno por separado
-                const testXY = { ...element, position_x: propX, position_y: propY };
-                const testX  = { ...element, position_x: propX, position_y: element.position_y };
-                const testY  = { ...element, position_x: element.position_x, position_y: propY };
-
-                if (!this.hasCollision(testXY)) {
-                    element.position_x = propX;
-                    element.position_y = propY;
-                } else if (!this.hasCollision(testX)) {
-                    element.position_x = propX;
-                } else if (!this.hasCollision(testY)) {
-                    element.position_y = propY;
-                }
-            };
-
-            const onUp = async () => {
-                document.removeEventListener('mousemove', onMove);
-                document.removeEventListener('mouseup',   onUp);
-                this.draggingId            = null;
-                document.body.style.cursor = '';
-                await this.persistPosition(element.id, element.position_x, element.position_y, element.width, element.height);
-            };
-
-            document.addEventListener('mousemove', onMove);
-            document.addEventListener('mouseup',   onUp);
-        },
-
-        // ── Paleta: drag-to-create (mesas, especiales y zonas) ────────────────
-        initPaletteInteract() {
-            const ghost     = document.getElementById('palette-ghost');
-            const canvasEl  = this.$refs.canvas;
-            let   dropShape = null;
-            let   dropW     = 100;
-            let   dropH     = 100;
-            let   dropX     = 0;
-            let   dropY     = 0;
-
-            interact('.palette-item').draggable({
-                inertia: false,
-                listeners: {
-                    start: (event) => {
-                        if (this.floorsEnabled && this.currentView === 'general') { event.interaction.stop(); return; }
-                        if (this.tables.length >= {{ $maxTables }}) {
-                            this.showToast(`Límite de {{ $maxTables }} mesas alcanzado.`, true);
-                            return;
-                        }
-
-                        dropShape = event.target.dataset.shape;
-                        dropW     = parseInt(event.target.dataset.width)  || 100;
-                        dropH     = parseInt(event.target.dataset.height) || 100;
-
-                        ghost.style.width   = `${dropW}px`;
-                        ghost.style.height  = `${dropH}px`;
-                        ghost.style.borderRadius =
-                            dropShape === 'round' ? '9999px' :
-                            dropShape === 'square' ? '12px' : '8px';
-                        ghost.querySelector('span').textContent = 'Nueva mesa';
-                        ghost.classList.remove('hidden');
-                        ghost.classList.add('flex');
-
-                        this.isDraggingFromPalette = true;
-                        this.currentDragShape      = dropShape;
-                    },
-
-                    move: (event) => {
-                        const canvasRect = canvasEl.getBoundingClientRect();
-                        const cx         = event.clientX;
-                        const cy         = event.clientY;
-
-                        ghost.style.left = `${cx - dropW / 2}px`;
-                        ghost.style.top  = `${cy - dropH / 2}px`;
-
-                        // getBoundingClientRect devuelve coords visuales (post-scale), hay que dividir por zoom
-                        dropX = Math.max(0, Math.round((cx - canvasRect.left - dropW / 2) / this.canvasZoom));
-                        dropY = Math.max(0, Math.round((cy - canvasRect.top  - dropH / 2) / this.canvasZoom));
-                    },
-
-                    end: async (event) => {
-                        ghost.classList.add('hidden');
-                        ghost.classList.remove('flex');
-                        this.isDraggingFromPalette = false;
-                        this.currentDragShape      = null;
-
-                        const canvasRect = canvasEl.getBoundingClientRect();
-                        const cx         = event.clientX;
-                        const cy         = event.clientY;
-
-                        const overCanvas =
-                            cx >= canvasRect.left && cx <= canvasRect.right &&
-                            cy >= canvasRect.top  && cy <= canvasRect.bottom;
-
-                        if (!overCanvas) return;
-
-                        const candidate = { position_x: dropX, position_y: dropY, width: dropW, height: dropH, shape: dropShape, id: null };
-                        if (this.hasCollision(candidate)) {
-                            this.showToast('No se puede colocar aquí: colisiona con otra mesa o elemento.', true);
-                            return;
-                        }
-
-                        const name = await Alpine.store('tableModal').prompt('table');
-                        if (name === null) return;
-
-                        await this.createTable(name || null, dropShape, dropX, dropY, dropW, dropH);
-                    },
-                },
-            });
-
-            // ── Paleta de elementos especiales (barra, taburete) ─────────────
-            interact('.special-item').draggable({
-                inertia: false,
-                listeners: {
-                    start: (event) => {
-                        if (this.floorsEnabled && this.currentView === 'general') { event.interaction.stop(); return; }
-                        const shape = event.target.dataset.shape;
-                        const dropW = parseInt(event.target.dataset.width)  || 80;
-                        const dropH = parseInt(event.target.dataset.height) || 50;
-
-                        ghost.style.width        = `${dropW}px`;
-                        ghost.style.height       = `${dropH}px`;
-                        ghost.style.borderRadius = shape === 'stool' ? '9999px' : '8px';
-                        ghost.style.borderColor  = '#d97706';
-                        ghost.style.background   = 'rgba(251,191,36,0.3)';
-                        ghost.querySelector('span').textContent = shape === 'bar' ? 'Nueva barra' : 'Nuevo taburete';
-                        ghost.classList.remove('hidden');
-                        ghost.classList.add('flex');
-                        this.isDraggingFromPalette = true;
-                        this.currentDragShape      = shape;
-                    },
-                    move: (event) => {
-                        const w = parseInt(event.target.dataset.width)  || 80;
-                        const h = parseInt(event.target.dataset.height) || 50;
-                        ghost.style.left = `${event.clientX - w / 2}px`;
-                        ghost.style.top  = `${event.clientY - h / 2}px`;
-                        const rect = canvasEl.getBoundingClientRect();
-                        dropX = Math.max(0, Math.round((event.clientX - rect.left - w / 2) / this.canvasZoom));
-                        dropY = Math.max(0, Math.round((event.clientY - rect.top  - h / 2) / this.canvasZoom));
-                        dropShape = event.target.dataset.shape;
-                        dropW     = w;
-                        dropH     = h;
-                    },
-                    end: async (event) => {
-                        ghost.classList.add('hidden');
-                        ghost.classList.remove('flex');
-                        ghost.style.borderColor = '';
-                        ghost.style.background  = '';
-                        this.isDraggingFromPalette = false;
-                        this.currentDragShape      = null;
-
-                        const rect = canvasEl.getBoundingClientRect();
-                        const over = event.clientX >= rect.left && event.clientX <= rect.right &&
-                                     event.clientY >= rect.top  && event.clientY <= rect.bottom;
-                        if (!over) return;
-
-                        const candidate = { position_x: dropX, position_y: dropY, width: dropW, height: dropH, shape: dropShape, id: null };
-                        if (this.hasCollision(candidate)) {
-                            this.showToast('No se puede colocar aquí: colisiona con otra mesa o elemento.', true);
-                            return;
-                        }
-
-                        const name = dropShape === 'bar' ? 'Barra' : 'Taburete';
-                        await this.createSpecialElement(name, dropShape, dropX, dropY, dropW, dropH);
-                    },
-                },
-            });
-
-            // ── Paleta de zonas ───────────────────────────────────────────────
-            interact('.zone-palette-item').draggable({
-                inertia: false,
-                listeners: {
-                    start: (event) => {
-                        if (this.floorsEnabled && this.currentView === 'general') { event.interaction.stop(); return; }
-                        const w = parseInt(event.target.dataset.width)  || 300;
-                        const h = parseInt(event.target.dataset.height) || 200;
-                        ghost.style.width        = `${w}px`;
-                        ghost.style.height       = `${h}px`;
-                        ghost.style.borderRadius = '8px';
-                        ghost.style.borderColor  = this.zoneColor;
-                        ghost.style.background   = this.zoneColor + '33';
-                        ghost.querySelector('span').textContent = 'Nueva zona';
-                        ghost.classList.remove('hidden');
-                        ghost.classList.add('flex');
-                        this.isDraggingZone = true;
-                    },
-                    move: (event) => {
-                        const w = parseInt(event.target.dataset.width)  || 300;
-                        const h = parseInt(event.target.dataset.height) || 200;
-                        ghost.style.left = `${event.clientX - w / 2}px`;
-                        ghost.style.top  = `${event.clientY - h / 2}px`;
-                        const rect = canvasEl.getBoundingClientRect();
-                        dropX = Math.max(0, Math.round((event.clientX - rect.left - w / 2) / this.canvasZoom));
-                        dropY = Math.max(0, Math.round((event.clientY - rect.top  - h / 2) / this.canvasZoom));
-                        dropW = w;
-                        dropH = h;
-                    },
-                    end: async (event) => {
-                        ghost.classList.add('hidden');
-                        ghost.classList.remove('flex');
-                        ghost.style.borderColor = '';
-                        ghost.style.background  = '';
-                        this.isDraggingZone = false;
-
-                        const rect = canvasEl.getBoundingClientRect();
-                        const over = event.clientX >= rect.left && event.clientX <= rect.right &&
-                                     event.clientY >= rect.top  && event.clientY <= rect.bottom;
-                        if (!over) return;
-
-                        const name = await Alpine.store('tableModal').prompt('zone');
-                        if (!name) return;
-
-                        const candidate = { position_x: dropX, position_y: dropY, width: dropW, height: dropH, rotation: 0, id: null, floor: this.floorsEnabled ? this.currentFloor : 1 };
-                        if (this.hasZoneCollision(candidate)) {
-                            this.showToast('No se puede colocar aquí: la zona colisiona con otra zona.', true);
-                            return;
-                        }
-                        await this.createZone(name, this.zoneColor, dropX, dropY, dropW, dropH);
-                    },
-                },
-            });
-        },
-
-        // ── AJAX: crear mesa ──────────────────────────────────────────────────
-        async createTable(name, shape, x, y, w, h) {
-            try {
-                const res = await fetch('{{ route("tables.store") }}', {
-                    method:  'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                        'Accept':       'application/json',
-                    },
-                    body: JSON.stringify({
-                        name:             name || null,
-                        shape,
-                        position_x:       x,
-                        position_y:       y,
-                        width:            w,
-                        height:           h,
-                        is_service_point: true,
-                        floor:            this.floorsEnabled ? this.currentFloor : 1,
-                    }),
-                });
-
-                const json = await res.json();
-
-                if (!res.ok || !json.success) {
-                    this.showToast(json.message ?? 'Error al crear la mesa.', true);
-                    return;
-                }
-
-                this.tables.push(json.data);
-                this.reinitInteract();
-                this.showToast(json.message);
-            } catch {
-                this.showToast('Error de red al crear la mesa.', true);
-            }
-        },
-
-        // ── AJAX: crear elemento especial (barra, taburete) ──────────────────
-        async createSpecialElement(name, shape, x, y, w, h) {
-            try {
-                const res = await fetch('{{ route("tables.store") }}', {
-                    method:  'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                        'Accept':       'application/json',
-                    },
-                    body: JSON.stringify({
-                        name,
-                        shape,
-                        position_x:       x,
-                        position_y:       y,
-                        width:            w,
-                        height:           h,
-                        is_service_point: false,
-                        floor:            this.floorsEnabled ? this.currentFloor : 1,
-                    }),
-                });
-
-                const json = await res.json();
-
-                if (!res.ok || !json.success) {
-                    this.showToast(json.message ?? 'Error al crear el elemento.', true);
-                    return;
-                }
-
-                this.elements.push(json.data);
-                this.reinitInteract();
-                this.showToast(json.message);
-            } catch {
-                this.showToast('Error de red al crear el elemento.', true);
-            }
-        },
-
-        // ── AJAX: crear zona ──────────────────────────────────────────────────
-        async createZone(name, color, x, y, w, h) {
-            try {
-                const res = await fetch('{{ route("zones.store") }}', {
-                    method:  'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                        'Accept':       'application/json',
-                    },
-                    body: JSON.stringify({ name, color, position_x: x, position_y: y, width: w, height: h, floor: this.floorsEnabled ? this.currentFloor : 1 }),
-                });
-
-                const json = await res.json();
-
-                if (!res.ok || !json.success) {
-                    this.showToast(json.message ?? 'Error al crear la zona.', true);
-                    return;
-                }
-
-                this.zones.push(json.data);
-                this.reinitZoneInteract();
-                this.showToast(json.message);
-            } catch {
-                this.showToast('Error de red al crear la zona.', true);
-            }
-        },
-
-        // ── AJAX: actualizar nombre de zona ───────────────────────────────────
-        async updateZoneName(zone, name) {
-            name = name.trim();
-            if (!name || name === zone.name) return;
-            const prev = zone.name;
-            zone.name  = name;
-
-            try {
-                const res = await fetch(`/zonas/${zone.id}`, {
-                    method:  'PATCH',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 'Accept': 'application/json' },
-                    body: JSON.stringify({ name }),
-                });
-                const json = await res.json();
-                if (!res.ok || !json.success) { zone.name = prev; this.showToast(json.message ?? 'Error.', true); return; }
-                this.showToast(json.message);
-            } catch {
-                zone.name = prev;
-                this.showToast('Error de red.', true);
-            }
-        },
-
-        // ── AJAX: actualizar color de zona ────────────────────────────────────
-        async updateZoneColor(zone, color) {
-            const prev = zone.color;
-            zone.color = color;
-
-            try {
-                const res = await fetch(`/zonas/${zone.id}`, {
-                    method:  'PATCH',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 'Accept': 'application/json' },
-                    body: JSON.stringify({ color }),
-                });
-                const json = await res.json();
-                if (!res.ok || !json.success) { zone.color = prev; this.showToast(json.message ?? 'Error.', true); }
-            } catch {
-                zone.color = prev;
-                this.showToast('Error de red.', true);
-            }
-        },
-
-        // ── AJAX: persistir posición de zona ──────────────────────────────────
-        async persistZonePosition(id, x, y) {
-            try {
-                const res = await fetch(`/zonas/${id}`, {
-                    method:  'PATCH',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 'Accept': 'application/json' },
-                    body: JSON.stringify({ position_x: x, position_y: y }),
-                });
-                if (!res.ok) this.showToast('Error al guardar la posición de la zona.', true);
-            } catch {
-                this.showToast('Error de red.', true);
-            }
-        },
-
-        // ── AJAX: persistir rotación de zona ──────────────────────────────────
-        async persistZoneRotation(id, rotation) {
-            try {
-                const res = await fetch(`/zonas/${id}`, {
-                    method:  'PATCH',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 'Accept': 'application/json' },
-                    body: JSON.stringify({ rotation }),
-                });
-                if (!res.ok) this.showToast('Error al guardar la rotación de la zona.', true);
-            } catch {
-                this.showToast('Error de red.', true);
-            }
-        },
-
-        // ── Polígonos: devuelve string de puntos SVG para la zona/barra ─────────
-        vertexPoints(item) {
-            if (!item.vertices || item.vertices.length < 3) return '';
-            return item.vertices.map(v => `${v.x},${v.y}`).join(' ');
-        },
-
-        // ── Drag de vértice de zona ───────────────────────────────────────────
-        startVertexDrag(event, zone, idx) {
-            if (!this.editMode) return;
-            event.stopPropagation();
-            this.pushUndo();
-            const startMX = event.clientX;
-            const startMY = event.clientY;
-            const startVX = zone.vertices[idx].x;
-            const startVY = zone.vertices[idx].y;
-            const handle  = event.currentTarget;
-            const zoneEl  = handle.closest('[data-zone-id]');
-            const svgPoly = zoneEl?.querySelector('polygon');
-
-            let newX = startVX, newY = startVY;
-
-            const onMove = (e) => {
-                newX = startVX + (e.clientX - startMX) / this.canvasZoom;
-                newY = startVY + (e.clientY - startMY) / this.canvasZoom;
-                handle.style.left = `${newX - 6}px`;
-                handle.style.top  = `${newY - 6}px`;
-                if (svgPoly) {
-                    svgPoly.setAttribute('points',
-                        zone.vertices.map((v, i) => i === idx ? `${newX},${newY}` : `${v.x},${v.y}`).join(' ')
-                    );
-                }
-            };
-
-            const onUp = async () => {
-                document.removeEventListener('mousemove', onMove);
-                document.removeEventListener('mouseup',   onUp);
-                zone.vertices[idx].x = newX;
-                zone.vertices[idx].y = newY;
-                await this.persistZoneVertices(zone.id, zone.vertices);
-            };
-
-            document.addEventListener('mousemove', onMove);
-            document.addEventListener('mouseup',   onUp);
-        },
-
-        // ── Drag de vértice de barra ──────────────────────────────────────────
-        startBarVertexDrag(event, element, idx) {
-            if (!this.editMode) return;
-            event.stopPropagation();
-            this.pushUndo();
-            const startMX = event.clientX;
-            const startMY = event.clientY;
-            const startVX = element.vertices[idx].x;
-            const startVY = element.vertices[idx].y;
-            const handle  = event.currentTarget;
-            const barEl   = handle.closest('[data-table-id]');
-            const svgPoly = barEl?.querySelector('polygon');
-
-            let newX = startVX, newY = startVY;
-
-            const onMove = (e) => {
-                newX = startVX + (e.clientX - startMX) / this.canvasZoom;
-                newY = startVY + (e.clientY - startMY) / this.canvasZoom;
-                handle.style.left = `${newX - 6}px`;
-                handle.style.top  = `${newY - 6}px`;
-                if (svgPoly) {
-                    svgPoly.setAttribute('points',
-                        element.vertices.map((v, i) => i === idx ? `${newX},${newY}` : `${v.x},${v.y}`).join(' ')
-                    );
-                }
-            };
-
-            const onUp = async () => {
-                document.removeEventListener('mousemove', onMove);
-                document.removeEventListener('mouseup',   onUp);
-                element.vertices[idx].x = newX;
-                element.vertices[idx].y = newY;
-                await this.persistBarVertices(element.id, element.vertices);
-            };
-
-            document.addEventListener('mousemove', onMove);
-            document.addEventListener('mouseup',   onUp);
-        },
-
-        // ── AJAX: persistir vértices de zona ──────────────────────────────────
-        async persistZoneVertices(id, vertices) {
-            try {
-                const res = await fetch(`/zonas/${id}`, {
-                    method:  'PATCH',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 'Accept': 'application/json' },
-                    body: JSON.stringify({ vertices }),
-                });
-                if (!res.ok) this.showToast('Error al guardar los vértices.', true);
-            } catch {
-                this.showToast('Error de red.', true);
-            }
-        },
-
-        // ── AJAX: persistir vértices de barra ─────────────────────────────────
-        async persistBarVertices(id, vertices) {
-            try {
-                const res = await fetch(`/mesas/${id}/vertices`, {
-                    method:  'PATCH',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 'Accept': 'application/json' },
-                    body: JSON.stringify({ vertices }),
-                });
-                if (!res.ok) this.showToast('Error al guardar los vértices de la barra.', true);
-            } catch {
-                this.showToast('Error de red.', true);
-            }
-        },
-
-        // ── Inicializar vértices de polígono (4 esquinas del rectángulo) ──────
-        initPolygonVertices(zone) {
-            if (zone.vertices && zone.vertices.length >= 3) return;
-            zone.vertices = [
-                { x: 0,           y: 0            },
-                { x: zone.width,  y: 0            },
-                { x: zone.width,  y: zone.height  },
-                { x: 0,           y: zone.height  },
-            ];
-            this.persistZoneVertices(zone.id, zone.vertices);
-        },
-
-        // ── Inicializar vértices de barra ─────────────────────────────────────
-        initBarPolygonVertices(element) {
-            if (element.vertices && element.vertices.length >= 3) return;
-            element.vertices = [
-                { x: 0,              y: 0               },
-                { x: element.width,  y: 0               },
-                { x: element.width,  y: element.height  },
-                { x: 0,              y: element.height  },
-            ];
-            this.persistBarVertices(element.id, element.vertices);
-        },
-
-        // ── Añadir vértice en el punto medio de una arista ────────────────────
-        addZoneVertex(zone, edgeStartIdx) {
-            this.pushUndo();
-            const n = zone.vertices.length;
-            const a = zone.vertices[edgeStartIdx];
-            const b = zone.vertices[(edgeStartIdx + 1) % n];
-            zone.vertices.splice(edgeStartIdx + 1, 0, { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
-            this.persistZoneVertices(zone.id, zone.vertices);
-        },
-
-        addBarVertex(element, edgeStartIdx) {
-            this.pushUndo();
-            const n = element.vertices.length;
-            const a = element.vertices[edgeStartIdx];
-            const b = element.vertices[(edgeStartIdx + 1) % n];
-            element.vertices.splice(edgeStartIdx + 1, 0, { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
-            this.persistBarVertices(element.id, element.vertices);
-        },
-
-        removeZoneVertex(zone, idx) {
-            if (zone.vertices.length <= 3) return;
-            this.pushUndo();
-            zone.vertices.splice(idx, 1);
-            this.persistZoneVertices(zone.id, zone.vertices);
-        },
-
-        removeBarVertex(element, idx) {
-            if (element.vertices.length <= 3) return;
-            this.pushUndo();
-            element.vertices.splice(idx, 1);
-            this.persistBarVertices(element.id, element.vertices);
-        },
-
-        // ── Resize de zona ────────────────────────────────────────────────────
-        startZoneResize(event, zone) {
-            if (!this.editMode) return;
-            this.pushUndo();
-            const startMX = event.clientX;
-            const startMY = event.clientY;
-            const startW  = zone.width;
-            const startH  = zone.height;
-            this.closeEditPanels();
-            this.resizingId            = zone.id;
-            document.body.style.cursor = 'se-resize';
-
-            const onMove = (e) => {
-                const maxW   = Math.max(80, this.floorWidth  - zone.position_x);
-                const maxH   = Math.max(60, this.floorHeight - zone.position_y);
-                const newW   = Math.min(maxW, Math.max(80, startW + (e.clientX - startMX) / this.canvasZoom));
-                const newH   = Math.min(maxH, Math.max(60, startH + (e.clientY - startMY) / this.canvasZoom));
-                const testWH = { ...zone, width: Math.round(newW), height: Math.round(newH) };
-                const testW  = { ...zone, width: Math.round(newW) };
-                const testH  = { ...zone, height: Math.round(newH) };
-
-                if (!this.hasZoneCollision(testWH)) {
-                    zone.width  = Math.round(newW);
-                    zone.height = Math.round(newH);
-                } else if (!this.hasZoneCollision(testW)) {
-                    zone.width  = Math.round(newW);
-                } else if (!this.hasZoneCollision(testH)) {
-                    zone.height = Math.round(newH);
-                }
-            };
-
-            const onUp = async () => {
-                document.removeEventListener('mousemove', onMove);
-                document.removeEventListener('mouseup',   onUp);
-                this.resizingId            = null;
-                document.body.style.cursor = '';
-                try {
-                    await fetch(`/zonas/${zone.id}`, {
-                        method:  'PATCH',
-                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 'Accept': 'application/json' },
-                        body: JSON.stringify({ position_x: zone.position_x, position_y: zone.position_y, width: zone.width, height: zone.height }),
-                    });
-                } catch {
-                    this.showToast('Error al guardar dimensiones.', true);
-                }
-            };
-
-            document.addEventListener('mousemove', onMove);
-            document.addEventListener('mouseup',   onUp);
-        },
-
-        // ── AJAX: eliminar zona ───────────────────────────────────────────────
-        async deleteZone(zone) {
-            const confirmed = await Alpine.store('deleteModal').prompt(zone);
-            if (!confirmed) return;
-
-            try {
-                const res = await fetch(`/zonas/${zone.id}`, {
-                    method:  'DELETE',
-                    headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 'Accept': 'application/json' },
-                });
-                const json = await res.json();
-                if (!res.ok || !json.success) { this.showToast(json.message ?? 'Error al eliminar.', true); return; }
-                this.zones = this.zones.filter(z => z.id !== zone.id);
-                this.showToast(json.message);
-            } catch {
-                this.showToast('Error de red.', true);
-            }
-        },
-
-        // ── AJAX: eliminar elemento especial ──────────────────────────────────
-        async deleteElement(element) {
-            const confirmed = await Alpine.store('deleteModal').prompt(element);
-            if (!confirmed) return;
-
-            try {
-                const res = await fetch(`/mesas/${element.id}`, {
-                    method:  'DELETE',
-                    headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 'Accept': 'application/json' },
-                });
-                const json = await res.json();
-                if (!res.ok || !json.success) { this.showToast(json.message ?? 'Error al eliminar.', true); return; }
-                this.elements = this.elements.filter(e => e.id !== element.id);
-                this.showToast(json.message);
-            } catch {
-                this.showToast('Error de red.', true);
-            }
-        },
-
-        // ── Resize libre en espacio local del elemento rotado ────────────────
-        startResize(event, table) {
-            if (this.floorsEnabled && this.currentView === 'general') return;
-            if (!this.editMode) return;
-            this.pushUndo();
-            const θRad    = (table.rotation ?? 0) * Math.PI / 180;
-            const cosθ    = Math.cos(θRad);
-            const sinθ    = Math.sin(θRad);
-            const startMX = event.clientX;
-            const startMY = event.clientY;
-            const startW  = table.width;
-            const startH  = table.height;
-            const startPx = table.position_x;
-            const startPy = table.position_y;
-
-            this.closeEditPanels();
-            this.resizingId            = table.id;
-            document.body.style.cursor = 'se-resize';
-
-            const onMove = (e) => {
-                const dx = (e.clientX - startMX) / this.canvasZoom;
-                const dy = (e.clientY - startMY) / this.canvasZoom;
-
-                // Proyectar delta de pantalla al espacio local del elemento (rotación inversa)
-                const localDX =  dx * cosθ + dy * sinθ;
-                const localDY = -dx * sinθ + dy * cosθ;
-
-                const newW = Math.min(800, Math.max(40, startW + localDX));
-                const newH = Math.min(800, Math.max(40, startH + localDY));
-                const dW   = newW - startW;
-                const dH   = newH - startH;
-
-                const rawX = Math.round(startPx + dW / 2 * (cosθ - 1) - dH / 2 * sinθ);
-                const rawY = Math.round(startPy + dW / 2 * sinθ + dH / 2 * (cosθ - 1));
-                const newX = Math.max(0, Math.min(this.floorWidth  - Math.round(newW), rawX));
-                const newY = Math.max(0, Math.min(this.floorHeight - Math.round(newH), rawY));
-
-                const testItem = { ...table, width: Math.round(newW), height: Math.round(newH), position_x: newX, position_y: newY };
-                if (!this.hasCollision(testItem)) {
-                    table.width      = Math.round(newW);
-                    table.height     = Math.round(newH);
-                    table.position_x = newX;
-                    table.position_y = newY;
-                }
-            };
-
-            const onUp = async () => {
-                document.removeEventListener('mousemove', onMove);
-                document.removeEventListener('mouseup',   onUp);
-                this.resizingId            = null;
-                document.body.style.cursor = '';
-                await this.persistPosition(table.id, table.position_x, table.position_y, table.width, table.height);
-            };
-
-            document.addEventListener('mousemove', onMove);
-            document.addEventListener('mouseup',   onUp);
-        },
-
-        // ── AJAX: persistir posición, dimensiones y rotación ─────────────────
-        async persistPosition(id, x, y, w, h) {
-            const item = this.tables.find(t => t.id === id) ?? this.elements.find(e => e.id === id);
-            if (item) {
-                item.position_x = x;
-                item.position_y = y;
-                item.width      = w;
-                item.height     = h;
-            }
-
-            try {
-                const res = await fetch(`/mesas/${id}/posicion`, {
-                    method:  'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                        'Accept':       'application/json',
-                    },
-                    body: JSON.stringify({
-                        position_x: x,
-                        position_y: y,
-                        width:      w,
-                        height:     h,
-                        rotation:   item?.rotation ?? 0,
-                    }),
-                });
-
-                if (!res.ok) {
-                    this.showToast('Error al guardar la posición.', true);
-                }
-            } catch {
-                this.showToast('Error de red al guardar posición.', true);
-            }
-        },
-
-        // ── AJAX: actualizar forma de mesa existente ──────────────────────────
-        async updateShape(table, shape) {
-            const prev = table.shape;
-            table.shape = shape;
-            this.editingTableId = null;
-            this.editingTable   = null;
-            this._editBtnEl     = null;
-
-            try {
-                const res = await fetch(`/mesas/${table.id}/forma`, {
-                    method:  'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                        'Accept':       'application/json',
-                    },
-                    body: JSON.stringify({ shape }),
-                });
-
-                const json = await res.json();
-
-                if (!res.ok || !json.success) {
-                    table.shape = prev;
-                    this.showToast(json.message ?? 'Error al cambiar la forma.', true);
-                    return;
-                }
-
-                this.showToast(json.message);
-            } catch {
-                table.shape = prev;
-                this.showToast('Error de red al cambiar la forma.', true);
-            }
-        },
-
-        // ── AJAX: actualizar nombre de mesa existente ─────────────────────────
-        zoneFor(table) {
-            return table.zone_id ? (this.zones.find(z => z.id == table.zone_id) ?? null) : null;
-        },
-
-        async updateZoneAssignment(table, zoneId) {
-            const prev       = table.zone_id;
-            table.zone_id    = zoneId ? parseInt(zoneId) : null;
-
-            try {
-                const res = await fetch(`/mesas/${table.id}/zona`, {
-                    method:  'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                        'Accept':       'application/json',
-                    },
-                    body: JSON.stringify({ zone_id: table.zone_id }),
-                });
-
-                const json = await res.json();
-
-                if (!res.ok || !json.success) {
-                    table.zone_id = prev;
-                    this.showToast(json.message ?? 'Error al asignar la zona.', true);
-                    return;
-                }
-
-                this.showToast(json.message);
-            } catch {
-                table.zone_id = prev;
-                this.showToast('Error de red al asignar la zona.', true);
-            }
-        },
-
-        async updateName(table, name) {
-            name = name.trim();
-            if (!name || name === table.name) return;
-
-            const prev  = table.name;
-            table.name  = name;
-
-            try {
-                const res = await fetch(`/mesas/${table.id}/nombre`, {
-                    method:  'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                        'Accept':       'application/json',
-                    },
-                    body: JSON.stringify({ name }),
-                });
-
-                const json = await res.json();
-
-                if (!res.ok || !json.success) {
-                    table.name = prev;
-                    this.showToast(json.message ?? 'Error al renombrar la mesa.', true);
-                    return;
-                }
-
-                this.showToast(json.message);
-            } catch {
-                table.name = prev;
-                this.showToast('Error de red al renombrar la mesa.', true);
-            }
-        },
-
-        // ── Rotación libre arrastrando el handle (estilo Canva) ───────────────
-        startRotation(event, table) {
-            if (this.floorsEnabled && this.currentView === 'general') return;
-            if (!this.editMode) return;
-            this.pushUndo();
-            this.closeEditPanels();
-            this.rotatingId     = table.id;
-
-            const canvasRect = this.$refs.canvas.getBoundingClientRect();
-            const centerX    = canvasRect.left + (table.position_x + table.width  / 2) * this.canvasZoom;
-            const centerY    = canvasRect.top  + (table.position_y + table.height / 2) * this.canvasZoom;
-
-            this.isRotating            = true;
-            this.rotTooltip.show       = true;
-            document.body.style.cursor = "url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2720%27 height=%2720%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27M21 2v6h-6%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M3 12a9 9 0 0 1 15-6.7L21 8%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M3 22v-6h6%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M21 12a9 9 0 0 1-15 6.7L3 16%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M21 2v6h-6%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M3 12a9 9 0 0 1 15-6.7L21 8%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M3 22v-6h6%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M21 12a9 9 0 0 1-15 6.7L3 16%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3C/svg%3E') 10 10, grabbing";
-
-            let lastValidRotation = table.rotation ?? 0;
-
-            const onMove = (e) => {
-                const dx       = e.clientX - centerX;
-                const dy       = e.clientY - centerY;
-                let   angle    = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
-                angle = ((angle % 360) + 360) % 360;
-                const proposed = Math.round(angle);
-
-                const testItem = { ...table, rotation: proposed };
-                if (!this.hasCollision(testItem)) {
-                    table.rotation    = proposed;
-                    lastValidRotation = proposed;
-                } else {
-                    table.rotation = lastValidRotation;
-                }
-
-                this.rotTooltip.x   = e.clientX;
-                this.rotTooltip.y   = e.clientY;
-                this.rotTooltip.deg = table.rotation;
-            };
-
-            const onUp = async () => {
-                document.removeEventListener('mousemove', onMove);
-                document.removeEventListener('mouseup',   onUp);
-                this.isRotating            = false;
-                this.rotatingId            = null;
-                this.rotTooltip.show       = false;
-                document.body.style.cursor = '';
-                await this.persistPosition(table.id, table.position_x, table.position_y, table.width, table.height);
-            };
-
-            document.addEventListener('mousemove', onMove);
-            document.addEventListener('mouseup',   onUp);
-        },
-
-        startPan(event) {
-            if (!this.editMode || this.currentView === 'general') return;
-            if (event.button !== 0) return;
-            const main = this.$refs.canvas?.parentElement;
-            if (!main) return;
-            this.isPanning = true;
-            const startX   = event.clientX;
-            const startY   = event.clientY;
-            const scrollX  = main.scrollLeft;
-            const scrollY  = main.scrollTop;
-            document.body.style.cursor = 'grabbing';
-
-            const onMove = (e) => {
-                if (!this.isPanning) return;
-                main.scrollLeft = scrollX - (e.clientX - startX);
-                main.scrollTop  = scrollY - (e.clientY - startY);
-            };
-            const onUp = () => {
-                this.isPanning             = false;
-                document.body.style.cursor = '';
-                document.removeEventListener('mousemove', onMove);
-                document.removeEventListener('mouseup',   onUp);
-            };
-            document.addEventListener('mousemove', onMove);
-            document.addEventListener('mouseup',   onUp);
-        },
-
-        closeEditPanels() {
-            this.editingTableId = null;
-            this.editingTable   = null;
-            this._editBtnEl     = null;
-            this.editingZoneId  = null;
-            this.editingZone    = null;
-            this._zoneBtnEl     = null;
-        },
-
-        // ── Menú contextual ──────────────────────────────────────────────────
-        openContextMenu(event, item, type) {
-            event.preventDefault();
-            this.selectedId = item.id;
-            this.closeEditPanels();
-
-            const menuW = 220;
-            const menuH = 340;
-            const vw    = window.innerWidth;
-            const vh    = window.innerHeight;
-
-            let x, y;
-
-            // Teclado: no hay clientX/Y reales, posicionar junto al elemento en el canvas
-            if (event.type !== 'contextmenu' || !event.clientX) {
-                const canvas = this.$refs.canvas;
-                const cRect  = canvas.getBoundingClientRect();
-                x = cRect.left + (item.position_x + item.width) * this.canvasZoom;
-                y = cRect.top  + (item.position_y + item.height / 2) * this.canvasZoom;
-            } else {
-                x = event.clientX;
-                y = event.clientY;
-            }
-
-            if (x + menuW > vw) x = Math.max(0, vw - menuW - 8);
-            if (y + menuH > vh) y = Math.max(0, vh - menuH - 8);
-
-            this.contextMenu = { show: true, x, y, type, item };
-        },
-
-        closeContextMenu() {
-            if (!this.contextMenu.show) return;
-            this.contextMenu = { show: false, x: 0, y: 0, type: null, item: null };
-        },
-
-        // Posición del panel de edición basada en coordenadas canvas del ítem
-        panelPosFromItem(item, panelW) {
-            return {
-                x: Math.max(4, item.position_x + item.width + 8),
-                y: Math.max(4, item.position_y),
-            };
-        },
-
-        // Navegación teclado dentro del menú contextual
-        focusNextContextItem(current) {
-            const items = [...document.querySelectorAll('#context-menu [role=menuitem]')]
-                .filter(el => el.offsetParent !== null);
-            const idx = items.indexOf(current);
-            items[(idx + 1) % items.length]?.focus();
-        },
-
-        focusPrevContextItem(current) {
-            const items = [...document.querySelectorAll('#context-menu [role=menuitem]')]
-                .filter(el => el.offsetParent !== null);
-            const idx = items.indexOf(current);
-            items[(idx - 1 + items.length) % items.length]?.focus();
-        },
-
-        exitEditMode() {
-            this.editMode  = false;
-            this.closeEditPanels();
-            this.selectedId = null;
-            this.hoveredId  = null;
-            Alpine.store('qrModal').close();
-            Alpine.store('tableModal').cancel();
-            Alpine.store('deleteModal').resolve(false);
-            Alpine.store('sizeModal').resolve(false);
-            this._applyOverviewZoom();
-        },
-
-        isActive(id) {
-            return this.selectedId     === id
-                || this.rotatingId     === id
-                || this.draggingId     === id
-                || this.resizingId     === id
-                || this.editingTableId === id
-                || this.editingZoneId  === id;
-        },
-
-        panelPosFromBtn(btn, panelW) {
-            const canvas = this.$refs.canvas;
-            const cRect  = canvas.getBoundingClientRect();
-            const bRect  = btn.getBoundingClientRect();
-            const zoom   = this.canvasZoom;
-            // Convertir coords de viewport a espacio del canvas (divir por zoom deshace el transform:scale)
-            const left = (bRect.left + bRect.width / 2 - cRect.left) / zoom - panelW / 2;
-            const top  = (bRect.bottom - cRect.top) / zoom + 8;
-            return {
-                x: Math.max(4, left),
-                y: Math.max(4, top),
-            };
-        },
-
-        // ── Filtros de visibilidad por planta ────────────────────────────────
-        visibleTables() {
-            if (!this.floorsEnabled || this.currentView === 'general') return this.tables;
-            return this.tables.filter(t => (t.floor ?? 1) === this.currentFloor);
-        },
-
-        visibleElements() {
-            if (!this.floorsEnabled || this.currentView === 'general') return this.elements;
-            return this.elements.filter(e => (e.floor ?? 1) === this.currentFloor);
-        },
-
-        visibleZones() {
-            if (!this.floorsEnabled || this.currentView === 'general') return this.zones;
-            return this.zones.filter(z => (z.floor ?? 1) === this.currentFloor);
-        },
-
-        // ── Navegación entre plantas y vistas ────────────────────────────────
-        switchFloor(n) {
-            this.currentFloor   = n;
-            this.currentView    = 'floor';
-            const size = this.floorCanvasSizes[n];
-            if (size) {
-                this.floorWidth  = size.width;
-                this.floorHeight = size.height;
-            }
-            if (this.editMode) {
-                this.canvasZoom = 1;
-            } else {
-                this._applyOverviewZoom();
-            }
-            this.editingTableId = null;
-            this.editingTable   = null;
-            this._editBtnEl     = null;
-            this.editingZoneId  = null;
-            this.editingZone    = null;
-            this._zoneBtnEl     = null;
-        },
-
-        switchView(view) {
-            this.currentView = view;
-            if (view === 'general') {
-                if (this.floorsEnabled) {
-                    const sizes = Object.values(this.floorCanvasSizes);
-                    if (sizes.length) {
-                        this.floorWidth  = Math.max(...sizes.map(s => s.width));
-                        this.floorHeight = Math.max(...sizes.map(s => s.height));
-                    }
-                }
-                this.$nextTick(() => this._applyOverviewZoom());
-            }
-            this.closeEditPanels();
-            this.selectedId = null;
-            this.hoveredId  = null;
-            Alpine.store('qrModal').close();
-            Alpine.store('tableModal').cancel();
-            Alpine.store('deleteModal').resolve(false);
-            Alpine.store('sizeModal').resolve(false);
-        },
-
-        // Calcula y aplica zoom para que el canvas quepa en pantalla (modo vista general).
-        _applyOverviewZoom() {
-            const headerH = document.querySelector('header')?.offsetHeight ?? 65;
-            const availW  = window.innerWidth  - 48;
-            const availH  = window.innerHeight - headerH - 48;
-            const scaleX  = availW  / this.floorWidth;
-            const scaleY  = availH  / this.floorHeight;
-            this.canvasZoom = Math.max(0.5, Math.min(1, Math.min(scaleX, scaleY)));
-            // Resetear scroll del contenedor para que el canvas aparezca centrado correctamente
-            const main = this.$refs.canvas?.parentElement;
-            if (main) { main.scrollTop = 0; main.scrollLeft = 0; }
-        },
-
-        // ── Mover zona a otra planta ─────────────────────────────────────────
-        async moveZoneToFloor(zone, newFloor) {
-            if (!zone || newFloor === (zone.floor ?? 1)) return;
-            const prev = zone.floor ?? 1;
-            zone.floor = newFloor;
-            try {
-                const res = await fetch(`/zonas/${zone.id}`, {
-                    method:  'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                        'Accept':       'application/json',
-                    },
-                    body: JSON.stringify({ floor: newFloor }),
-                });
-                const json = await res.json();
-                if (!res.ok || !json.success) {
-                    zone.floor = prev;
-                    this.showToast(json.message ?? 'Error al mover la zona.', true);
-                    return;
-                }
-                this.editingZoneId = null;
-                this.editingZone   = null;
-                this._zoneBtnEl    = null;
-                this.showToast(json.message);
-            } catch {
-                zone.floor = prev;
-                this.showToast('Error de red al mover la zona.', true);
-            }
-        },
-
-        // ── Toggle sistema de plantas ─────────────────────────────────────────
-        async toggleFloorsEnabled(enabled) {
-            if (!enabled) {
-                const hasUpperStructures =
-                    this.tables.some(t => (t.floor ?? 1) > 1) ||
-                    this.elements.some(e => (e.floor ?? 1) > 1) ||
-                    this.zones.some(z => (z.floor ?? 1) > 1);
-                if (hasUpperStructures) {
-                    this.showToast('Elimina todas las estructuras de las plantas superiores antes de desactivar el sistema.', true);
-                    return;
-                }
-                this.currentView  = 'floor';
-                this.currentFloor = 1;
-            }
-            const prev = this.floorsEnabled;
-            this.floorsEnabled = enabled;
-            try {
-                const res = await fetch('{{ route("tables.floor-settings") }}', {
-                    method:  'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                        'Accept':       'application/json',
-                    },
-                    body: JSON.stringify({ floors_enabled: enabled }),
-                });
-                const json = await res.json();
-                if (!res.ok || !json.success) {
-                    this.floorsEnabled = prev;
-                    this.showToast(json.message ?? 'Error al guardar la configuración de plantas.', true);
-                }
-            } catch {
-                this.floorsEnabled = prev;
-                this.showToast('Error al guardar la configuración de plantas.', true);
-            }
-        },
-
-        // ── Añadir planta ─────────────────────────────────────────────────────
-        async addFloor() {
-            if (this.floorCount >= 5) return;
-            const newCount = this.floorCount + 1;
-            try {
-                const res = await fetch('{{ route("tables.floor-settings") }}', {
-                    method:  'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                        'Accept':       'application/json',
-                    },
-                    body: JSON.stringify({ floor_count: newCount }),
-                });
-                const json = await res.json();
-                if (res.ok && json.success) {
-                    this.floorCount = newCount;
-                    const floor1Size = this.floorCanvasSizes[1] ?? { width: this.floorWidth, height: this.floorHeight };
-                    this.floorCanvasSizes[newCount] = { ...floor1Size };
-                    this.switchFloor(newCount);
-                    this.showToast(`Planta ${newCount} creada.`);
-                }
-            } catch {
-                this.showToast('Error al crear la planta.', true);
-            }
-        },
-
-        // ── Confirmar y eliminar última planta ───────────────────────────────
-        async confirmDeleteFloor(floor) {
-            const structuresOnFloor = [
-                ...this.tables.filter(t => (t.floor ?? 1) === floor),
-                ...this.elements.filter(e => (e.floor ?? 1) === floor),
-            ];
-
-            const confirmed = await Alpine.store('deleteModal').prompt({
-                name:     String(floor),
-                shape:    null,
-                _isFloor: true,
-                _count:   structuresOnFloor.length,
-            });
-
-            if (!confirmed) return;
-
-            try {
-                const res = await fetch(`/mesas/mapa/plantas/${floor}`, {
-                    method:  'DELETE',
-                    headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                        'Accept':       'application/json',
-                    },
-                });
-                const json = await res.json();
-                if (!res.ok || !json.success) {
-                    this.showToast(json.message ?? 'Error al eliminar la planta.', true);
-                    return;
-                }
-                this.tables   = this.tables.filter(t => (t.floor ?? 1) !== floor);
-                this.elements = this.elements.filter(e => (e.floor ?? 1) !== floor);
-                this.zones    = this.zones.filter(z => (z.floor ?? 1) !== floor);
-                this.floorCount = floor - 1;
-                if (this.currentFloor >= floor) this.switchFloor(floor - 1);
-                this.$nextTick(() => {
-                    this.initTableInteract();
-                    this.initCanvasDropzone();
-                });
-                this.showToast(`Planta ${floor} eliminada.`);
-            } catch {
-                this.showToast('Error de red al eliminar la planta.', true);
-            }
-        },
-
-        // ── Mover estructura a otra planta ───────────────────────────────────
-        async moveToFloor(item, newFloor) {
-            if (!item || newFloor === (item.floor ?? 1)) return;
-            const prev = item.floor ?? 1;
-            item.floor = newFloor;
-            try {
-                const res = await fetch(`/mesas/${item.id}/planta`, {
-                    method:  'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                        'Accept':       'application/json',
-                    },
-                    body: JSON.stringify({ floor: newFloor }),
-                });
-                const json = await res.json();
-                if (!res.ok || !json.success) {
-                    item.floor = prev;
-                    this.showToast(json.message ?? 'Error al mover la estructura.', true);
-                    return;
-                }
-                this.editingTableId = null;
-                this.editingTable   = null;
-                this._editBtnEl     = null;
-                this.$nextTick(() => this.initTableInteract());
-                this.showToast(json.message);
-            } catch {
-                item.floor = prev;
-                this.showToast('Error de red al mover la estructura.', true);
-            }
-        },
-
-        // ── AJAX: eliminar mesa ───────────────────────────────────────────────
-        async deleteTable(table) {
-            const confirmed = await Alpine.store('deleteModal').prompt(table);
-            if (!confirmed) return;
-
-            try {
-                const res = await fetch(`/mesas/${table.id}`, {
-                    method:  'DELETE',
-                    headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                        'Accept':       'application/json',
-                    },
-                });
-
-                const json = await res.json();
-
-                if (!res.ok || !json.success) {
-                    this.showToast(json.message ?? 'Error al eliminar la mesa.', true);
-                    return;
-                }
-
-                this.tables = this.tables.filter(t => t.id !== table.id);
-                this.showToast(json.message);
-            } catch {
-                this.showToast('Error de red al eliminar la mesa.', true);
-            }
-        },
-
-        // ── Teclado: helpers ──────────────────────────────────────────────────
-        _isTyping() {
-            const tag = document.activeElement?.tagName;
-            return tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA'
-                || document.activeElement?.isContentEditable;
-        },
-
-        getSelectedItem() {
-            if (!this.selectedId) return null;
-            return this.tables.find(t => t.id === this.selectedId)
-                ?? this.elements.find(e => e.id === this.selectedId)
-                ?? this.zones.find(z => z.id === this.selectedId)
-                ?? null;
-        },
-
-        // ── Teclado: mover elemento seleccionado ─────────────────────────────
-        async kbMove(dx, dy) {
-            const item = this.getSelectedItem();
-            if (!item) return;
-            this.pushUndo();
-            const { width: cw, height: ch } = this.sizeForItem(item);
-            item.position_x = Math.max(0, Math.min(item.position_x + dx, cw - item.width));
-            item.position_y = Math.max(0, Math.min(item.position_y + dy, ch - item.height));
-            if (this.zones.some(z => z.id === item.id)) {
-                await this.persistZonePosition(item.id, item.position_x, item.position_y);
-            } else {
-                await this.persistPosition(item.id, item.position_x, item.position_y, item.width, item.height);
-            }
-        },
-
-        // ── Teclado: rotar elemento seleccionado ─────────────────────────────
-        async kbRotate(delta) {
-            const item = this.getSelectedItem();
-            if (!item) return;
-            this.pushUndo();
-            item.rotation = ((item.rotation ?? 0) + delta + 360) % 360;
-            if (this.zones.some(z => z.id === item.id)) {
-                await this.persistZoneRotation(item.id, item.rotation);
-            } else {
-                await this.persistPosition(item.id, item.position_x, item.position_y, item.width, item.height);
-            }
-        },
-
-        // ── Teclado: redimensionar elemento seleccionado ─────────────────────
-        async kbResize(dw, dh) {
-            const item = this.getSelectedItem();
-            if (!item) return;
-            this.pushUndo();
-            const { width: cw, height: ch } = this.sizeForItem(item);
-            const oldW = item.width;
-            const oldH = item.height;
-            item.width  = Math.max(40, Math.min(item.width  + dw, cw - item.position_x));
-            item.height = Math.max(40, Math.min(item.height + dh, ch - item.position_y));
-
-            // Escalar vértices del polígono proporcionalmente para evitar
-            // que el div y el SVG queden desincronizados visualmente.
-            if (item.vertices && item.vertices.length >= 3 && oldW > 0 && oldH > 0) {
-                const scaleX = item.width  / oldW;
-                const scaleY = item.height / oldH;
-                item.vertices.forEach(v => { v.x = Math.round(v.x * scaleX); v.y = Math.round(v.y * scaleY); });
-            }
-
-            if (this.zones.some(z => z.id === item.id)) {
-                try {
-                    await fetch(`/zonas/${item.id}`, {
-                        method:  'PATCH',
-                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 'Accept': 'application/json' },
-                        body: JSON.stringify({ position_x: item.position_x, position_y: item.position_y, width: item.width, height: item.height }),
-                    });
-                } catch { this.showToast('Error al guardar dimensiones.', true); }
-                if (item.vertices && item.vertices.length >= 3) {
-                    await this.persistZoneVertices(item.id, item.vertices);
-                }
-            } else {
-                await this.persistPosition(item.id, item.position_x, item.position_y, item.width, item.height);
-                if (item.vertices && item.vertices.length >= 3) {
-                    await this.persistBarVertices(item.id, item.vertices);
-                }
-            }
-        },
-
-        // ── Teclado: eliminar elemento seleccionado ───────────────────────────
-        async kbDelete() {
-            const item = this.getSelectedItem();
-            if (!item) return;
-            const isTable = this.tables.some(t => t.id === item.id);
-            const isZone  = this.zones.some(z => z.id === item.id);
-            if (isTable)     await this.deleteTable(item);
-            else if (isZone) await this.deleteZone(item);
-            else             await this.deleteElement(item);
-            this.selectedId = null;
-        },
-
-        // ── Teclado: mover vértice enfocado ──────────────────────────────────
-        async kbMoveVertex(dx, dy) {
-            if (this.focusedVertexIdx === null) return;
-            const item = this.getSelectedItem();
-            if (!item?.vertices) return;
-            const v = item.vertices[this.focusedVertexIdx];
-            if (!v) return;
-            this.pushUndo();
-            v.x = Math.max(0, Math.min(v.x + dx, item.width));
-            v.y = Math.max(0, Math.min(v.y + dy, item.height));
-            if (this.zones.some(z => z.id === item.id)) {
-                await this.persistZoneVertices(item.id, item.vertices);
-            } else {
-                await this.persistBarVertices(item.id, item.vertices);
-            }
-        },
-
-        // ── Teclado: manejador principal ─────────────────────────────────────
-        handleKb(event) {
-            if (this.contextMenu.show) return;
-            if (this._isTyping()) return;
-
-            if (event.key === '?') {
-                event.preventDefault();
-                this.$store.helpModal.show = !this.$store.helpModal.show;
-                return;
-            }
-
-            const isArrow = event.key === 'ArrowUp' || event.key === 'ArrowDown'
-                         || event.key === 'ArrowLeft' || event.key === 'ArrowRight';
-
-            // Bloquear scroll del canvas siempre que haya algo seleccionado,
-            // independientemente de editMode — el scroll ocurriría de otro modo.
-            if (isArrow && this.selectedId) {
-                event.preventDefault();
-            }
-
-            // Las operaciones de edición solo aplican en modo edición
-            if (this.readonly || !this.editMode || !this.selectedId) return;
-
-            const step  = event.shiftKey ? 1 : 10;
-            const rStep = event.shiftKey ? 1 : 5;
-
-            // Modo vértice: flechas mueven el vértice enfocado
-            if (this.focusedVertexIdx !== null) {
-                const vStep = event.shiftKey ? 1 : 5;
-                switch (event.key) {
-                    case 'ArrowUp':    this.kbMoveVertex(0, -vStep); break;
-                    case 'ArrowDown':  this.kbMoveVertex(0,  vStep); break;
-                    case 'ArrowLeft':  this.kbMoveVertex(-vStep, 0); break;
-                    case 'ArrowRight': this.kbMoveVertex( vStep, 0); break;
-                    case 'Escape':     this.focusedVertexIdx = null; break;
-                }
-                return;
-            }
-
-            // Alt+Flechas = redimensionar
-            if (event.altKey) {
-                switch (event.key) {
-                    case 'ArrowRight': this.kbResize( step,    0); break;
-                    case 'ArrowLeft':  this.kbResize(-step,    0); break;
-                    case 'ArrowDown':  this.kbResize(0,     step); break;
-                    case 'ArrowUp':    this.kbResize(0,    -step); break;
-                }
-                return;
-            }
-
-            switch (event.key) {
-                case 'ArrowUp':    this.kbMove(0, -step);                          break;
-                case 'ArrowDown':  this.kbMove(0,  step);                          break;
-                case 'ArrowLeft':  this.kbMove(-step, 0);                          break;
-                case 'ArrowRight': this.kbMove( step, 0);                          break;
-                case 'r': event.preventDefault(); this.kbRotate(event.shiftKey ? -1 : -5); break;
-                case 'e': event.preventDefault(); this.kbRotate(event.shiftKey ?  1 :  5); break;
-                case 'Delete':
-                case 'Backspace':  event.preventDefault(); this.kbDelete();         break;
-                case 'Escape':
-                    this.selectedId       = null;
-                    this.focusedVertexIdx = null;
-                    this.closeEditPanels();
-                    break;
-            }
-        },
-    }));
-});
-</script>
+@php
+    $mapInit = [
+        'tables'           => $tables,
+        'elements'         => $elements,
+        'zones'            => $zones,
+        'floorWidth'       => $floorWidth,
+        'floorHeight'      => $floorHeight,
+        'floorsEnabled'    => $floorsEnabled,
+        'floorCount'       => $floorCount,
+        'floorCanvasSizes' => $floorCanvasSizes,
+        'readonly'         => $readonly,
+        'maxTables'        => $maxTables,
+    ];
+    $mapUrls = [
+        'statuses'     => route('tables.map.statuses'),
+        'canvasUpdate' => route('tables.canvas.update'),
+        'store'        => route('tables.store'),
+        'zonesStore'   => route('zones.store'),
+        'floorSettings'=> route('tables.floor-settings'),
+    ];
+@endphp
+<script id="map-init" type="application/json">@json($mapInit)</script>
+<script id="map-urls" type="application/json">@json($mapUrls)</script>
 </x-app-layout>

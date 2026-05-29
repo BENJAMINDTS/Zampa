@@ -276,6 +276,7 @@ class SplitPaymentController extends Controller
         return response()->json([
             'success'    => true,
             'fully_paid' => $fullyPaid,
+            'order_id'   => $order->id,
         ]);
     }
 
