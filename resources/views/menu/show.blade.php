@@ -13,6 +13,210 @@
     <meta name="stripe-key" content="{{ $stripePublicKey }}">
     <script src="https://js.stripe.com/v3/" defer></script>
 
+    <!-- Dark mode: apply before paint to avoid flash -->
+    <script>
+        (function () {
+            const saved = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if (saved === 'dark' || (!saved && prefersDark)) {
+                document.documentElement.classList.add('dark');
+            }
+        })();
+    </script>
+
+    <style>
+        /* ── Zampi Chatbot Animations ────────────────────────────── */
+        @keyframes zampiSlideUp {
+            from { opacity: 0; transform: translateY(12px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes zampiFloat {
+            0%, 100% { transform: translateY(0); }
+            50%      { transform: translateY(-5px); }
+        }
+        @keyframes zampiPulse {
+            0%, 100% { opacity: 1; }
+            50%      { opacity: 0.4; }
+        }
+        @keyframes zampiTyping {
+            0%, 80%, 100% { opacity: 1; }
+            40%           { opacity: 0.2; }
+        }
+
+        .zampi-float    { animation: zampiFloat 3s ease-in-out infinite; }
+        .zampi-pulse    { animation: zampiPulse 2s ease-in-out infinite; }
+        .zampi-msg-appear { animation: zampiSlideUp 0.3s ease; }
+        .zampi-typing-1 { animation: zampiTyping 1.2s ease-in-out 0.0s infinite; }
+        .zampi-typing-2 { animation: zampiTyping 1.2s ease-in-out 0.2s infinite; }
+        .zampi-typing-3 { animation: zampiTyping 1.2s ease-in-out 0.4s infinite; }
+
+        /* Notificaciones del cart bar — animación directa via :class */
+        @keyframes zampiNotifIn {
+            0%   { opacity: 0; transform: translateY(14px) scale(0.70); }
+            65%  { opacity: 1; transform: translateY(-3px)  scale(1.06); }
+            100% { opacity: 1; transform: translateY(0)     scale(1);    }
+        }
+        @keyframes zampiNotifOut {
+            0%   { opacity: 1; transform: translateY(0)    scale(1);   }
+            100% { opacity: 0; transform: translateY(8px)  scale(0.8); }
+        }
+        .zampi-notif-pill     { display:flex; align-items:center; gap:5px; background:#991b1b;
+                                border:1px solid #ef4444; border-radius:9999px;
+                                padding:4px 10px; flex-shrink:0; }
+        .zampi-notif-pill-in  { animation: zampiNotifIn  0.40s cubic-bezier(0.34,1.56,0.64,1) both; }
+        .zampi-notif-pill-out { animation: zampiNotifOut 0.22s ease-in both; }
+        @media (max-width: 640px) {
+            .zampi-cartbar-row { padding-top: 20px !important; padding-bottom: 20px !important; }
+            .zampi-hidden-mobile { display: none !important; }
+            .zampi-notif-bar-active { flex: 1 !important; min-width: 0; overflow: visible; }
+            .zampi-notif-bar .zampi-notif-pill:not(:last-child) { display: none !important; }
+            .zampi-notif-bar-active .zampi-notif-pill { width: 100%; min-width: 0; display: flex; align-items: center; gap: 5px; overflow: hidden; }
+            .zampi-notif-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+            .zampi-notif-suffix { flex-shrink: 0; white-space: nowrap; }
+        }
+
+        .zampi-bubble-user {
+            background: linear-gradient(135deg, #2E50B0, #1A3380);
+            color: #fff;
+            border-radius: 18px 18px 4px 18px;
+            box-shadow: 0 4px 16px rgba(15,31,88,0.55);
+            max-width: 78%;
+            padding: 10px 14px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 14px;
+            line-height: 1.5;
+            word-break: break-word;
+        }
+        .zampi-bubble-bot {
+            background: #0E1A38;
+            border: 1px solid rgba(46,80,176,0.35);
+            color: #C8D8FF;
+            border-radius: 18px 18px 18px 4px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+            max-width: 75%;
+            padding: 10px 14px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 14px;
+            line-height: 1.5;
+            word-break: break-word;
+        }
+        .zampi-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #1A3380, #3070E8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+        .zampi-product-card {
+            background: #0E1A38;
+            border: 1px solid rgba(46,80,176,0.45);
+            border-radius: 16px;
+            padding: 10px;
+            min-width: 140px;
+            max-width: 160px;
+            flex-shrink: 0;
+            box-shadow: 0 4px 20px rgba(15,31,88,0.4);
+            cursor: pointer;
+            transition: transform 200ms ease;
+        }
+        .zampi-card-img {
+            height: 56px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #162648, #0A1430);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 6px;
+            font-size: 28px;
+        }
+        .zampi-add-btn {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #2E50B0, #1A3380);
+            border: none;
+            color: #fff;
+            font-size: 18px;
+            line-height: 1;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 8px rgba(46,80,176,0.6);
+            transition: transform 150ms cubic-bezier(0.34, 1.56, 0.64, 1);
+            flex-shrink: 0;
+        }
+        .zampi-add-btn:hover  { transform: scale(1.1); }
+        .zampi-add-btn:active { transform: scale(0.92); }
+        .zampi-qr-btn {
+            background: rgba(46,80,176,0.22);
+            color: #8FA8E8;
+            border: 1px solid rgba(46,80,176,0.5);
+            border-radius: 9999px;
+            padding: 5px 12px;
+            font-size: 12px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 150ms ease;
+            white-space: nowrap;
+        }
+        .zampi-qr-btn:hover  { background: #1A3380; color: #fff; }
+        .zampi-order-summary {
+            background: rgba(14,26,56,0.9);
+            border: 1px solid rgba(46,80,176,0.45);
+            border-radius: 16px;
+            padding: 12px;
+            margin-top: 8px;
+            backdrop-filter: blur(12px);
+        }
+        .zampi-send-btn {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            background: linear-gradient(135deg, #2E50B0, #1A3380);
+            color: #fff;
+            font-size: 20px;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 14px rgba(46,80,176,0.65);
+            flex-shrink: 0;
+            transition: transform 150ms cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .zampi-send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .zampi-scrollbar::-webkit-scrollbar       { width: 4px; }
+        .zampi-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .zampi-scrollbar::-webkit-scrollbar-thumb { background: rgba(46,80,176,0.5); border-radius: 4px; }
+        .zampi-chat-input::placeholder            { color: rgba(84,120,208,0.7); }
+
+        /* ── Zampi Chat — Layout ────────────────────────────────────── */
+
+        /* El overlay cubre siempre toda la pantalla, sin importar el tamaño */
+        .zampi-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+            background: rgba(1,4,14,0.92);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+        .zampi-panel {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+    </style>
+
     @php
         // Datos de productos para Alpine. Se calculan aquí para evitar que
         // @json() reciba una expresión multi-línea con corchetes anidados,
@@ -109,7 +313,8 @@
                         {{ $table->user->name }}
                     </h1>
                 </div>
-                <div class="text-right">
+                <div class="flex items-center gap-2">
+                    {{-- Badge de mesa --}}
                     <span class="inline-flex items-center gap-1 text-xs font-medium
                                  bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300
                                  px-2.5 py-1 rounded-full">
@@ -119,6 +324,38 @@
                         </svg>
                         {{ $table->name }}
                     </span>
+
+                    {{-- Toggle dark/light --}}
+                    <button x-data="{
+                                dark: localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches),
+                                toggle() {
+                                    this.dark = !this.dark;
+                                    document.documentElement.classList.toggle('dark', this.dark);
+                                    localStorage.setItem('theme', this.dark ? 'dark' : 'light');
+                                }
+                            }"
+                            @click="toggle()"
+                            :aria-label="dark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'"
+                            :aria-pressed="dark.toString()"
+                            class="p-1.5 rounded-full
+                                   bg-gray-100 dark:bg-gray-700
+                                   text-gray-500 dark:text-gray-300
+                                   hover:bg-gray-200 dark:hover:bg-gray-600
+                                   focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1
+                                   transition-colors duration-150">
+                        {{-- Sol: en dark mode --}}
+                        <svg x-show="dark" aria-hidden="true" class="h-4 w-4 text-amber-400"
+                             fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                  d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+                        </svg>
+                        {{-- Luna: en light mode --}}
+                        <svg x-show="!dark" aria-hidden="true" class="h-4 w-4"
+                             fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                  d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+                        </svg>
+                    </button>
                 </div>
             </div>
         </header>

@@ -1,54 +1,182 @@
 <x-app-layout>
   <div class="max-w-6xl mx-auto px-4 sm:px-6 py-6 mt-4 sm:mt-10">
-    <div class="flex justify-between items-center mb-4 sm:mb-6">
-      <h2 class="text-xl sm:text-2xl font-bold text-gray-800">Mi Carta Digital</h2>
-      <a href="{{ route('products.create') }}" class="bg-green-600 text-white px-3 py-2 sm:px-4 rounded-md hover:bg-green-700 text-sm sm:text-base">
-        + Añadir Plato
+
+    {{-- Header --}}
+    <div class="flex justify-between items-start mb-4 sm:mb-6">
+      <div>
+        <h2 class="text-xl sm:text-2xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+          <svg class="h-6 w-6 text-indigo-500" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+          </svg>
+          Mi Carta Digital
+        </h2>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5 ml-8">
+          {{ $products->total() }} {{ $products->total() === 1 ? 'plato registrado' : 'platos registrados' }}
+        </p>
+      </div>
+      <a href="{{ route('products.create') }}"
+         class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm py-2.5 px-4 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900 transition">
+        <svg class="h-4 w-4" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+        </svg>
+        Añadir Plato
       </a>
     </div>
 
+    {{-- Flash de éxito --}}
     @if(session('success'))
-    <div role="alert" class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
-      {{ session('success') }}
+    <div role="alert" aria-live="polite"
+         class="rounded-md bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700 p-4 mb-4 flex items-start gap-3">
+      <svg class="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+      <p class="text-sm text-emerald-800 dark:text-emerald-300">{{ session('success') }}</p>
     </div>
     @endif
 
-    <div class="bg-white shadow-md rounded-lg overflow-x-auto">
-      <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
+    {{-- Tabla --}}
+    <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-x-auto" role="region" aria-label="Listado de platos" tabindex="0">
+      <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+        <caption class="sr-only">Listado de platos de mi carta digital</caption>
+        <thead class="bg-gray-50 dark:bg-gray-700">
           <tr>
-            <th class="hidden sm:table-cell px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Imagen</th>
-            <th class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre</th>
-            <th class="hidden md:table-cell px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Precio</th>
-            <th class="hidden lg:table-cell px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Alérgenos</th>
-            <th class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acciones</th>
+            {{-- Imagen --}}
+            <th scope="col" class="hidden sm:table-cell px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              <span class="inline-flex items-center gap-1.5">
+                <svg class="h-3.5 w-3.5" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+                Imagen
+              </span>
+            </th>
+
+            {{-- Nombre --}}
+            <th scope="col" class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              <span class="inline-flex items-center gap-1.5">
+                <svg class="h-3.5 w-3.5" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"/>
+                </svg>
+                Nombre
+              </span>
+            </th>
+
+            {{-- Precio --}}
+            <th scope="col" class="hidden md:table-cell px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              <span class="inline-flex items-center gap-1.5">
+                <svg class="h-3.5 w-3.5" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
+                </svg>
+                Precio
+              </span>
+            </th>
+
+            {{-- Alérgenos --}}
+            <th scope="col" class="hidden lg:table-cell px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              <span class="inline-flex items-center gap-1.5">
+                <svg class="h-3.5 w-3.5" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                </svg>
+                Alérgenos
+              </span>
+            </th>
+
+            {{-- Acciones --}}
+            <th scope="col" class="px-4 sm:px-6 py-3 relative">
+              <span class="sr-only">Acciones</span>
+            </th>
           </tr>
         </thead>
-        <tbody class="bg-white divide-y divide-gray-200">
-          @foreach($products as $product)
-          <tr>
+
+        <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+          @forelse($products as $product)
+          <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+
+            {{-- Imagen / Placeholder --}}
             <td class="hidden sm:table-cell px-4 sm:px-6 py-4 whitespace-nowrap">
               @if($product->image)
-              <img src="{{ asset('storage/' . $product->image) }}" alt="Foto de {{ $product->name }}" loading="lazy" decoding="async" class="h-10 w-10 sm:h-12 sm:w-12 object-cover rounded-md">
+                <img src="{{ asset('storage/' . $product->image) }}"
+                     alt="Foto de {{ $product->name }}"
+                     loading="lazy" decoding="async"
+                     class="h-10 w-10 sm:h-12 sm:w-12 object-cover rounded-md">
               @else
-              <span class="text-gray-400 text-sm">Sin imagen</span>
+                <div class="h-10 w-10 sm:h-12 sm:w-12 rounded-md bg-gray-100 dark:bg-gray-700 flex items-center justify-center"
+                     aria-label="Sin imagen">
+                  <svg class="h-5 w-5 text-gray-300 dark:text-gray-600" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                  </svg>
+                </div>
               @endif
             </td>
-            <td class="px-4 sm:px-6 py-4 whitespace-nowrap font-medium text-gray-900 text-sm sm:text-base">{{ $product->name }}</td>
-            <td class="hidden md:table-cell px-4 sm:px-6 py-4 text-gray-500">
+
+            {{-- Nombre + estado activo/inactivo + categoría --}}
+            <td class="px-4 sm:px-6 py-4">
+              <div class="flex flex-col gap-1">
+                <span class="font-medium text-gray-900 dark:text-gray-100 text-sm sm:text-base leading-tight">
+                  {{ $product->name }}
+                </span>
+
+                <div class="flex items-center flex-wrap gap-2">
+                  {{-- Estado activo / inactivo --}}
+                  @if($product->is_active)
+                    <span class="inline-flex items-center gap-1 text-xs text-emerald-700 dark:text-emerald-400">
+                      <span class="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden="true"></span>
+                      Activo
+                    </span>
+                  @else
+                    <span class="inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400">
+                      <svg class="h-3 w-3" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/>
+                      </svg>
+                      Oculto en carta
+                    </span>
+                  @endif
+
+                  {{-- Categoría --}}
+                  @if($product->category)
+                    <span class="inline-flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                      @if($product->category->destination === 'kitchen')
+                        <svg class="h-3 w-3" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
+                        </svg>
+                      @else
+                        <svg class="h-3 w-3" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                        </svg>
+                      @endif
+                      {{ $product->category->name }}
+                    </span>
+                  @endif
+                </div>
+              </div>
+            </td>
+
+            {{-- Precio --}}
+            <td class="hidden md:table-cell px-4 sm:px-6 py-4 text-gray-600 dark:text-gray-300 text-sm">
               @if($product->variants->isNotEmpty())
-                <div class="text-sm mb-1">desde {{ number_format($product->getEffectivePrice(), 2, ',', '.') }} €</div>
+                <div class="flex items-center gap-1 mb-1 text-gray-500 dark:text-gray-400 text-xs">
+                  <svg class="h-3 w-3" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
+                  </svg>
+                  desde {{ number_format($product->getEffectivePrice(), 2, ',', '.') }} €
+                </div>
                 <div class="flex flex-wrap gap-1">
                   @foreach($product->variants as $variant)
-                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 text-xs font-medium border border-indigo-200">
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 text-xs font-medium border border-indigo-200 dark:border-indigo-700">
                       {{ $variant->name }}&nbsp;·&nbsp;{{ number_format($variant->price, 2, ',', '.') }}&nbsp;€
                     </span>
                   @endforeach
                 </div>
               @else
-                {{ number_format($product->price, 2, ',', '.') }} €
+                <span class="inline-flex items-center gap-1.5 font-semibold text-gray-800 dark:text-gray-200">
+                  <svg class="h-3.5 w-3.5 text-gray-400 dark:text-gray-500" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                  {{ number_format($product->price, 2, ',', '.') }} €
+                </span>
               @endif
             </td>
+
+            {{-- Alérgenos --}}
             <td class="hidden lg:table-cell px-4 sm:px-6 py-4">
               @if($product->ingredients->where('is_allergen', true)->isNotEmpty())
                 <div class="flex flex-wrap gap-3" role="list" aria-label="Alérgenos de {{ $product->name }}">
@@ -57,21 +185,68 @@
                   @endforeach
                 </div>
               @else
-                <span class="text-gray-400 text-xs">Ninguno</span>
+                <span class="inline-flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
+                  <svg class="h-3.5 w-3.5" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                  </svg>
+                  Sin alérgenos
+                </span>
               @endif
             </td>
-            <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-medium">
-              <div class="flex flex-col sm:flex-row gap-2">
-                <a href="{{ route('products.edit', $product) }}" class="text-indigo-600 hover:text-indigo-900 bg-indigo-100 px-3 py-1 rounded text-center">Editar</a>
-                <form action="{{ route('products.destroy', $product) }}" method="POST" onsubmit="return confirm('¿Seguro que quieres borrar este plato?');">
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit" aria-label="Borrar plato {{ $product->name }}" class="w-full text-red-600 hover:text-red-900 bg-red-100 px-3 py-1 rounded">Borrar</button>
+
+            {{-- Acciones --}}
+            <td class="px-4 sm:px-6 py-4 whitespace-nowrap">
+              <div class="flex justify-end items-center gap-2">
+                <a href="{{ route('products.edit', $product) }}"
+                   aria-label="Editar plato {{ $product->name }}"
+                   class="inline-flex items-center gap-1.5 text-sm bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 border border-indigo-200 dark:border-indigo-700 py-1.5 px-3 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 transition">
+                  <svg class="h-3.5 w-3.5" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                  </svg>
+                  Editar
+                </a>
+                <form action="{{ route('products.destroy', $product) }}" method="POST"
+                      onsubmit="return confirm('¿Seguro que quieres borrar el plato {{ addslashes($product->name) }}?');">
+                  @csrf
+                  @method('DELETE')
+                  <button type="submit"
+                          aria-label="Borrar plato {{ $product->name }}"
+                          class="inline-flex items-center gap-1.5 text-sm bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/50 border border-red-200 dark:border-red-700 py-1.5 px-3 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1 transition">
+                    <svg class="h-3.5 w-3.5" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                    Borrar
+                  </button>
                 </form>
               </div>
             </td>
+
           </tr>
-          @endforeach
+          @empty
+          {{-- Estado vacío --}}
+          <tr>
+            <td colspan="5" class="px-6 py-16 text-center">
+              <div class="flex flex-col items-center gap-3">
+                <div class="h-16 w-16 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+                  <svg class="h-8 w-8 text-gray-300 dark:text-gray-600" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2M12 18v-6m-3 3h6"/>
+                  </svg>
+                </div>
+                <div>
+                  <p class="text-sm font-medium text-gray-900 dark:text-gray-100">Aún no tienes platos</p>
+                  <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Empieza añadiendo tu primer plato a la carta.</p>
+                </div>
+                <a href="{{ route('products.create') }}"
+                   class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold py-2 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition mt-1">
+                  <svg class="h-4 w-4" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                  </svg>
+                  Añadir primer plato
+                </a>
+              </div>
+            </td>
+          </tr>
+          @endforelse
         </tbody>
       </table>
     </div>
@@ -81,5 +256,6 @@
       {{ $products->links() }}
     </nav>
     @endif
+
   </div>
 </x-app-layout>
