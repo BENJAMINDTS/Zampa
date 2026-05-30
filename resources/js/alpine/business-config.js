@@ -84,6 +84,12 @@ export function businessConfig() {
         business_schedules: cfg.business_schedules ?? [],
         /** @type {boolean} */
         split_enabled: cfg.split_enabled ?? false,
+        /** @type {string} */
+        menu_style: cfg.menu_style ?? 'modern',
+        /** @type {string} */
+        savedMenuStyle: cfg.menu_style ?? 'modern',
+        /** @type {Object<string,string>} */
+        menuStyleLabels: { modern: 'Moderno', classic: 'Clásico', minimal: 'Minimalista' },
 
         addKitchenSchedule() {
             addScheduleSlot(this.kitchen_schedules);
