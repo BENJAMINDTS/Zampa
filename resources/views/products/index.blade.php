@@ -11,7 +11,7 @@
           Mi Carta Digital
         </h2>
         <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5 ml-8">
-          {{ $products->total() }} {{ $products->total() === 1 ? 'plato registrado' : 'platos registrados' }}
+          {{ $products->total() }} {{ $products->total() === 1 ? 'producto registrado' : 'productos registrados' }}
         </p>
       </div>
       <a href="{{ route('products.create') }}"
@@ -19,21 +19,21 @@
         <svg class="h-4 w-4" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
         </svg>
-        Añadir Plato
+        Añadir Producto
       </a>
     </div>
 
     {{-- Filtros: búsqueda y categoría --}}
     <form method="GET" action="{{ route('products.index') }}"
           class="mb-4 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center"
-          role="search" aria-label="Filtrar platos">
+          role="search" aria-label="Filtrar productos">
       <div class="relative flex-1">
         <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0z"/>
         </svg>
         <input type="text" name="search" id="search" value="{{ request('search') }}"
-               placeholder="Buscar plato..."
-               aria-label="Buscar plato por nombre"
+               placeholder="Buscar producto..."
+               aria-label="Buscar producto por nombre"
                class="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 py-2 pl-9 pr-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
       </div>
       <div class="relative">
@@ -81,9 +81,9 @@
     @endif
 
     {{-- Tabla --}}
-    <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-x-auto" role="region" aria-label="Listado de platos" tabindex="0">
+    <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-x-auto" role="region" aria-label="Listado de productos" tabindex="0">
       <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-        <caption class="sr-only">Listado de platos de mi carta digital</caption>
+        <caption class="sr-only">Listado de productos de mi carta digital</caption>
         <thead class="bg-gray-50 dark:bg-gray-700">
           <tr>
             {{-- Imagen --}}
@@ -249,7 +249,7 @@
             <td class="px-4 sm:px-6 py-4 whitespace-nowrap">
               <div class="flex justify-end items-center gap-2">
                 <a href="{{ route('products.edit', $product) }}"
-                   aria-label="Editar plato {{ $product->name }}"
+                   aria-label="Editar producto {{ $product->name }}"
                    class="inline-flex items-center gap-1.5 text-sm bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 border border-indigo-200 dark:border-indigo-700 py-1.5 px-3 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 transition">
                   <svg class="h-3.5 w-3.5" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
@@ -257,11 +257,11 @@
                   Editar
                 </a>
                 <form action="{{ route('products.destroy', $product) }}" method="POST"
-                      onsubmit="return confirm('¿Seguro que quieres borrar el plato {{ addslashes($product->name) }}?');">
+                      onsubmit="return confirm('¿Seguro que quieres borrar el producto {{ addslashes($product->name) }}?');">
                   @csrf
                   @method('DELETE')
                   <button type="submit"
-                          aria-label="Borrar plato {{ $product->name }}"
+                          aria-label="Borrar producto {{ $product->name }}"
                           class="inline-flex items-center gap-1.5 text-sm bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/50 border border-red-200 dark:border-red-700 py-1.5 px-3 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1 transition">
                     <svg class="h-3.5 w-3.5" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
@@ -284,15 +284,15 @@
                   </svg>
                 </div>
                 <div>
-                  <p class="text-sm font-medium text-gray-900 dark:text-gray-100">Aún no tienes platos</p>
-                  <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Empieza añadiendo tu primer plato a la carta.</p>
+                  <p class="text-sm font-medium text-gray-900 dark:text-gray-100">Aún no tienes productos</p>
+                  <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Empieza añadiendo tu primer producto a la carta.</p>
                 </div>
                 <a href="{{ route('products.create') }}"
                    class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold py-2 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition mt-1">
                   <svg class="h-4 w-4" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                   </svg>
-                  Añadir primer plato
+                  Añadir primer producto
                 </a>
               </div>
             </td>

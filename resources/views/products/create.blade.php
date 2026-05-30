@@ -5,7 +5,7 @@
         {{-- Cabecera --}}
         <div class="flex items-center gap-3 mb-6">
             <a href="{{ route('products.index') }}"
-               aria-label="Volver al listado de platos"
+               aria-label="Volver al listado de productos"
                class="p-1.5 rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-gray-300
                       hover:bg-gray-100 dark:hover:bg-gray-700
                       focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2
@@ -21,7 +21,7 @@
                     </svg>
                 </span>
                 <h2 class="text-xl sm:text-2xl font-bold text-gray-800 dark:text-gray-100 leading-tight">
-                    Añadir nuevo plato
+                    Añadir nuevo producto
                 </h2>
             </div>
         </div>
@@ -50,7 +50,7 @@
                     <svg aria-hidden="true" class="h-4 w-4 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h8m-8 6h16"/>
                     </svg>
-                    Nombre del plato
+                    Nombre del producto
                     <span aria-hidden="true" class="text-red-500">*</span>
                     <span class="sr-only">(obligatorio)</span>
                 </label>
@@ -241,7 +241,7 @@
                     <svg aria-hidden="true" class="h-4 w-4 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                     </svg>
-                    Foto del plato
+                    Foto del producto
                     <span class="text-gray-400 dark:text-gray-500 font-normal">(máx. 2 MB)</span>
                 </label>
 
@@ -310,7 +310,7 @@
                     <svg aria-hidden="true" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
                     </svg>
-                    Guardar plato
+                    Guardar producto
                 </button>
             </div>
         </form>
