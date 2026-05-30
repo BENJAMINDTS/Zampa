@@ -80,6 +80,7 @@ class User extends Authenticatable
         'split_payment_max_parts',
         'stripe_account_id',
         'stripe_onboarding_completed',
+        'menu_style',
     ];
 
     /**
