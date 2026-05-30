@@ -75,8 +75,8 @@ it('creates a non allergen ingredient', function () {
 it('creates an allergen ingredient', function () {
     $this->actingAs($this->user)
         ->post(route('ingredients.store'), [
-            'name'        => 'Queso',
-            'is_allergen' => true,
+            'name'           => 'Queso',
+            'allergen_types' => ['lacteos'],
         ])
         ->assertRedirect(route('ingredients.index'));
 
@@ -143,8 +143,8 @@ it('updates ingredient name and is_allergen correctly', function () {
 
     $this->actingAs($this->user)
         ->put(route('ingredients.update', $ingredient), [
-            'name'        => 'Pan Integral',
-            'is_allergen' => true,
+            'name'           => 'Pan Integral',
+            'allergen_types' => ['gluten'],
         ])
         ->assertRedirect(route('ingredients.index'));
 
