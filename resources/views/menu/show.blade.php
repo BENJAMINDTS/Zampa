@@ -1,14 +1,20 @@
 ﻿<!DOCTYPE html>
-<html lang="es" class="scroll-smooth">
+<html lang="es" data-theme="{{ $theme }}" id="carta-root">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Carta — {{ $table->user->name }}</title>
-    <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700&display=swap" rel="stylesheet" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
+    @if($theme === 'classic')
+    <link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Spectral:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    @elseif($theme === 'minimal')
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Archivo:wght@400;500;600&display=swap" rel="stylesheet">
+    @else
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    @endif
+    <link rel="stylesheet" href="{{ asset('css/carta/colors_and_type.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/carta/styles.css') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <meta name="stripe-key" content="{{ $stripePublicKey }}">
     <script src="https://js.stripe.com/v3/" defer></script>
@@ -18,8 +24,10 @@
         (function () {
             const saved = localStorage.getItem('theme');
             const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            if (saved === 'dark' || (!saved && prefersDark)) {
+            const isDark = saved === 'dark' || (!saved && prefersDark);
+            if (isDark) {
                 document.documentElement.classList.add('dark');
+                document.getElementById('carta-root').setAttribute('data-theme', 'dark');
             }
         })();
     </script>
@@ -289,74 +297,80 @@
     <script id="menu-context" type="application/json">@json($menuContext)</script>
 </head>
 
-<body class="font-sans antialiased bg-gray-200 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen">
+<body>
 
     {{-- Skip to content --}}
     <a href="#main-content"
        class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4
-              bg-white dark:bg-gray-800 text-indigo-700 dark:text-indigo-300
-              px-4 py-2 rounded font-medium z-50 shadow">
+              bg-white text-indigo-700 px-4 py-2 rounded font-medium z-50 shadow">
         Saltar al contenido principal
     </a>
 
-    {{-- ── Componente Alpine raíz ──────────────────────────────────── --}}
-    <div x-data="menuFilters()">
+    {{-- ── Componente Alpine raíz + wrapper DS ───────────────────── --}}
+    <div x-data="menuFilters()"
+         class="carta"
+         data-theme="{{ $theme }}"
+         x-init="
+            $nextTick(() => {
+                const update = () => {
+                    const w = window.innerWidth;
+                    $el.dataset.bp = w < 640 ? 'mobile' : w < 1024 ? 'tablet' : 'desktop';
+                };
+                update();
+                window.addEventListener('resize', update);
+            });
+         ">
 
-        {{-- ── Header ──────────────────────────────────────────────── --}}
-        <header class="sticky top-0 z-40 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 shadow-sm">
-            <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+        {{-- ── Header DS ────────────────────────────────────────────── --}}
+        <header class="header" role="banner">
+            <div class="header__brand">
+                <div class="header__logo" aria-hidden="true">
+                    {{ mb_strtoupper(mb_substr($table->user->business_name ?: $table->user->name, 0, 2)) }}
+                </div>
                 <div>
-                    <p class="text-xs font-medium text-indigo-600 dark:text-indigo-400 uppercase tracking-widest">
-                        Carta digital
-                    </p>
-                    <h1 class="text-lg sm:text-xl font-bold leading-tight text-gray-900 dark:text-white">
-                        {{ $table->user->name }}
-                    </h1>
+                    <div class="header__bizname">
+                        {{ $table->user->business_name ?: $table->user->name }}
+                    </div>
+                    <div class="header__table">{{ $table->name }}</div>
                 </div>
-                <div class="flex items-center gap-2">
-                    {{-- Badge de mesa --}}
-                    <span class="inline-flex items-center gap-1 text-xs font-medium
-                                 bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300
-                                 px-2.5 py-1 rounded-full">
-                        <svg aria-hidden="true" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                  d="M3 10h11M9 21V3M19 14l2 2-2 2m2-2H13"/>
-                        </svg>
-                        {{ $table->name }}
+            </div>
+            <div class="header__actions">
+                {{-- Estado cocina --}}
+                @if(!$kitchenOpen && $nextOpeningTime)
+                <span class="kitchen-pill kitchen-pill--closed" aria-label="Cocina cerrada">
+                    <span class="kitchen-pill__dot"></span>
+                    <span class="kitchen-pill__stack">
+                        <span class="kitchen-pill__l1">Cocina cerrada</span>
+                        <span class="kitchen-pill__l2">abre {{ $nextOpeningTime }}</span>
                     </span>
+                </span>
+                @endif
 
-                    {{-- Toggle dark/light --}}
-                    <button x-data="{
-                                dark: localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches),
-                                toggle() {
-                                    this.dark = !this.dark;
-                                    document.documentElement.classList.toggle('dark', this.dark);
-                                    localStorage.setItem('theme', this.dark ? 'dark' : 'light');
-                                }
-                            }"
-                            @click="toggle()"
-                            :aria-label="dark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'"
-                            :aria-pressed="dark.toString()"
-                            class="p-1.5 rounded-full
-                                   bg-gray-100 dark:bg-gray-700
-                                   text-gray-500 dark:text-gray-300
-                                   hover:bg-gray-200 dark:hover:bg-gray-600
-                                   focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1
-                                   transition-colors duration-150">
-                        {{-- Sol: en dark mode --}}
-                        <svg x-show="dark" aria-hidden="true" class="h-4 w-4 text-amber-400"
-                             fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                  d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
-                        </svg>
-                        {{-- Luna: en light mode --}}
-                        <svg x-show="!dark" aria-hidden="true" class="h-4 w-4"
-                             fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                  d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
-                        </svg>
-                    </button>
-                </div>
+                {{-- Toggle dark/light — sincroniza Tailwind + DS data-theme --}}
+                <button class="theme-toggle"
+                        x-data="{
+                            dark: localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches),
+                            toggle() {
+                                this.dark = !this.dark;
+                                document.documentElement.classList.toggle('dark', this.dark);
+                                document.querySelector('.carta').dataset.theme = this.dark ? 'dark' : '{{ $theme }}';
+                                localStorage.setItem('theme', this.dark ? 'dark' : 'light');
+                            }
+                        }"
+                        @click="toggle()"
+                        :aria-label="dark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'"
+                        :aria-pressed="dark.toString()">
+                    <svg x-show="dark" aria-hidden="true" width="18" height="18"
+                         fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                              d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+                    </svg>
+                    <svg x-show="!dark" aria-hidden="true" width="18" height="18"
+                         fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                              d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+                    </svg>
+                </button>
             </div>
         </header>
 
@@ -2485,29 +2499,30 @@
             </div>
         </div>{{-- /mixed stripe sheet --}}
 
-        {{-- ── FAB Carrito ─────────────────────────────────────────── --}}
-        <div class="fixed bottom-6 right-4 z-50"
-             x-show="$store.cart.count > 0 && !$store.chat.open"
-             x-transition:enter="transition ease-out duration-200"
-             x-transition:enter-start="opacity-0 scale-75"
-             x-transition:enter-end="opacity-100 scale-100"
-             x-transition:leave="transition ease-in duration-150"
-             x-transition:leave-start="opacity-100 scale-100"
-             x-transition:leave-end="opacity-0 scale-75">
-            <button type="button"
-                    @click="$store.cart.open = true"
-                    class="relative flex items-center gap-2 px-5 py-3 rounded-full
-                           bg-green-600 hover:bg-green-700 text-white font-bold shadow-xl
-                           transition-colors focus:outline-none focus:ring-4 focus:ring-green-400">
-                <svg aria-hidden="true" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                          d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
-                </svg>
-                Ver pedido
-                <span class="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center"
-                      x-text="$store.cart.count"></span>
-            </button>
-        </div>
+        {{-- ── Cart Bar DS ─────────────────────────────────────────── --}}
+        <button type="button"
+                class="cart-bar"
+                x-show="$store.cart.count > 0 && !$store.chat.open"
+                x-transition:enter="transition ease-out duration-200"
+                x-transition:enter-start="opacity-0 translate-y-4"
+                x-transition:enter-end="opacity-100 translate-y-0"
+                x-transition:leave="transition ease-in duration-150"
+                x-transition:leave-start="opacity-100 translate-y-0"
+                x-transition:leave-end="opacity-0 translate-y-4"
+                @click="$store.cart.open = true"
+                aria-label="Ver pedido">
+            <div class="cart-bar__left">
+                <span class="cart-bar__icon">
+                    <svg aria-hidden="true" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                              d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
+                    </svg>
+                    <span class="cart-bar__count" x-text="$store.cart.count" aria-hidden="true"></span>
+                </span>
+                <span x-text="$store.cart.count + ' ' + ($store.cart.count === 1 ? 'artículo' : 'artículos')"></span>
+            </div>
+            <span class="cart-bar__cta">Ver pedido</span>
+        </button>
 
         {{-- ── Drawer del carrito ───────────────────────────────────── --}}
         <div x-show="$store.cart.open"
@@ -2819,54 +2834,38 @@
         </div>
         @endif
 
-        {{-- ── Filtro de categorías ────────────────────────────────────── --}}
+        {{-- ── Filtro de categorías DS (.filter-bar) ──────────────────── --}}
         @if ($businessOpen && $categories->isNotEmpty())
-            <nav aria-label="Filtrar por categoría"
-                 class="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
-                <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <ul class="flex gap-1 py-2" role="list">
+            <nav class="filter-bar" aria-label="Filtrar por categoría">
 
-                        {{-- Chip "Todas" --}}
-                        <li>
-                            <button type="button"
-                                    @click="setCategory(null)"
-                                    :aria-pressed="activeCategory === null"
-                                    :class="activeCategory === null
-                                        ? 'bg-indigo-600 text-white'
-                                        : 'text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 hover:text-indigo-700 dark:hover:text-indigo-300'"
-                                    class="inline-block whitespace-nowrap px-3 py-1.5 rounded-full text-sm font-medium
-                                           transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500
-                                           focus:ring-offset-2 dark:focus:ring-offset-gray-900">
-                                Todas
-                            </button>
-                        </li>
+                {{-- Chip "Todas" --}}
+                <button type="button"
+                        @click="setCategory(null)"
+                        :aria-pressed="activeCategory === null"
+                        :class="activeCategory === null ? 'chip chip--active' : 'chip'">
+                    Todas
+                </button>
 
-                        @foreach ($categories as $category)
-                            <li x-show="isCategoryVisible({{ $category->id }})">
-                                <button type="button"
-                                        @click="setCategory({{ $category->id }})"
-                                        :aria-pressed="activeCategory === {{ $category->id }}"
-                                        :class="activeCategory === {{ $category->id }}
-                                            ? 'bg-indigo-600 text-white'
-                                            : 'text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 hover:text-indigo-700 dark:hover:text-indigo-300'"
-                                        class="inline-block whitespace-nowrap px-3 py-1.5 rounded-full text-sm font-medium
-                                               transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500
-                                               focus:ring-offset-2 dark:focus:ring-offset-gray-900">
-                                    {{ $category->name }}
-                                </button>
-                            </li>
-                        @endforeach
+                @foreach ($categories as $category)
+                    <button type="button"
+                            x-show="isCategoryVisible({{ $category->id }})"
+                            @click="setCategory({{ $category->id }})"
+                            :aria-pressed="activeCategory === {{ $category->id }}"
+                            :class="activeCategory === {{ $category->id }} ? 'chip chip--active' : 'chip'">
+                        {{ $category->name }}
+                    </button>
+                @endforeach
 
-                    </ul>
-                </div>
             </nav>
         @endif
 
         {{-- ════════════════════════════════════════════════════════════ --}}
         {{-- NEGOCIO CERRADO: carta inaccesible + horarios del día      --}}
         {{-- ════════════════════════════════════════════════════════════ --}}
+        <div class="carta__main">
+        <div class="carta__body" id="main-content">
         @if(!$businessOpen)
-        <main id="main-content" class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
+        <main class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
             <div class="text-center" role="status" aria-live="polite">
                 <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gray-100 dark:bg-gray-800 mb-6">
                     <svg aria-hidden="true" class="w-10 h-10 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2915,7 +2914,7 @@
         @else
 
         {{-- ── Contenido principal ──────────────────────────────────── --}}
-        <main id="main-content" class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-10">
+        <main class="carta__products max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-10">
 
             {{-- ── Menú del Día ──────────────────────────────────────── --}}
             <x-daily-menu-banner :hash="$table->unique_hash" />
@@ -3028,23 +3027,22 @@
                                 x-transition:leave="transition ease-in duration-150"
                                 x-transition:leave-start="opacity-100 scale-100"
                                 x-transition:leave-end="opacity-0 scale-95"
-                                class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700
-                                       shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden">
-                                <div class="flex gap-3 sm:gap-4 p-3 sm:p-4">
-
-                                    {{-- Imagen --}}
+                                class="pcard">
+                                    {{-- Foto --}}
                                     @if ($product->image)
-                                        <div class="flex-shrink-0">
+                                        <div class="pcard__photo">
                                             <img src="{{ Storage::url($product->image) }}"
                                                  alt="Foto de {{ $product->name }}"
                                                  loading="lazy"
                                                  decoding="async"
-                                                 class="h-20 w-20 sm:h-24 sm:w-24 object-cover rounded-lg">
+                                                 class="w-full h-full object-cover">
                                         </div>
+                                    @else
+                                        <div class="pcard__photo pcard__photo--food-1" aria-hidden="true"></div>
                                     @endif
 
                                     {{-- Info --}}
-                                    <div class="flex-1 min-w-0">
+                                    <div class="pcard__body">
                                         @if($product->variants->isNotEmpty())
                                         {{-- Producto con variantes --}}
                                         <div x-data="{
@@ -3053,16 +3051,16 @@
                                             get selectedVariant() { return this.variants.find(v => v.id === this.selectedVariantId); }
                                         }">
                                             <div class="flex items-start justify-between gap-2">
-                                                <h3 class="font-semibold text-base sm:text-lg leading-snug text-gray-900 dark:text-gray-100">
+                                                <h3 class="pcard__name">
                                                     {{ $product->name }}
                                                 </h3>
-                                                <span class="flex-shrink-0 font-bold text-base sm:text-lg text-indigo-600 dark:text-indigo-400"
+                                                <span class="pcard__price"
                                                       x-text="'desde ' + Number(Math.min(...variants.map(v => v.price))).toFixed(2).replace('.',',') + ' €'"
                                                       aria-label="Desde {{ number_format($product->variants->min('price'), 2, ',', '.') }} euros"></span>
                                             </div>
 
                                             @if ($product->description)
-                                                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+                                                <p class="pcard__desc">
                                                     {{ $product->description }}
                                                 </p>
                                             @endif
@@ -3143,7 +3141,7 @@
                                         @else
                                         {{-- Producto sin variantes (comportamiento original) --}}
                                         <div class="flex items-start justify-between gap-2">
-                                            <h3 class="font-semibold text-base sm:text-lg leading-snug text-gray-900 dark:text-gray-100">
+                                            <h3 class="pcard__name">
                                                 {{ $product->name }}
                                             </h3>
                                             <span class="flex-shrink-0 font-bold text-base sm:text-lg
@@ -3154,7 +3152,7 @@
                                         </div>
 
                                         @if ($product->description)
-                                            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+                                            <p class="pcard__desc">
                                                 {{ $product->description }}
                                             </p>
                                         @endif
@@ -3231,6 +3229,8 @@
 
         </main>
         @endif{{-- /businessOpen --}}
+        </div>{{-- /carta__body --}}
+        </div>{{-- /carta__main --}}
 
         {{-- ── Banner de Tapas disponibles ─────────────────────────── --}}
         @if($tapaConfig && $barItemsCount > 0)
