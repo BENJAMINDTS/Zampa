@@ -31,14 +31,15 @@ class IngredientFactory extends Factory
      */
     public function definition(): array
     {
-        $name       = fake()->randomElement(['Tomate', 'Queso', 'Bacon', 'Lechuga', 'Salsa BBQ', 'Huevo', 'Pan', 'Pollo']);
-        $isAllergen = isset(self::ALLERGEN_MAP[$name]) ? fake()->boolean(20) : false;
+        $name          = fake()->randomElement(['Tomate', 'Queso', 'Bacon', 'Lechuga', 'Salsa BBQ', 'Huevo', 'Pan', 'Pollo']);
+        $isAllergen    = isset(self::ALLERGEN_MAP[$name]) ? fake()->boolean(20) : false;
+        $allergenTypes = $isAllergen ? [self::ALLERGEN_MAP[$name]] : null;
 
         return [
-            'name'          => $name,
-            'is_allergen'   => $isAllergen,
-            'allergen_type' => $isAllergen ? self::ALLERGEN_MAP[$name] : null,
-            'user_id'       => User::factory(),
+            'name'           => $name,
+            'is_allergen'    => $isAllergen,
+            'allergen_types' => $allergenTypes,
+            'user_id'        => User::factory(),
         ];
     }
 }
