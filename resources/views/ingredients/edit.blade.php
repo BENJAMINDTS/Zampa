@@ -48,47 +48,35 @@
               @enderror
             </div>
 
-            {{-- Campo: Es alérgeno --}}
-            <fieldset x-data="{ isAllergen: {{ $ingredient->is_allergen ? 'true' : 'false' }} }">
+            {{-- Campo: Alérgenos UE --}}
+            <fieldset>
               <legend class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Clasificación alérgeno
+                Alérgenos (Reglamento UE 1169/2011)
               </legend>
-              <div class="flex items-center gap-3">
-                <input type="hidden" name="is_allergen" value="0">
-                <input
-                  type="checkbox"
-                  name="is_allergen"
-                  id="is_allergen"
-                  value="1"
-                  {{ old('is_allergen', $ingredient->is_allergen) ? 'checked' : '' }}
-                  @change="isAllergen = $event.target.checked"
-                  class="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-green-600 focus:ring-green-500 focus:outline-none focus:ring-2 focus:ring-offset-2"
-                >
-                <label for="is_allergen" class="text-sm text-gray-700 dark:text-gray-300">
-                  Marcar como alérgeno
-                </label>
-              </div>
-
-              {{-- Selector de tipo de alérgeno oficial UE — visible solo si is_allergen está marcado --}}
-              <div x-show="isAllergen" x-cloak class="mt-4">
-                <label for="allergen_type" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Tipo de alérgeno oficial (UE)
-                </label>
-                <select
-                  name="allergen_type"
-                  id="allergen_type"
-                  class="w-full h-10 rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:focus:border-indigo-600 dark:focus:ring-indigo-600 sm:text-sm"
-                >
-                  <option value="">— Selecciona el alérgeno oficial —</option>
-                  @foreach(\App\Models\Ingredient::ALLERGEN_TYPES as $slug => $label)
-                    <option value="{{ $slug }}" {{ old('allergen_type', $ingredient->allergen_type) === $slug ? 'selected' : '' }}>
+              <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                Selecciona todos los alérgenos que contiene este ingrediente.
+              </p>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                @foreach(\App\Models\Ingredient::ALLERGEN_TYPES as $slug => $label)
+                  @php
+                    $currentTypes = old('allergen_types', $ingredient->allergen_types ?? []);
+                    $checked = in_array($slug, $currentTypes, true);
+                  @endphp
+                  <div class="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      name="allergen_types[]"
+                      id="allergen_{{ $slug }}"
+                      value="{{ $slug }}"
+                      {{ $checked ? 'checked' : '' }}
+                      class="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-green-600 focus:ring-green-500 focus:outline-none focus:ring-2 focus:ring-offset-2"
+                    >
+                    <label for="allergen_{{ $slug }}" class="flex items-center gap-1.5 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
+                      <img src="{{ asset('images/allergens/' . $slug . '.svg') }}" alt="" aria-hidden="true" class="h-5 w-5 object-contain">
                       {{ $label }}
-                    </option>
-                  @endforeach
-                </select>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  Según el Reglamento UE 1169/2011 de información alimentaria.
-                </p>
+                    </label>
+                  </div>
+                @endforeach
               </div>
             </fieldset>
 
