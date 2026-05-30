@@ -14,9 +14,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * Materia prima o ingrediente modificable.
  * Ej: "Queso Cheddar", "Huevo", "Salsa Picante".
  *
- * @property string $name           Nombre del ingrediente
- * @property boolean $is_allergen   Si se considera alérgeno importante
- * @property string|null $allergen_type Tipo de alérgeno según Reglamento UE 1169/2011
+ * @property string    $name           Nombre del ingrediente
+ * @property boolean   $is_allergen    Si se considera alérgeno (true si allergen_types no está vacío)
+ * @property array     $allergen_types Slugs de alérgenos UE 1169/2011 que contiene este ingrediente
  *
  * @author AyrtonAlania
  * @author BenjaminDTS
@@ -25,7 +25,12 @@ class Ingredient extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $fillable = ['user_id', 'name', 'is_allergen', 'allergen_type'];
+    protected $fillable = ['user_id', 'name', 'is_allergen', 'allergen_types'];
+
+    protected $casts = [
+        'is_allergen'   => 'boolean',
+        'allergen_types' => 'array',
+    ];
 
     /**
      * Slugs válidos para allergen_type.
@@ -156,36 +161,39 @@ class Ingredient extends Model
     }
 
     /**
-     * Devuelve la URL del SVG oficial del alérgeno.
-     * Retorna null si no tiene allergen_type asignado.
+     * Devuelve la URL del SVG oficial del primer alérgeno asignado.
+     * Retorna null si el ingrediente no tiene alérgenos.
      *
      * @return string|null
      */
     public function allergenIconPath(): ?string
     {
-        if (!$this->allergen_type) return null;
-        return asset('images/allergens/' . $this->allergen_type . '.svg');
+        $first = ($this->allergen_types ?? [])[0] ?? null;
+        if (!$first) return null;
+        return asset('images/allergens/' . $first . '.svg');
     }
 
     /**
-     * Devuelve el nombre legible del tipo de alérgeno.
+     * Devuelve el nombre legible del primer tipo de alérgeno.
      *
      * @return string|null
      */
     public function allergenTypeName(): ?string
     {
-        return self::ALLERGEN_TYPES[$this->allergen_type] ?? null;
+        $first = ($this->allergen_types ?? [])[0] ?? null;
+        return $first ? (self::ALLERGEN_TYPES[$first] ?? null) : null;
     }
 
     /**
-     * Devuelve el emoji correspondiente al tipo de alérgeno UE.
-     * Retorna ⚠️ como fallback si no tiene allergen_type asignado.
+     * Devuelve el emoji del primer tipo de alérgeno UE.
+     * Retorna ⚠️ como fallback si no tiene alérgenos asignados.
      *
      * @return string
      */
     public function allergenEmoji(): string
     {
-        return self::ALLERGEN_EMOJIS[$this->allergen_type] ?? '⚠️';
+        $first = ($this->allergen_types ?? [])[0] ?? null;
+        return $first ? (self::ALLERGEN_EMOJIS[$first] ?? '⚠️') : '⚠️';
     }
 
     /**
