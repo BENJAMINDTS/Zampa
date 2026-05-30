@@ -29,7 +29,7 @@
           @foreach ($ingredients as $ingredient)
           <div class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 shadow-sm flex flex-col justify-between">
             <div class="text-center">
-              <div class="text-2xl mb-2">🍅</div>
+              <div class="text-2xl mb-2">{{ $ingredient->ingredientEmoji() }}</div>
               <h3 class="font-bold text-gray-700 dark:text-gray-300">{{ $ingredient->name }}</h3>
               @if($ingredient->is_allergen)
               <span class="mt-1 inline-block text-xs font-semibold text-amber-700 dark:text-amber-400 bg-amber-100 dark:bg-amber-900 px-2 py-0.5 rounded-full">
