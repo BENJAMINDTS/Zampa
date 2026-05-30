@@ -65,7 +65,7 @@ class CardPaymentController extends Controller
 
         $tip = (float) ($validated['tip'] ?? 0);
 
-        $table = Table::where('unique_hash', $hash)->firstOrFail();
+        $table = Table::with('user')->where('unique_hash', $hash)->firstOrFail();
 
         $order = Order::where('table_id', $table->id)
             ->whereIn('status', ['pending', 'cooking', 'ready'])
@@ -83,10 +83,15 @@ class CardPaymentController extends Controller
         $remaining  = max(0, $order->total - $order->getPaidAmountViaSplit());
         $grandTotal = $remaining + $tip;
 
+        $stripeAccountId = ($table->user->stripe_onboarding_completed && $table->user->stripe_account_id)
+            ? $table->user->stripe_account_id
+            : null;
+
         $result = $this->stripe->createPaymentIntent(
-            amount:   (int) round($grandTotal * 100),
-            currency: 'eur',
-            metadata: ['order_id' => $order->id, 'table_name' => $table->name, 'tip' => $tip],
+            amount:          (int) round($grandTotal * 100),
+            currency:        'eur',
+            metadata:        ['order_id' => $order->id, 'table_name' => $table->name, 'tip' => $tip],
+            stripeAccountId: $stripeAccountId,
         );
 
         return response()->json([
