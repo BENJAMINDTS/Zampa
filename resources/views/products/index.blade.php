@@ -178,10 +178,15 @@
 
             {{-- Alérgenos --}}
             <td class="hidden lg:table-cell px-4 sm:px-6 py-4">
-              @if($product->ingredients->where('is_allergen', true)->isNotEmpty())
+              @php
+                $allergenSlugs = $product->ingredients->where('is_allergen', true)
+                    ->flatMap(fn($i) => $i->allergen_types ?? [])
+                    ->unique()->values();
+              @endphp
+              @if($allergenSlugs->isNotEmpty())
                 <div class="flex flex-wrap gap-3" role="list" aria-label="Alérgenos de {{ $product->name }}">
-                  @foreach($product->ingredients->where('is_allergen', true)->unique('allergen_type') as $allergen)
-                    <x-allergen-badge :ingredient="$allergen" />
+                  @foreach($allergenSlugs as $slug)
+                    <x-allergen-badge :slug="$slug" />
                   @endforeach
                 </div>
               @else
