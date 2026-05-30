@@ -2,7 +2,7 @@
 @php
     $cartaActive   = request()->routeIs('categories.*', 'ingredients.*', 'products.*', 'daily-menus.*');
     $localActive   = request()->routeIs('tables.*', 'zones.*', 'staff.*');
-    $negocioActive = request()->routeIs('tapas.*', 'negocio.*', 'manager.*', 'ticket-config.*');
+    $negocioActive = request()->routeIs('tapas.*', 'negocio.*', 'manager.*', 'ticket-config.*', 'negocio.menu-style.*');
 @endphp
 
 <aside
@@ -196,6 +196,14 @@
                              ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 font-medium'
                              : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200' }}">
                     Ticket PDF
+                </a>
+                <a href="{{ route('negocio.menu-style.edit') }}"
+                   aria-current="{{ request()->routeIs('negocio.menu-style.*') ? 'page' : 'false' }}"
+                   class="flex items-center px-3 py-1.5 rounded-md text-sm transition-colors
+                          {{ request()->routeIs('negocio.menu-style.*')
+                             ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 font-medium'
+                             : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200' }}">
+                    Carta digital
                 </a>
             </div>
         </div>
