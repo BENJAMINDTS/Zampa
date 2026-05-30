@@ -40,6 +40,8 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property bool        $floors_enabled Si el sistema de plantas está activo
  * @property bool        $split_payment_enabled   Si el cobro partido está activo para este restaurante
  * @property int|null    $split_payment_max_parts Máximo de partes en que se puede dividir la cuenta (null = sin límite)
+ * @property string|null $stripe_account_id           ID de cuenta Stripe Connect Express del restaurante (acct_xxx)
+ * @property bool        $stripe_onboarding_completed Si el restaurante completó el onboarding de Stripe Connect
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property \Illuminate\Support\Carbon|null $deleted_at
@@ -76,6 +78,8 @@ class User extends Authenticatable
         'floor_canvas_sizes',
         'split_payment_enabled',
         'split_payment_max_parts',
+        'stripe_account_id',
+        'stripe_onboarding_completed',
     ];
 
     /**
@@ -104,8 +108,9 @@ class User extends Authenticatable
             'floor_count'             => 'integer',
             'floors_enabled'          => 'boolean',
             'floor_canvas_sizes'      => 'array',
-            'split_payment_enabled'   => 'boolean',
-            'split_payment_max_parts' => 'integer',
+            'split_payment_enabled'        => 'boolean',
+            'split_payment_max_parts'      => 'integer',
+            'stripe_onboarding_completed'  => 'boolean',
         ];
     }
 
