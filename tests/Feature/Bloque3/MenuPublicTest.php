@@ -103,7 +103,7 @@ it('passes allergens to view for filters', function () {
     $table    = Table::factory()->for($this->user)->create();
     $category = Category::factory()->for($this->user)->create(['destination' => 'kitchen']);
     $product  = Product::factory()->for($category)->for($this->user)->create(['is_active' => true]);
-    $allergen = Ingredient::factory()->for($this->user)->create(['name' => 'Queso', 'is_allergen' => true, 'allergen_type' => 'lacteos']);
+    $allergen = Ingredient::factory()->for($this->user)->create(['name' => 'Queso', 'is_allergen' => true, 'allergen_types' => ['lacteos']]);
 
     $product->ingredients()->attach($allergen->id, [
         'quantity_base' => 1,

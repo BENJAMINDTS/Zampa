@@ -51,14 +51,22 @@ class IngredientController extends Controller
      */
     public function store(Request $request): \Illuminate\Http\RedirectResponse
     {
-        $validated = $request->validate([
-            'name'         => 'required|string|max:255',
-            'is_allergen'  => 'boolean',
-            'allergen_type' => ['nullable', 'string', Rule::in(array_keys(Ingredient::ALLERGEN_TYPES))],
+        $request->validate([
+            'name'            => 'required|string|max:255',
+            'allergen_types'  => ['nullable', 'array'],
+            'allergen_types.*' => ['string', Rule::in(array_keys(Ingredient::ALLERGEN_TYPES))],
         ]);
 
-        $ownerId = Auth::user()->ownerUserId();
-        Ingredient::create(array_merge($validated, ['user_id' => $ownerId]));
+        $allergenTypes = array_values(array_filter($request->input('allergen_types', [])));
+        $ownerId       = Auth::user()->ownerUserId();
+
+        Ingredient::create([
+            'user_id'        => $ownerId,
+            'name'           => $request->input('name'),
+            'allergen_types' => $allergenTypes ?: null,
+            'is_allergen'    => count($allergenTypes) > 0,
+        ]);
+
         Cache::forget("menu:{$ownerId}");
 
         return redirect()->route('ingredients.index')->with('success', 'Ingrediente creado correctamente.');
@@ -96,13 +104,19 @@ class IngredientController extends Controller
     {
         abort_if($ingredient->user_id !== Auth::user()->ownerUserId(), 403, 'Acceso denegado.');
 
-        $validated = $request->validate([
-            'name'         => 'required|string|max:255',
-            'is_allergen'  => 'boolean',
-            'allergen_type' => ['nullable', 'string', Rule::in(array_keys(Ingredient::ALLERGEN_TYPES))],
+        $request->validate([
+            'name'             => 'required|string|max:255',
+            'allergen_types'   => ['nullable', 'array'],
+            'allergen_types.*' => ['string', Rule::in(array_keys(Ingredient::ALLERGEN_TYPES))],
         ]);
 
-        $ingredient->update($validated);
+        $allergenTypes = array_values(array_filter($request->input('allergen_types', [])));
+
+        $ingredient->update([
+            'name'           => $request->input('name'),
+            'allergen_types' => $allergenTypes ?: null,
+            'is_allergen'    => count($allergenTypes) > 0,
+        ]);
         Cache::forget("menu:{$ingredient->user_id}");
 
         return redirect()->route('ingredients.index')->with('success', 'Ingrediente actualizado correctamente.');

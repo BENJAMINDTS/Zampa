@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Category;
+use App\Models\Ingredient;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Table;
@@ -56,7 +57,7 @@ class MenuController extends Controller
                                             'ingredients.id',
                                             'ingredients.name',
                                             'ingredients.is_allergen',
-                                            'ingredients.allergen_type',
+                                            'ingredients.allergen_types',
                                         ]);
                                   },
                                   'variants',
@@ -77,7 +78,13 @@ class MenuController extends Controller
         $allergens = $categories
             ->flatMap(fn ($c) => $c->products)
             ->flatMap(fn ($p) => $p->ingredients->where('is_allergen', true))
-            ->unique(fn ($i) => $i->allergen_type ?? 'name:'.$i->name)
+            ->flatMap(fn ($i) => $i->allergen_types ?? [])
+            ->unique()
+            ->map(fn ($slug) => (object)[
+                'slug'  => $slug,
+                'name'  => Ingredient::ALLERGEN_TYPES[$slug] ?? $slug,
+                'emoji' => Ingredient::ALLERGEN_EMOJIS[$slug] ?? '⚠️',
+            ])
             ->sortBy('name')
             ->values();
 

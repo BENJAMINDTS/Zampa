@@ -31,10 +31,12 @@
             <div class="text-center">
               <div class="text-2xl mb-2">{{ $ingredient->ingredientEmoji() }}</div>
               <h3 class="font-bold text-gray-700 dark:text-gray-300">{{ $ingredient->name }}</h3>
-              @if($ingredient->is_allergen)
-              <span class="mt-1 inline-block text-xs font-semibold text-amber-700 dark:text-amber-400 bg-amber-100 dark:bg-amber-900 px-2 py-0.5 rounded-full">
-                Alérgeno
-              </span>
+              @if($ingredient->is_allergen && !empty($ingredient->allergen_types))
+                <div class="mt-2 flex flex-wrap justify-center gap-1">
+                  @foreach($ingredient->allergen_types as $allergenSlug)
+                    <x-allergen-badge :slug="$allergenSlug" />
+                  @endforeach
+                </div>
               @endif
             </div>
 

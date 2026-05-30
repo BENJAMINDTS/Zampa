@@ -235,7 +235,7 @@
                 'categoryId'  => $category->id,
                 'destination' => $category->destination,
                 'allergenTypes' => $p->ingredients->where('is_allergen', true)
-                    ->map(fn ($i) => $i->allergen_type ?? 'name:'.$i->name)
+                    ->flatMap(fn ($i) => $i->allergen_types ?? [])
                     ->unique()->values()->toArray(),
                 'removable'   => $p->ingredients
                     ->filter(fn ($i) => $i->pivot->is_removable)
@@ -2755,8 +2755,8 @@
 
                         @foreach ($allergens as $allergen)
                             @php
-                                $allergenKey  = $allergen->allergen_type ? "'{$allergen->allergen_type}'" : "'name:{$allergen->name}'";
-                                $allergenName = $allergen->allergenTypeName() ?? $allergen->name;
+                                $allergenKey  = "'{$allergen->slug}'";
+                                $allergenName = $allergen->name;
                             @endphp
                             <div class="relative" x-data="{ tip: false }"
                                  x-show="visibleAllergenKeys.includes({{ $allergenKey }})">
@@ -2773,17 +2773,11 @@
                                                focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2
                                                dark:focus:ring-offset-gray-900"
                                         aria-label="{{ $allergenName }}">
-                                    @if($allergen->allergen_type)
-                                        <div class="h-12 w-12 rounded-full overflow-hidden">
-                                            <img src="{{ $allergen->allergenIconPath() }}"
-                                                 alt="{{ $allergenName }}"
-                                                 class="h-full w-full object-contain">
-                                        </div>
-                                    @else
-                                        <div class="h-12 w-12 flex items-center justify-center bg-yellow-100 dark:bg-yellow-900 rounded-full">
-                                            <span class="text-2xl" aria-hidden="true">⚠️</span>
-                                        </div>
-                                    @endif
+                                    <div class="h-12 w-12 rounded-full overflow-hidden">
+                                        <img src="{{ asset('images/allergens/' . $allergen->slug . '.svg') }}"
+                                             alt="{{ $allergenName }}"
+                                             class="h-full w-full object-contain">
+                                    </div>
                                 </button>
 
                                 <div x-show="tip"
@@ -3074,14 +3068,19 @@
                                             @endif
 
                                             {{-- Alérgenos --}}
-                                            @if ($product->ingredients->where('is_allergen', true)->isNotEmpty())
+                                            @php
+                                                $productAllergenSlugs = $product->ingredients->where('is_allergen', true)
+                                                    ->flatMap(fn($i) => $i->allergen_types ?? [])
+                                                    ->unique()->values();
+                                            @endphp
+                                            @if ($productAllergenSlugs->isNotEmpty())
                                                 <div class="mt-2" aria-label="Alérgenos de {{ $product->name }}">
                                                     <p class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1">
                                                         Alérgenos
                                                     </p>
                                                     <ul class="flex flex-wrap gap-3" role="list">
-                                                        @foreach ($product->ingredients->where('is_allergen', true)->unique('allergen_type') as $allergen)
-                                                            <li><x-allergen-badge :ingredient="$allergen" /></li>
+                                                        @foreach ($productAllergenSlugs as $slug)
+                                                            <li><x-allergen-badge :slug="$slug" /></li>
                                                         @endforeach
                                                     </ul>
                                                 </div>
@@ -3161,14 +3160,19 @@
                                         @endif
 
                                         {{-- Alérgenos --}}
-                                        @if ($product->ingredients->where('is_allergen', true)->isNotEmpty())
+                                        @php
+                                            $productAllergenSlugs2 = $product->ingredients->where('is_allergen', true)
+                                                ->flatMap(fn($i) => $i->allergen_types ?? [])
+                                                ->unique()->values();
+                                        @endphp
+                                        @if ($productAllergenSlugs2->isNotEmpty())
                                             <div class="mt-2" aria-label="Alérgenos de {{ $product->name }}">
                                                 <p class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1">
                                                     Alérgenos
                                                 </p>
                                                 <ul class="flex flex-wrap gap-3" role="list">
-                                                    @foreach ($product->ingredients->where('is_allergen', true)->unique('allergen_type') as $allergen)
-                                                        <li><x-allergen-badge :ingredient="$allergen" /></li>
+                                                    @foreach ($productAllergenSlugs2 as $slug)
+                                                        <li><x-allergen-badge :slug="$slug" /></li>
                                                     @endforeach
                                                 </ul>
                                             </div>
