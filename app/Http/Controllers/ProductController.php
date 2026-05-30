@@ -29,11 +29,23 @@ class ProductController extends Controller
    *
    * @return View Vista con la tabla de productos.
    */
-  public function index(): View
+  /**
+   * @param Request $request
+   * @return View
+   */
+  public function index(Request $request): View
   {
-    $ownerId  = Auth::user()->ownerUserId();
-    $products = Product::where('user_id', $ownerId)->with(['allergens', 'variants'])->paginate(15);
-    return view('products.index', compact('products'));
+    $ownerId    = Auth::user()->ownerUserId();
+    $categories = Category::where('user_id', $ownerId)->orderBy('name')->get();
+
+    $products = Product::where('user_id', $ownerId)
+      ->with(['allergens', 'variants', 'category'])
+      ->when($request->filled('search'), fn ($q) => $q->where('name', 'like', '%' . $request->search . '%'))
+      ->when($request->filled('category'), fn ($q) => $q->where('category_id', $request->category))
+      ->paginate(15)
+      ->withQueryString();
+
+    return view('products.index', compact('products', 'categories'));
   }
 
   /**

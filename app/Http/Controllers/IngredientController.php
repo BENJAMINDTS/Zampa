@@ -25,10 +25,17 @@ class IngredientController extends Controller
      *
      * @return \Illuminate\View\View Vista con la rejilla de ingredientes.
      */
-    public function index(): \Illuminate\View\View
+    /**
+     * @param Request $request
+     * @return \Illuminate\View\View
+     */
+    public function index(Request $request): \Illuminate\View\View
     {
         $ownerId     = Auth::user()->ownerUserId();
-        $ingredients = Ingredient::where('user_id', $ownerId)->paginate(15);
+        $ingredients = Ingredient::where('user_id', $ownerId)
+            ->when($request->filled('search'), fn ($q) => $q->where('name', 'like', '%' . $request->search . '%'))
+            ->paginate(15)
+            ->withQueryString();
 
         return view('ingredients.index', compact('ingredients'));
     }

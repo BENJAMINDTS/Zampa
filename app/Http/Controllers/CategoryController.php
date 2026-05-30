@@ -26,10 +26,17 @@ class CategoryController extends Controller
      *
      * @return View Retorna la vista 'categories.index' con los datos.
      */
-    public function index(): View
+    /**
+     * @param Request $request
+     * @return View
+     */
+    public function index(Request $request): View
     {
         $ownerId    = Auth::user()->ownerUserId();
-        $categories = Category::where('user_id', $ownerId)->paginate(15);
+        $categories = Category::where('user_id', $ownerId)
+            ->when($request->filled('search'), fn ($q) => $q->where('name', 'like', '%' . $request->search . '%'))
+            ->paginate(15)
+            ->withQueryString();
 
         return view('categories.index', compact('categories'));
     }
