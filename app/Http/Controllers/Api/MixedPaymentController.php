@@ -33,7 +33,7 @@ class MixedPaymentController extends Controller
             'tip'         => 'nullable|numeric|min:0|max:500',
         ]);
 
-        $table = Table::where('unique_hash', $hash)->firstOrFail();
+        $table = Table::with('user')->where('unique_hash', $hash)->firstOrFail();
         $order = $this->activeOrder($table->id);
 
         if (! $order) {
@@ -54,15 +54,20 @@ class MixedPaymentController extends Controller
 
         $grandTotal = $cardAmount + $tip;
 
+        $stripeAccountId = ($table->user->stripe_onboarding_completed && $table->user->stripe_account_id)
+            ? $table->user->stripe_account_id
+            : null;
+
         $result = $this->stripe->createPaymentIntent(
-            amount:   (int) round($grandTotal * 100),
-            currency: 'eur',
-            metadata: [
+            amount:          (int) round($grandTotal * 100),
+            currency:        'eur',
+            metadata:        [
                 'order_id'    => $order->id,
                 'table_name'  => $table->name,
                 'cash_amount' => $cashAmount,
                 'tip'         => $tip,
             ],
+            stripeAccountId: $stripeAccountId,
         );
 
         return response()->json([

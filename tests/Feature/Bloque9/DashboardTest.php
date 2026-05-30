@@ -284,7 +284,7 @@ it('filters income by this month period', function () {
         'payment_method' => 'cash',
         'payment_status' => 'paid',
         'total'          => 99.00,
-        'updated_at'     => now()->subMonth(),
+        'updated_at'     => now()->subMonthNoOverflow(),
     ]);
 
     $summary = $this->actingAs($this->admin)
@@ -579,7 +579,7 @@ it('top table changes correctly when period filter changes', function () {
     Order::factory()->create([
         'table_id' => $table->id, 'payment_method' => 'cash',
         'payment_status' => 'paid', 'total' => 60.00,
-        'updated_at' => now()->subMonth()->startOfDay()->addHours(12),
+        'updated_at' => now()->subMonthNoOverflow()->startOfDay()->addHours(12),
     ]);
 
     $topTableMonth = $this->actingAs($this->admin)
@@ -592,8 +592,8 @@ it('top table changes correctly when period filter changes', function () {
     $topTableCustom = $this->actingAs($this->admin)
                            ->get(route('dashboard', [
                                'period' => 'custom',
-                               'from'   => now()->subMonth()->startOfMonth()->format('Y-m-d'),
-                               'to'     => now()->subMonth()->endOfMonth()->format('Y-m-d'),
+                               'from'   => now()->subMonthNoOverflow()->startOfMonth()->format('Y-m-d'),
+                               'to'     => now()->subMonthNoOverflow()->endOfMonth()->format('Y-m-d'),
                            ]))
                            ->assertOk()
                            ->viewData('topTable');
@@ -744,7 +744,7 @@ it('average ticket updates correctly when period filter changes', function () {
     Order::factory()->create([
         'table_id' => $table->id, 'payment_method' => 'cash', 'payment_status' => 'paid',
         'total' => 60.00, 'tip' => 0,
-        'updated_at' => now()->subMonth()->startOfDay()->addHours(12),
+        'updated_at' => now()->subMonthNoOverflow()->startOfDay()->addHours(12),
     ]);
 
     $avgTicketMonth = $this->actingAs($this->admin)
@@ -757,8 +757,8 @@ it('average ticket updates correctly when period filter changes', function () {
     $avgTicketCustom = $this->actingAs($this->admin)
                             ->get(route('dashboard', [
                                 'period' => 'custom',
-                                'from'   => now()->subMonth()->startOfMonth()->format('Y-m-d'),
-                                'to'     => now()->subMonth()->endOfMonth()->format('Y-m-d'),
+                                'from'   => now()->subMonthNoOverflow()->startOfMonth()->format('Y-m-d'),
+                                'to'     => now()->subMonthNoOverflow()->endOfMonth()->format('Y-m-d'),
                             ]))
                             ->assertOk()
                             ->viewData('avgTicket');

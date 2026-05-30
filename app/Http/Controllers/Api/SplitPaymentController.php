@@ -117,12 +117,17 @@ class SplitPaymentController extends Controller
             $amount      = $items->sum(fn (OrderItem $i) => round($i->price * $i->quantity, 2));
             $grandAmount = $amount + $tip;
 
+            $stripeAccountId = ($table->user->stripe_onboarding_completed && $table->user->stripe_account_id)
+                ? $table->user->stripe_account_id
+                : null;
+
             $result = $this->stripe->createSplitPaymentIntent(
-                amount:      (int) round($grandAmount * 100),
-                mode:        'items',
-                partNumber:  1,
-                partsTotal:  1,
-                metadata:    ['order_id' => $order->id, 'table_name' => $table->name, 'tip' => $tip],
+                amount:          (int) round($grandAmount * 100),
+                mode:            'items',
+                partNumber:      1,
+                partsTotal:      1,
+                metadata:        ['order_id' => $order->id, 'table_name' => $table->name, 'tip' => $tip],
+                stripeAccountId: $stripeAccountId,
             );
 
             foreach ($items as $index => $item) {
@@ -194,12 +199,17 @@ class SplitPaymentController extends Controller
         $part        = round((float) $order->total / $people, 2);
         $grandAmount = $part + $tip;
 
+        $stripeAccountId = ($table->user->stripe_onboarding_completed && $table->user->stripe_account_id)
+            ? $table->user->stripe_account_id
+            : null;
+
         $result = $this->stripe->createSplitPaymentIntent(
-            amount:     (int) round($grandAmount * 100),
-            mode:       'equitative',
-            partNumber: $partNumber,
-            partsTotal: $people,
-            metadata:   ['order_id' => $order->id, 'table_name' => $table->name, 'tip' => $tip],
+            amount:          (int) round($grandAmount * 100),
+            mode:            'equitative',
+            partNumber:      $partNumber,
+            partsTotal:      $people,
+            metadata:        ['order_id' => $order->id, 'table_name' => $table->name, 'tip' => $tip],
+            stripeAccountId: $stripeAccountId,
         );
 
         OrderItemPayment::create([

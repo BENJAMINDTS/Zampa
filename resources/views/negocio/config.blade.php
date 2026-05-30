@@ -118,6 +118,132 @@
 
             <script id="config-init" type="application/json">@json($configInit)</script>
 
+            {{-- ══════════════════════════════════════════════════════════════ --}}
+            {{-- SECCIÓN STRIPE CONNECT — fuera del form (redirige a Stripe)     --}}
+            {{-- ══════════════════════════════════════════════════════════════ --}}
+            <section aria-labelledby="section-stripe-title"
+                     class="bg-white dark:bg-gray-800 shadow-sm rounded-xl overflow-hidden
+                            ring-1 ring-gray-200 dark:ring-gray-700">
+
+                <div class="px-4 py-5 sm:px-6 border-b border-gray-200 dark:border-gray-700
+                            flex items-start gap-4">
+                    <div class="flex items-center justify-center h-10 w-10 rounded-lg
+                                bg-violet-100 dark:bg-violet-900/40 shrink-0">
+                        <svg class="h-5 w-5 text-violet-600 dark:text-violet-400" aria-hidden="true"
+                             fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 id="section-stripe-title"
+                            class="text-base font-semibold text-gray-900 dark:text-gray-100">
+                            {{ __('Cuenta bancaria (Stripe Connect)') }}
+                        </h3>
+                        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                            {{ __('Conecta tu cuenta bancaria para recibir los pagos con tarjeta directamente. Sin esto, los cobros van a la cuenta de la plataforma.') }}
+                        </p>
+                    </div>
+                </div>
+
+                <div class="px-4 py-5 sm:px-6">
+
+                    @if(auth()->user()->stripe_onboarding_completed)
+                        {{-- Estado: conectado --}}
+                        <div class="flex items-center justify-between gap-4">
+                            <div class="flex items-center gap-3">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full
+                                             bg-emerald-100 dark:bg-emerald-900/30
+                                             text-emerald-700 dark:text-emerald-400
+                                             text-xs font-semibold">
+                                    <svg class="h-3 w-3" aria-hidden="true" fill="currentColor" viewBox="0 0 8 8">
+                                        <circle cx="4" cy="4" r="3"/>
+                                    </svg>
+                                    {{ __('Cuenta conectada') }}
+                                </span>
+                                <span class="text-sm text-gray-500 dark:text-gray-400 font-mono">
+                                    {{ auth()->user()->stripe_account_id }}
+                                </span>
+                            </div>
+                            <form method="POST"
+                                  action="{{ route('stripe.connect.disconnect') }}"
+                                  onsubmit="return confirm('{{ __('¿Seguro que quieres desconectar tu cuenta de Stripe? Los pagos dejarán de ingresarse en tu cuenta bancaria.') }}')">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit"
+                                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg
+                                               text-sm font-medium text-red-600 dark:text-red-400
+                                               border border-red-300 dark:border-red-700
+                                               hover:bg-red-50 dark:hover:bg-red-900/20
+                                               focus:outline-none focus:ring-2 focus:ring-red-500
+                                               focus:ring-offset-2 dark:focus:ring-offset-gray-800
+                                               transition-colors">
+                                    <svg aria-hidden="true" class="h-4 w-4" fill="none"
+                                         stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                              d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                                    </svg>
+                                    {{ __('Desconectar') }}
+                                </button>
+                            </form>
+                        </div>
+
+                    @elseif(auth()->user()->stripe_account_id)
+                        {{-- Estado: cuenta creada pero onboarding pendiente --}}
+                        <div class="space-y-4">
+                            <div class="flex items-center gap-3 rounded-lg
+                                        bg-amber-50 dark:bg-amber-900/20
+                                        border border-amber-200 dark:border-amber-700
+                                        px-4 py-3">
+                                <svg class="h-4 w-4 text-amber-500 shrink-0" aria-hidden="true"
+                                     fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                </svg>
+                                <p class="text-sm text-amber-700 dark:text-amber-400">
+                                    {{ __('Onboarding pendiente. Completa tus datos bancarios en Stripe para activar los cobros.') }}
+                                </p>
+                            </div>
+                            <a href="{{ route('stripe.connect') }}"
+                               class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold
+                                      bg-violet-600 text-white shadow-sm
+                                      hover:bg-violet-500 active:bg-violet-700
+                                      focus:outline-none focus:ring-2 focus:ring-violet-500
+                                      focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-colors">
+                                <svg aria-hidden="true" class="h-4 w-4" fill="none"
+                                     stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                          d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                                </svg>
+                                {{ __('Completar onboarding en Stripe') }}
+                            </a>
+                        </div>
+
+                    @else
+                        {{-- Estado: sin cuenta --}}
+                        <div class="space-y-4">
+                            <p class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                                {{ __('Serás redirigido a Stripe para introducir tus datos bancarios. El proceso tarda menos de 5 minutos.') }}
+                            </p>
+                            <a href="{{ route('stripe.connect') }}"
+                               class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold
+                                      bg-violet-600 text-white shadow-sm
+                                      hover:bg-violet-500 active:bg-violet-700
+                                      focus:outline-none focus:ring-2 focus:ring-violet-500
+                                      focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-colors">
+                                <svg aria-hidden="true" class="h-4 w-4" fill="none"
+                                     stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                          d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+                                </svg>
+                                {{ __('Conectar cuenta bancaria con Stripe') }}
+                            </a>
+                        </div>
+                    @endif
+
+                </div>
+            </section>
+
             <form method="POST" action="{{ route('negocio.config.update') }}"
                   x-data="businessConfig()"
                   class="space-y-6">

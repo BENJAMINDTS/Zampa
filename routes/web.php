@@ -14,6 +14,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TableController;
+use App\Http\Controllers\StripeConnectController;
 use App\Http\Controllers\TicketConfigController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\ZoneController;
@@ -97,6 +98,11 @@ Route::middleware(['auth', 'business.active'])->group(function () {
         Route::post('/zonas', [ZoneController::class, 'store'])->name('zones.store');
         Route::patch('/zonas/{zone}', [ZoneController::class, 'update'])->name('zones.update');
         Route::delete('/zonas/{zone}', [ZoneController::class, 'destroy'])->name('zones.destroy');
+
+        // Stripe Connect — conexión de cuenta bancaria por restaurante
+        Route::get('/stripe/connect', [StripeConnectController::class, 'connect'])->name('stripe.connect');
+        Route::get('/stripe/connect/callback', [StripeConnectController::class, 'callback'])->name('stripe.connect.callback');
+        Route::delete('/stripe/connect/disconnect', [StripeConnectController::class, 'disconnect'])->name('stripe.connect.disconnect');
 
         // Menú del Día — gestión del gerente (Bloque 14.2)
         Route::resource('daily-menus', DailyMenuController::class)
