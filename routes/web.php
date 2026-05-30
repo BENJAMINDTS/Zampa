@@ -17,6 +17,7 @@ use App\Http\Controllers\TableController;
 use App\Http\Controllers\StripeConnectController;
 use App\Http\Controllers\TicketConfigController;
 use App\Http\Controllers\TicketController;
+use App\Http\Controllers\MenuStyleController;
 use App\Http\Controllers\ZoneController;
 use App\Http\Controllers\SuperAdmin\SuperAdminDashboardController;
 use App\Http\Controllers\SuperAdmin\SuperAdminPlanController;
@@ -59,6 +60,9 @@ Route::middleware(['auth', 'business.active'])->group(function () {
     Route::middleware('role:admin')->group(function () {
         Route::get('/negocio/configuracion', [TapasController::class, 'edit'])->name('negocio.config.edit');
         Route::put('/negocio/configuracion', [TapasController::class, 'update'])->name('negocio.config.update');
+
+        Route::get('/negocio/carta-digital', [MenuStyleController::class, 'edit'])->name('negocio.menu-style.edit');
+        Route::put('/negocio/carta-digital', [MenuStyleController::class, 'update'])->name('negocio.menu-style.update');
 
         // Rutas antiguas: GET redirige, PUT sigue llamando al controlador por compat
         Route::get('/tapas/config', fn () => redirect()->route('negocio.config.edit'))->name('tapas.edit');
