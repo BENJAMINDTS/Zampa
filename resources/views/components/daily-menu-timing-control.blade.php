@@ -1,89 +1,49 @@
 {{-- @author SebastianBCF --}}
 {{-- @author Ayrtonalania --}}
-{{-- Control de timing [−] X min [+] para el stepper del menú del día.
-     Sin x-data propio: hereda el scope Alpine del banner (pasoActualObj, timings, horasEstimadas). --}}
+{{-- Control de tiempos entre rondas — clases DS (dm-timing + dm-timing__slider).
+     Sin x-data propio: hereda el scope Alpine de dailyMenuBanner. --}}
 
-<div class="py-2"
+<div class="dm-step"
      role="group"
-     :aria-labelledby="`timing-label-${pasoActualObj?.round}`">
+     :aria-labelledby="'dm-timing-title'">
 
-    <p :id="`timing-label-${pasoActualObj?.round}`"
-       class="text-white font-semibold mb-3 text-base"
-       x-text="pasoActualObj?.label">
-    </p>
-
-    <div class="flex items-center justify-center gap-6 my-6">
-
-        {{-- Botón menos --}}
-        <button
-            type="button"
-            @click="decrementTiming(pasoActualObj.round, pasoActualObj.minDelay)"
-            :disabled="timings[pasoActualObj?.round] <= pasoActualObj?.minDelay"
-            :aria-disabled="timings[pasoActualObj?.round] <= pasoActualObj?.minDelay"
-            :aria-label="`Reducir tiempo de la ronda ${pasoActualObj?.round}`"
-            :class="{
-                'w-12 h-12 rounded-full flex items-center justify-center border-2 border-blue-600/60 text-blue-300 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-[#0E1A38]': true,
-                'hover:bg-blue-800/50 hover:text-white': timings[pasoActualObj?.round] > pasoActualObj?.minDelay,
-                'opacity-35 cursor-not-allowed': timings[pasoActualObj?.round] <= pasoActualObj?.minDelay
-            }"
-        >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor"
-                 viewBox="0 0 24 24" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round"
-                      stroke-width="2" d="M20 12H4"/>
-            </svg>
-        </button>
-
-        {{-- Valor actual — spinbutton con soporte de teclado (↑ ↓ Home End) --}}
-        <div class="text-center min-w-[80px]"
-             role="spinbutton"
-             tabindex="0"
-             :aria-valuemin="pasoActualObj?.minDelay"
-             :aria-valuemax="120"
-             :aria-valuenow="timings[pasoActualObj?.round]"
-             :aria-valuetext="timings[pasoActualObj?.round] + ' minutos'"
-             :aria-label="`Tiempo para la ronda ${pasoActualObj?.round}`"
-             @keydown.arrow-up.prevent="incrementTiming(pasoActualObj.round)"
-             @keydown.arrow-down.prevent="decrementTiming(pasoActualObj.round, pasoActualObj.minDelay)"
-             @keydown.home.prevent="timings = { ...timings, [pasoActualObj.round]: pasoActualObj.minDelay }"
-             @keydown.end.prevent="timings = { ...timings, [pasoActualObj.round]: 120 }"
-             class="focus:outline-none focus:ring-2 focus:ring-blue-400 rounded-lg">
-            <span class="text-5xl font-bold text-white"
-                  x-text="timings[pasoActualObj?.round]">
-            </span>
-            <span class="text-blue-300 text-sm ml-1">min</span>
-        </div>
-
-        {{-- Botón más --}}
-        <button
-            type="button"
-            @click="incrementTiming(pasoActualObj.round)"
-            :disabled="timings[pasoActualObj?.round] >= 120"
-            :aria-disabled="timings[pasoActualObj?.round] >= 120"
-            :aria-label="`Aumentar tiempo de la ronda ${pasoActualObj?.round}`"
-            :class="{
-                'w-12 h-12 rounded-full flex items-center justify-center border-2 border-blue-600/60 text-blue-300 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-[#0E1A38]': true,
-                'hover:bg-blue-800/50 hover:text-white': timings[pasoActualObj?.round] < 120,
-                'opacity-35 cursor-not-allowed': timings[pasoActualObj?.round] >= 120
-            }"
-        >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor"
-                 viewBox="0 0 24 24" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round"
-                      stroke-width="2" d="M12 4v16m8-8H4"/>
-            </svg>
-        </button>
-
+    <div class="dm-step__head">
+        <h3 class="dm-step__title" id="dm-timing-title"
+            x-text="pasoActualObj?.label ?? 'Tiempos entre platos'"></h3>
+        <p class="dm-step__hint">
+            Marca cuánto quieres esperar entre rondas. Lo verá el equipo de cocina.
+        </p>
     </div>
 
-    {{-- Hora estimada de llegada --}}
-    <div aria-live="polite" aria-atomic="true"
-         class="text-center text-blue-200 text-sm">
-        <span x-text="`Tu plato llegará aprox. a las ${horasEstimadas[pasoActualObj?.round] ?? '--:--'}`"></span>
+    <div class="dm-timing">
+        <template x-for="rule in timingRules" :key="rule.round">
+            <div class="dm-timing__row">
+                <div class="dm-timing__top">
+                    <span class="dm-timing__label"
+                          x-text="'Ronda ' + rule.round"></span>
+                    <span class="dm-timing__val"
+                          x-text="(timings[rule.round] ?? rule.minDelay) + ' min'"></span>
+                </div>
+                <input
+                    type="range"
+                    :min="rule.minDelay"
+                    max="120"
+                    step="5"
+                    :value="timings[rule.round] ?? rule.minDelay"
+                    @input="setTiming(rule.round, Number($event.target.value))"
+                    class="dm-timing__slider"
+                    :aria-label="'Tiempo para ronda ' + rule.round"
+                    :aria-valuemin="rule.minDelay"
+                    aria-valuemax="120"
+                    :aria-valuenow="timings[rule.round] ?? rule.minDelay"
+                >
+                <div class="dm-timing__ticks">
+                    <span x-text="rule.minDelay + ' min'"></span>
+                    <span>—</span>
+                    <span>120 min</span>
+                </div>
+            </div>
+        </template>
     </div>
-
-    <p class="text-center text-blue-400/70 text-xs mt-1"
-       x-text="`Tiempo mínimo de preparación: ${pasoActualObj?.minDelay} min`">
-    </p>
 
 </div>
