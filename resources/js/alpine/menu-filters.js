@@ -193,6 +193,19 @@ export function registerMenuFilters() {
                 this.closeProduct();
             },
 
+            init() {
+                this.$watch(
+                    () => Alpine.store('cart').count,
+                    (newVal, oldVal) => {
+                        if (newVal === 0 && oldVal > 0) {
+                            const cart = Alpine.store('cart');
+                            cart._barLeaving = true;
+                            setTimeout(() => { cart._barLeaving = false; }, 220);
+                        }
+                    },
+                );
+            },
+
             toggleAllergen(id) {
                 toggleAllergen(this.activeAllergens, id);
             },
