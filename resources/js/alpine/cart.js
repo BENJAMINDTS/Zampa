@@ -111,11 +111,36 @@ export function registerCart() {
         /** @type {string} Unique table hash from URL. */
         tableHash: ctx.tableHash ?? '',
 
-        showTapaModal:  false,
-        tapaConfig:     tapaConfig,
-        tapaProducts:   tapaProdList,
-        _barItemsCount: tapaConfig.barItemsCount ?? 0,
-        _variantsUsed:  tapaConfig.variantsUsed  ?? 0,
+        showTapaModal:     false,
+        tapaConfig:        tapaConfig,
+        tapaProducts:      tapaProdList,
+        /** Server-side base counts (submitted orders before this session). */
+        _initBarCount:     tapaConfig.barItemsCount ?? 0,
+        _initVariantsUsed: tapaConfig.variantsUsed  ?? 0,
+
+        /** Reactive: bar items in current cart + server-side base. */
+        get _barItemsCount() {
+            const cart = this.items
+                .filter(i => i.destination === 'bar' && !i.isTapa)
+                .reduce((s, i) => s + i.quantity, 0);
+            return this._initBarCount + cart;
+        },
+
+        /** Reactive: distinct tapa product IDs in cart + server-side base. */
+        get _variantsUsed() {
+            const ids = new Set(this.items.filter(i => i.isTapa).map(i => i.productId));
+            return this._initVariantsUsed + ids.size;
+        },
+
+        /** Reactive: true when tapas are available but not yet chosen in the current cart. */
+        get _tapaPending() {
+            return shouldShowTapaModal(
+                this.tapaConfig,
+                this._barItemsCount,
+                this._variantsUsed,
+                this.tapaProducts,
+            );
+        },
 
         close() {
             if (this.closing) return;
@@ -125,6 +150,7 @@ export function registerCart() {
         },
 
         add(product) {
+            if (this.sent) this.sent = false;
             const key      = product.id + ':none';
             const existing = this.items.find(i => i._key === key);
             if (existing) {
@@ -145,12 +171,12 @@ export function registerCart() {
                 });
             }
             if (product.destination === 'bar') {
-                this._barItemsCount++;
                 this._checkTapaSuggestion();
             }
         },
 
         addWithVariant(productId, variantId, variantName, variantPrice, productData) {
+            if (this.sent) this.sent = false;
             const key      = productId + ':' + variantId;
             const existing = this.items.find(i => i._key === key);
             if (existing) {
@@ -171,7 +197,6 @@ export function registerCart() {
                 });
             }
             if (productData?.destination === 'bar') {
-                this._barItemsCount++;
                 this._checkTapaSuggestion();
             }
         },
@@ -190,15 +215,27 @@ export function registerCart() {
         },
 
         addTapa(tapaProduct) {
-            this.add({
-                id:          tapaProduct.id,
-                name:        tapaProduct.name,
-                price:       tapaProduct.price,
-                destination: 'kitchen',
-                removable:   [],
-                extras:      [],
-            });
-            this._variantsUsed++;
+            const key      = tapaProduct.id + ':none';
+            const existing = this.items.find(i => i._key === key);
+            if (existing) {
+                // already in cart — just mark as tapa if not already
+                existing.isTapa = true;
+            } else {
+                this.items.push({
+                    _key:        key,
+                    productId:   tapaProduct.id,
+                    variantId:   null,
+                    variantName: null,
+                    name:        tapaProduct.name,
+                    price:       tapaProduct.price,
+                    quantity:    1,
+                    destination: 'kitchen',
+                    mods:        [],
+                    removable:   [],
+                    extras:      [],
+                    isTapa:      true,
+                });
+            }
             this.showTapaModal = false;
         },
 
@@ -210,8 +247,18 @@ export function registerCart() {
         dec(key) {
             const idx = this.items.findIndex(i => i._key === key);
             if (idx === -1) return;
-            this.items[idx].quantity--;
-            if (this.items[idx].quantity <= 0) this.items.splice(idx, 1);
+            const item = this.items[idx];
+            const wasBarItem = item.destination === 'bar' && !item.isTapa;
+            item.quantity--;
+            if (item.quantity <= 0) this.items.splice(idx, 1);
+            if (wasBarItem) {
+                const cartBarCount = this.items
+                    .filter(i => i.destination === 'bar' && !i.isTapa)
+                    .reduce((s, i) => s + i.quantity, 0);
+                if (cartBarCount === 0 && this._initBarCount === 0) {
+                    this.items = this.items.filter(i => !i.isTapa);
+                }
+            }
         },
 
         toggleRemove(key, ing) {
@@ -275,7 +322,7 @@ export function registerCart() {
         },
 
         async send() {
-            if (!this.items.length || this.sending) return;
+            if (!this.items.length || this.sending || this._tapaPending) return;
             this.sending = true;
             this.error   = null;
             try {
