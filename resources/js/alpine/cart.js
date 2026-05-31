@@ -94,6 +94,8 @@ export function registerCart() {
         items:   [],
         /** @type {boolean} Whether the cart drawer is open. */
         open:    false,
+        /** @type {boolean} True while the close animation is running. */
+        closing: false,
         /** @type {boolean} Submission in progress. */
         sending: false,
         /** @type {boolean} Order successfully sent. */
@@ -108,6 +110,13 @@ export function registerCart() {
         tapaProducts:   tapaProdList,
         _barItemsCount: tapaConfig.barItemsCount ?? 0,
         _variantsUsed:  tapaConfig.variantsUsed  ?? 0,
+
+        close() {
+            if (this.closing) return;
+            this.closing = true;
+            this.open = false;
+            setTimeout(() => { this.closing = false; }, 260);
+        },
 
         add(product) {
             const key      = product.id + ':none';
