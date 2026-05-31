@@ -223,6 +223,122 @@
             flex-direction: column;
             overflow: hidden;
         }
+
+        /* ── Carta DS — Layout crítico ──────────────────────────────── */
+        /* Garantiza que .carta llene el viewport independientemente de Tailwind */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        .carta {
+            height: 100dvh;
+            height: 100vh; /* fallback */
+            width: 100%;
+            max-width: 100%;
+        }
+        /* Animación spin para el spinner de envío */
+        @keyframes spin { to { transform: rotate(360deg); } }
+        /* Animación pulse para el banner de tapas y otros indicadores */
+        .banner-closed {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 10px 16px;
+            background: var(--color-amber-100, #fef9c3);
+            color: var(--color-amber-800, #92400e);
+            border-bottom: 1px solid var(--color-amber-200, #fde68a);
+            flex-shrink: 0;
+        }
+        /* category__closed necesita definición de color */
+        .category__closed {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-family: var(--font-body);
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--color-amber-700, #b45309);
+        }
+        .category__closedDot {
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+            flex-shrink: 0;
+        }
+        /* drawer--wide se usa para cobro partido/mixto */
+        .drawer--wide { max-height: 88dvh; max-height: 88vh; }
+        /* citem__customTags */
+        .citem__customTags {
+            display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px;
+        }
+        .citem__customTag {
+            padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 500;
+            background: var(--bg-chip); color: var(--fg-muted);
+            border: 1px solid var(--border-subtle);
+        }
+        .citem__customTag--extra { color: var(--color-green-700); background: var(--color-green-50); border-color: var(--color-green-200); }
+        .citem__customTag--removed { color: var(--color-amber-700); background: var(--color-amber-50); border-color: var(--color-amber-200); }
+        /* cashTip clases adicionales */
+        .cashTip__spin {
+            display: inline-block; width: 14px; height: 14px;
+            border: 2px solid rgba(255,255,255,0.4); border-top-color: #fff;
+            border-radius: 50%; animation: spin 0.8s linear infinite;
+        }
+        .cashTip__ctaTag {
+            font-size: 11px; font-weight: 500; opacity: 0.75; margin-left: 4px;
+        }
+        /* tip clase (propina tarjeta) */
+        .tip {
+            flex: 1; padding: 14px 8px; border: 1px solid var(--glass-border);
+            border-radius: 12px; background: var(--glass-bg-surface);
+            display: flex; flex-direction: column; align-items: center; gap: 4px;
+            cursor: pointer; transition: border-color 150ms, background 150ms;
+        }
+        .tip:hover { border-color: var(--border-strong); }
+        .tip--selected { border-color: var(--brand-primary); background: var(--color-green-50); }
+        .tip .pct { font-family: var(--font-display); font-weight: 900; font-size: 18px; color: var(--fg-primary); }
+        .tip .amt { font-family: var(--font-body); font-size: 12px; color: var(--fg-muted); }
+        .tip-row { display: flex; gap: 8px; }
+        [data-theme="dark"] .tip--selected { background: rgba(34,197,94,0.1); }
+        /* bill footRow */
+        .bill__footRow { display: flex; gap: 8px; }
+        .bill__footRow--stack { flex-direction: column; }
+        /* cart-empty emojis */
+        .cart-empty__emoji { font-size: 48px; line-height: 1; margin-bottom: 12px; display: block; }
+        /* drawer__subtitle */
+        .drawer__subtitle {
+            font-family: var(--font-body); font-size: 12px; color: var(--fg-muted);
+            margin-top: 2px; line-height: 1.4;
+        }
+        /* method clases */
+        .method {
+            display: grid;
+            grid-template-columns: 44px 1fr auto;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 16px;
+            border: 1px solid var(--glass-border);
+            border-radius: 14px;
+            background: var(--glass-bg-surface);
+            cursor: pointer;
+            text-align: left;
+            transition: border-color 150ms, transform 150ms;
+            width: 100%;
+        }
+        .method:hover { border-color: var(--brand-primary); transform: translateY(-1px); }
+        .method__ic {
+            width: 44px; height: 44px; border-radius: 50%;
+            background: var(--bg-chip);
+            display: inline-flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .method__txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+        .method__nm { font-family: var(--font-body); font-weight: 700; font-size: 15px; color: var(--fg-primary); }
+        .method__ds { font-family: var(--font-body); font-size: 12px; color: var(--fg-muted); }
+        .method__chev { color: var(--fg-muted); flex-shrink: 0; transition: transform 150ms, color 150ms; }
+        .method:hover .method__chev { transform: translateX(3px); color: var(--fg-primary); }
     </style>
 
     @php
