@@ -707,6 +707,7 @@
                     @click="openChat()"
                     aria-label="Abrir asistente Zampi"
                     x-show="!open"
+                    style="display:none"
                     x-transition:enter="transition ease-out duration-200"
                     x-transition:enter-start="opacity-0"
                     x-transition:enter-end="opacity-100"
