@@ -346,8 +346,9 @@ html, body {
 
 .product-grid {
   display: grid; gap: 14px;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(3, 1fr);
 }
+.carta[data-bp="mobile"] .product-grid { grid-template-columns: repeat(2, 1fr); }
 .carta[data-bp="tablet"] .product-grid { grid-template-columns: repeat(3, 1fr); }
 .carta[data-bp="desktop"] .product-grid { grid-template-columns: repeat(3, 1fr); gap: 16px; }
 .carta[data-bp="desktop"][data-chat="open"] .carta__cartCol { display: none; }
