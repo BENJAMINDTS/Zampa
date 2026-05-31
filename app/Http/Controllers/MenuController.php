@@ -70,8 +70,6 @@ class MenuController extends Controller
         });
 
         $categories = $allCategories
-            ->filter(fn ($cat) => $kitchenOpen || $cat->destination === 'bar')
-            ->filter(fn ($cat) => ! ($config && $config->tapas_enabled) || $cat->name !== 'Tapas')
             ->filter(fn ($cat) => $cat->products->isNotEmpty())
             ->values();
 
