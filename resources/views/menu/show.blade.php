@@ -231,34 +231,132 @@
     </style>
 
     @php
+        // Mapeo de nombre de categoría → emoji fallback (coincidencia exacta luego parcial).
+        $getEmoji = static function (string $categoryName): string {
+            $n = mb_strtolower(trim($categoryName));
+
+            $exact = [
+                'hamburguesas' => '🍔', 'hamburguesa' => '🍔', 'burgers' => '🍔', 'burger' => '🍔',
+                'pizzas' => '🍕', 'pizza' => '🍕',
+                'ensaladas' => '🥗', 'ensalada' => '🥗',
+                'postres' => '🍮', 'postre' => '🍮',
+                'tartas' => '🍰', 'tarta' => '🍰', 'pasteles' => '🎂', 'pastel' => '🎂',
+                'helados' => '🍦', 'helado' => '🍦',
+                'sopas' => '🍲', 'sopa' => '🍲',
+                'cremas' => '🥣', 'crema' => '🥣', 'caldos' => '🥣', 'caldo' => '🥣',
+                'entrantes' => '🥙', 'entrante' => '🥙',
+                'aperitivos' => '🫒', 'aperitivo' => '🫒',
+                'tapas' => '🫕', 'tapa' => '🫕',
+                'pinchos' => '🍢', 'pincho' => '🍢',
+                'montaditos' => '🥖', 'montadito' => '🥖',
+                'bocadillos' => '🥖', 'bocadillo' => '🥖',
+                'sandwiches' => '🥪', 'sandwich' => '🥪',
+                'wraps' => '🌯', 'wrap' => '🌯',
+                'carnes' => '🥩', 'carne' => '🥩',
+                'asados' => '🍖', 'asado' => '🍖',
+                'pollos' => '🍗', 'pollo' => '🍗',
+                'pescados' => '🐟', 'pescado' => '🐟',
+                'mariscos' => '🦞', 'marisco' => '🦞',
+                'pastas' => '🍝', 'pasta' => '🍝',
+                'arroces' => '🍚', 'arroz' => '🍚',
+                'paellas' => '🥘', 'paella' => '🥘',
+                'verduras' => '🥦', 'verdura' => '🥦',
+                'vegetarianos' => '🥦', 'vegetariano' => '🥦',
+                'veganos' => '🥦', 'vegano' => '🥦',
+                'bebidas' => '🥤', 'bebida' => '🥤',
+                'refrescos' => '🥤', 'refresco' => '🥤',
+                'cervezas' => '🍺', 'cerveza' => '🍺',
+                'vinos' => '🍷', 'vino' => '🍷',
+                'cócteles' => '🍸', 'cocteles' => '🍸', 'coctel' => '🍸',
+                'copas' => '🥂', 'copa' => '🥂',
+                'zumos' => '🍊', 'zumo' => '🍊',
+                'cafés' => '☕', 'café' => '☕', 'cafes' => '☕', 'cafe' => '☕',
+                'infusiones' => '🍵', 'infusión' => '🍵', 'infusion' => '🍵',
+                'especiales' => '⭐', 'especial' => '⭐',
+                'recomendados' => '⭐', 'sugerencias' => '⭐',
+                'desayunos' => '🥐', 'desayuno' => '🥐',
+                'brunch' => '🥞',
+            ];
+
+            if (isset($exact[$n])) {
+                return $exact[$n];
+            }
+
+            $partial = [
+                'hambur' => '🍔', 'burger' => '🍔',
+                'pizza'  => '🍕',
+                'ensalad' => '🥗',
+                'postre' => '🍮', 'tarta' => '🍰', 'helado' => '🍦', 'pastel' => '🎂',
+                'sopa' => '🍲', 'crema' => '🥣', 'caldo' => '🥣', 'gazpacho' => '🍅',
+                'entrante' => '🥙', 'aperitiv' => '🫒',
+                'tapa' => '🫕', 'pincho' => '🍢',
+                'bocadill' => '🥖', 'montadit' => '🥖',
+                'sandwich' => '🥪', 'wrap' => '🌯',
+                'carne' => '🥩', 'ternera' => '🥩', 'asado' => '🍖', 'cordero' => '🍖',
+                'pollo' => '🍗',
+                'pescad' => '🐟', 'bacalao' => '🐟', 'salmon' => '🐟',
+                'marisco' => '🦞', 'gambas' => '🦐', 'langostino' => '🦐',
+                'pasta' => '🍝',
+                'arroz' => '🍚', 'paella' => '🥘', 'risotto' => '🍚',
+                'verdura' => '🥦', 'vegano' => '🥦', 'vegeta' => '🥦',
+                'bebida' => '🥤', 'refresc' => '🥤',
+                'cervez' => '🍺',
+                'vino' => '🍷',
+                'coctel' => '🍸', 'cóctel' => '🍸',
+                'copa' => '🥂',
+                'zumo' => '🍊',
+                'café' => '☕', 'cafe' => '☕', 'coffee' => '☕',
+                'infusi' => '🍵',
+                'especial' => '⭐', 'recomend' => '⭐', 'sugerid' => '⭐',
+                'desayun' => '🥐', 'brunch' => '🥞',
+            ];
+
+            foreach ($partial as $keyword => $emoji) {
+                if (str_contains($n, $keyword)) {
+                    return $emoji;
+                }
+            }
+
+            return '🍽️';
+        };
+
         // Datos de productos para Alpine. Se calculan aquí para evitar que
-        // @json() reciba una expresión multi-línea con corchetes anidados,
+        // la directiva json() reciba una expresión multi-línea con corchetes anidados,
         // lo que confunde al parser de Blade.
-        $productsForAlpine = $categories->flatMap(function ($category) {
-            return $category->products->map(fn ($p) => [
-                'id'          => $p->id,
-                'name'        => $p->name,
-                'price'       => $p->variants->isNotEmpty() ? (float) $p->variants->min('price') : (float) $p->price,
-                'hasVariants' => $p->variants->isNotEmpty(),
-                'variants'    => $p->variants->map(fn ($v) => [
-                    'id'    => $v->id,
-                    'name'  => $v->name,
-                    'price' => (float) $v->price,
-                ])->values(),
-                'categoryId'  => $category->id,
-                'destination' => $category->destination,
-                'allergenTypes' => $p->ingredients->where('is_allergen', true)
-                    ->flatMap(fn ($i) => $i->allergen_types ?? [])
-                    ->unique()->values()->toArray(),
-                'removable'   => $p->ingredients
-                    ->filter(fn ($i) => $i->pivot->is_removable)
-                    ->map(fn ($i) => ['id' => $i->id, 'name' => $i->name])
-                    ->values(),
-                'extras'      => $p->ingredients
-                    ->filter(fn ($i) => $i->pivot->is_extra)
-                    ->map(fn ($i) => ['id' => $i->id, 'name' => $i->name, 'price' => (float) $i->pivot->extra_price])
-                    ->values(),
-            ]);
+        $alpinePhotoCycle  = 0;
+        $productsForAlpine = $categories->flatMap(function ($category) use (&$alpinePhotoCycle, $getEmoji) {
+            return $category->products->map(function ($p) use ($category, &$alpinePhotoCycle, $getEmoji) {
+                $alpinePhotoCycle++;
+                return [
+                    'id'           => $p->id,
+                    'name'         => $p->name,
+                    'description'  => $p->description,
+                    'imageUrl'     => $p->image ? Storage::url($p->image) : null,
+                    'photoStyle'   => (($alpinePhotoCycle - 1) % 6) + 1,
+                    'categoryName' => $category->name,
+                    'emoji'        => $getEmoji($category->name),
+                    'price'        => $p->variants->isNotEmpty() ? (float) $p->variants->min('price') : (float) $p->price,
+                    'hasVariants'  => $p->variants->isNotEmpty(),
+                    'variants'     => $p->variants->map(fn ($v) => [
+                        'id'    => $v->id,
+                        'name'  => $v->name,
+                        'price' => (float) $v->price,
+                    ])->values(),
+                    'categoryId'   => $category->id,
+                    'destination'  => $category->destination,
+                    'allergenTypes' => $p->ingredients->where('is_allergen', true)
+                        ->flatMap(fn ($i) => $i->allergen_types ?? [])
+                        ->unique()->values()->toArray(),
+                    'removable'    => $p->ingredients
+                        ->filter(fn ($i) => $i->pivot->is_removable)
+                        ->map(fn ($i) => ['id' => $i->id, 'name' => $i->name])
+                        ->values(),
+                    'extras'       => $p->ingredients
+                        ->filter(fn ($i) => $i->pivot->is_extra)
+                        ->map(fn ($i) => ['id' => $i->id, 'name' => $i->name, 'price' => (float) $i->pivot->extra_price])
+                        ->values(),
+                ];
+            });
         })->values();
 
         // El precio de cada tapa se resuelve en backend (getPriceForProduct) para que
@@ -290,6 +388,7 @@
             'originalOrderTotal'  => (float) $originalOrderTotal,
             'splitPaymentEnabled' => $splitPaymentEnabled,
             'splitPaymentMaxParts'=> $splitPaymentMaxParts,
+            'kitchenOpen'         => $kitchenOpen,
         ];
     @endphp
 
@@ -1359,8 +1458,14 @@
                                 ->unique()->values();
                         @endphp
                         <div class="pcard"
+                             role="button"
+                             tabindex="0"
                              x-show="isProductVisible({{ $product->id }})"
-                             x-transition>
+                             x-transition
+                             @click="openProduct(products.find(p => p.id === {{ $product->id }}))"
+                             @keydown.enter.prevent="openProduct(products.find(p => p.id === {{ $product->id }}))"
+                             @keydown.space.prevent="openProduct(products.find(p => p.id === {{ $product->id }}))"
+                             aria-label="Ver detalle de {{ $product->name }}">
 
                             {{-- Foto --}}
                             @if($product->image)
@@ -1371,7 +1476,7 @@
                                      style="width:100%;height:100%;object-fit:cover">
                             </div>
                             @else
-                            <div class="pcard__photo pcard__photo--food-{{ $photoStyle }}" aria-hidden="true"></div>
+                            <div class="pcard__photo pcard__photo--food-{{ $photoStyle }}" aria-hidden="true">{{ $getEmoji($category->name) }}</div>
                             @endif
 
                             {{-- Body --}}
@@ -2933,6 +3038,169 @@
                 </div>
             </div>
         </div>
+
+        {{-- ══════════════════════════════════════════════════════════════════════
+             PRODUCT DETAIL MODAL — DS: .scrim.scrim--center > .pdetail
+             ══════════════════════════════════════════════════════════════════════ --}}
+        <div class="scrim scrim--center"
+             x-show="selectedProduct !== null"
+             :class="{ 'is-closing': pdetailClosing }"
+             @click="closeProduct()"
+             @keydown.escape.window="closeProduct()"
+             style="display:none"
+             role="dialog"
+             aria-modal="true"
+             :aria-label="selectedProduct ? 'Detalle de ' + selectedProduct.name : ''">
+
+            <div class="pdetail"
+                 :class="{ 'is-closing': pdetailClosing }"
+                 @click.stop>
+
+                {{-- Botón cerrar --}}
+                <button class="pdetail__close" @click="closeProduct()" aria-label="Cerrar">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2.5"
+                         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+
+                <div class="pdetail__layout">
+
+                    {{-- Foto / Hero --}}
+                    <div class="pdetail__photo"
+                         :class="selectedProduct?.imageUrl ? '' : 'pdetail__photo--food-' + (selectedProduct?.photoStyle || 1)">
+                        <template x-if="selectedProduct?.imageUrl">
+                            <img :src="selectedProduct.imageUrl"
+                                 :alt="'Foto de ' + selectedProduct.name"
+                                 style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0">
+                        </template>
+                        <template x-if="!selectedProduct?.imageUrl">
+                            <div class="pdetail__photo-emoji" aria-hidden="true"
+                                 x-text="selectedProduct?.emoji || '🍽️'"></div>
+                        </template>
+                        <div class="pdetail__photo-fade" aria-hidden="true"></div>
+                        <div class="pdetail__chip-row">
+                            <span class="pdetail__catchip" x-text="selectedProduct?.categoryName || ''"></span>
+                            <template x-if="selectedProduct?.destination === 'kitchen' && !kitchenOpen">
+                                <span class="pdetail__catchip pdetail__catchip--warn">Cocina cerrada</span>
+                            </template>
+                        </div>
+                        <div class="pdetail__grabber" aria-hidden="true"></div>
+                    </div>
+
+                    {{-- Contenido --}}
+                    <div class="pdetail__content">
+                        <div class="pdetail__scroll">
+
+                            <h2 class="pdetail__name" x-text="selectedProduct?.name"></h2>
+                            <div class="pdetail__price"
+                                 x-text="Number(selectedProduct?.price || 0).toFixed(2).replace('.', ',') + ' €'"></div>
+                            <p class="pdetail__desc"
+                               x-text="selectedProduct?.description"
+                               x-show="selectedProduct?.description"></p>
+
+                            {{-- Alérgenos --}}
+                            <section class="pdetail__section"
+                                     x-show="(selectedProduct?.allergenTypes || []).length > 0">
+                                <div class="pdetail__label">Contiene</div>
+                                <div class="pdetail__allergens">
+                                    <template x-for="al in (selectedProduct?.allergenTypes || [])" :key="al">
+                                        <span class="pdetail__allergen">
+                                            <svg class="allergen-img"
+                                                 :data-al="al"
+                                                 viewBox="0 0 100 100"
+                                                 width="22" height="22"
+                                                 role="img"
+                                                 :aria-label="'Contiene ' + (window.ZAMPA_ALLERGEN_LABELS?.[al] || al)">
+                                            </svg>
+                                            <span x-text="window.ZAMPA_ALLERGEN_LABELS?.[al] || al"></span>
+                                        </span>
+                                    </template>
+                                </div>
+                            </section>
+
+                            {{-- Quitar ingredientes --}}
+                            <section class="pdetail__section"
+                                     x-show="(selectedProduct?.removable || []).length > 0">
+                                <div class="pdetail__label">Personaliza · quita lo que no quieras</div>
+                                <div class="pdetail__chips">
+                                    <template x-for="ing in (selectedProduct?.removable || [])" :key="ing.id">
+                                        <button type="button"
+                                                :class="pdetailRemovedIds.includes(ing.id)
+                                                    ? 'pdetail__chip pdetail__chip--off'
+                                                    : 'pdetail__chip'"
+                                                @click="pdetailRemovedIds.includes(ing.id)
+                                                    ? pdetailRemovedIds.splice(pdetailRemovedIds.indexOf(ing.id), 1)
+                                                    : pdetailRemovedIds.push(ing.id)">
+                                            <span class="pdetail__chip-x" aria-hidden="true"
+                                                  x-text="pdetailRemovedIds.includes(ing.id) ? '✕' : '−'"></span>
+                                            <span x-text="ing.name"></span>
+                                        </button>
+                                    </template>
+                                </div>
+                            </section>
+
+                            {{-- Extras --}}
+                            <section class="pdetail__section"
+                                     x-show="(selectedProduct?.extras || []).length > 0">
+                                <div class="pdetail__label">Extras</div>
+                                <div class="pdetail__extras">
+                                    <template x-for="ex in (selectedProduct?.extras || [])" :key="ex.id">
+                                        <button type="button"
+                                                :class="pdetailExtraIds.includes(ex.id)
+                                                    ? 'pdetail__extra pdetail__extra--on'
+                                                    : 'pdetail__extra'"
+                                                @click="pdetailExtraIds.includes(ex.id)
+                                                    ? pdetailExtraIds.splice(pdetailExtraIds.indexOf(ex.id), 1)
+                                                    : pdetailExtraIds.push(ex.id)">
+                                            <span class="pdetail__extra-name" x-text="ex.name"></span>
+                                            <span class="pdetail__extra-price"
+                                                  x-text="ex.price > 0
+                                                      ? '+ ' + Number(ex.price).toFixed(2).replace('.',',') + ' €'
+                                                      : 'gratis'"></span>
+                                            <span class="pdetail__check"
+                                                  :class="pdetailExtraIds.includes(ex.id) ? 'pdetail__check--on' : ''"
+                                                  aria-hidden="true"
+                                                  x-text="pdetailExtraIds.includes(ex.id) ? '✓' : ''"></span>
+                                        </button>
+                                    </template>
+                                </div>
+                            </section>
+
+                        </div>{{-- /pdetail__scroll --}}
+
+                        {{-- Footer: cantidad + CTA --}}
+                        @if($orderingAllowed)
+                        <div class="pdetail__foot">
+                            <div class="pdetail__qty">
+                                <button type="button"
+                                        class="pdetail__qtybtn pdetail__qtybtn--minus"
+                                        @click="pdetailQty = Math.max(1, pdetailQty - 1)"
+                                        aria-label="Quitar uno">−</button>
+                                <span class="pdetail__qtyn" x-text="pdetailQty"></span>
+                                <button type="button"
+                                        class="pdetail__qtybtn pdetail__qtybtn--plus"
+                                        @click="pdetailQty++"
+                                        aria-label="Añadir uno">+</button>
+                            </div>
+                            <button type="button"
+                                    class="pdetail__cta"
+                                    @click="pdetailAddToCart()"
+                                    :disabled="selectedProduct?.destination === 'kitchen' && !kitchenOpen">
+                                <span class="pdetail__cta-lab"
+                                      x-text="$store.cart.items.some(i => i.productId === selectedProduct?.id && !i.variantId)
+                                          ? 'Actualizar carrito' : 'Añadir al carrito'"></span>
+                                <span class="pdetail__cta-price"
+                                      x-text="Number(((selectedProduct?.price || 0) + (selectedProduct?.extras || []).filter(e => pdetailExtraIds.includes(e.id)).reduce((s, e) => s + e.price, 0)) * pdetailQty).toFixed(2).replace('.',',') + ' €'"></span>
+                            </button>
+                        </div>
+                        @endif
+
+                    </div>{{-- /pdetail__content --}}
+                </div>{{-- /pdetail__layout --}}
+            </div>{{-- /pdetail --}}
+        </div>{{-- /scrim.scrim--center --}}
 
     </div>{{-- /carta (Alpine) --}}
 </body>
