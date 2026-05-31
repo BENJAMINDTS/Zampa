@@ -1586,10 +1586,9 @@
         {{-- ══════════════════════════════════════════════════════════════════════
              CART BAR — .cart-bar position:absolute dentro de .carta
              ══════════════════════════════════════════════════════════════════════ --}}
+        <template x-if="$store.cart.count > 0">
         <button type="button"
                 class="cart-bar"
-                x-show="$store.cart.count > 0 && !$store.chat.open"
-                x-transition
                 @click="$store.cart.open = true"
                 :aria-label="'Ver pedido — ' + $store.cart.count + ($store.cart.count === 1 ? ' artículo' : ' artículos') + ', total ' + Number($store.cart.total).toFixed(2).replace('.',',') + ' €'">
             <div class="cart-bar__left">
@@ -1609,6 +1608,7 @@
             </div>
             <span class="cart-bar__cta">Ver pedido</span>
         </button>
+        </template>
 
         {{-- ══════════════════════════════════════════════════════════════════════
              FAB CLUSTER — DS: .fab-cluster (Mis pedidos + Cuenta + Mi ticket)
@@ -1684,12 +1684,14 @@
              x-transition:enter="transition duration-200"
              x-transition:enter-start="opacity-0"
              x-transition:enter-end="opacity-100"
-             x-transition:leave="transition duration-200"
+             x-transition:leave="transition duration-260"
              x-transition:leave-start="opacity-100"
              x-transition:leave-end="opacity-0"
-             @click.self="$store.cart.open = false"
+             @click.self="$store.cart.close()"
              role="dialog" aria-modal="true" aria-label="Tu pedido">
-            <div class="drawer drawer--cart" @click.stop>
+            <div class="drawer drawer--cart"
+                 :class="{ 'is-closing': $store.cart.closing }"
+                 @click.stop>
                 <div class="drawer__grabber" aria-hidden="true"></div>
                 {{-- Cart head --}}
                 <div class="cart-head">
@@ -1699,7 +1701,7 @@
                             <h2 class="cart-head__title">Tu&nbsp;pedido</h2>
                         </div>
                         <button type="button" class="icon-btn cart-head__close"
-                                @click="$store.cart.open = false" aria-label="Cerrar">
+                                @click="$store.cart.close()" aria-label="Cerrar">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
                             </svg>
@@ -1720,6 +1722,9 @@
                     <template x-if="$store.cart.items.length === 0">
                         <div class="cart-empty">
                             <div class="cart-empty__art" aria-hidden="true">
+                                <span class="cart-empty__plate"></span>
+                                <span class="cart-empty__fork"></span>
+                                <span class="cart-empty__knife"></span>
                                 <span class="cart-empty__emoji">🍽️</span>
                             </div>
                             <div class="cart-empty__h">Tu pedido está vacío</div>
@@ -1767,7 +1772,7 @@
                                                             aria-label="Añadir uno">+</button>
                                                 </div>
                                                 <span class="citem__price"
-                                                      x-text="Number(item.price * item.quantity).toFixed(2).replace('.',',') + ' €'"></span>
+                                                      x-text="Number($store.cart.lineTotal(item)).toFixed(2).replace('.',',') + ' €'"></span>
                                             </div>
                                         </div>
                                         {{-- Quitar ingredientes --}}
