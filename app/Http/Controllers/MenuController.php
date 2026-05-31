@@ -153,8 +153,10 @@ class MenuController extends Controller
                 ->toArray()
             : [];
 
+        $theme = 'modern';
+
         return view('menu.show', compact(
-            'table', 'categories', 'allergens',
+            'theme', 'table', 'categories', 'allergens',
             'tapaConfig', 'barItemsCount', 'kitchenOpen', 'nextOpeningTime',
             'tapaVariantsUsed', 'tapaProducts', 'shouldSuggest',
             'hasActiveOrder', 'activeOrderTotal', 'originalOrderTotal', 'billRequested', 'stripePublicKey',

@@ -1,88 +1,51 @@
 {{-- @author SebastianBCF --}}
 {{-- @author Ayrtonalania --}}
-{{-- Dialog de exclusividad: se muestra cuando el usuario tiene ítems en el carrito
-     y quiere abrir el menú del día. Hereda el scope Alpine del banner (sin x-data propio). --}}
+{{-- Diálogo de exclusividad del menú del día — clases DS (modal + dm-excl).
+     Sin x-data propio: hereda el scope Alpine de dailyMenuBanner. --}}
 
 <div
-    role="alertdialog"
-    aria-modal="true"
-    aria-labelledby="exclusivity-title"
-    aria-describedby="exclusivity-desc"
+    class="scrim modal--center"
     x-show="showExclusivityWarning"
-    @keydown.escape.window="if (showExclusivityWarning) { showExclusivityWarning = false; $nextTick(() => $refs.openButton?.focus()); }"
+    @click="showExclusivityWarning = false; $nextTick(() => {})"
+    @keydown.escape.window="if (showExclusivityWarning) showExclusivityWarning = false"
     @keydown.tab.window="
         if (!showExclusivityWarning || !$el.contains(document.activeElement)) return;
         $event.preventDefault();
-        const focusable = [...$el.querySelectorAll('button:not([disabled]),[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex=\'-1\'])')];
+        const focusable = [...$el.querySelectorAll('button:not([disabled]),[href],input:not([disabled])')];
         if (!focusable.length) return;
         const idx = focusable.indexOf(document.activeElement);
-        focusable[$event.shiftKey
-            ? (idx - 1 + focusable.length) % focusable.length
-            : (idx + 1) % focusable.length
-        ].focus();
+        focusable[$event.shiftKey ? (idx - 1 + focusable.length) % focusable.length : (idx + 1) % focusable.length].focus();
     "
-    x-transition:enter="transition ease-out duration-200"
-    x-transition:enter-start="opacity-0"
-    x-transition:enter-end="opacity-100"
-    x-transition:leave="transition ease-in duration-150"
-    x-transition:leave-start="opacity-100"
-    x-transition:leave-end="opacity-0"
-    class="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-4"
+    role="alertdialog"
+    aria-modal="true"
+    aria-labelledby="dm-excl-title"
+    aria-describedby="dm-excl-desc"
     x-cloak
 >
-    {{-- Overlay --}}
-    <div class="absolute inset-0 bg-black/70 backdrop-blur-sm"
-         @click="showExclusivityWarning = false"
-         aria-hidden="true"></div>
+    <div class="modal__panel modal__panel--narrow" @click.stop>
+        <div class="dm-excl">
+            <div class="dm-excl__ic" aria-hidden="true">!</div>
 
-    {{-- Panel --}}
-    <div class="relative w-full max-w-sm rounded-2xl
-                bg-[#0E1A38] border border-blue-600/40
-                shadow-2xl shadow-blue-900/50 p-5 z-10">
+            <div class="dm-excl__title" id="dm-excl-title">
+                El menú del día va aparte
+            </div>
 
-        <h3 id="exclusivity-title"
-            class="text-white font-bold text-base mb-2">
-            ¿Quieres pedir el Menú del Día?
-        </h3>
+            <div class="dm-excl__copy" id="dm-excl-desc">
+                Para pedir el menú del día tu carrito debe estar vacío. Tienes
+                <strong x-text="Alpine.store('cart').items.length + (Alpine.store('cart').items.length === 1 ? ' artículo' : ' artículos')"></strong>
+                añadidos à la carte.
+            </div>
 
-        <p id="exclusivity-desc" class="text-blue-200 text-sm leading-relaxed mb-4">
-            Tienes
-            <span class="font-semibold text-white"
-                  x-text="Alpine.store('cart').items.length"></span><span
-                  x-text="Alpine.store('cart').items.length === 1 ? ' producto' : ' productos'"></span>
-            en tu carrito à la carte. El Menú del Día y el pedido normal
-            no pueden combinarse en la misma comanda.
-            <br><br>
-            Si continúas, <strong class="text-white">tu carrito actual se vaciará.</strong>
-        </p>
-
-        <div class="flex flex-col gap-2">
-
-            {{-- Botón primario visual: camino seguro (cancelar) --}}
-            <button
-                @click="showExclusivityWarning = false"
-                class="w-full py-2.5 px-4 rounded-lg font-semibold text-sm
-                       bg-[#2E50B0] text-white hover:bg-[#3660CC]
-                       focus:outline-none focus:ring-2 focus:ring-blue-400
-                       focus:ring-offset-2 focus:ring-offset-[#0E1A38]
-                       transition-colors"
-            >
-                Volver a la carta
-            </button>
-
-            {{-- Botón destructivo: vaciar carrito y continuar --}}
-            <button
-                @click="clearCartAndOpen()"
-                class="w-full py-2.5 px-4 rounded-lg font-medium text-sm
-                       border border-red-500/60 text-red-400
-                       hover:bg-red-500/10 hover:text-red-300
-                       focus:outline-none focus:ring-2 focus:ring-red-500/50
-                       focus:ring-offset-2 focus:ring-offset-[#0E1A38]
-                       transition-colors"
-            >
-                Vaciar carrito y ver el menú
-            </button>
-
+            <div class="dm-excl__actions">
+                <button type="button" class="btn-secondary"
+                        @click="showExclusivityWarning = false">
+                    Cancelar
+                </button>
+                <button type="button" class="btn-primary dm-excl__btnPrimary"
+                        @click="clearCartAndOpen()">
+                    Vaciar carrito y continuar
+                </button>
+            </div>
         </div>
     </div>
 </div>
