@@ -13,21 +13,21 @@
     @else
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     @endif
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link rel="stylesheet" href="{{ asset('css/carta/colors_and_type.css') }}">
     <link rel="stylesheet" href="{{ asset('css/carta/styles.css') }}">
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
     <meta name="stripe-key" content="{{ $stripePublicKey }}">
+    <script src="{{ asset('js/allergen-pictograms.js') }}"></script>
+    <script>window.ZAMPA_ALLERGEN_LABELS = @json(\App\Models\Ingredient::ALLERGEN_TYPES);</script>
     <script src="https://js.stripe.com/v3/" defer></script>
 
-    <!-- Dark mode: apply before paint to avoid flash -->
+    <!-- Dark mode: señal para que x-init de .carta la aplique antes del primer paint -->
     <script>
         (function () {
             const saved = localStorage.getItem('theme');
             const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            const isDark = saved === 'dark' || (!saved && prefersDark);
-            if (isDark) {
-                document.documentElement.classList.add('dark');
-                document.getElementById('carta-root').setAttribute('data-theme', 'dark');
+            if (saved === 'dark' || (!saved && prefersDark)) {
+                document.documentElement.setAttribute('data-dark-pending', '1');
             }
         })();
     </script>
@@ -224,121 +224,10 @@
             overflow: hidden;
         }
 
-        /* ── Carta DS — Layout crítico ──────────────────────────────── */
-        /* Garantiza que .carta llene el viewport independientemente de Tailwind */
-        html, body {
-            height: 100%;
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-        }
-        .carta {
-            height: 100dvh;
-            height: 100vh; /* fallback */
-            width: 100%;
-            max-width: 100%;
-        }
-        /* Animación spin para el spinner de envío */
+        /* ── Layout crítico — garantiza que .carta llene el viewport ── */
+        html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; }
+        .carta { height: 100dvh; height: 100vh; width: 100%; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        /* Animación pulse para el banner de tapas y otros indicadores */
-        .banner-closed {
-            display: flex;
-            align-items: flex-start;
-            gap: 12px;
-            padding: 10px 16px;
-            background: var(--color-amber-100, #fef9c3);
-            color: var(--color-amber-800, #92400e);
-            border-bottom: 1px solid var(--color-amber-200, #fde68a);
-            flex-shrink: 0;
-        }
-        /* category__closed necesita definición de color */
-        .category__closed {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            font-family: var(--font-body);
-            font-size: 11px;
-            font-weight: 600;
-            color: var(--color-amber-700, #b45309);
-        }
-        .category__closedDot {
-            width: 6px; height: 6px;
-            border-radius: 50%;
-            background: currentColor;
-            flex-shrink: 0;
-        }
-        /* drawer--wide se usa para cobro partido/mixto */
-        .drawer--wide { max-height: 88dvh; max-height: 88vh; }
-        /* citem__customTags */
-        .citem__customTags {
-            display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px;
-        }
-        .citem__customTag {
-            padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 500;
-            background: var(--bg-chip); color: var(--fg-muted);
-            border: 1px solid var(--border-subtle);
-        }
-        .citem__customTag--extra { color: var(--color-green-700); background: var(--color-green-50); border-color: var(--color-green-200); }
-        .citem__customTag--removed { color: var(--color-amber-700); background: var(--color-amber-50); border-color: var(--color-amber-200); }
-        /* cashTip clases adicionales */
-        .cashTip__spin {
-            display: inline-block; width: 14px; height: 14px;
-            border: 2px solid rgba(255,255,255,0.4); border-top-color: #fff;
-            border-radius: 50%; animation: spin 0.8s linear infinite;
-        }
-        .cashTip__ctaTag {
-            font-size: 11px; font-weight: 500; opacity: 0.75; margin-left: 4px;
-        }
-        /* tip clase (propina tarjeta) */
-        .tip {
-            flex: 1; padding: 14px 8px; border: 1px solid var(--glass-border);
-            border-radius: 12px; background: var(--glass-bg-surface);
-            display: flex; flex-direction: column; align-items: center; gap: 4px;
-            cursor: pointer; transition: border-color 150ms, background 150ms;
-        }
-        .tip:hover { border-color: var(--border-strong); }
-        .tip--selected { border-color: var(--brand-primary); background: var(--color-green-50); }
-        .tip .pct { font-family: var(--font-display); font-weight: 900; font-size: 18px; color: var(--fg-primary); }
-        .tip .amt { font-family: var(--font-body); font-size: 12px; color: var(--fg-muted); }
-        .tip-row { display: flex; gap: 8px; }
-        [data-theme="dark"] .tip--selected { background: rgba(34,197,94,0.1); }
-        /* bill footRow */
-        .bill__footRow { display: flex; gap: 8px; }
-        .bill__footRow--stack { flex-direction: column; }
-        /* cart-empty emojis */
-        .cart-empty__emoji { font-size: 48px; line-height: 1; margin-bottom: 12px; display: block; }
-        /* drawer__subtitle */
-        .drawer__subtitle {
-            font-family: var(--font-body); font-size: 12px; color: var(--fg-muted);
-            margin-top: 2px; line-height: 1.4;
-        }
-        /* method clases */
-        .method {
-            display: grid;
-            grid-template-columns: 44px 1fr auto;
-            align-items: center;
-            gap: 14px;
-            padding: 14px 16px;
-            border: 1px solid var(--glass-border);
-            border-radius: 14px;
-            background: var(--glass-bg-surface);
-            cursor: pointer;
-            text-align: left;
-            transition: border-color 150ms, transform 150ms;
-            width: 100%;
-        }
-        .method:hover { border-color: var(--brand-primary); transform: translateY(-1px); }
-        .method__ic {
-            width: 44px; height: 44px; border-radius: 50%;
-            background: var(--bg-chip);
-            display: inline-flex; align-items: center; justify-content: center;
-            flex-shrink: 0;
-        }
-        .method__txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-        .method__nm { font-family: var(--font-body); font-weight: 700; font-size: 15px; color: var(--fg-primary); }
-        .method__ds { font-family: var(--font-body); font-size: 12px; color: var(--fg-muted); }
-        .method__chev { color: var(--fg-muted); flex-shrink: 0; transition: transform 150ms, color 150ms; }
-        .method:hover .method__chev { transform: translateX(3px); color: var(--fg-primary); }
     </style>
 
     @php
@@ -411,14 +300,40 @@
     <script id="tapa-products" type="application/json">@json($tapaProductsForAlpine)</script>
     <script id="order-items" type="application/json">@json($activeOrderItemsForAlpine)</script>
     <script id="menu-context" type="application/json">@json($menuContext)</script>
+
+    {{-- Inicializa los badges de alérgenos con los pictogramas oficiales del DS --}}
+    <script>
+    (function initAllergenBadges() {
+        function fill() {
+            var p = window.ZAMPA_PICTOGRAMS;
+            var labels = window.ZAMPA_ALLERGEN_LABELS || {};
+            if (!p) return;
+            document.querySelectorAll('svg[data-al]').forEach(function (svg) {
+                var slug = svg.getAttribute('data-al');
+                var c = p.ALLERGEN_COLORS[slug] || '#888';
+                var inner = p.pictogramSVG(slug);
+                if (!inner) return;
+                svg.style.setProperty('--c', c);
+                svg.innerHTML = inner;
+            });
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', fill);
+        } else {
+            fill();
+        }
+        document.addEventListener('alpine:initialized', fill);
+    })();
+    </script>
 </head>
 
 <body>
 
     {{-- Skip to content --}}
-    <a href="#main-content"
-       class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4
-              bg-white text-indigo-700 px-4 py-2 rounded font-medium z-50 shadow">
+    <a href="#main-content" class="sr-only"
+       style="--skip-link:1"
+       onfocus="this.style.position='absolute';this.style.top='1rem';this.style.left='1rem';this.style.zIndex='9999';this.style.padding='8px 16px';this.style.background='var(--bg-base)';this.style.color='var(--brand-primary)';this.style.borderRadius='6px';this.style.boxShadow='var(--shadow-pop)';this.style.fontFamily='var(--font-body)';this.style.fontWeight='600';this.style.width='auto';this.style.height='auto';this.style.clip='auto';this.style.overflow='visible'"
+       onblur="this.removeAttribute('style')">
         Saltar al contenido principal
     </a>
 
@@ -427,6 +342,10 @@
          class="carta"
          data-theme="{{ $theme }}"
          x-init="
+            if (document.documentElement.getAttribute('data-dark-pending') === '1') {
+                $el.dataset.theme = 'dark';
+                document.documentElement.removeAttribute('data-dark-pending');
+            }
             $nextTick(() => {
                 const update = () => {
                     const w = window.innerWidth;
@@ -462,13 +381,12 @@
                 </span>
                 @endif
 
-                {{-- Toggle dark/light — sincroniza Tailwind + DS data-theme --}}
+                {{-- Toggle dark/light — data-theme en .carta, html conserva el tema base --}}
                 <button class="theme-toggle"
                         x-data="{
-                            dark: localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches),
+                            dark: document.querySelector('.carta')?.dataset.theme === 'dark',
                             toggle() {
                                 this.dark = !this.dark;
-                                document.documentElement.classList.toggle('dark', this.dark);
                                 document.querySelector('.carta').dataset.theme = this.dark ? 'dark' : '{{ $theme }}';
                                 localStorage.setItem('theme', this.dark ? 'dark' : 'light');
                             }
@@ -569,98 +487,7 @@
                 </symbol>
             </svg>
 
-            {{-- Sprite SVG: 14 alérgenos Reglamento UE 1169/2011 --}}
-            <svg aria-hidden="true" style="display:none;position:absolute;width:0;height:0;overflow:hidden;">
-                {{-- 1. Gluten (cereales con gluten) --}}
-                <symbol id="al-gluten" viewBox="0 0 24 24" fill="currentColor">
-                    <rect x="11.2" y="4" width="1.6" height="16" rx="0.8"/>
-                    <ellipse cx="12" cy="6.5" rx="2.8" ry="4"/>
-                    <ellipse cx="7" cy="11" rx="2.2" ry="3.2" transform="rotate(-30 7 11)"/>
-                    <ellipse cx="17" cy="11" rx="2.2" ry="3.2" transform="rotate(30 17 11)"/>
-                    <ellipse cx="7.5" cy="16.5" rx="2" ry="2.8" transform="rotate(-25 7.5 16.5)"/>
-                    <ellipse cx="16.5" cy="16.5" rx="2" ry="2.8" transform="rotate(25 16.5 16.5)"/>
-                </symbol>
-                {{-- 2. Crustáceos --}}
-                <symbol id="al-crustaceans" viewBox="0 0 24 24">
-                    <circle cx="18" cy="5" r="2.5" fill="currentColor"/>
-                    <path d="M18 3 L22 1.5 M18.8 2 L21.5 0" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>
-                    <path d="M18 5 C21 8 21 15 17 19 C14 22 9 22 6 19 C3 16 4 12 7 11 C10 10 12 12 11 15 C10.5 16.5 9.5 16.5 9 15.5"
-                          stroke="currentColor" stroke-width="3.5" fill="none" stroke-linecap="round"/>
-                </symbol>
-                {{-- 3. Huevo --}}
-                <symbol id="al-egg" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2 C8 2 5 6 5 11 C5 16.5 8.1 22 12 22 C15.9 22 19 16.5 19 11 C19 6 16 2 12 2 Z"/>
-                </symbol>
-                {{-- 4. Pescado --}}
-                <symbol id="al-fish" viewBox="0 0 24 24" fill="currentColor">
-                    <ellipse cx="9.5" cy="12" rx="7.5" ry="5.5"/>
-                    <path d="M17 6.5 L24 4 L24 20 L17 17.5 Z"/>
-                    <circle cx="5" cy="11" r="1.4" fill="#050B1F"/>
-                </symbol>
-                {{-- 5. Cacahuetes --}}
-                <symbol id="al-peanuts" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2 C7 2 4 4.5 4 7.5 C4 10.5 6.5 12 9.5 12.3 Q9 12.8 9 13.5 Q9 14 9.5 14.2 C6.5 14.8 4 16.5 4 19 C4 21.5 7.5 23 12 23 C16.5 23 20 21.5 20 19 C20 16.5 17.5 14.8 14.5 14.2 Q15 14 15 13.5 Q15 12.8 14.5 12.3 C17.5 12 20 10.5 20 7.5 C20 4.5 17 2 12 2 Z"/>
-                </symbol>
-                {{-- 6. Soja --}}
-                <symbol id="al-soy" viewBox="0 0 24 24" fill="currentColor">
-                    <circle cx="12" cy="6.5" r="4"/>
-                    <circle cx="7" cy="15.5" r="4"/>
-                    <circle cx="17" cy="15.5" r="4"/>
-                    <path d="M12 10 L7 12 M12 10 L17 12" stroke="currentColor" stroke-width="1.5" fill="none"/>
-                </symbol>
-                {{-- 7. Leche / Lácteos --}}
-                <symbol id="al-milk" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2 L19 13 C19 18.5 15.9 22 12 22 C8.1 22 5 18.5 5 13 Z"/>
-                </symbol>
-                {{-- 8. Frutos secos (nueces, almendras…) --}}
-                <symbol id="al-nuts" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2 C10 2 8.5 3.5 8 5 L6 8 C5 9 5 10 5 11 C5 15 8.1 20 12 20 C15.9 20 19 15 19 11 C19 10 19 9 18 8 L16 5 C15.5 3.5 14 2 12 2 Z"/>
-                    <path d="M12 20 L12 22 M10 21.5 L14 21.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
-                </symbol>
-                {{-- 9. Apio --}}
-                <symbol id="al-celery" viewBox="0 0 24 24" fill="currentColor">
-                    <rect x="4.5" y="11" width="3" height="10" rx="1.5"/>
-                    <rect x="10.5" y="8" width="3" height="13" rx="1.5"/>
-                    <rect x="16.5" y="11" width="3" height="10" rx="1.5"/>
-                    <path d="M6 11 C5 7 3.5 5 6 3 C8 4 8 8.5 6 11 Z"/>
-                    <path d="M12 8 C11 4 9.5 2 12 1 C14 2 14 5.5 12 8 Z"/>
-                    <path d="M18 11 C19 7 20.5 5 18 3 C16 4 16 8.5 18 11 Z"/>
-                </symbol>
-                {{-- 10. Mostaza --}}
-                <symbol id="al-mustard" viewBox="0 0 24 24" fill="currentColor">
-                    <rect x="8" y="11" width="8" height="10" rx="1.5"/>
-                    <rect x="9" y="8" width="6" height="3.5" rx="1"/>
-                    <rect x="9.5" y="5.5" width="5" height="3" rx="1.5"/>
-                    <circle cx="12" cy="4" r="1.2"/>
-                </symbol>
-                {{-- 11. Sésamo --}}
-                <symbol id="al-sesame" viewBox="0 0 24 24" fill="currentColor">
-                    <ellipse cx="12" cy="4.5" rx="2" ry="3.5"/>
-                    <ellipse cx="17.5" cy="7.5" rx="2" ry="3.5" transform="rotate(60 17.5 7.5)"/>
-                    <ellipse cx="19.5" cy="14" rx="2" ry="3.5" transform="rotate(120 19.5 14)"/>
-                    <ellipse cx="15" cy="19.5" rx="2" ry="3.5" transform="rotate(180 15 19.5)"/>
-                    <ellipse cx="9" cy="19.5" rx="2" ry="3.5" transform="rotate(240 9 19.5)"/>
-                    <ellipse cx="4.5" cy="14" rx="2" ry="3.5" transform="rotate(300 4.5 14)"/>
-                </symbol>
-                {{-- 12. Dióxido de azufre / Sulfitos --}}
-                <symbol id="al-sulphites" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M7 3 L17 3 C17 8.5 14.5 10.5 13 12 L13 17 L15 17 L15 20 L9 20 L9 17 L11 17 L11 12 C9.5 10.5 7 8.5 7 3 Z"/>
-                </symbol>
-                {{-- 13. Altramuces --}}
-                <symbol id="al-lupin" viewBox="0 0 24 24" fill="currentColor">
-                    <rect x="11.2" y="4" width="1.6" height="16" rx="0.8"/>
-                    <ellipse cx="12" cy="6" rx="3.5" ry="2.2"/>
-                    <ellipse cx="12" cy="10.5" rx="4" ry="2.5"/>
-                    <ellipse cx="12" cy="15" rx="3.5" ry="2.2"/>
-                    <ellipse cx="12" cy="18.5" rx="2.5" ry="1.8"/>
-                </symbol>
-                {{-- 14. Moluscos --}}
-                <symbol id="al-molluscs" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 22 L3 9 Q3 4 12 3 Q21 4 21 9 Z"/>
-                    <path d="M12 22 L4.5 8.5 M12 22 L7.5 4.5 M12 22 L12 3 M12 22 L16.5 4.5 M12 22 L19.5 8.5"
-                          stroke="#050B1F" stroke-width="0.9" fill="none"/>
-                </symbol>
-            </svg>
+            {{-- Los pictogramas de alérgenos se inyectan vía allergen-pictograms.js (ZAMPA_PICTOGRAMS) --}}
 
             {{-- Sprite SVG: categorías de tipo de alimento --}}
             <svg aria-hidden="true" style="display:none;position:absolute;width:0;height:0;overflow:hidden;">
@@ -1205,17 +1032,34 @@
         </div>
         @endif
 
-        {{-- ── Indicador de tapas ────────────────────────────────────────────── --}}
+        {{-- ── Indicador de tapas (DS: .tapas-indicator) ────────────────────── --}}
         @if($tapaConfig && $tapaConfig->tapas_enabled && $barItemsCount > 0)
-        <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;background:linear-gradient(135deg,var(--color-amber-100),var(--color-amber-50));border-bottom:1px solid var(--color-amber-200);font-family:var(--font-body);font-size:13px;color:var(--color-amber-800);flex-shrink:0;"
-             role="status" aria-live="polite">
-            <span aria-hidden="true" style="font-size:20px">🍽️</span>
-            <div style="flex:1">
-                <strong>{{ $barItemsCount }} {{ Str::plural('tapa', $barItemsCount) }}</strong>
-                {{ $barItemsCount > 1 ? 'disponibles' : 'disponible' }}
-                @if($tapaConfig->tapas_free) · Gratuita@if($barItemsCount > 1)s@endif @else · {{ number_format($tapaConfig->tapa_price, 2, ',', '.') }} €@endif
-            </div>
-        </div>
+        @php
+            $tapasLeft     = max(0, $barItemsCount - $tapaVariantsUsed);
+            $maxTokens     = 8;
+            $shownTokens   = min($barItemsCount, $maxTokens);
+            $overflowTokens = max(0, $barItemsCount - $maxTokens);
+        @endphp
+        <button type="button"
+                class="tapas-indicator"
+                @click="$store.cart.showTapaModal = true"
+                :title="'Tienes ' + {{ $tapasLeft }} + ' tapa(s) por canjear'"
+                aria-label="{{ $tapasLeft }} {{ $tapasLeft === 1 ? 'tapa' : 'tapas' }} {{ $tapaConfig->tapas_free ? 'de cortesía' : 'incluidas' }} — Pedir">
+            <span class="tapas-indicator__glyph" aria-hidden="true">🍻</span>
+            <span class="tapas-indicator__copy">
+                <strong>{{ $tapasLeft }}</strong>
+                <span>{{ $tapasLeft === 1 ? 'tapa' : 'tapas' }} {{ $tapaConfig->tapas_free ? 'de cortesía' : 'incluidas' }}</span>
+            </span>
+            <span class="tapas-indicator__tokens" aria-hidden="true">
+                @for($t = 0; $t < $shownTokens; $t++)
+                    <span class="tk{{ $t < $tapaVariantsUsed ? ' tk--used' : '' }}"></span>
+                @endfor
+                @if($overflowTokens > 0)
+                    <span class="tapas-indicator__tokensMore">+{{ $overflowTokens }}</span>
+                @endif
+            </span>
+            <span class="tapas-indicator__cta">Pedir →</span>
+        </button>
         @endif
 
         {{-- ══════════════════════════════════════════════════════════════════════
@@ -1263,8 +1107,7 @@
                     </button>
                     @endforeach
                 </div>
-                {{-- Botón alérgenos fijo a la derecha --}}
-                @if($allergens->isNotEmpty())
+                {{-- Botón alérgenos fijo a la derecha (siempre visible) --}}
                 <button type="button"
                         class="filter-bar__pinned"
                         :class="activeAllergens.length > 0 ? 'filter-bar__pinned--on' : ''"
@@ -1281,11 +1124,9 @@
                           x-text="activeAllergens.length"
                           aria-hidden="true"></span>
                 </button>
-                @endif
             </nav>
 
             {{-- DS: .scrim > .drawer.drawer--allergens (sheet móvil) --}}
-            @if($allergens->isNotEmpty())
             <div class="scrim"
                  x-show="allergensOpen"
                  x-transition:enter="transition duration-200"
@@ -1313,18 +1154,20 @@
                     </div>
                     <div class="drawer__body">
                         <div class="allergens-grid">
-                            @foreach($allergens as $allergen)
+                            @foreach(\App\Models\Ingredient::ALLERGEN_TYPES as $slug => $name)
                             <button type="button"
                                     class="allergen-chip"
-                                    :class="activeAllergens.includes('{{ $allergen->slug }}') ? 'allergen-chip--active' : ''"
-                                    @click="toggleAllergen('{{ $allergen->slug }}')"
-                                    :aria-pressed="activeAllergens.includes('{{ $allergen->slug }}').toString()">
-                                <span class="allergen" aria-hidden="true">
-                                    <svg width="16" height="16" style="overflow:visible;display:block">
-                                        <use href="#al-{{ $allergen->slug }}"/>
-                                    </svg>
-                                </span>
-                                <span>{{ $allergen->name }}</span>
+                                    :class="activeAllergens.includes('{{ $slug }}') ? 'allergen-chip--active' : ''"
+                                    @click="toggleAllergen('{{ $slug }}')"
+                                    :aria-pressed="activeAllergens.includes('{{ $slug }}').toString()">
+                                <svg class="allergen-img"
+                                     data-al="{{ $slug }}"
+                                     viewBox="0 0 100 100"
+                                     width="22" height="22"
+                                     role="img"
+                                     aria-label="{{ $name }}">
+                                </svg>
+                                <span>{{ $name }}</span>
                             </button>
                             @endforeach
                         </div>
@@ -1336,7 +1179,6 @@
                     </div>
                 </div>
             </div>
-            @endif
         </div>{{-- /allergensOpen x-data --}}
         @endif
 
@@ -1348,9 +1190,6 @@
             {{-- DS: .carta__filters — sidebar (tablet + desktop, hidden on mobile via CSS) --}}
             @if($businessOpen && $categories->isNotEmpty())
             <div class="carta__filters" aria-label="Filtros">
-
-                {{-- Menú del día --}}
-                <x-daily-menu-availability />
 
                 {{-- Destino (cocina / barra / todo) --}}
                 <div class="filter-section">
@@ -1407,36 +1246,36 @@
                     </div>
                 </div>
 
-                {{-- Alérgenos --}}
-                @if($allergens->isNotEmpty())
+                {{-- Alérgenos — siempre los 14 del Reglamento UE 1169/2011 --}}
                 <div class="filter-section">
                     <div class="filter-section__label">Alérgenos</div>
                     <div class="filter-list filter-list--allergens" role="list">
-                        @foreach($allergens as $allergen)
+                        @foreach(\App\Models\Ingredient::ALLERGEN_TYPES as $slug => $name)
                         <div class="filter-list__item"
-                             :class="activeAllergens.includes('{{ $allergen->slug }}') ? 'filter-list__item--active' : ''"
-                             @click="toggleAllergen('{{ $allergen->slug }}')"
-                             @keydown.enter="toggleAllergen('{{ $allergen->slug }}')"
+                             :class="activeAllergens.includes('{{ $slug }}') ? 'filter-list__item--active' : ''"
+                             @click="toggleAllergen('{{ $slug }}')"
+                             @keydown.enter="toggleAllergen('{{ $slug }}')"
                              role="button" tabindex="0"
-                             :aria-pressed="activeAllergens.includes('{{ $allergen->slug }}').toString()">
+                             :aria-pressed="activeAllergens.includes('{{ $slug }}').toString()">
                             <span class="filter-list__check" aria-hidden="true">
-                                <svg x-show="activeAllergens.includes('{{ $allergen->slug }}')"
+                                <svg x-show="activeAllergens.includes('{{ $slug }}')"
                                      width="10" height="10" viewBox="0 0 24 24"
                                      fill="none" stroke="currentColor" stroke-width="3">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
                                 </svg>
                             </span>
-                            <span class="allergen" aria-hidden="true">
-                                <svg width="16" height="16" style="overflow:visible;display:block">
-                                    <use href="#al-{{ $allergen->slug }}"/>
-                                </svg>
-                            </span>
-                            <span style="font-size:13px">{{ $allergen->name }}</span>
+                            <svg class="allergen-img"
+                                 data-al="{{ $slug }}"
+                                 viewBox="0 0 100 100"
+                                 width="22" height="22"
+                                 role="img"
+                                 aria-label="{{ $name }}">
+                            </svg>
+                            <span style="font-size:13px">{{ $name }}</span>
                         </div>
                         @endforeach
                     </div>
                 </div>
-                @endif
 
                 {{-- Contador de visibles --}}
                 <div style="margin-top:auto;padding-top:16px;border-top:1px solid var(--border-subtle)">
@@ -1538,16 +1377,16 @@
                             {{-- Body --}}
                             <div class="pcard__body">
 
-                                {{-- Badges alérgenos --}}
+                                {{-- Badges alérgenos — pictogramas oficiales DS --}}
                                 <div class="pcard__badges">
                                     @foreach($allergenSlugs->take(5) as $slug)
-                                    <span class="allergen"
-                                          title="{{ \App\Models\Ingredient::ALLERGEN_TYPES[$slug] ?? $slug }}"
-                                          aria-label="{{ \App\Models\Ingredient::ALLERGEN_TYPES[$slug] ?? $slug }}">
-                                        <svg aria-hidden="true" width="12" height="12" style="overflow:visible;display:block">
-                                            <use href="#al-{{ $slug }}"/>
-                                        </svg>
-                                    </span>
+                                    <svg class="allergen-img"
+                                         data-al="{{ $slug }}"
+                                         viewBox="0 0 100 100"
+                                         width="22" height="22"
+                                         role="img"
+                                         aria-label="Contiene {{ \App\Models\Ingredient::ALLERGEN_TYPES[$slug] ?? $slug }}">
+                                    </svg>
                                     @endforeach
                                 </div>
 
@@ -1669,36 +1508,70 @@
         </button>
 
         {{-- ══════════════════════════════════════════════════════════════════════
-             FAB BILL — .fab.fab--bill position:absolute dentro de .carta
+             FAB CLUSTER — DS: .fab-cluster (Mis pedidos + Cuenta + Mi ticket)
              ══════════════════════════════════════════════════════════════════════ --}}
-        <button type="button"
-                class="fab fab--bill"
-                x-show="$store.bill.active && !$store.chat.open"
-                x-transition
-                @click="$store.bill.open()"
-                :disabled="$store.bill.requested && $store.bill.paymentDone"
-                :aria-label="$store.bill.paymentDone ? 'Pago completado' : ($store.bill.requested ? 'Cuenta solicitada' : 'Solicitar la cuenta')">
-            <svg aria-hidden="true" width="18" height="18" fill="none"
-                 stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round"
-                      d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"/>
-            </svg>
-            <span x-text="$store.bill.paymentDone ? '¡Pagado!' : ($store.bill.requested ? 'Solicitado' : 'Cuenta')"></span>
-        </button>
+        <div class="fab-cluster"
+             x-show="$store.bill.active && !$store.chat.open"
+             x-transition:enter="transition duration-200"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition duration-150"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0">
 
-        {{-- Enlace descarga ticket post-pago --}}
-        <template x-if="$store.bill.paymentDone && $store.bill.paidOrderId">
-            <a :href="$store.bill.ticketDownloadBase + '/' + $store.bill.paidOrderId + '/download?hash=' + $store.bill.tableHash"
-               target="_blank" rel="noopener noreferrer"
-               class="delete-pill"
-               style="background:var(--cta-view-order);border-color:var(--color-green-400);color:#fff;text-decoration:none"
-               :aria-label="'Descargar ticket del pedido #' + $store.bill.paidOrderId">
-                <svg aria-hidden="true" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 16v-8m0 8l-3-3m3 3l3-3M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2"/>
-                </svg>
-                <strong>Descargar ticket</strong>
-            </a>
-        </template>
+            {{-- fab--orders: Mis pedidos (visible cuando hay pedido activo no pagado) --}}
+            <button type="button"
+                    class="fab fab--orders"
+                    x-show="$store.bill.active && !$store.bill.paymentDone"
+                    @click="$store.bill.open()"
+                    :aria-label="'Mi pedido activo — ver cuenta'">
+                <span class="fab--orders__ic" aria-hidden="true">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M5 3h14v18l-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5L5 21V3z"/>
+                        <path d="M8 8h8M8 12h8M8 16h5" stroke-width="2.4"/>
+                    </svg>
+                    <span class="fab--orders__badge" aria-hidden="true">1</span>
+                </span>
+                <span class="fab--orders__label">Mi pedido</span>
+            </button>
+
+            {{-- fab--bill: Cuenta --}}
+            <button type="button"
+                    :class="'fab fab--bill' + ($store.bill.active && !$store.bill.paymentDone ? ' fab--in-cluster' : '')"
+                    x-show="!$store.bill.paymentDone"
+                    @click="$store.bill.open()"
+                    :disabled="$store.bill.requested && !$store.bill.paymentDone ? undefined : undefined"
+                    :aria-label="$store.bill.requested ? 'Cuenta solicitada' : 'Solicitar la cuenta'">
+                <span class="fab__ic" aria-hidden="true">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 2v20l3-2 3 2 3-2 3 2 3-2V2H4z"/>
+                        <path d="M8 7h8M8 11h8M8 15h6"/>
+                    </svg>
+                </span>
+                <span class="fab__label"
+                      x-text="$store.bill.requested ? 'Solicitada' : 'Cuenta'"></span>
+            </button>
+
+            {{-- fab--ticket: Mi ticket (visible tras pago completado) --}}
+            <template x-if="$store.bill.paymentDone && $store.bill.paidOrderId">
+                <a :href="$store.bill.ticketDownloadBase + '/' + $store.bill.paidOrderId + '/download?hash=' + $store.bill.tableHash"
+                   target="_blank" rel="noopener noreferrer"
+                   class="fab fab--ticket fab--in-cluster"
+                   :aria-label="'Descargar ticket #' + $store.bill.paidOrderId">
+                    <span class="fab__ic" aria-hidden="true">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 2v20l3-2 3 2 3-2 3 2 3-2V2H4z"/>
+                            <path d="M8 7h8M8 11h8M8 15h6"/>
+                        </svg>
+                    </span>
+                    <span class="fab__label">Mi ticket</span>
+                </a>
+            </template>
+
+        </div>
 
         {{-- ══════════════════════════════════════════════════════════════════════
              CART DRAWER — DS: .scrim > .drawer.drawer--cart
@@ -2342,12 +2215,8 @@
                         <legend class="sr-only">Selecciona los ítems que quieres pagar</legend>
                         <template x-for="item in $store.bill.splitItems" :key="item.id">
                             <label :for="'spi-' + item.id"
-                                   :class="item.claimed
-                                       ? 'opacity-50 cursor-not-allowed'
-                                       : $store.bill.isItemSelected(item.id)
-                                           ? 'ring-2'
-                                           : ''"
-                                   style="display:flex;align-items:center;gap:12px;padding:12px;border-radius:12px;border:2px solid var(--glass-border);cursor:pointer;background:var(--glass-bg-surface)">
+                                   :class="$store.bill.isItemSelected(item.id) ? 'slot--you' : ''"
+                                   :style="'display:flex;align-items:center;gap:12px;padding:12px;border-radius:12px;border:2px solid var(--glass-border);cursor:pointer;background:var(--glass-bg-surface);' + (item.claimed ? 'opacity:0.5;cursor:not-allowed;' : '')">
                                 <input type="checkbox"
                                        :id="'spi-' + item.id"
                                        :checked="$store.bill.isItemSelected(item.id)"
@@ -2577,11 +2446,6 @@
                 </div>
             </div>
         </div>
-
-        {{-- ── Daily menu dialogs (componentes Blade existentes) --}}
-        <x-daily-menu-stepper :hash="$table->unique_hash" />
-        <x-daily-menu-exclusivity-dialog />
-        <x-daily-menu-timing-control />
 
     </div>{{-- /carta (Alpine) --}}
 </body>
