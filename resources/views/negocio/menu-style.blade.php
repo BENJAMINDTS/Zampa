@@ -198,7 +198,7 @@
                                                 @else
                                                     <div aria-hidden="true" class="rounded border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-950 overflow-hidden text-[9px] leading-tight">
                                                         <div class="border-b border-gray-200 dark:border-gray-700 px-2 py-1.5 flex items-center justify-between bg-white dark:bg-gray-950">
-                                                            <span class="font-bold tracking-tight text-[10px] text-gray-900 dark:text-gray-100" style="font-family:monospace">MI RESTAURANTE</span>
+                                                            <span class="font-bold tracking-tight text-[10px] text-gray-900 dark:text-gray-100" class="font-mono">MI RESTAURANTE</span>
                                                             <span class="text-gray-400 text-[8px]">☰</span>
                                                         </div>
                                                         <div class="px-2 py-1 flex gap-1">
@@ -207,11 +207,11 @@
                                                         </div>
                                                         <div class="mx-2 mb-2 border border-gray-200 dark:border-gray-600 p-1.5 flex gap-1.5 bg-white dark:bg-gray-950">
                                                             <div class="w-8 h-8 shrink-0 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800"></div>
-                                                            <div class="flex-1 min-w-0"><div class="font-medium text-gray-900 dark:text-gray-100" style="font-family:monospace">Pizza Margherita</div><div class="text-gray-900 dark:text-gray-100 font-bold mt-0.5">12,00 €</div></div>
+                                                            <div class="flex-1 min-w-0"><div class="font-medium text-gray-900 dark:text-gray-100" class="font-mono">Pizza Margherita</div><div class="text-gray-900 dark:text-gray-100 font-bold mt-0.5">12,00 €</div></div>
                                                             <span class="w-5 h-5 border border-gray-900 dark:border-gray-100 text-gray-900 dark:text-gray-100 flex items-center justify-center font-bold text-[11px] shrink-0 self-center">+</span>
                                                         </div>
                                                         <div class="border-t border-gray-200 dark:border-gray-700 px-2 py-1.5 flex justify-between bg-gray-900 dark:bg-gray-950">
-                                                            <span class="text-white font-medium" style="font-family:monospace">VER PEDIDO</span>
+                                                            <span class="text-white font-medium" class="font-mono">VER PEDIDO</span>
                                                             <span class="text-white font-bold">12,00 €</span>
                                                         </div>
                                                     </div>
@@ -310,8 +310,7 @@
                         {{-- Marco de teléfono --}}
                         <div class="relative w-[300px] shrink-0">
                             {{-- Cuerpo del teléfono --}}
-                            <div class="rounded-[2.5rem] border-[10px] border-gray-800 shadow-2xl overflow-hidden"
-                                 style="height: 580px;">
+                            <div class="rounded-[2.5rem] border-[10px] border-gray-800 shadow-2xl overflow-hidden h-[580px]">
 
                                 {{-- Pantalla de la carta --}}
                                 <div class="h-full flex flex-col overflow-hidden transition-colors duration-500"

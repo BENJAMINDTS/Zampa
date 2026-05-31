@@ -17,10 +17,22 @@
         Saltar al contenido principal
     </a>
 
-    <div class="flex h-full min-h-screen">
+    <div class="flex h-full min-h-screen" x-data="{ sidebarOpen: false }">
+
+        {{-- Mobile sidebar overlay --}}
+        <div x-show="sidebarOpen"
+             x-cloak
+             @click="sidebarOpen = false"
+             class="fixed inset-0 z-20 bg-black/60 lg:hidden"
+             aria-hidden="true"></div>
 
         {{-- Sidebar --}}
-        <aside class="w-64 flex-shrink-0 bg-slate-900 border-r border-slate-800 flex flex-col">
+        <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
+               class="fixed inset-y-0 left-0 z-30 w-64 flex-shrink-0 bg-slate-900 border-r border-slate-800 flex flex-col
+                      transform transition-transform duration-200 ease-in-out
+                      lg:static lg:translate-x-0"
+               id="superadmin-sidebar"
+               aria-label="Barra de navegación superadmin">
 
             {{-- Logo / Branding --}}
             <div class="flex items-center gap-3 px-6 py-5 border-b border-slate-800">
@@ -119,8 +131,23 @@
         <div class="flex-1 flex flex-col min-w-0 bg-slate-950">
 
             {{-- Top bar --}}
-            <header class="bg-slate-900 border-b border-slate-800 px-6 py-4 flex items-center justify-between flex-shrink-0">
-                <div class="text-white font-semibold text-lg">
+            <header class="bg-slate-900 border-b border-slate-800 px-4 sm:px-6 py-4 flex items-center gap-3 flex-shrink-0">
+                {{-- Hamburger (mobile only) --}}
+                <button @click="sidebarOpen = !sidebarOpen"
+                        :aria-expanded="sidebarOpen.toString()"
+                        aria-controls="superadmin-sidebar"
+                        aria-label="Abrir menú"
+                        class="lg:hidden p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center
+                               rounded-md text-slate-400 hover:bg-slate-800 hover:text-white
+                               focus:outline-none focus:ring-2 focus:ring-amber-400 transition-colors">
+                    <svg x-show="!sidebarOpen" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+                    </svg>
+                    <svg x-show="sidebarOpen" x-cloak class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+                <div class="flex-1 text-white font-semibold text-lg">
                     @yield('header')
                 </div>
                 <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold
@@ -129,7 +156,7 @@
                 </span>
             </header>
 
-            <main id="main-content" class="flex-1 overflow-auto p-6 sm:p-8">
+            <main id="main-content" class="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
                 @yield('content')
             </main>
 

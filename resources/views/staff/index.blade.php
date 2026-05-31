@@ -59,7 +59,7 @@
                       @method('DELETE')
                       <button type="submit"
                               aria-label="Eliminar a {{ $member->name }}"
-                              class="text-sm bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 py-1 px-3 rounded focus:outline-none focus:ring-2 focus:ring-red-400">
+                              class="text-sm bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 py-1.5 px-3 rounded focus:outline-none focus:ring-2 focus:ring-red-400">
                         Eliminar
                       </button>
                     </form>

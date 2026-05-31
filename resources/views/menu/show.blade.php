@@ -33,197 +33,6 @@
     </script>
 
     <style>
-        /* ── Zampi Chatbot Animations ────────────────────────────── */
-        @keyframes zampiSlideUp {
-            from { opacity: 0; transform: translateY(12px); }
-            to   { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes zampiFloat {
-            0%, 100% { transform: translateY(0); }
-            50%      { transform: translateY(-5px); }
-        }
-        @keyframes zampiPulse {
-            0%, 100% { opacity: 1; }
-            50%      { opacity: 0.4; }
-        }
-        @keyframes zampiTyping {
-            0%, 80%, 100% { opacity: 1; }
-            40%           { opacity: 0.2; }
-        }
-
-        .zampi-float    { animation: zampiFloat 3s ease-in-out infinite; }
-        .zampi-pulse    { animation: zampiPulse 2s ease-in-out infinite; }
-        .zampi-msg-appear { animation: zampiSlideUp 0.3s ease; }
-        .zampi-typing-1 { animation: zampiTyping 1.2s ease-in-out 0.0s infinite; }
-        .zampi-typing-2 { animation: zampiTyping 1.2s ease-in-out 0.2s infinite; }
-        .zampi-typing-3 { animation: zampiTyping 1.2s ease-in-out 0.4s infinite; }
-
-        /* Notificaciones del cart bar — animación directa via :class */
-        @keyframes zampiNotifIn {
-            0%   { opacity: 0; transform: translateY(14px) scale(0.70); }
-            65%  { opacity: 1; transform: translateY(-3px)  scale(1.06); }
-            100% { opacity: 1; transform: translateY(0)     scale(1);    }
-        }
-        @keyframes zampiNotifOut {
-            0%   { opacity: 1; transform: translateY(0)    scale(1);   }
-            100% { opacity: 0; transform: translateY(8px)  scale(0.8); }
-        }
-        .zampi-notif-pill     { display:flex; align-items:center; gap:5px; background:#991b1b;
-                                border:1px solid #ef4444; border-radius:9999px;
-                                padding:4px 10px; flex-shrink:0; }
-        .zampi-notif-pill-in  { animation: zampiNotifIn  0.40s cubic-bezier(0.34,1.56,0.64,1) both; }
-        .zampi-notif-pill-out { animation: zampiNotifOut 0.22s ease-in both; }
-        @media (max-width: 640px) {
-            .zampi-cartbar-row { padding-top: 20px !important; padding-bottom: 20px !important; }
-            .zampi-hidden-mobile { display: none !important; }
-            .zampi-notif-bar-active { flex: 1 !important; min-width: 0; overflow: visible; }
-            .zampi-notif-bar .zampi-notif-pill:not(:last-child) { display: none !important; }
-            .zampi-notif-bar-active .zampi-notif-pill { width: 100%; min-width: 0; display: flex; align-items: center; gap: 5px; overflow: hidden; }
-            .zampi-notif-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-            .zampi-notif-suffix { flex-shrink: 0; white-space: nowrap; }
-        }
-
-        .zampi-bubble-user {
-            background: linear-gradient(135deg, #2E50B0, #1A3380);
-            color: #fff;
-            border-radius: 18px 18px 4px 18px;
-            box-shadow: 0 4px 16px rgba(15,31,88,0.55);
-            max-width: 78%;
-            padding: 10px 14px;
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 14px;
-            line-height: 1.5;
-            word-break: break-word;
-        }
-        .zampi-bubble-bot {
-            background: #0E1A38;
-            border: 1px solid rgba(46,80,176,0.35);
-            color: #C8D8FF;
-            border-radius: 18px 18px 18px 4px;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.3);
-            max-width: 75%;
-            padding: 10px 14px;
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 14px;
-            line-height: 1.5;
-            word-break: break-word;
-        }
-        .zampi-avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #1A3380, #3070E8);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            overflow: hidden;
-        }
-        .zampi-product-card {
-            background: #0E1A38;
-            border: 1px solid rgba(46,80,176,0.45);
-            border-radius: 16px;
-            padding: 10px;
-            min-width: 140px;
-            max-width: 160px;
-            flex-shrink: 0;
-            box-shadow: 0 4px 20px rgba(15,31,88,0.4);
-            cursor: pointer;
-            transition: transform 200ms ease;
-        }
-        .zampi-card-img {
-            height: 56px;
-            border-radius: 10px;
-            background: linear-gradient(135deg, #162648, #0A1430);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 6px;
-            font-size: 28px;
-        }
-        .zampi-add-btn {
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #2E50B0, #1A3380);
-            border: none;
-            color: #fff;
-            font-size: 18px;
-            line-height: 1;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 0 8px rgba(46,80,176,0.6);
-            transition: transform 150ms cubic-bezier(0.34, 1.56, 0.64, 1);
-            flex-shrink: 0;
-        }
-        .zampi-add-btn:hover  { transform: scale(1.1); }
-        .zampi-add-btn:active { transform: scale(0.92); }
-        .zampi-qr-btn {
-            background: rgba(46,80,176,0.22);
-            color: #8FA8E8;
-            border: 1px solid rgba(46,80,176,0.5);
-            border-radius: 9999px;
-            padding: 5px 12px;
-            font-size: 12px;
-            font-family: 'Space Grotesk', sans-serif;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 150ms ease;
-            white-space: nowrap;
-        }
-        .zampi-qr-btn:hover  { background: #1A3380; color: #fff; }
-        .zampi-order-summary {
-            background: rgba(14,26,56,0.9);
-            border: 1px solid rgba(46,80,176,0.45);
-            border-radius: 16px;
-            padding: 12px;
-            margin-top: 8px;
-            backdrop-filter: blur(12px);
-        }
-        .zampi-send-btn {
-            width: 38px;
-            height: 38px;
-            border-radius: 50%;
-            border: none;
-            cursor: pointer;
-            background: linear-gradient(135deg, #2E50B0, #1A3380);
-            color: #fff;
-            font-size: 20px;
-            line-height: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 0 14px rgba(46,80,176,0.65);
-            flex-shrink: 0;
-            transition: transform 150ms cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-        .zampi-send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-        .zampi-scrollbar::-webkit-scrollbar       { width: 4px; }
-        .zampi-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .zampi-scrollbar::-webkit-scrollbar-thumb { background: rgba(46,80,176,0.5); border-radius: 4px; }
-        .zampi-chat-input::placeholder            { color: rgba(84,120,208,0.7); }
-
-        /* ── Zampi Chat — Layout ────────────────────────────────────── */
-
-        /* El overlay cubre siempre toda la pantalla, sin importar el tamaño */
-        .zampi-overlay {
-            position: fixed;
-            inset: 0;
-            z-index: 50;
-            background: rgba(1,4,14,0.92);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-        }
-        .zampi-panel {
-            position: absolute;
-            inset: 0;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
         /* ── Layout crítico — garantiza que .carta llene el viewport ── */
         html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; }
         .carta { height: 100dvh; height: 100vh; width: 100%; }
@@ -614,17 +423,13 @@
                     x-transition:leave="transition ease-in duration-150"
                     x-transition:leave-start="opacity-100"
                     x-transition:leave-end="opacity-0"
-                    class="fixed bottom-20 right-4 z-40 flex items-center gap-2 px-4 py-2.5 rounded-full font-semibold focus:outline-none focus:ring-4"
-                    style="background:linear-gradient(135deg,#2E50B0,#1A3380); color:#fff; box-shadow:0 0 20px rgba(46,80,176,0.65),0 4px 16px rgba(15,31,88,0.55); transition:transform 200ms ease, box-shadow 200ms ease;"
-                    onmouseenter="this.style.transform='scale(1.05)'; this.style.boxShadow='0 0 30px rgba(46,80,176,0.9),0 4px 20px rgba(15,31,88,0.65)';"
-                    onmouseleave="this.style.transform='scale(1)'; this.style.boxShadow='0 0 20px rgba(46,80,176,0.65),0 4px 16px rgba(15,31,88,0.55)';">
-                <div class="zampi-float flex-shrink-0">
+                    class="zampi-fab fixed bottom-20 right-4 z-40 flex items-center gap-2 px-4 py-2.5 rounded-full font-semibold focus:outline-none focus:ring-4">
+                <div class="zampi-float zampi-header-icon">
                     <svg width="26" height="24" aria-hidden="true"><use href="#zampi-mascot"/></svg>
                 </div>
-                <span style="font-family:'Nunito',sans-serif; font-weight:800; font-size:14px;">Zampi</span>
+                <span class="zampi-fab-label">Zampi</span>
                 <template x-if="cartCount > 0">
-                    <span x-text="cartCount"
-                          style="position:absolute; top:-8px; right:-8px; min-width:20px; height:20px; border-radius:9999px; background:#FBBF24; color:#050B1F; font-size:11px; font-weight:900; display:flex; align-items:center; justify-content:center; padding:0 4px; font-family:'Nunito',sans-serif; box-shadow:0 0 8px rgba(251,191,36,0.6); pointer-events:none;"></span>
+                    <span x-text="cartCount" class="zampi-fab-badge"></span>
                 </template>
             </button>
 
@@ -641,29 +446,26 @@
                  aria-modal="true" role="dialog" aria-label="Asistente virtual Zampi">
 
                 {{-- Panel: full-screen en móvil / modal en tablet / flotante en desktop --}}
-                <div class="zampi-panel zampi-scrollbar"
-                     style="background:radial-gradient(ellipse at 50% 20%,#0E1A38 0%,#050B1F 60%,#01040E 100%);">
+                <div class="zampi-panel zampi-panel-bg zampi-scrollbar">
 
                     {{-- Cabecera --}}
-                    <div style="flex-shrink:0; padding:12px 16px; background:rgba(10,20,48,0.9); backdrop-filter:blur(16px); border-bottom:1px solid rgba(46,80,176,0.4); display:flex; align-items:center; gap:10px;">
-                        <div class="zampi-float" style="flex-shrink:0;">
+                    <div class="zampi-header">
+                        <div class="zampi-float zampi-header-icon">
                             <svg width="38" height="35" aria-hidden="true"><use href="#zampi-mascot"/></svg>
                         </div>
-                        <div style="flex:1;">
-                            <h2 style="font-family:'Nunito',sans-serif; font-weight:900; font-size:16px; color:#fff; line-height:1.2; margin:0;">Zampi</h2>
-                            <p style="font-size:11px; color:#8FA8E8; letter-spacing:0.03em; margin:0;">{{ $table->name }} · {{ $table->user->business_name ?: $table->user->name }}</p>
+                        <div class="zampi-header-body">
+                            <h2 class="zampi-header-title">Zampi</h2>
+                            <p class="zampi-header-sub">{{ $table->name }} · {{ $table->user->business_name ?: $table->user->name }}</p>
                         </div>
-                        <div style="display:flex; align-items:center; gap:12px;">
-                            <div style="display:flex; align-items:center; gap:5px;">
-                                <div class="zampi-pulse" style="width:7px; height:7px; border-radius:50%; background:#22C55E; box-shadow:0 0 6px #22C55E;"></div>
-                                <span style="font-size:11px; color:#22C55E; font-weight:600; font-family:'Space Grotesk',sans-serif;">En línea</span>
+                        <div class="zampi-header-actions">
+                            <div class="zampi-status-indicator">
+                                <div class="zampi-pulse zampi-status-dot"></div>
+                                <span class="zampi-status-text">En línea</span>
                             </div>
                             <button type="button"
                                     @click="closeChat()"
                                     aria-label="Cerrar asistente Zampi"
-                                    style="padding:6px; border-radius:50%; border:1px solid rgba(46,80,176,0.4); background:transparent; color:#8FA8E8; cursor:pointer; transition:all 150ms ease; display:flex; align-items:center; justify-content:center;"
-                                    onmouseenter="this.style.background='rgba(46,80,176,0.25)'; this.style.color='#fff';"
-                                    onmouseleave="this.style.background='transparent'; this.style.color='#8FA8E8';">
+                                    class="zampi-close-btn">
                                 <svg aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
                                 </svg>
@@ -678,122 +480,102 @@
                          aria-label="Conversación con Zampi"
                          @wheel.stop
                          @touchmove.stop
-                         class="zampi-scrollbar"
-                         style="flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:12px;">
+                         class="zampi-chat-log zampi-scrollbar">
 
                         <template x-for="msg in messages" :key="msg._id">
                             <div class="zampi-msg-appear">
 
                                 {{-- Sistema --}}
                                 <template x-if="msg.type === 'system'">
-                                    <div style="display:flex; justify-content:center;">
-                                        <div style="background:rgba(46,80,176,0.22); border:1px solid rgba(46,80,176,0.3); color:#8FA8E8; font-size:11px; padding:5px 14px; border-radius:9999px; backdrop-filter:blur(8px); font-family:'Space Grotesk',sans-serif;"
-                                             x-text="msg.text"></div>
+                                    <div class="zampi-system-row">
+                                        <div class="zampi-system-msg" x-text="msg.text"></div>
                                     </div>
                                 </template>
 
                                 {{-- Bot --}}
                                 <template x-if="msg.type === 'bot'">
-                                    <div style="display:flex; gap:8px; align-items:flex-end;">
-                                        <div class="zampi-avatar" style="flex-shrink:0;">
+                                    <div class="zampi-bot-row">
+                                        <div class="zampi-avatar">
                                             <svg width="24" height="22" aria-hidden="true"><use href="#zampi-mascot"/></svg>
                                         </div>
-                                        <div style="max-width:75%; min-width:0;">
-                                            <div style="background:#0E1A38; border:1px solid rgba(46,80,176,0.35); color:#C8D8FF; font-size:14px; line-height:1.6; padding:10px 14px; border-radius:18px 18px 18px 4px; box-shadow:0 2px 12px rgba(0,0,0,0.3); font-family:'Space Grotesk',sans-serif; white-space:pre-line;"
-                                                 x-text="msg.text"></div>
+                                        <div class="zampi-bot-bubble-wrap">
+                                            <div class="zampi-bubble-bot" x-text="msg.text"></div>
                                             {{-- Tarjetas de producto --}}
                                             <template x-if="msg.cards && msg.cards.length">
-                                                <div style="display:flex; gap:8px; margin-top:8px; overflow-x:auto; padding-bottom:4px;">
+                                                <div class="zampi-cards-row">
                                                     <template x-for="card in msg.cards" :key="card.id">
-                                                        <div style="background:#0E1A38; border:1px solid rgba(46,80,176,0.45); border-radius:16px; padding:10px; min-width:150px; max-width:160px; flex-shrink:0; box-shadow:0 4px 20px rgba(15,31,88,0.4); transition:transform 200ms ease; display:flex; flex-direction:column;"
-                                                             onmouseenter="this.style.transform='translateY(-2px)'"
-                                                             onmouseleave="this.style.transform='translateY(0)'">
+                                                        <div class="zampi-product-card">
                                                             {{-- Foto del plato o icono de categoría --}}
                                                             <template x-if="card.image">
                                                                 <img :src="card.image"
                                                                      :alt="card.name"
-                                                                     style="width:100%; height:72px; object-fit:cover; border-radius:10px; margin-bottom:8px; flex-shrink:0; display:block;"
+                                                                     class="zampi-card-real-img"
                                                                      loading="lazy"/>
                                                             </template>
                                                             <template x-if="!card.image">
-                                                                <div style="height:56px; border-radius:10px; background:linear-gradient(135deg,#162648,#0A1430); display:flex; align-items:center; justify-content:center; margin-bottom:8px; flex-shrink:0;">
+                                                                <div class="zampi-card-img">
                                                                     <template x-if="card.foodIcon">
                                                                         <svg width="34" height="34" viewBox="0 0 24 24"
                                                                              aria-hidden="true"
-                                                                             style="color:rgba(139,168,232,0.6); overflow:visible;">
+                                                                             class="zampi-card-food-icon">
                                                                             <use :href="'#fc-' + card.foodIcon.svgId"/>
                                                                         </svg>
                                                                     </template>
                                                                     <template x-if="!card.foodIcon">
-                                                                        <span x-text="card.emoji" style="font-size:26px;"></span>
+                                                                        <span x-text="card.emoji" class="zampi-card-emoji"></span>
                                                                     </template>
                                                                 </div>
                                                             </template>
                                                             {{-- Nombre --}}
-                                                            <div style="font-size:12px; font-weight:700; color:#fff; margin-bottom:3px; font-family:'Space Grotesk',sans-serif; line-height:1.3;"
-                                                                 x-text="card.name"></div>
+                                                            <div class="zampi-card-name" x-text="card.name"></div>
                                                             {{-- Descripción --}}
                                                             <div x-show="card.description"
-                                                                 style="font-size:10px; color:#8FA8E8; margin-bottom:5px; line-height:1.4; flex-grow:1;"
+                                                                 class="zampi-card-desc"
                                                                  x-text="card.description"></div>
                                                             {{-- Alérgenos UE encima del precio --}}
                                                             <template x-if="card.allergens && card.allergens.length">
-                                                                <div style="display:flex; flex-wrap:wrap; gap:3px; margin-bottom:7px;">
+                                                                <div class="zampi-allergens-row">
                                                                     <template x-for="al in card.allergens" :key="al.name">
-                                                                        <div :title="al.name"
-                                                                             style="display:inline-flex; align-items:center; gap:3px; background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.35); border-radius:5px; padding:2px 6px 2px 4px; cursor:default;">
+                                                                        <div :title="al.name" class="zampi-allergen-badge">
                                                                             {{-- Icono SVG oficial UE, o fallback ⚠ si no hay mapeo --}}
                                                                             <template x-if="al.svgId">
                                                                                 <svg :aria-label="al.label" width="13" height="13"
-                                                                                     style="flex-shrink:0; color:#FCD34D; overflow:visible;">
+                                                                                     class="zampi-allergen-icon">
                                                                                     <use :href="'#al-' + al.svgId"/>
                                                                                 </svg>
                                                                             </template>
                                                                             <template x-if="!al.svgId">
-                                                                                <span style="font-size:11px; line-height:1; color:#FCD34D;">⚠</span>
+                                                                                <span class="zampi-allergen-fallback">⚠</span>
                                                                             </template>
-                                                                            <span x-text="al.label"
-                                                                                  style="font-size:8px; color:#FCD34D; font-weight:700; font-family:'Space Grotesk',sans-serif; letter-spacing:0.02em;"></span>
+                                                                            <span x-text="al.label" class="zampi-allergen-label"></span>
                                                                         </div>
                                                                     </template>
                                                                 </div>
                                                             </template>
                                                             {{-- Precio + controles cantidad --}}
-                                                            <div style="display:flex; align-items:center; justify-content:space-between; margin-top:auto;">
-                                                                <span style="font-size:13px; font-weight:700; color:#FBBF24; font-family:'Nunito',sans-serif;"
+                                                            <div class="zampi-card-footer">
+                                                                <span class="zampi-card-price"
                                                                       x-text="Number(card.price).toFixed(2).replace('.',',') + ' €'"></span>
                                                                 {{-- Sin cantidad: solo botón + --}}
                                                                 <template x-if="cartQty(card.id) === 0">
                                                                     <button type="button"
                                                                             @click.stop="addToCart(card)"
                                                                             :aria-label="'Añadir ' + card.name + ' al pedido'"
-                                                                            style="width:26px; height:26px; border-radius:50%; background:linear-gradient(135deg,#2E50B0,#1A3380); border:2px solid transparent; color:#fff; font-size:17px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 0 8px rgba(46,80,176,0.6); flex-shrink:0; transition:all 150ms ease;"
-                                                                            onmouseenter="this.style.background='#3D6AE0'; this.style.boxShadow='0 0 12px rgba(34,197,94,0.7)'; this.style.borderColor='#22C55E'; this.style.transform='scale(1.15)';"
-                                                                            onmouseleave="this.style.background='linear-gradient(135deg,#2E50B0,#1A3380)'; this.style.boxShadow='0 0 8px rgba(46,80,176,0.6)'; this.style.borderColor='transparent'; this.style.transform='scale(1)';"
-                                                                            onmousedown="this.style.borderColor='#16A34A'; this.style.transform='scale(0.9)';"
-                                                                            onmouseup="this.style.borderColor='#22C55E'; this.style.transform='scale(1.15)';">+</button>
+                                                                            class="zampi-card-add-btn">+</button>
                                                                 </template>
                                                                 {{-- Con cantidad: controles [-] [n] [+] --}}
                                                                 <template x-if="cartQty(card.id) > 0">
-                                                                    <div style="display:flex; align-items:center; gap:5px;">
+                                                                    <div class="zampi-card-qty-row">
                                                                         <button type="button"
                                                                                 @click.stop="decreaseQty(card)"
                                                                                 :aria-label="'Quitar uno de ' + card.name"
-                                                                                style="width:24px; height:24px; border-radius:50%; background:rgba(46,80,176,0.35); border:2px solid transparent; color:#fff; font-size:16px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all 150ms ease;"
-                                                                                onmouseenter="this.style.background='#2E50B0'; this.style.borderColor='#EF4444'; this.style.boxShadow='0 0 10px rgba(239,68,68,0.6)'; this.style.transform='scale(1.15)';"
-                                                                                onmouseleave="this.style.background='rgba(46,80,176,0.35)'; this.style.borderColor='transparent'; this.style.boxShadow='none'; this.style.transform='scale(1)';"
-                                                                                onmousedown="this.style.borderColor='#B91C1C'; this.style.boxShadow='0 0 14px rgba(185,28,28,0.8)'; this.style.transform='scale(0.9)';"
-                                                                                onmouseup="this.style.borderColor='#EF4444'; this.style.boxShadow='0 0 10px rgba(239,68,68,0.6)'; this.style.transform='scale(1.15)';">−</button>
+                                                                                class="zampi-card-dec-btn">−</button>
                                                                         <span x-text="cartQty(card.id)"
-                                                                              style="font-size:13px; font-weight:800; color:#fff; font-family:'Nunito',sans-serif; min-width:14px; text-align:center;"></span>
+                                                                              class="zampi-card-qty"></span>
                                                                         <button type="button"
                                                                                 @click.stop="addToCart(card)"
                                                                                 :aria-label="'Añadir otro de ' + card.name"
-                                                                                style="width:24px; height:24px; border-radius:50%; background:linear-gradient(135deg,#2E50B0,#1A3380); border:2px solid transparent; color:#fff; font-size:17px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 0 8px rgba(46,80,176,0.6); flex-shrink:0; transition:all 150ms ease;"
-                                                                                onmouseenter="this.style.background='#3D6AE0'; this.style.boxShadow='0 0 12px rgba(34,197,94,0.7)'; this.style.borderColor='#22C55E'; this.style.transform='scale(1.15)';"
-                                                                                onmouseleave="this.style.background='linear-gradient(135deg,#2E50B0,#1A3380)'; this.style.boxShadow='0 0 8px rgba(46,80,176,0.6)'; this.style.borderColor='transparent'; this.style.transform='scale(1)';"
-                                                                                onmousedown="this.style.borderColor='#16A34A'; this.style.transform='scale(0.9)';"
-                                                                                onmouseup="this.style.borderColor='#22C55E'; this.style.transform='scale(1.15)';">+</button>
+                                                                                class="zampi-card-inc-btn">+</button>
                                                                     </div>
                                                                 </template>
                                                             </div>
@@ -803,11 +585,12 @@
                                             </template>
                                             {{-- Quick replies --}}
                                             <template x-if="msg.quickReplies && msg.quickReplies.length">
-                                                <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:8px;">
+                                                <div class="zampi-qr-row">
                                                     <template x-for="(qr, qrIdx) in msg.quickReplies" :key="qrIdx">
                                                         <button type="button"
                                                                 @click="handleQuickReply(qr)"
-                                                                :style="getQrStyle(qr) + 'display:inline-flex;align-items:center;gap:4px;'"
+                                                                :style="getQrStyle(qr)"
+                                                                class="zampi-qr-btn"
                                                                 @mouseenter="onQrEnter($el, qr)"
                                                                 @mouseleave="onQrLeave($el, qr)">
                                                                 <template x-if="qr === 'Ver mi pedido'">
@@ -823,52 +606,40 @@
                                             </template>
                                             {{-- Resumen del pedido en vivo (reactivo al store) --}}
                                             <template x-if="msg.cartLive">
-                                                <div style="background:rgba(14,26,56,0.9); border:1px solid rgba(46,80,176,0.45); border-radius:16px; padding:12px; margin-top:8px; backdrop-filter:blur(12px);">
-                                                    <div style="font-size:13px; font-weight:800; font-family:'Nunito',sans-serif; color:#fff; margin-bottom:8px;">🛒 Tu pedido</div>
+                                                <div class="zampi-order-summary">
+                                                    <div class="zampi-cart-live-title">🛒 Tu pedido</div>
                                                     <template x-if="$store.cart.items.length === 0">
-                                                        <p style="font-size:12px; color:#8FA8E8; text-align:center; padding:8px 0;">El pedido está vacío.</p>
+                                                        <p class="zampi-cart-empty">El pedido está vacío.</p>
                                                     </template>
                                                     <template x-for="item in $store.cart.items" :key="item.productId">
-                                                        <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.06);">
-                                                            <span style="font-size:12px; color:#C8D8FF; flex:1;" x-text="item.name"></span>
-                                                            <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
+                                                        <div class="zampi-cart-item-row">
+                                                            <span class="zampi-cart-item-name" x-text="item.name"></span>
+                                                            <div class="zampi-cart-controls">
                                                                 {{-- Controles cantidad --}}
                                                                 <button type="button"
                                                                         @click.stop="decreaseQty(item)"
                                                                         :aria-label="'Quitar uno de ' + item.name"
-                                                                        style="width:22px; height:22px; border-radius:50%; background:rgba(46,80,176,0.35); border:2px solid transparent; color:#fff; font-size:15px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 150ms ease;"
-                                                                        onmouseenter="this.style.background='#2E50B0'; this.style.borderColor='#EF4444'; this.style.boxShadow='0 0 10px rgba(239,68,68,0.6)'; this.style.transform='scale(1.15)';"
-                                                                        onmouseleave="this.style.background='rgba(46,80,176,0.35)'; this.style.borderColor='transparent'; this.style.boxShadow='none'; this.style.transform='scale(1)';"
-                                                                        onmousedown="this.style.borderColor='#B91C1C'; this.style.boxShadow='0 0 14px rgba(185,28,28,0.8)'; this.style.transform='scale(0.9)';"
-                                                                        onmouseup="this.style.borderColor='#EF4444'; this.style.boxShadow='0 0 10px rgba(239,68,68,0.6)'; this.style.transform='scale(1.15)';">−</button>
+                                                                        class="zampi-cart-sm-dec">−</button>
                                                                 <span x-text="item.quantity"
-                                                                      style="font-size:12px; font-weight:800; color:#fff; min-width:14px; text-align:center; font-family:'Nunito',sans-serif;"></span>
+                                                                      class="zampi-cart-qty"></span>
                                                                 <button type="button"
                                                                         @click.stop="addToCart(item)"
                                                                         :aria-label="'Añadir otro de ' + item.name"
-                                                                        style="width:22px; height:22px; border-radius:50%; background:linear-gradient(135deg,#2E50B0,#1A3380); border:2px solid transparent; color:#fff; font-size:15px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 150ms ease;"
-                                                                        onmouseenter="this.style.background='#3D6AE0'; this.style.boxShadow='0 0 12px rgba(34,197,94,0.7)'; this.style.borderColor='#22C55E'; this.style.transform='scale(1.15)';"
-                                                                        onmouseleave="this.style.background='linear-gradient(135deg,#2E50B0,#1A3380)'; this.style.boxShadow='none'; this.style.borderColor='transparent'; this.style.transform='scale(1)';"
-                                                                        onmousedown="this.style.borderColor='#16A34A'; this.style.transform='scale(0.9)';"
-                                                                        onmouseup="this.style.borderColor='#22C55E'; this.style.transform='scale(1.15)';">+</button>
+                                                                        class="zampi-cart-sm-inc">+</button>
                                                                 {{-- Precio y eliminar --}}
-                                                                <span style="font-size:11px; font-weight:600; color:#FBBF24; min-width:48px; text-align:right; font-family:'Nunito',sans-serif;"
+                                                                <span class="zampi-cart-item-price"
                                                                       x-text="Number(item.price * item.quantity).toFixed(2).replace('.',',') + ' €'"></span>
                                                                 <button type="button"
                                                                         @click.stop="removeCartItem(item.productId)"
                                                                         :aria-label="'Eliminar ' + item.name + ' del pedido'"
-                                                                        style="width:20px; height:20px; border-radius:50%; background:rgba(220,38,38,0.2); border:1px solid rgba(220,38,38,0.4); color:#F87171; font-size:11px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all 150ms ease;"
-                                                                        onmouseenter="this.style.background='#DC2626'; this.style.borderColor='#EF4444'; this.style.color='#fff'; this.style.transform='scale(1.15)';"
-                                                                        onmouseleave="this.style.background='rgba(220,38,38,0.2)'; this.style.borderColor='rgba(220,38,38,0.4)'; this.style.color='#F87171'; this.style.transform='scale(1)';"
-                                                                        onmousedown="this.style.transform='scale(0.9)';"
-                                                                        onmouseup="this.style.transform='scale(1.15)';">✕</button>
+                                                                        class="zampi-cart-del">✕</button>
                                                             </div>
                                                         </div>
                                                     </template>
                                                     <template x-if="$store.cart.items.length > 0">
-                                                        <div style="display:flex; justify-content:space-between; margin-top:8px; padding-top:8px; border-top:1px solid rgba(46,80,176,0.4);">
-                                                            <span style="font-size:13px; font-weight:700; color:#fff;">Total</span>
-                                                            <span style="font-size:16px; font-weight:900; color:#FBBF24; font-family:'Nunito',sans-serif;"
+                                                        <div class="zampi-cart-total-row">
+                                                            <span class="zampi-cart-total-label">Total</span>
+                                                            <span class="zampi-cart-total-amount"
                                                                   x-text="Number($store.cart.total).toFixed(2).replace('.',',') + ' €'"></span>
                                                         </div>
                                                     </template>
@@ -880,11 +651,10 @@
 
                                 {{-- Usuario --}}
                                 <template x-if="msg.type === 'user'">
-                                    <div style="display:flex; justify-content:flex-end;">
-                                        <div style="max-width:78%;">
-                                            <div style="background:linear-gradient(135deg,#2E50B0,#1A3380); color:#fff; font-size:14px; line-height:1.5; padding:10px 14px; border-radius:18px 18px 4px 18px; box-shadow:0 4px 16px rgba(15,31,88,0.55); font-family:'Space Grotesk',sans-serif;"
-                                                 x-text="msg.text"></div>
-                                            <div style="font-size:10px; color:#3A5090; text-align:right; margin-top:3px; padding-right:4px;"
+                                    <div class="zampi-user-row">
+                                        <div class="zampi-user-bubble-wrap">
+                                            <div class="zampi-bubble-user" x-text="msg.text"></div>
+                                            <div class="zampi-user-time"
                                                  x-text="formatTime(msg.time) + ' ✓✓'"></div>
                                         </div>
                                     </div>
@@ -895,37 +665,36 @@
 
                         {{-- Indicador de escritura --}}
                         <template x-if="isTyping">
-                            <div style="display:flex; gap:8px; align-items:flex-end;" aria-label="Zampi está escribiendo">
-                                <div class="zampi-avatar" style="flex-shrink:0;">
+                            <div class="zampi-typing-row" aria-label="Zampi está escribiendo">
+                                <div class="zampi-avatar">
                                     <svg width="24" height="22" aria-hidden="true"><use href="#zampi-mascot"/></svg>
                                 </div>
-                                <div style="background:#0E1A38; border:1px solid rgba(46,80,176,0.35); border-radius:18px 18px 18px 4px; padding:12px 16px; display:flex; gap:5px; align-items:center;">
-                                    <div class="zampi-typing-1" style="width:7px; height:7px; border-radius:50%; background:#5478D0;"></div>
-                                    <div class="zampi-typing-2" style="width:7px; height:7px; border-radius:50%; background:#5478D0;"></div>
-                                    <div class="zampi-typing-3" style="width:7px; height:7px; border-radius:50%; background:#5478D0;"></div>
+                                <div class="zampi-typing-bubble">
+                                    <div class="zampi-typing-dot zampi-typing-1"></div>
+                                    <div class="zampi-typing-dot zampi-typing-2"></div>
+                                    <div class="zampi-typing-dot zampi-typing-3"></div>
                                 </div>
                             </div>
                         </template>
 
                         {{-- Error --}}
                         <template x-if="error">
-                            <div style="display:flex; justify-content:center;" role="alert">
-                                <div style="background:rgba(208,14,26,0.15); border:1px solid rgba(208,14,26,0.4); color:#F04040; font-size:12px; padding:5px 14px; border-radius:9999px; font-family:'Space Grotesk',sans-serif;"
-                                     x-text="error"></div>
+                            <div class="zampi-error-row" role="alert">
+                                <div class="zampi-error-msg" x-text="error"></div>
                             </div>
                         </template>
 
                         {{-- Conversación cerrada --}}
                         <template x-if="closed">
-                            <div style="display:flex; justify-content:center;">
-                                <div style="background:rgba(46,80,176,0.15); border:1px solid rgba(46,80,176,0.25); color:#8FA8E8; font-size:11px; padding:5px 14px; border-radius:9999px; font-family:'Space Grotesk',sans-serif;">
+                            <div class="zampi-closed-row">
+                                <div class="zampi-closed-msg">
                                     Conversación finalizada. Inicia una nueva para seguir pidiendo.
                                 </div>
                             </div>
                         </template>
 
                         {{-- Centinela de scroll -- siempre al final del log --}}
-                        <div x-ref="chatEnd" style="height:1px; flex-shrink:0;" aria-hidden="true"></div>
+                        <div x-ref="chatEnd" class="zampi-scroll-end" aria-hidden="true"></div>
 
                     </div>
 
@@ -937,46 +706,43 @@
                          x-transition:leave="transition ease-in duration-150"
                          x-transition:leave-start="opacity-100 translate-y-0"
                          x-transition:leave-end="opacity-0 translate-y-2"
-                         style="flex-shrink:0; width:100%;">
-                        <div style="width:100%; box-sizing:border-box; background:linear-gradient(135deg,#0f3d2a,#0a2e1f); border-top:2px solid #22c55e; box-shadow:0 -4px 20px rgba(34,197,94,0.2);">
+                         class="zampi-cartbar-wrap">
+                        <div class="zampi-cartbar-inner">
                         {{-- Fila principal --}}
-                        <div class="zampi-cartbar-row" style="padding:14px 16px; display:flex; align-items:center; gap:12px; overflow:visible;">
+                        <div class="zampi-cartbar-row">
                         {{-- Resumen del carrito --}}
-                        <div class="zampi-cart-left" style="display:flex; align-items:center; gap:10px; flex:1; min-width:0;">
-                            <div style="position:relative; flex-shrink:0;">
+                        <div class="zampi-cart-left">
+                            <div class="zampi-cart-icon-wrap">
                                 <svg aria-hidden="true" width="26" height="26" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
                                 </svg>
-                                <span x-text="cartCount"
-                                      style="position:absolute; top:-6px; right:-6px; min-width:17px; height:17px; border-radius:9999px; background:#EF4444; color:#fff; font-size:10px; font-weight:900; display:flex; align-items:center; justify-content:center; padding:0 3px; font-family:'Nunito',sans-serif;"></span>
+                                <span x-text="cartCount" class="zampi-cart-badge"></span>
                             </div>
                             <span :class="cartNotifs.length > 0 ? 'zampi-hidden-mobile' : ''"
-                                  style="font-size:13px; color:#fff; font-family:'Space Grotesk',sans-serif; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:600;"
+                                  class="zampi-cart-items-text"
                                   x-text="cartCount + (cartCount === 1 ? ' artículo' : ' artículos')"></span>
                             <span :class="cartNotifs.length > 0 ? 'zampi-hidden-mobile' : ''"
-                                  style="font-size:15px; font-weight:900; color:#FBBF24; font-family:'Nunito',sans-serif; flex-shrink:0;"
+                                  class="zampi-cart-total-text"
                                   x-text="Number(cartTotal).toFixed(2).replace('.',',') + ' €'"></span>
                             {{-- Notificaciones de eliminación acumulables (máx 3) --}}
                             <div class="zampi-notif-bar" :class="cartNotifs.length > 0 ? 'zampi-notif-bar-active' : ''"
-                                 style="display:flex; gap:5px; flex-shrink:0; flex-wrap:nowrap;" role="status" aria-live="polite">
+                                 role="status" aria-live="polite">
                                 <template x-for="notif in cartNotifs" :key="notif.id">
                                     <div :class="notif.leaving ? 'zampi-notif-pill zampi-notif-pill-out' : 'zampi-notif-pill zampi-notif-pill-in'">
-                                        <span style="font-size:12px;" aria-hidden="true">🗑️</span>
-                                        <span class="zampi-notif-name" style="font-size:11px; font-weight:600; color:#fff; font-family:'Space Grotesk',sans-serif; white-space:nowrap;" x-text="notif.name"></span>
-                                        <span class="zampi-notif-suffix" style="font-size:11px; font-weight:600; color:#fff; font-family:'Space Grotesk',sans-serif; white-space:nowrap;"> eliminado</span>
+                                        <span aria-hidden="true">🗑️</span>
+                                        <span class="zampi-notif-name" x-text="notif.name"></span>
+                                        <span class="zampi-notif-suffix"> eliminado</span>
                                     </div>
                                 </template>
                             </div>
                         </div>
                         {{-- Botón único: abre el panel de pedido del menú digital --}}
-                        <div style="display:flex; gap:8px; flex-shrink:0;">
+                        <div class="zampi-cart-actions">
                             <button type="button"
                                     @click="$store.cart.open = true"
                                     aria-label="Ver y confirmar pedido"
-                                    style="padding:0; border-radius:9999px; background:#16A34A; border:none; color:#fff; font-size:13px; font-weight:700; font-family:'Space Grotesk',sans-serif; cursor:pointer; white-space:nowrap; transition:background 150ms ease; box-shadow:0 4px 14px rgba(22,163,74,0.45);"
-                                    onmouseenter="this.style.background='#15803D';"
-                                    onmouseleave="this.style.background='#16A34A';">
-                                <span style="display:flex; flex-direction:row; align-items:center; gap:6px; padding:8px 18px; line-height:1;">
+                                    class="zampi-cart-order-btn">
+                                <span class="zampi-cart-order-btn-inner">
                                     <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
                                     <span>Ver pedido</span>
                                 </span>
@@ -987,8 +753,8 @@
                     </div>
 
                     {{-- Área de input --}}
-                    <div style="flex-shrink:0; padding:10px 12px; background:rgba(5,11,31,0.95); backdrop-filter:blur(16px); border-top:1px solid rgba(46,80,176,0.3);">
-                        <div style="display:flex; gap:8px; align-items:center; background:rgba(14,26,56,0.7); border:1px solid rgba(96,152,248,0.3); border-radius:9999px; padding:8px 8px 8px 16px;">
+                    <div class="zampi-input-area">
+                        <div class="zampi-input-wrapper">
                             <label for="zampi-chat-input" class="sr-only">Escribe tu mensaje a Zampi</label>
                             <input id="zampi-chat-input"
                                    type="text"
@@ -997,15 +763,12 @@
                                    @keydown.enter="sendMessage()"
                                    :disabled="sending || closed"
                                    placeholder="Escribe tu pedido..."
-                                   style="flex:1; background:none; border:none; outline:none; font-family:'Space Grotesk',sans-serif; font-size:14px; color:#C8D8FF; min-width:0;">
+                                   class="zampi-chat-input">
                             <button type="button"
                                     @click="sendMessage()"
                                     :disabled="!input.trim() || sending || closed"
                                     aria-label="Enviar mensaje a Zampi"
-                                    style="width:38px; height:38px; border-radius:50%; border:none; cursor:pointer; background:linear-gradient(135deg,#2E50B0,#1A3380); color:#fff; font-size:18px; display:flex; align-items:center; justify-content:center; box-shadow:0 0 14px rgba(46,80,176,0.65); flex-shrink:0; transition:transform 150ms cubic-bezier(0.34,1.56,0.64,1);"
-                                    onmousedown="this.style.transform='scale(0.92)'"
-                                    onmouseup="this.style.transform='scale(1)'"
-                                    onmouseleave="this.style.transform='scale(1)'">↑</button>
+                                    class="zampi-send-btn">↑</button>
                         </div>
                     </div>
 
@@ -1087,7 +850,7 @@
                         🍺 Barra
                     </button>
                     {{-- Separador visual --}}
-                    <span style="width:1px;background:var(--border-subtle);margin:2px 4px;align-self:stretch;flex-shrink:0" aria-hidden="true"></span>
+                    <span class="zampi-filter-sep" aria-hidden="true"></span>
                     {{-- Categorías --}}
                     <button type="button"
                             class="chip chip--small"
@@ -1334,7 +1097,7 @@
                      x-show="isCategoryVisible({{ $category->id }})"
                      x-transition
                      @if(!$kitchenOpen && $category->destination === 'kitchen')
-                     style="opacity:0.45;pointer-events:none"
+                     class="opacity-[0.45] pointer-events-none"
                      @endif>
 
                     <div class="category__head">
@@ -1368,7 +1131,7 @@
                                 <img src="{{ Storage::url($product->image) }}"
                                      alt="Foto de {{ $product->name }}"
                                      loading="lazy" decoding="async"
-                                     style="width:100%;height:100%;object-fit:cover">
+                                     class="w-full h-full object-cover">
                             </div>
                             @else
                             <div class="pcard__photo pcard__photo--food-{{ $photoStyle }}" aria-hidden="true"></div>
@@ -2293,7 +2056,7 @@
                                     <template x-for="i in Array.from({length: parts}, (_, k) => k)" :key="i">
                                         <g :class="'slice' + (i === mySlice ? ' slice--mine' : '')"
                                            @click="mySlice = i"
-                                           style="cursor:pointer">
+                                           class="cursor-pointer">
                                             <path :d="arc(i)"
                                                   :fill="i === mySlice ? 'var(--brand-primary)' : 'var(--bg-chip)'"
                                                   stroke="var(--bg-base)" stroke-width="2"
@@ -2928,8 +2691,8 @@
                         </div>
                     </template>
                 </div>
-                <div style="display:flex;gap:8px;margin-top:4px">
-                    <button type="button" class="btn-secondary" style="flex:1" @click="$store.cart.closeTapaModal()">Ahora no</button>
+                <div class="flex gap-2 mt-1">
+                    <button type="button" class="btn-secondary flex-1" @click="$store.cart.closeTapaModal()">Ahora no</button>
                 </div>
             </div>
         </div>

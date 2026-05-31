@@ -80,7 +80,7 @@
             {{-- Acciones --}}
             <div class="flex items-center justify-end space-x-3 pt-2">
               <a href="{{ route('ingredients.index') }}"
-                 class="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:underline focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 rounded-md px-2 py-1 transition">
+                 class="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:underline focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 rounded-md px-3 py-2 transition">
                 Cancelar
               </a>
               <x-primary-button>Guardar ingrediente</x-primary-button>

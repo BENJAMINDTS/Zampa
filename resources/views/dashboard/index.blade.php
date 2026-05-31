@@ -87,7 +87,7 @@
                     </a>
                 </div>
 
-                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
 
                     {{-- Efectivo --}}
                     <div role="region" aria-label="Total ingresos en efectivo"
@@ -165,7 +165,7 @@
                 </div>
 
                 {{-- Propinas desglosadas --}}
-                <div class="grid grid-cols-2 gap-4 mt-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
 
                     {{-- Propina en efectivo --}}
                     <div role="region" aria-label="Total propinas en efectivo"

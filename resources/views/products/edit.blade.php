@@ -6,7 +6,7 @@
         <div class="flex items-center gap-3 mb-6">
             <a href="{{ route('products.index') }}"
                aria-label="Volver al listado de productos"
-               class="p-1.5 rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-gray-300
+               class="p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-gray-300
                       hover:bg-gray-100 dark:hover:bg-gray-700
                       focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2
                       transition-colors">
