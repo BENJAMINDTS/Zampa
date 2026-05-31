@@ -33,7 +33,7 @@ class MenuController extends Controller
     {
         $table = Table::where('unique_hash', $hash)
             ->where('is_service_point', true)
-            ->with(['user.tapaConfig.kitchenSchedules', 'user.tapaConfig.businessSchedules'])
+            ->with(['user.tapaConfig.kitchenSchedules', 'user.tapaConfig.businessSchedules', 'zone'])
             ->firstOrFail();
         $config = $table->user->tapaConfig;
 
