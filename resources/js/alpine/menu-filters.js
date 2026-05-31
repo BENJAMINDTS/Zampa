@@ -64,6 +64,16 @@ export function readMenuProducts() {
 }
 
 /**
+ * Reads menu context from `<script id="menu-context" type="application/json">`.
+ *
+ * @returns {Object} Parsed context or empty object.
+ */
+function readMenuContext() {
+    const raw = document.getElementById('menu-context');
+    return raw ? JSON.parse(raw.textContent) : {};
+}
+
+/**
  * Registers the `menuFilters` Alpine.data component.
  *
  * @returns {void}
@@ -71,6 +81,7 @@ export function readMenuProducts() {
 export function registerMenuFilters() {
     Alpine.data('menuFilters', () => {
         const products = readMenuProducts();
+        const ctx      = readMenuContext();
 
         return {
             products,
@@ -80,6 +91,107 @@ export function registerMenuFilters() {
             activeDestination: null,
             /** @type {number|null} */
             activeCategory:    null,
+
+            /** @type {Object|null} Product currently shown in the detail drawer. */
+            selectedProduct:   null,
+            /** @type {boolean} True while the close animation is running. */
+            pdetailClosing:    false,
+            /** @type {number} Quantity selected in the detail drawer. */
+            pdetailQty:        1,
+            /** @type {number[]} Ingredient IDs marked for removal. */
+            pdetailRemovedIds: [],
+            /** @type {number[]} Extra ingredient IDs selected. */
+            pdetailExtraIds:   [],
+            /** @type {boolean} Whether the kitchen is currently open. */
+            kitchenOpen:       ctx.kitchenOpen ?? true,
+
+            /**
+             * Opens the product detail drawer for the given product.
+             *
+             * @param {Object} product - Product object from the products array.
+             * @returns {void}
+             */
+            openProduct(product) {
+                if (!product) return;
+                this.selectedProduct = product;
+                this.pdetailClosing  = false;
+                const key      = product.id + ':none';
+                const cartItem = Alpine.store('cart').items.find(i => i._key === key);
+                this.pdetailQty        = cartItem ? cartItem.quantity : 1;
+                this.pdetailRemovedIds = cartItem
+                    ? cartItem.mods.filter(m => m.action === 'remove').map(m => m.ingredientId)
+                    : [];
+                this.pdetailExtraIds   = cartItem
+                    ? cartItem.mods.filter(m => m.action === 'add').map(m => m.ingredientId)
+                    : [];
+                this.$nextTick(() => this._fillPdetailAllergens());
+            },
+
+            /**
+             * Closes the product detail drawer with the exit animation.
+             *
+             * @returns {void}
+             */
+            closeProduct() {
+                if (this.pdetailClosing) return;
+                this.pdetailClosing = true;
+                setTimeout(() => { this.selectedProduct = null; this.pdetailClosing = false; }, 260);
+            },
+
+            /**
+             * Re-initialises allergen SVG pictograms inside the pdetail after Alpine renders.
+             *
+             * @returns {void}
+             */
+            _fillPdetailAllergens() {
+                const p = window.ZAMPA_PICTOGRAMS;
+                if (!p) return;
+                document.querySelectorAll('.pdetail svg[data-al]').forEach(svg => {
+                    const slug = svg.getAttribute('data-al');
+                    if (!slug) return;
+                    const c     = p.ALLERGEN_COLORS[slug] || '#888';
+                    const inner = p.pictogramSVG(slug);
+                    if (!inner) return;
+                    svg.style.setProperty('--c', c);
+                    svg.innerHTML = inner;
+                });
+            },
+
+            /**
+             * Applies the quantity, removed ingredients, and extras from the detail
+             * drawer to the cart, then closes the drawer.
+             *
+             * @returns {void}
+             */
+            pdetailAddToCart() {
+                if (!this.selectedProduct) return;
+                const cart       = Alpine.store('cart');
+                const product    = this.selectedProduct;
+                const key        = product.id + ':none';
+                const cartItem   = cart.items.find(i => i._key === key);
+                const currentQty = cartItem ? cartItem.quantity : 0;
+                const targetQty  = this.pdetailQty;
+
+                if (targetQty > currentQty) {
+                    for (let i = 0; i < targetQty - currentQty; i++) cart.add(product);
+                } else if (targetQty < currentQty) {
+                    for (let i = 0; i < currentQty - targetQty; i++) cart.dec(key);
+                }
+
+                const updated = cart.items.find(i => i._key === key);
+                if (updated) {
+                    updated.mods = [];
+                    for (const ingId of this.pdetailRemovedIds) {
+                        const ing = product.removable?.find(r => r.id === ingId);
+                        if (ing) updated.mods.push({ ingredientId: ingId, name: ing.name, action: 'remove', amountCharged: 0 });
+                    }
+                    for (const ingId of this.pdetailExtraIds) {
+                        const ing = product.extras?.find(e => e.id === ingId);
+                        if (ing) updated.mods.push({ ingredientId: ingId, name: ing.name, action: 'add', amountCharged: ing.price });
+                    }
+                }
+                this.closeProduct();
+            },
 
             toggleAllergen(id) {
                 toggleAllergen(this.activeAllergens, id);
