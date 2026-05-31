@@ -620,8 +620,7 @@
                                              :aria-label="`Vértice ${idx + 1} de la zona`">
                                         </div>
                                         <div x-show="zone.vertices.length > 3"
-                                             class="absolute -top-2 -right-2 w-3.5 h-3.5 rounded-full bg-red-500 text-white flex items-center justify-center leading-none pointer-events-auto cursor-pointer shadow text-[9px] font-bold select-none focus:outline-none focus:ring-2 focus:ring-red-400"
-                                             style="z-index:11;"
+                                             class="absolute -top-2 -right-2 z-[11] w-3.5 h-3.5 rounded-full bg-red-500 text-white flex items-center justify-center leading-none pointer-events-auto cursor-pointer shadow text-[9px] font-bold select-none focus:outline-none focus:ring-2 focus:ring-red-400"
                                              role="button"
                                              tabindex="0"
                                              @click.stop.prevent="removeZoneVertex(zone, idx)"
@@ -790,8 +789,7 @@
                                                  :aria-label="`Vértice ${idx + 1} de la barra`">
                                             </div>
                                             <div x-show="bar.vertices.length > 3"
-                                                 class="absolute -top-2 -right-2 w-3.5 h-3.5 rounded-full bg-red-500 text-white flex items-center justify-center leading-none pointer-events-auto cursor-pointer shadow text-[9px] font-bold select-none focus:outline-none focus:ring-2 focus:ring-red-400"
-                                                 style="z-index:11;"
+                                                 class="absolute -top-2 -right-2 z-[11] w-3.5 h-3.5 rounded-full bg-red-500 text-white flex items-center justify-center leading-none pointer-events-auto cursor-pointer shadow text-[9px] font-bold select-none focus:outline-none focus:ring-2 focus:ring-red-400"
                                                  role="button"
                                                  tabindex="0"
                                                  @click.stop.prevent="removeBarVertex(bar, idx)"
