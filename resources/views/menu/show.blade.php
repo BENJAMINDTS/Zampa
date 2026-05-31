@@ -447,14 +447,12 @@
                 $el.dataset.theme = 'dark';
                 document.documentElement.removeAttribute('data-dark-pending');
             }
-            $nextTick(() => {
-                const update = () => {
-                    const w = window.innerWidth;
-                    $el.dataset.bp = w < 640 ? 'mobile' : w < 1024 ? 'tablet' : 'desktop';
-                };
-                update();
-                window.addEventListener('resize', update);
-            });
+            const updateBp = () => {
+                const w = window.innerWidth;
+                $el.dataset.bp = w < 640 ? 'mobile' : w < 1024 ? 'tablet' : 'desktop';
+            };
+            updateBp();
+            window.addEventListener('resize', updateBp);
          ">
 
         {{-- ── Header DS ────────────────────────────────────────────── --}}
