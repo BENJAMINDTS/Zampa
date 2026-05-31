@@ -71,7 +71,7 @@
             <div class="mt-4 flex flex-col sm:flex-row justify-end gap-2 border-t pt-3 dark:border-gray-600">
               <a
                 href="{{ route('ingredients.edit', $ingredient) }}"
-                class="text-sm text-center bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border border-indigo-200 py-1 px-3 rounded focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2"
+                class="text-sm text-center bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 border border-indigo-200 dark:border-indigo-700 py-2 px-3 rounded focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2"
               >
                 Editar
               </a>
@@ -85,7 +85,7 @@
                 <button
                   type="submit"
                   aria-label="Borrar ingrediente {{ $ingredient->name }}"
-                  class="w-full text-sm bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 py-1 px-3 rounded focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2"
+                  class="w-full text-sm bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 py-2 px-3 rounded focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2"
                 >
                   Borrar
                 </button>
