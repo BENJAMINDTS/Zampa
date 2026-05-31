@@ -1586,11 +1586,11 @@
         {{-- ══════════════════════════════════════════════════════════════════════
              CART BAR — .cart-bar position:absolute dentro de .carta
              ══════════════════════════════════════════════════════════════════════ --}}
-        <template x-if="$store.cart.count > 0">
+        <template x-if="$store.cart.barShouldShow">
         <button type="button"
-                class="cart-bar"
+                :class="$store.cart._barLeaving ? 'cart-bar cart-bar--leaving' : 'cart-bar'"
                 @click="$store.cart.open = true"
-                :aria-label="'Ver pedido — ' + $store.cart.count + ($store.cart.count === 1 ? ' artículo' : ' artículos') + ', total ' + Number($store.cart.total).toFixed(2).replace('.',',') + ' €'">
+                :aria-label="'Ver pedido — ' + $store.cart.displayCount + ($store.cart.displayCount === 1 ? ' artículo' : ' artículos') + ', total ' + Number($store.cart.displayTotal).toFixed(2).replace('.',',') + ' €'">
             <div class="cart-bar__left">
                 <span class="cart-bar__icon">
                     <svg aria-hidden="true" width="18" height="18" fill="none"
@@ -1598,12 +1598,12 @@
                         <path stroke-linecap="round" stroke-linejoin="round"
                               d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
                     </svg>
-                    <span class="cart-bar__count" x-text="$store.cart.count" aria-hidden="true"></span>
+                    <span class="cart-bar__count" x-text="$store.cart.displayCount" aria-hidden="true"></span>
                 </span>
                 <div style="display:flex;flex-direction:column;gap:2px;align-items:flex-start">
-                    <span x-text="$store.cart.count + ($store.cart.count === 1 ? ' artículo' : ' artículos')"></span>
+                    <span x-text="$store.cart.displayCount + ($store.cart.displayCount === 1 ? ' artículo' : ' artículos')"></span>
                     <span class="cart-bar__total"
-                          x-text="Number($store.cart.total).toFixed(2).replace('.',',') + ' €'"></span>
+                          x-text="Number($store.cart.displayTotal).toFixed(2).replace('.',',') + ' €'"></span>
                 </div>
             </div>
             <span class="cart-bar__cta">Ver pedido</span>
