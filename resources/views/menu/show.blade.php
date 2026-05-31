@@ -707,7 +707,6 @@
                     @click="openChat()"
                     aria-label="Abrir asistente Zampi"
                     x-show="!open"
-                    style="display:none"
                     x-transition:enter="transition ease-out duration-200"
                     x-transition:enter-start="opacity-0"
                     x-transition:enter-end="opacity-100"
@@ -715,7 +714,7 @@
                     x-transition:leave-start="opacity-100"
                     x-transition:leave-end="opacity-0"
                     class="fixed bottom-20 right-4 z-40 flex items-center gap-2 px-4 py-2.5 rounded-full font-semibold focus:outline-none focus:ring-4"
-                    style="background:linear-gradient(135deg,#2E50B0,#1A3380); color:#fff; box-shadow:0 0 20px rgba(46,80,176,0.65),0 4px 16px rgba(15,31,88,0.55); transition:transform 200ms ease, box-shadow 200ms ease;"
+                    style="display:none; background:linear-gradient(135deg,#2E50B0,#1A3380); color:#fff; box-shadow:0 0 20px rgba(46,80,176,0.65),0 4px 16px rgba(15,31,88,0.55); transition:transform 200ms ease, box-shadow 200ms ease;"
                     onmouseenter="this.style.transform='scale(1.05)'; this.style.boxShadow='0 0 30px rgba(46,80,176,0.9),0 4px 20px rgba(15,31,88,0.65)';"
                     onmouseleave="this.style.transform='scale(1)'; this.style.boxShadow='0 0 20px rgba(46,80,176,0.65),0 4px 16px rgba(15,31,88,0.55)';">
                 <div class="zampi-float flex-shrink-0">
