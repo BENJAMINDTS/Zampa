@@ -85,6 +85,7 @@ class TapasController extends Controller
             'business_schedules.*.closes_at'      => ['required', 'date_format:H:i'],
             'split_payment_enabled'               => ['sometimes', 'boolean'],
             'split_payment_max_parts'             => ['nullable', 'integer', 'min:2', 'max:20'],
+            'menu_style'                          => ['sometimes', 'in:modern,classic,minimal'],
         ], [
             'max_tapa_variants.required'          => 'El número máximo de variantes de tapa es obligatorio.',
             'max_tapa_variants.integer'           => 'El número máximo de variantes debe ser un número entero.',
@@ -108,6 +109,8 @@ class TapasController extends Controller
             'split_payment_max_parts.integer'     => 'El número máximo de partes debe ser un número entero.',
             'split_payment_max_parts.min'         => 'El cobro partido requiere al menos 2 partes.',
             'split_payment_max_parts.max'         => 'El cobro partido no puede dividirse en más de 20 partes.',
+            'menu_style.required'                 => 'Debes seleccionar un estilo para la carta digital.',
+            'menu_style.in'                       => 'El estilo seleccionado no es válido.',
         ]);
 
         $userId       = Auth::id();
@@ -143,6 +146,7 @@ class TapasController extends Controller
         $user           = Auth::user();
         $splitEnabled   = $request->boolean('split_payment_enabled');
         $newMaxParts    = $splitEnabled ? ($request->input('split_payment_max_parts') ?: null) : null;
+        $newMenuStyle   = $request->input('menu_style', 'modern');
 
         $changed = [];
 
@@ -171,6 +175,10 @@ class TapasController extends Controller
             (string) ($newMaxParts ?? '') !== (string) ($user->split_payment_max_parts ?? '')
         ) {
             $changed[] = 'Cobro partido actualizado';
+        }
+
+        if ($newMenuStyle !== ($user->menu_style ?? 'modern')) {
+            $changed[] = 'Estilo de carta digital actualizado';
         }
 
         // — Persistir —
@@ -213,6 +221,7 @@ class TapasController extends Controller
         $user->update([
             'split_payment_enabled'   => $splitEnabled,
             'split_payment_max_parts' => $newMaxParts,
+            'menu_style'              => $newMenuStyle,
         ]);
 
         Cache::forget("menu:{$userId}");
