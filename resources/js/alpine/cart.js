@@ -96,6 +96,12 @@ export function registerCart() {
         open:    false,
         /** @type {boolean} True while the close animation is running. */
         closing: false,
+        /** @type {number} Last non-zero count — keeps cart bar display stable during leave animation. */
+        _snapCount: 0,
+        /** @type {number} Last non-zero total — keeps cart bar display stable during leave animation. */
+        _snapTotal: 0,
+        /** @type {boolean} True while the slide-down exit animation is running. */
+        _barLeaving: false,
         /** @type {boolean} Submission in progress. */
         sending: false,
         /** @type {boolean} Order successfully sent. */
@@ -239,6 +245,22 @@ export function registerCart() {
 
         get count() {
             return this.items.reduce((s, i) => s + i.quantity, 0);
+        },
+
+        get barShouldShow() {
+            return this.count > 0 || this._barLeaving;
+        },
+
+        get displayCount() {
+            const c = this.count;
+            if (c > 0) this._snapCount = c;
+            return this._snapCount;
+        },
+
+        get displayTotal() {
+            const t = this.total;
+            if (this.count > 0) this._snapTotal = t;
+            return this._snapTotal;
         },
 
         get sendLabel() {
