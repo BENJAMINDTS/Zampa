@@ -1198,7 +1198,6 @@
                     @foreach($categories as $cat)
                     <button type="button"
                             class="chip chip--small"
-                            x-show="isCategoryVisible({{ $cat->id }})"
                             :class="activeCategory === {{ $cat->id }} ? 'chip--active' : ''"
                             @click="setCategory({{ $cat->id }})"
                             :aria-pressed="(activeCategory === {{ $cat->id }}).toString()">
@@ -1332,7 +1331,6 @@
                         </div>
                         @foreach($categories as $cat)
                         <div class="filter-list__item"
-                             x-show="isCategoryVisible({{ $cat->id }})"
                              :class="activeCategory === {{ $cat->id }} ? 'filter-list__item--active' : ''"
                              @click="setCategory({{ $cat->id }})"
                              @keydown.enter="setCategory({{ $cat->id }})"
