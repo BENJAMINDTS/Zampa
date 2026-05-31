@@ -1,5 +1,5 @@
-/* =========================================================
-   Carta Digital Pública — interactive UI kit styles
+﻿/* =========================================================
+   Carta Digital PÃºblica â€” interactive UI kit styles
    Imports the project tokens, then defines carta layout.
    ========================================================= */
 
@@ -175,7 +175,7 @@ html, body {
 .carta[data-bp="tablet"] .carta__filters { width: 220px; }
 .carta[data-bp="tablet"] .carta__cartCol { display: none; }
 
-/* Desktop: sidebar only — order is accessed from the bottom bar */
+/* Desktop: sidebar only â€” order is accessed from the bottom bar */
 .carta[data-bp="desktop"] .carta__filters { width: 240px; }
 .carta[data-bp="desktop"] .carta__cartCol { display: none; }
 
@@ -304,7 +304,7 @@ html, body {
   background: var(--brand-primary); border-color: var(--brand-primary); color: var(--fg-on-accent);
 }
 
-/* Allergen list active state — matches the mobile amber chip look */
+/* Allergen list active state â€” matches the mobile amber chip look */
 .carta__filters .filter-list--allergens .filter-list__item--active {
   background: #FBBF24; color: #5A2F00; font-weight: 600;
 }
@@ -327,13 +327,13 @@ html, body {
 /* ----- Body / product grid -----
    Bottom padding clears the floating FABs (bottom: 92 + 56 height = 148) and
    the cart bar below them. Just enough so the last row of plates sits a hair
-   above the FABs when scrolled to the end — no empty void below. */
+   above the FABs when scrolled to the end â€” no empty void below. */
 .carta__body { padding: 20px 18px 156px; }
 .carta[data-bp="mobile"] .carta__body { padding: 16px 14px 156px; }
 
 /* Mobile: en el grid de 2 columnas la fila precio + stepper se desbordaba
    ~3px y recortaba el "+" contra el borde de la tarjeta. Apretamos hueco,
-   relleno y tamaño de los botones para que quepa con margen en todos los temas. */
+   relleno y tamaÃ±o de los botones para que quepa con margen en todos los temas. */
 .carta[data-bp="mobile"] .pcard__foot { gap: 6px; }
 .carta[data-bp="mobile"] .pcard__price { font-size: 16px; }
 .carta[data-bp="mobile"] .qty { padding: 1px; }
@@ -433,7 +433,7 @@ html, body {
 .allergen-chip--active .allergen { background: #5A2F00; color: var(--color-amber-300); }
 [data-theme="dark"] .allergen-chip--active { background: var(--color-amber-300); color: #5A2F00; }
 
-/* Qty control — tightened so it doesn't crowd the price on small
+/* Qty control â€” tightened so it doesn't crowd the price on small
    product cards. Total pill width ~86px (was ~106px). */
 .qty {
   display: inline-flex; align-items: center; padding: 2px;
@@ -452,7 +452,7 @@ html, body {
               box-shadow var(--duration-fast);
 }
 
-/* Solid, semantic fills — red for minus (quitar), green for plus (añadir).
+/* Solid, semantic fills â€” red for minus (quitar), green for plus (aÃ±adir).
    Soft tint by default so the button reads as colored without screaming,
    then saturates fully on hover/active with a tiny bounce. */
 .qty button.qty-minus {
@@ -483,7 +483,7 @@ html, body {
 }
 .qty button:active { transform: scale(0.92); transition-duration: 80ms; }
 
-/* Pulse animation — fires once when React swaps the qty value.
+/* Pulse animation â€” fires once when React swaps the qty value.
    Triggered by re-keying via the qty-n text change; we attach the
    animation to the buttons themselves so each tap reads as a quick
    "highlight". */
@@ -498,7 +498,7 @@ html, body {
 .qty button.qty-minus:focus-visible { animation: qty-pulse-minus 420ms var(--ease-out, ease-out); outline: none; }
 .qty button.qty-plus:focus-visible  { animation: qty-pulse-plus  420ms var(--ease-out, ease-out); outline: none; }
 
-/* Dark mode: gradientes ligeramente más saturados sobre night-blue. */
+/* Dark mode: gradientes ligeramente mÃ¡s saturados sobre night-blue. */
 [data-theme="dark"] .qty button.qty-minus {
   background: linear-gradient(180deg, #EF4444, #B91C1C);
   color: #FFFFFF;
@@ -567,7 +567,7 @@ html, body {
 .fab--chat img { width: 48px; height: 48px; }
 .fab--bill {
   /* Horizontal pill so the "Cuenta" label reads at first glance.
-     Width is intrinsic — grows with the label, fixed height. */
+     Width is intrinsic â€” grows with the label, fixed height. */
   left: 16px; bottom: 92px;
   width: auto; height: 44px;
   padding: 0 18px 0 14px;
@@ -596,7 +596,7 @@ html, body {
 }
 
 /* On tablet & desktop, keep the bottom-overlay UI (cart bar, bill FAB, delete pill)
-   inside the product panel only — don't cover the left filter sidebar. */
+   inside the product panel only â€” don't cover the left filter sidebar. */
 .carta[data-bp="tablet"]  .cart-bar     { left: 236px; }
 .carta[data-bp="desktop"] .cart-bar     { left: 256px; }
 .carta[data-bp="tablet"]  .fab--bill    { left: 236px; }
@@ -716,7 +716,7 @@ html, body {
 }
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 
-/* Bottom sheet — used at every breakpoint.
+/* Bottom sheet â€” used at every breakpoint.
    Slides up, occupies a bit more than half of the carta height. */
 .drawer {
   background: var(--glass-bg-base);
@@ -959,12 +959,12 @@ html, body {
 .bill__method .nm { font-family: var(--font-body); font-weight: 700; font-size: 15px; color: var(--fg-primary); }
 .bill__method .ds { font-family: var(--font-body); font-size: 11px; color: var(--fg-muted); }
 
-/* Payment-method colour coding — high-contrast, unambiguous.
-   Efectivo → verde (asociación universal con monedas / billetes).
-   Tarjeta  → celeste / cian (banca / pago digital, alto contraste
+/* Payment-method colour coding â€” high-contrast, unambiguous.
+   Efectivo â†’ verde (asociaciÃ³n universal con monedas / billetes).
+   Tarjeta  â†’ celeste / cian (banca / pago digital, alto contraste
               tanto en light como en dark mode).
    El tinte de fondo es deliberadamente lavado (~3% en light, ~6%
-   en dark) para reforzar la asociación sin saturar la superficie. */
+   en dark) para reforzar la asociaciÃ³n sin saturar la superficie. */
 .bill__method--cash {
   background: color-mix(in oklab, var(--color-green-500) 4%, var(--bg-surface));
   border-color: color-mix(in oklab, var(--color-green-500) 22%, var(--border-subtle));
@@ -981,7 +981,7 @@ html, body {
 }
 .bill__method--card .ic {
   background: rgba(34, 211, 238, 0.14);
-  color: #0891B2; /* cyan-600 — legible sobre fondo claro */
+  color: #0891B2; /* cyan-600 â€” legible sobre fondo claro */
 }
 .bill__method--card:hover { border-color: var(--color-cyan-400); }
 
@@ -1004,9 +1004,9 @@ html, body {
 
 .bill__done { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 18px 0; }
 
-/* ════════════════════════════════════════════════════════════════
-   PAYMENT SUCCESS — pantalla de éxito post-pago (celebración ligera)
-   ════════════════════════════════════════════════════════════════ */
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   PAYMENT SUCCESS â€” pantalla de Ã©xito post-pago (celebraciÃ³n ligera)
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 .ps {
   display: flex; flex-direction: column; align-items: center; text-align: center;
   padding: 8px 4px 4px;
@@ -1018,7 +1018,7 @@ html, body {
   animation: ps-rise 460ms 120ms var(--ease-bounce) both;
 }
 
-/* ── Importe destacado ── */
+/* â”€â”€ Importe destacado â”€â”€ */
 .ps__amount {
   display: flex; flex-direction: column; align-items: center; gap: 1px; margin-top: 12px;
   animation: ps-rise 460ms 200ms var(--ease-bounce) both;
@@ -1028,7 +1028,7 @@ html, body {
 .ps__amountTip { font-family: var(--font-body); font-size: 12px; color: var(--color-green-700); margin-top: 4px; }
 [data-theme="dark"] .ps__amountTip { color: var(--color-green-400); }
 
-/* ── Cobro partido: progreso + total mesa ── */
+/* â”€â”€ Cobro partido: progreso + total mesa â”€â”€ */
 .ps__split {
   width: 100%; max-width: 320px; margin-top: 16px;
   display: flex; flex-direction: column; gap: 8px;
@@ -1043,7 +1043,7 @@ html, body {
 .ps__splitRow { display: flex; justify-content: space-between; font-family: var(--font-body); font-size: 13px; color: var(--fg-muted); }
 .ps__splitRow strong { color: var(--fg-primary); font-variant-numeric: tabular-nums; }
 
-/* ── Chips de meta (mesa · pedido · método) ── */
+/* â”€â”€ Chips de meta (mesa Â· pedido Â· mÃ©todo) â”€â”€ */
 .ps__meta {
   display: flex; flex-wrap: wrap; justify-content: center; gap: 7px; margin-top: 16px;
   animation: ps-rise 460ms 280ms var(--ease-bounce) both;
@@ -1062,7 +1062,7 @@ html, body {
   animation: ps-rise 460ms 320ms var(--ease-bounce) both;
 }
 
-/* ── CTAs ── */
+/* â”€â”€ CTAs â”€â”€ */
 .ps__cta {
   width: 100%; max-width: 340px; display: flex; flex-direction: column; gap: 9px; margin-top: 22px;
   animation: ps-rise 460ms 380ms var(--ease-bounce) both;
@@ -1090,7 +1090,7 @@ html, body {
 
 @keyframes ps-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 
-/* ── Medallón celebratorio ── */
+/* â”€â”€ MedallÃ³n celebratorio â”€â”€ */
 .ps-medal { position: relative; width: 88px; height: 88px; display: grid; place-items: center; }
 .ps-medal__disc {
   position: relative; z-index: 2;
@@ -1136,7 +1136,7 @@ html, body {
   .ps__head, .ps__amount, .ps__split, .ps__meta, .ps__note, .ps__cta { opacity: 1; transform: none; }
 }
 
-/* ── Chip persistente en el header: re-descargar ticket ── */
+/* â”€â”€ Chip persistente en el header: re-descargar ticket â”€â”€ */
 .ticket-badge {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 6px 11px 6px 8px; border-radius: 999px; cursor: pointer;
@@ -1232,7 +1232,7 @@ html, body {
 .bill__callWaiter { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
 .bill__doneAmt { color: var(--price-gold); font-variant-numeric: tabular-nums; }
 
-/* Bill drawer header — responsive guard so the title/total never collide.
+/* Bill drawer header â€” responsive guard so the title/total never collide.
    At narrow widths the subtitle truncates, the total label stays one line,
    and the heading flexes to swallow remaining space. */
 .drawer--bill .drawer__head { gap: 10px; padding-right: 14px; }
@@ -1252,15 +1252,15 @@ html, body {
 }
 [data-theme="dark"] .bill__doneIc { background: rgba(34, 197, 94, 0.15); color: var(--color-green-400); }
 
-/* ════════════════════════════════════════════════════════════════
-   REDISEÑO · Flujo de pago en EFECTIVO
-   - Picker de métodos como lista (filas con desc + chevron)
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   REDISEÃ‘O Â· Flujo de pago en EFECTIVO
+   - Picker de mÃ©todos como lista (filas con desc + chevron)
    - Pantalla de propina con chips %, input libre, resumen e info
-   - CTA dinámica con/sin propina
-   - Responsive para móvil, tablet y desktop
-   ════════════════════════════════════════════════════════════════ */
+   - CTA dinÃ¡mica con/sin propina
+   - Responsive para mÃ³vil, tablet y desktop
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
-/* ---- Picker de métodos: lista vertical (mobile) / grid 2x2 (tablet+desktop) ---- */
+/* ---- Picker de mÃ©todos: lista vertical (mobile) / grid 2x2 (tablet+desktop) ---- */
 .method-list { display: flex; flex-direction: column; gap: 10px; }
 .carta[data-bp="tablet"] .method-list,
 .carta[data-bp="desktop"] .method-list {
@@ -1334,7 +1334,7 @@ html, body {
 }
 .method:hover .method__chev { transform: translateX(3px); color: var(--fg-primary); }
 
-/* Acentos suaves por método (tinte + ic color) */
+/* Acentos suaves por mÃ©todo (tinte + ic color) */
 .method--cash .method__ic  { background: var(--color-green-100);  color: var(--color-green-700); }
 .method--card .method__ic  { background: rgba(34, 211, 238, 0.14); color: #0891B2; }
 .method--mixed .method__ic { background: var(--color-amber-100); color: var(--color-amber-800); }
@@ -1344,7 +1344,7 @@ html, body {
 [data-theme="dark"] .method--mixed .method__ic { background: rgba(251,191,36,0.18); color: var(--color-amber-300); }
 [data-theme="dark"] .method--split .method__ic { background: rgba(46,80,176,0.25);  color: var(--color-blue-300); }
 
-/* Mobile: filas algo más compactas pero descripciones siguen visibles */
+/* Mobile: filas algo mÃ¡s compactas pero descripciones siguen visibles */
 .carta[data-bp="mobile"] .method { padding: 12px 14px; gap: 12px; grid-template-columns: 40px 1fr auto; }
 .carta[data-bp="mobile"] .method__ic { width: 40px; height: 40px; border-radius: 10px; }
 .carta[data-bp="mobile"] .method__nm { font-size: 15px; }
@@ -1499,7 +1499,7 @@ html, body {
   color: var(--color-green-400);
 }
 
-/* CTA — etiqueta interna "con/sin propina" un poco más sutil */
+/* CTA â€” etiqueta interna "con/sin propina" un poco mÃ¡s sutil */
 .cashTip__cta { display: inline-flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; }
 .cashTip__ctaTag {
   font-family: var(--font-body); font-weight: 600; font-size: 12px;
@@ -1516,7 +1516,7 @@ html, body {
 }
 @keyframes cashTip-spin { to { transform: rotate(360deg); } }
 
-/* Stacked footer modifier — primary CTA on top, secondary below */
+/* Stacked footer modifier â€” primary CTA on top, secondary below */
 .bill__footRow--stack {
   flex-direction: column; align-items: stretch; gap: 8px;
 }
@@ -1536,7 +1536,7 @@ html, body {
 .carta[data-bp="mobile"] .cashTip__row--total .v { font-size: 17px; }
 .carta[data-bp="mobile"] .cashTip__info { padding: 9px 12px; font-size: 12px; }
 .carta[data-bp="mobile"] .cashTip__ctaTag { font-size: 11px; padding: 2px 7px; }
-/* Very narrow phones — hide CTA tag if it pushes a line break that hurts readability */
+/* Very narrow phones â€” hide CTA tag if it pushes a line break that hurts readability */
 @media (max-width: 360px) {
   .cashTip__ctaTag { display: none; }
 }
@@ -1598,14 +1598,14 @@ html, body {
 }
 
 
-/* ════════════════════════════════════════════════════════════════
-   PRODUCT DETAIL MODAL · responsive
-   - Móvil  → bottom sheet a pantalla completa
-   - Tablet → bottom sheet centrado, anchura limitada
-   - Desktop → modal centrado en 2 columnas (foto + info)
-   ════════════════════════════════════════════════════════════════ */
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   PRODUCT DETAIL MODAL Â· responsive
+   - MÃ³vil  â†’ bottom sheet a pantalla completa
+   - Tablet â†’ bottom sheet centrado, anchura limitada
+   - Desktop â†’ modal centrado en 2 columnas (foto + info)
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
-/* Scrim centrado (en desktop / tablet) vs anclado abajo (móvil) */
+/* Scrim centrado (en desktop / tablet) vs anclado abajo (mÃ³vil) */
 .scrim.scrim--center { align-items: center; justify-content: center; }
 .carta[data-bp="mobile"] .scrim.scrim--center { align-items: flex-end; justify-content: stretch; }
 
@@ -1622,7 +1622,7 @@ html, body {
   width: 100%;
 }
 
-/* ─── Móvil: bottom sheet a casi pantalla completa ─── */
+/* â”€â”€â”€ MÃ³vil: bottom sheet a casi pantalla completa â”€â”€â”€ */
 .carta[data-bp="mobile"] .pdetail {
   width: 100%;
   height: 92%;
@@ -1632,7 +1632,7 @@ html, body {
 }
 .carta[data-bp="mobile"] .pdetail.is-closing { animation: drawer-down 260ms var(--ease-smooth) forwards; }
 
-/* ─── Tablet: bottom sheet centrado ─── */
+/* â”€â”€â”€ Tablet: bottom sheet centrado â”€â”€â”€ */
 .carta[data-bp="tablet"] .pdetail {
   width: min(560px, 92%);
   max-height: 90%;
@@ -1641,7 +1641,7 @@ html, body {
 }
 .carta[data-bp="tablet"] .pdetail.is-closing { animation: pdetail-pop-out 220ms var(--ease-out) forwards; }
 
-/* ─── Desktop: modal centrado de 2 columnas ─── */
+/* â”€â”€â”€ Desktop: modal centrado de 2 columnas â”€â”€â”€ */
 .carta[data-bp="desktop"] .pdetail {
   width: min(760px, 90%);
   max-height: 86%;
@@ -1669,7 +1669,7 @@ html, body {
   flex-direction: row;
 }
 
-/* Botón cerrar flotante */
+/* BotÃ³n cerrar flotante */
 .pdetail__close {
   position: absolute;
   top: 10px; right: 10px;
@@ -1746,7 +1746,7 @@ html, body {
 }
 .pdetail__catchip--warn { background: rgba(252, 211, 77, 0.95); color: #5A2F00; }
 
-/* Grabber sólo en móvil */
+/* Grabber sÃ³lo en mÃ³vil */
 .pdetail__grabber {
   display: none;
   position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
@@ -1756,7 +1756,7 @@ html, body {
 }
 .carta[data-bp="mobile"] .pdetail__grabber { display: block; }
 
-/* ── Contenido ─────────────────────────────────────────── */
+/* â”€â”€ Contenido â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .pdetail__content {
   flex: 1; min-height: 0;
   display: flex; flex-direction: column;
@@ -1815,7 +1815,7 @@ html, body {
   color: var(--fg-muted);
 }
 
-/* Lista de alérgenos con texto */
+/* Lista de alÃ©rgenos con texto */
 .pdetail__allergens {
   display: flex; flex-wrap: wrap; gap: 6px;
 }
@@ -1916,7 +1916,7 @@ html, body {
   color: white;
 }
 
-/* ── Pie con qty + CTA ─────────────────────────────────── */
+/* â”€â”€ Pie con qty + CTA â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .pdetail__foot {
   flex-shrink: 0;
   padding: 14px 18px calc(14px + env(safe-area-inset-bottom, 0px));
@@ -1990,12 +1990,12 @@ html, body {
 .pcard:active { transform: translateY(0); }
 
 
-/* ════════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    Orders surfaces: bottom-left FAB cluster, OrdersWindow with
-   list ↔ detail sub-views, and order-confirmed popup.
-   ════════════════════════════════════════════════════════════ */
+   list â†” detail sub-views, and order-confirmed popup.
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
-/* Bottom-left FAB cluster. When the user has sent ≥1 order,
+/* Bottom-left FAB cluster. When the user has sent â‰¥1 order,
    the red "Cuenta" pill becomes the head of a cluster with a
    charcoal "Mis pedidos" pill beside it. */
 .fab-cluster {
@@ -2060,7 +2060,7 @@ html, body {
 [data-theme="dark"] .fab--orders__count { background: var(--color-green-500); color: #0A1430; }
 .fab--orders__label { white-space: nowrap; }
 
-/* ── "Mi ticket" pill — green, sits to the right of "Cuenta" ── */
+/* â”€â”€ "Mi ticket" pill â€” green, sits to the right of "Cuenta" â”€â”€ */
 .fab__ic { display: inline-flex; align-items: center; }
 .fab__label { white-space: nowrap; }
 .fab--ticket {
@@ -2080,9 +2080,9 @@ html, body {
 .fab--ticket:hover { filter: brightness(1.06); }
 .fab--ticket svg { color: #FFFFFF; width: 18px; height: 18px; }
 
-/* ── Mobile: the three cluster pills collapse to icon-only buttons
+/* â”€â”€ Mobile: the three cluster pills collapse to icon-only buttons
    and expand to reveal their label on hover / tap / focus. Tablet
-   and desktop keep every label visible at all times. ── */
+   and desktop keep every label visible at all times. â”€â”€ */
 .carta[data-bp="mobile"] .fab-cluster .fab {
   transition: padding .3s var(--ease-smooth);
 }
@@ -2123,7 +2123,7 @@ html, body {
   padding-right: 16px;
 }
 
-/* ── Orders window (drawer variant) ──────────────────────── */
+/* â”€â”€ Orders window (drawer variant) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .drawer--orders { height: auto; max-height: 78%; }
 .carta[data-bp="mobile"]  .drawer--orders { height: 78%; max-height: 78%; }
 .carta[data-bp="tablet"]  .drawer--orders,
@@ -2206,7 +2206,7 @@ html, body {
   white-space: nowrap;
 }
 
-/* ── Order detail sub-view ───────────────────────────────── */
+/* â”€â”€ Order detail sub-view â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .orders-detail { display: flex; flex-direction: column; gap: 14px; padding-bottom: 8px; }
 .orders-back {
   align-self: flex-start;
@@ -2297,7 +2297,7 @@ html, body {
   color: var(--price-gold); font-variant-numeric: tabular-nums;
 }
 
-/* ── Order-confirmed popup ────────────────────────────────── */
+/* â”€â”€ Order-confirmed popup â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .scrim.order-confirmed,
 .carta[data-bp="mobile"] .scrim.order-confirmed {
   align-items: center; justify-content: center;
@@ -2406,15 +2406,15 @@ html, body {
 }
 
 
-/* ════════════════════════════════════════════════════════════════
-   MENÚ DEL DÍA · módulo opcional
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   MENÃš DEL DÃA Â· mÃ³dulo opcional
    - Anuncio de entrada (sticky bajo el header, auto-dismiss)
    - Chip diferenciado en la barra de filtros
-   - Diálogo de exclusividad
+   - DiÃ¡logo de exclusividad
    - Stepper / wizard con progreso
-   Paleta: ámbar/oro como acento (variant: --price-gold) sin
+   Paleta: Ã¡mbar/oro como acento (variant: --price-gold) sin
    competir con el verde del CTA principal.
-   ════════════════════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
 :root {
   --dm-gold-50:  #FFF8E6;
@@ -2437,7 +2437,7 @@ html, body {
   --dm-gold-ink: #FFF8E6;
 }
 
-/* ── Banner / anuncio de entrada ────────────────────────────── */
+/* â”€â”€ Banner / anuncio de entrada â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .dm-banner {
   position: sticky;
   top: 0;
@@ -2463,7 +2463,7 @@ html, body {
   transition: box-shadow 200ms var(--ease-smooth);
 }
 [data-theme="dark"] .dm-banner {
-  /* Base sólida primero, luego un tinte oro encima — así no se ve a través
+  /* Base sÃ³lida primero, luego un tinte oro encima â€” asÃ­ no se ve a travÃ©s
      cuando hace sticky sobre el contenido scrolleado. */
   background:
     linear-gradient(135deg, rgba(251, 191, 36, 0.14) 0%, rgba(251, 191, 36, 0.04) 50%, rgba(251, 191, 36, 0.12) 100%),
@@ -2471,8 +2471,8 @@ html, body {
   border-color: rgba(251, 191, 36, 0.32);
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
 }
-/* Cuando ya no está en su posición inicial, refuerza la sombra para
-   que se note que "cuelga" sobre el contenido detrás. */
+/* Cuando ya no estÃ¡ en su posiciÃ³n inicial, refuerza la sombra para
+   que se note que "cuelga" sobre el contenido detrÃ¡s. */
 .dm-banner--stuck {
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.6) inset,
@@ -2608,7 +2608,7 @@ html, body {
 [data-theme="dark"] .dm-banner__close { background: rgba(1,4,14,0.55); color: var(--dm-gold-500); border-color: rgba(251,191,36,0.2); }
 .dm-banner__close:hover { opacity: 1; }
 
-/* mobile: stamp queda más pequeño y se mantiene grid 3-col */
+/* mobile: stamp queda mÃ¡s pequeÃ±o y se mantiene grid 3-col */
 .carta[data-bp="mobile"] .dm-banner {
   margin: 10px 12px 0;
   padding: 12px 12px 12px 14px;
@@ -2621,7 +2621,7 @@ html, body {
 .carta[data-bp="mobile"] .dm-banner__price { font-size: 18px; }
 .carta[data-bp="mobile"] .dm-banner__cta { padding: 7px 11px; font-size: 12px; }
 
-/* ── Chip persistente en filtros ─────────────────────────────── */
+/* â”€â”€ Chip persistente en filtros â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .dm-chip {
   appearance: none;
   display: inline-flex; align-items: center; gap: 10px;
@@ -2704,7 +2704,7 @@ html, body {
 .filter-section--dm { margin-bottom: 18px; }
 .filter-section--dm .dm-chip { width: 100%; }
 
-/* ── Diálogo de exclusividad ─────────────────────────────────── */
+/* â”€â”€ DiÃ¡logo de exclusividad â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .modal--center { align-items: center; }
 .carta[data-bp="mobile"] .modal--center { align-items: center; padding: 0 16px; }
 .modal__panel--narrow {
@@ -2747,7 +2747,7 @@ html, body {
 }
 .dm-excl__btnPrimary:hover { background: var(--color-amber-300); filter: none; }
 
-/* ── Stepper modal ───────────────────────────────────────────── */
+/* â”€â”€ Stepper modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .scrim--dm {
   align-items: flex-end;
   justify-content: center;
@@ -2869,7 +2869,7 @@ html, body {
   width: auto; padding: 12px 16px; flex-shrink: 0;
 }
 
-/* ── Step inner ─────────────────────────────────────────────── */
+/* â”€â”€ Step inner â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .dm-step { display: flex; flex-direction: column; gap: 14px; }
 .dm-step__head { padding: 6px 0 2px; }
 .dm-step__title {
@@ -3162,11 +3162,11 @@ html, body {
 }
 
 
-/* ════════════════════════════════════════════════════════════════
-   MENÚ DEL DÍA · presentación dentro de "Mis pedidos"
-   ════════════════════════════════════════════════════════════════ */
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   MENÃš DEL DÃA Â· presentaciÃ³n dentro de "Mis pedidos"
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
-/* Row en la lista — variante dorada */
+/* Row en la lista â€” variante dorada */
 .order-row--dm {
   background: linear-gradient(180deg, var(--dm-gold-50), var(--bg-surface) 70%);
   border-color: var(--dm-gold-200);
@@ -3199,7 +3199,7 @@ html, body {
   color: var(--dm-gold-500); background: rgba(251,191,36,0.18);
 }
 
-/* Detail — encabezado dorado */
+/* Detail â€” encabezado dorado */
 .orders-detail__head--dm {
   background: linear-gradient(180deg, var(--dm-gold-50), transparent);
   border-radius: 12px;
@@ -3219,7 +3219,7 @@ html, body {
   color: var(--dm-gold-500);
 }
 
-/* Line — variante para menú */
+/* Line â€” variante para menÃº */
 .orders-line--dm {
   background: linear-gradient(180deg, var(--dm-gold-50), var(--bg-surface) 70%);
   border-color: var(--dm-gold-200);
@@ -3281,7 +3281,7 @@ html, body {
   min-width: 82px;
 }
 
-/* Confirmed popup — variante de menú */
+/* Confirmed popup â€” variante de menÃº */
 .order-confirmed__panel--dm {
   background:
     radial-gradient(800px 240px at 50% 0%, rgba(236, 194, 90, 0.18), transparent 60%),
@@ -3328,17 +3328,17 @@ html, body {
 }
 
 
-/* ════════════════════════════════════════════════════════════════
-   ACCESIBILIDAD · estados de selección en modo OSCURO
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   ACCESIBILIDAD Â· estados de selecciÃ³n en modo OSCURO
    ----------------------------------------------------------------
    En modo oscuro la "soft blue" del hover y la "active blue" eran
-   demasiado parecidas. Aquí los estados seleccionados ganan un
+   demasiado parecidas. AquÃ­ los estados seleccionados ganan un
    acento cian (#22D3EE) bien diferenciado del hover, manteniendo
-   los colores semánticos (oro = menú del día, verde = CTA/propina,
-   ámbar = alérgenos) que ya están bien diferenciados.
-   ════════════════════════════════════════════════════════════════ */
+   los colores semÃ¡nticos (oro = menÃº del dÃ­a, verde = CTA/propina,
+   Ã¡mbar = alÃ©rgenos) que ya estÃ¡n bien diferenciados.
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
-/* Token único de "acento de selección" — en oscuro es cian de alta
+/* Token Ãºnico de "acento de selecciÃ³n" â€” en oscuro es cian de alta
    visibilidad; en claro mantiene el verde primario del sistema. */
 :root         { --select-accent: var(--color-green-600); --select-accent-fg: #FFFFFF; --select-accent-soft: var(--color-green-50); }
 [data-theme="dark"] {
@@ -3347,15 +3347,15 @@ html, body {
   --select-accent-soft: rgba(34, 211, 238, 0.14);
 }
 
-/* ════════════════════════════════════════════════════════════════
-   ACCESIBILIDAD · estados de selección en modo CLARO
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   ACCESIBILIDAD Â· estados de selecciÃ³n en modo CLARO
    ----------------------------------------------------------------
-   En claro, el activo de categoría y servicio era casi idéntico al
-   hover (mismo gris). Aquí reforzamos con el verde de marca para que
-   "lo seleccionado" destaque en móvil, tablet y desktop por igual.
-   ════════════════════════════════════════════════════════════════ */
+   En claro, el activo de categorÃ­a y servicio era casi idÃ©ntico al
+   hover (mismo gris). AquÃ­ reforzamos con el verde de marca para que
+   "lo seleccionado" destaque en mÃ³vil, tablet y desktop por igual.
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
-/* Chips horizontales (Cocina / Barra / Todas / categorías) — móvil */
+/* Chips horizontales (Cocina / Barra / Todas / categorÃ­as) â€” mÃ³vil */
 [data-theme="light"] .chip--active {
   background: var(--select-accent);
   color: var(--select-accent-fg);
@@ -3368,7 +3368,7 @@ html, body {
   filter: brightness(1.04);
 }
 
-/* Toggle Servicio (Todo / 🍳 / 🍺) — sidebar tablet+desktop */
+/* Toggle Servicio (Todo / ðŸ³ / ðŸº) â€” sidebar tablet+desktop */
 [data-theme="light"] .dest-toggle button.active {
   background: var(--select-accent);
   color: var(--select-accent-fg);
@@ -3378,7 +3378,7 @@ html, body {
     0 3px 8px rgba(22, 163, 74, 0.28);
 }
 
-/* Lista de Categorías (sidebar) — NO los alérgenos (siguen en ámbar) */
+/* Lista de CategorÃ­as (sidebar) â€” NO los alÃ©rgenos (siguen en Ã¡mbar) */
 [data-theme="light"] .filter-list:not(.filter-list--allergens) .filter-list__item--active {
   background: var(--select-accent-soft);
   color: var(--color-green-800);
@@ -3396,7 +3396,7 @@ html, body {
   color: var(--select-accent-fg);
 }
 
-/* ── Chips horizontales (Cocina / Barra / Todas / categorías) ── */
+/* â”€â”€ Chips horizontales (Cocina / Barra / Todas / categorÃ­as) â”€â”€ */
 [data-theme="dark"] .chip {
   /* Reforzar el reposo para que tenga distancia con el activo */
   background: rgba(46, 80, 176, 0.20);
@@ -3418,7 +3418,7 @@ html, body {
   filter: brightness(1.08);
 }
 
-/* ── Toggle Servicio (Todo / 🍳 / 🍺) en sidebar ─────────────── */
+/* â”€â”€ Toggle Servicio (Todo / ðŸ³ / ðŸº) en sidebar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 [data-theme="dark"] .dest-toggle {
   background: rgba(255, 255, 255, 0.04);
 }
@@ -3435,7 +3435,7 @@ html, body {
     0 4px 10px rgba(34, 211, 238, 0.25);
 }
 
-/* ── Lista de Categorías y Alérgenos (sidebar) ──────────────── */
+/* â”€â”€ Lista de CategorÃ­as y AlÃ©rgenos (sidebar) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 [data-theme="dark"] .filter-list__item {
   /* hover diferente para que no se confunda con seleccionado */
   position: relative;
@@ -3444,7 +3444,7 @@ html, body {
   background: rgba(255, 255, 255, 0.05);
 }
 [data-theme="dark"] .filter-list__item--active {
-  /* Selección: fondo soft-cyan + barra lateral cian saturada */
+  /* SelecciÃ³n: fondo soft-cyan + barra lateral cian saturada */
   background: var(--select-accent-soft);
   color: #FFFFFF;
   font-weight: 700;
@@ -3455,20 +3455,20 @@ html, body {
   color: var(--select-accent);
   font-weight: 700;
 }
-/* Caja del check de alérgenos también en cian al estar activa */
+/* Caja del check de alÃ©rgenos tambiÃ©n en cian al estar activa */
 [data-theme="dark"] .filter-list__item--active .filter-list__check {
   background: var(--select-accent);
   border-color: var(--select-accent);
   color: var(--select-accent-fg);
 }
 
-/* ── Mobile filter row: refuerzo de chip activo y separadores ── */
+/* â”€â”€ Mobile filter row: refuerzo de chip activo y separadores â”€â”€ */
 [data-theme="dark"] .dm-filter-sep { background: rgba(255,255,255,0.10); }
 
-/* ── Allergen-chip activo (filtro de alérgenos) ─────────────── */
-/* Ya usa ámbar saturado en oscuro — está bien diferenciado. */
+/* â”€â”€ Allergen-chip activo (filtro de alÃ©rgenos) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* Ya usa Ã¡mbar saturado en oscuro â€” estÃ¡ bien diferenciado. */
 
-/* ── Tapas seleccionada / tip seleccionado ──────────────────── */
+/* â”€â”€ Tapas seleccionada / tip seleccionado â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 [data-theme="dark"] .tapa {
   background: rgba(255,255,255,0.03);
 }
@@ -3484,7 +3484,7 @@ html, body {
 }
 [data-theme="dark"] .tip--selected .pct { color: #4ADE80; }
 
-/* ── Menú del día · opciones seleccionables ─────────────────── */
+/* â”€â”€ MenÃº del dÃ­a Â· opciones seleccionables â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 [data-theme="dark"] .dm-opt {
   background: rgba(255, 255, 255, 0.025);
   border-color: rgba(251, 191, 36, 0.18);
@@ -3520,7 +3520,7 @@ html, body {
   border-style: solid;
 }
 
-/* ── Chip "quitar ingrediente" activo en carrito ────────────── */
+/* â”€â”€ Chip "quitar ingrediente" activo en carrito â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 [data-theme="dark"] .chip-quitar {
   background: rgba(255,255,255,0.04);
   border-color: rgba(255,255,255,0.10);
@@ -3529,12 +3529,12 @@ html, body {
 [data-theme="dark"] .chip-quitar:hover {
   border-color: rgba(255,255,255,0.25); color: #FFFFFF;
 }
-/* Ya tiene ámbar en oscuro — está bien diferenciado. */
+/* Ya tiene Ã¡mbar en oscuro â€” estÃ¡ bien diferenciado. */
 
-/* ── Chip del Menú del día en filtros (oscuro) ──────────────── */
-/* Ya usa oro saturado — accesible. */
+/* â”€â”€ Chip del MenÃº del dÃ­a en filtros (oscuro) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* Ya usa oro saturado â€” accesible. */
 
-/* ── Focus visible para teclado en oscuro ───────────────────── */
+/* â”€â”€ Focus visible para teclado en oscuro â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 [data-theme="dark"] .chip:focus-visible,
 [data-theme="dark"] .dest-toggle button:focus-visible,
 [data-theme="dark"] .filter-list__item:focus-visible,
@@ -3546,17 +3546,17 @@ html, body {
 }
 
 
-/* ════════════════════════════════════════════════════════════════
-   ACCESIBILIDAD · refuerzo daltonismo (modo oscuro)
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   ACCESIBILIDAD Â· refuerzo daltonismo (modo oscuro)
    ----------------------------------------------------------------
    Aseguramos que cada estado seleccionable distinga por al menos
    DOS canales:
-     a) cromático (cian / oro / verde / ámbar)
+     a) cromÃ¡tico (cian / oro / verde / Ã¡mbar)
      b) luminancia (texto y/o fondo cambian de claro a oscuro)
      c) forma (barra lateral, halo, glifo, peso de fuente)
-   ════════════════════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
-/* Sidebar: el activo necesita más luminancia y borde lateral más grueso */
+/* Sidebar: el activo necesita mÃ¡s luminancia y borde lateral mÃ¡s grueso */
 [data-theme="dark"] .filter-list__item--active {
   background: rgba(34, 211, 238, 0.22);
   box-shadow:
@@ -3584,8 +3584,8 @@ html, body {
   color: #5A2F00;
 }
 
-/* Chip horizontal activo: añadimos un anillo oscuro 1px alrededor
-   para que en simulación deuteran/protanópica destaque por silueta. */
+/* Chip horizontal activo: aÃ±adimos un anillo oscuro 1px alrededor
+   para que en simulaciÃ³n deuteran/protanÃ³pica destaque por silueta. */
 [data-theme="dark"] .chip--active {
   background: var(--select-accent);
   color: var(--select-accent-fg);
@@ -3608,10 +3608,10 @@ html, body {
 }
 
 /* Daily-menu option seleccionada en oscuro: el radio/check pasa de
-   borde a relleno; añadimos halo gold detrás para que la "forma"
+   borde a relleno; aÃ±adimos halo gold detrÃ¡s para que la "forma"
    del seleccionado se distinga del solo "hover" para alguien con
-   tritanopía (donde azul-amarillo es el eje afectado, el oro puede
-   verse más apagado). */
+   tritanopÃ­a (donde azul-amarillo es el eje afectado, el oro puede
+   verse mÃ¡s apagado). */
 [data-theme="dark"] .dm-opt--on {
   background: rgba(251, 191, 36, 0.20);
   border-width: 2px;
@@ -3632,7 +3632,7 @@ html, body {
   background: #2A1B05;              /* punto interior navy = doble cue */
 }
 
-/* Selección verde (tapas/tip): mismos refuerzos para deuteran/protan */
+/* SelecciÃ³n verde (tapas/tip): mismos refuerzos para deuteran/protan */
 [data-theme="dark"] .tapa--selected,
 [data-theme="dark"] .tip--selected {
   border-width: 2px;
@@ -3642,13 +3642,13 @@ html, body {
     0 4px 14px rgba(34, 197, 94, 0.25);
 }
 
-/* Allergen chip activo (ámbar) en oscuro: borde oscuro para silueta */
+/* Allergen chip activo (Ã¡mbar) en oscuro: borde oscuro para silueta */
 [data-theme="dark"] .allergen-chip--active {
   border: 1px solid #2A1B05;
   box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.35);
 }
 
-/* Focus visible — outline cian sobre dark navy 2px (ya estaba),
+/* Focus visible â€” outline cian sobre dark navy 2px (ya estaba),
    subimos a outline-offset 3px para que no se solape con el chip. */
 [data-theme="dark"] .chip:focus-visible,
 [data-theme="dark"] .dest-toggle button:focus-visible,
@@ -3661,17 +3661,17 @@ html, body {
   outline-offset: 3px;
 }
 
-/* Comprobación rápida de contraste (luminancia, no croma):
-   cyan #22D3EE ↔ navy #001823  → 12.6:1  (AAA)
-   gold #ECC25A ↔ navy #2A1B05  → 11.2:1  (AAA)
-   green#22C55E ↔ ink  #052e16  → 6.4:1   (AA-AAA según tamaño)
-   amber#FBBF24 ↔ ink  #2A1B05  → 11.4:1  (AAA)
+/* ComprobaciÃ³n rÃ¡pida de contraste (luminancia, no croma):
+   cyan #22D3EE â†” navy #001823  â†’ 12.6:1  (AAA)
+   gold #ECC25A â†” navy #2A1B05  â†’ 11.2:1  (AAA)
+   green#22C55E â†” ink  #052e16  â†’ 6.4:1   (AA-AAA segÃºn tamaÃ±o)
+   amber#FBBF24 â†” ink  #2A1B05  â†’ 11.4:1  (AAA)
    Pasan los pares vitales bajo deuteran/protan/tritan simulado:
    la diferencia se conserva por luminancia y/o forma. */
 
 
 /* =========================================================
-   NEW FLOWS — Horarios, Tapas v2, Cobro partido, Cobro mixto
+   NEW FLOWS â€” Horarios, Tapas v2, Cobro partido, Cobro mixto
    Appended to extend the existing carta styles.
    ========================================================= */
 
@@ -4062,7 +4062,7 @@ html, body {
 }
 .tapas-foot .btn-secondary, .tapas-foot .btn-primary { flex: 1; }
 
-/* ---- 3) Cobro partido — common ---- */
+/* ---- 3) Cobro partido â€” common ---- */
 .drawer--wide { max-height: 86%; height: auto; }
 .carta[data-bp="mobile"] .drawer--wide { max-height: 88%; }
 .drawer--bill.drawer--wide .drawer__body { padding-top: 8px; }
@@ -4454,7 +4454,7 @@ html, body {
 [data-theme="dark"] .mixed-tile--cash { background: rgba(34,197,94,0.18); color: var(--color-green-400); }
 [data-theme="dark"] .mixed-tile--card { background: rgba(34,211,238,0.22); color: var(--color-cyan-400); }
 
-/* Fader bar — visual split between cash and card */
+/* Fader bar â€” visual split between cash and card */
 .fader { position: relative; padding: 8px 0; }
 .fader__bar {
   display: flex; height: 84px; border-radius: 16px;
@@ -4730,10 +4730,10 @@ html, body {
 .drawer--bill.drawer--wide .drawer__body { padding-left: 16px; padding-right: 16px; }
 .carta[data-bp="mobile"] .drawer--bill.drawer--wide .drawer__body { padding-left: 12px; padding-right: 12px; }
 
-/* Slot text should be readable — bump weight */
+/* Slot text should be readable â€” bump weight */
 .slot { font-size: 13px; line-height: 1; }
 
-/* Make the pie SVG never stretch — keep centered with explicit size */
+/* Make the pie SVG never stretch â€” keep centered with explicit size */
 .split-equit__pie svg { display: block; }
 
 /* The mixed-stage waiting receipt prevents content from being too wide */
@@ -4760,15 +4760,15 @@ html, body {
 
 
 /* ============================================================
-   FAB "Mi pedido" — versión vibrante con icono + badge
-   - Color: índigo/cobalt sólido (separa visualmente de la cuenta roja
-     y de la barra del carrito verde — pedidos en curso).
-   - Icono dedicado (ticket de cocina) en círculo blanco.
-   - Badge rojo con contador como notificación clásica.
+   FAB "Mi pedido" â€” versiÃ³n vibrante con icono + badge
+   - Color: Ã­ndigo/cobalt sÃ³lido (separa visualmente de la cuenta roja
+     y de la barra del carrito verde â€” pedidos en curso).
+   - Icono dedicado (ticket de cocina) en cÃ­rculo blanco.
+   - Badge rojo con contador como notificaciÃ³n clÃ¡sica.
    ============================================================ */
 .fab--orders {
-  /* Sólido, llamativo, claramente distinto del verde del carrito y
-     del rojo de la cuenta. Cobalt/índigo profundo de la paleta. */
+  /* SÃ³lido, llamativo, claramente distinto del verde del carrito y
+     del rojo de la cuenta. Cobalt/Ã­ndigo profundo de la paleta. */
   background: linear-gradient(135deg, #3B5BDB, #1E3A8A);
   color: #FFFFFF;
   border: 1px solid rgba(255,255,255,0.18);
@@ -4790,7 +4790,7 @@ html, body {
   border-color: rgba(255,255,255,0.32);
 }
 
-/* Slot del icono — círculo blanco que contrasta sobre el azul */
+/* Slot del icono â€” cÃ­rculo blanco que contrasta sobre el azul */
 .fab--orders__ic {
   position: relative;
   flex-shrink: 0;
@@ -4803,7 +4803,7 @@ html, body {
 }
 [data-theme="dark"] .fab--orders__ic { color: #0B1C46; background: #F4F6FF; }
 
-/* Badge de notificación — rojo, esquina superior derecha del icono */
+/* Badge de notificaciÃ³n â€” rojo, esquina superior derecha del icono */
 .fab--orders__badge {
   position: absolute;
   top: -4px; right: -6px;
@@ -4834,7 +4834,7 @@ html, body {
 
 
 /* ============================================================
-   Stepper de detalle de producto — color semántico
+   Stepper de detalle de producto â€” color semÃ¡ntico
    Verde para sumar (+), rojo para restar (-) en ambos temas.
    ============================================================ */
 .pdetail__qtybtn--minus {
@@ -4870,22 +4870,22 @@ html, body {
 
 
 /* ============================================================
-   Tu pedido — drawer rediseñado (cart-head, cart-drawer__body,
+   Tu pedido â€” drawer rediseÃ±ado (cart-head, cart-drawer__body,
    cart-sum, cart-empty, cart-foot)
-   Aesthetic: comanda artesanal — papel cálido, dorado para el
+   Aesthetic: comanda artesanal â€” papel cÃ¡lido, dorado para el
    importe, tarjetas con foto del plato, mini-recibo.
    ============================================================ */
 
 .drawer--cart {
   /* Permite que el drawer crezca lo necesario sin romper el alto;
-     mantiene la animación bottom-sheet existente. */
+     mantiene la animaciÃ³n bottom-sheet existente. */
   max-height: 88%;
 }
 .carta[data-bp="mobile"] .drawer--cart { max-height: 92%; }
 .carta[data-bp="tablet"] .drawer--cart,
 .carta[data-bp="desktop"] .drawer--cart { max-height: 84%; }
 
-/* ── Header con kicker + título grande + chips ───────────── */
+/* â”€â”€ Header con kicker + tÃ­tulo grande + chips â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .cart-head {
   padding: 14px 18px 12px;
   background:
@@ -4955,7 +4955,7 @@ html, body {
   50%      { box-shadow: 0 0 0 5px rgba(34,197,94,0); }
 }
 
-/* ── Body / scroll area ──────────────────────────────────── */
+/* â”€â”€ Body / scroll area â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .cart-drawer__body {
   flex: 1; min-height: 0; overflow-y: auto;
   padding: 12px 14px 14px;
@@ -4966,7 +4966,7 @@ html, body {
 }
 .cart-drawer__list--col { padding: 12px 14px; flex: 1; overflow-y: auto; }
 
-/* ── CartItem v2 (con foto, stepper rojo/verde, custom tags) ── */
+/* â”€â”€ CartItem v2 (con foto, stepper rojo/verde, custom tags) â”€â”€ */
 .citem {
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
@@ -5038,7 +5038,7 @@ html, body {
   white-space: nowrap;
 }
 
-/* QtyControl pill — stepper rojo/verde compacto */
+/* QtyControl pill â€” stepper rojo/verde compacto */
 .citem .qty {
   display: inline-flex; align-items: center; gap: 0;
   background: var(--bg-base);
@@ -5084,7 +5084,7 @@ html, body {
 }
 .citem__chips { display: flex; flex-wrap: wrap; gap: 6px; }
 
-/* ── Mini-recibo (CartSummary) ───────────────────────────── */
+/* â”€â”€ Mini-recibo (CartSummary) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .cart-sum {
   background: var(--bg-base);
   border: 1px dashed var(--border-strong);
@@ -5140,7 +5140,7 @@ html, body {
 [data-theme="dark"] .cart-sum__row--time { color: var(--color-green-400); }
 .cart-sum__row--time .num { color: inherit; }
 
-/* ── Empty state ─────────────────────────────────────────── */
+/* â”€â”€ Empty state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .cart-empty {
   padding: 36px 24px 28px;
   text-align: center;
@@ -5189,7 +5189,7 @@ html, body {
   line-height: 1.45;
 }
 
-/* ── Footer total + CTA ──────────────────────────────────── */
+/* â”€â”€ Footer total + CTA â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .cart-foot {
   border-top: 1px solid var(--border-subtle);
   padding: 12px 16px 14px;
@@ -5199,7 +5199,7 @@ html, body {
   position: relative;
 }
 .cart-foot::before {
-  /* Línea decorativa dorada para separar */
+  /* LÃ­nea decorativa dorada para separar */
   content: ""; position: absolute; left: 16px; right: 16px; top: 0;
   height: 2px;
   background: linear-gradient(90deg, transparent, var(--price-gold), transparent);
@@ -5237,7 +5237,8 @@ html, body {
 }
 .cart-foot__cta:hover { filter: brightness(1.06); transform: translateY(-1px); }
 .cart-foot__cta:active { transform: translateY(0); }
-.cart-foot__cta:disabled { opacity: 0.6; cursor: wait; transform: none; }
+.cart-foot__cta:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+.cart-foot__cta--sending:disabled { cursor: wait; }
 .cart-foot__ctaIc {
   width: 30px; height: 30px; border-radius: 9999px;
   background: rgba(255,255,255,0.18);
@@ -5255,6 +5256,27 @@ html, body {
 .cart-foot__cta:hover .cart-foot__ctaArrow { transform: translateY(-50%) translateX(3px); }
 
 /* (las reglas por breakpoint ya no son necesarias: el centrado es global) */
+
+.cart-foot__tapaPending {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 11px 14px;
+  border-radius: 12px;
+  width: 100%;
+  border: 1.5px solid #f59e0b;
+  background: color-mix(in oklab, #f59e0b 10%, transparent);
+  color: var(--fg-primary);
+  cursor: pointer;
+  font-family: var(--font-body); font-weight: 600; font-size: 13px;
+  transition: border-color var(--duration-fast), background-color var(--duration-fast);
+  animation: tapaPendingPulse 2s ease-in-out infinite;
+}
+.cart-foot__tapaPending:hover {
+  background: color-mix(in oklab, #f59e0b 20%, transparent);
+}
+@keyframes tapaPendingPulse {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in oklab, #f59e0b 40%, transparent); }
+  50%       { box-shadow: 0 0 0 5px color-mix(in oklab, #f59e0b 0%, transparent); }
+}
 
 .cart-foot__secondary {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
@@ -5277,7 +5299,7 @@ html, body {
 }
 
 
-/* Aviso "Cocina cerrada" en la cabecera de cada categoría afectada */
+/* Aviso "Cocina cerrada" en la cabecera de cada categorÃ­a afectada */
 .category__closed {
   display: inline-flex; align-items: center; gap: 6px;
   margin-left: 4px;
@@ -5316,10 +5338,10 @@ html, body {
 
 
 /* ============================================================
-   chip-quitar — refuerzo de la diferencia visible entre estados
+   chip-quitar â€” refuerzo de la diferencia visible entre estados
    off (ingrediente incluido) y on (ingrediente quitado).
-   - Off: pill neutra, texto + signo "−" tenue.
-   - On:  ámbar saturado, texto blanco, signo "✕" y tachado.
+   - Off: pill neutra, texto + signo "âˆ’" tenue.
+   - On:  Ã¡mbar saturado, texto blanco, signo "âœ•" y tachado.
    Funciona igual en claro y oscuro.
    ============================================================ */
 .chip-quitar {
@@ -5338,12 +5360,12 @@ html, body {
   flex-shrink: 0;
 }
 .chip-quitar--on::before {
-  content: "✕";
+  content: "âœ•";
   background: #FFFFFF;
   color: var(--color-amber-800);
 }
 
-/* On (ingrediente quitado) — saturado y con tachado */
+/* On (ingrediente quitado) â€” saturado y con tachado */
 .chip-quitar--on {
   background: linear-gradient(180deg, var(--color-amber-300), var(--color-amber-400));
   color: #2A1B05;
@@ -5355,7 +5377,7 @@ html, body {
   text-decoration-thickness: 1.5px;
 }
 
-/* Dark mode — mismo patrón pero ajustado al night-blue de fondo */
+/* Dark mode â€” mismo patrÃ³n pero ajustado al night-blue de fondo */
 [data-theme="dark"] .chip-quitar {
   background: rgba(255,255,255,0.04);
   border-color: rgba(255,255,255,0.10);
@@ -5382,7 +5404,7 @@ html, body {
 }
 
 
-/* Diferenciar visualmente extras añadidos vs ingredientes quitados
+/* Diferenciar visualmente extras aÃ±adidos vs ingredientes quitados
    en la fila del carrito */
 .citem__customTag--removed {
   background: rgba(245, 158, 11, 0.14);
@@ -5400,7 +5422,7 @@ html, body {
 }
 
 
-/* Toda la cart-bar es ahora un <button>: hereda interacción completa */
+/* Toda la cart-bar es ahora un <button>: hereda interacciÃ³n completa */
 .cart-bar {
   appearance: none;
   border: 1px solid var(--cart-bar-border);
@@ -5419,7 +5441,7 @@ html, body {
   outline: 2px solid var(--color-green-500);
   outline-offset: 3px;
 }
-/* El pill antes era <button>, ahora es <span>; mantén su estilo */
+/* El pill antes era <button>, ahora es <span>; mantÃ©n su estilo */
 .cart-bar__cta {
   display: inline-flex; align-items: center; justify-content: center;
   background: var(--cta-view-order);
@@ -5428,14 +5450,14 @@ html, body {
   border-radius: 9999px;
   font-weight: 600; font-size: 13px;
   font-family: var(--font-body);
-  pointer-events: none; /* el click ya lo maneja el botón padre */
+  pointer-events: none; /* el click ya lo maneja el botÃ³n padre */
 }
 .cart-bar:hover .cart-bar__cta { filter: brightness(1.1); }
 
 
 /* Tapas indicator: no se rompe con muchas tapas
-   - Texto en una línea con elipsis
-   - Tokens máx. 8 con overflow "+N" */
+   - Texto en una lÃ­nea con elipsis
+   - Tokens mÃ¡x. 8 con overflow "+N" */
 .tapas-indicator__copy {
   flex-shrink: 1; min-width: 0;
   white-space: nowrap; overflow: hidden;
@@ -5469,10 +5491,10 @@ html, body {
 
 
 /* ============================================================
-   Tapas modal — REDISEÑO "tasca artesanal"
-   Paleta: ámbar/oro sobre crema cálida (claro) o navy con velo
-   dorado (oscuro). Tipografía display para títulos, mono para
-   kicker/etiquetas. Tapa cards como platos cerámicos.
+   Tapas modal â€” REDISEÃ‘O "tasca artesanal"
+   Paleta: Ã¡mbar/oro sobre crema cÃ¡lida (claro) o navy con velo
+   dorado (oscuro). TipografÃ­a display para tÃ­tulos, mono para
+   kicker/etiquetas. Tapa cards como platos cerÃ¡micos.
    ============================================================ */
 
 .tapas-modal {
@@ -5492,7 +5514,7 @@ html, body {
   border-color: rgba(251,191,36,0.30);
 }
 
-/* ── HEADER ──────────────────────────────────────────────── */
+/* â”€â”€ HEADER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .tapas-head--v2 {
   position: relative;
   padding: 22px 22px 16px;
@@ -5623,7 +5645,7 @@ html, body {
 }
 [data-theme="dark"] .tapas-variants--v2 { background: rgba(255,255,255,0.04); }
 
-/* ── BODY ────────────────────────────────────────────────── */
+/* â”€â”€ BODY â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .tapas-body {
   flex: 1; min-height: 0; overflow-y: auto;
   padding: 14px 16px 16px;
@@ -5685,7 +5707,7 @@ html, body {
   box-shadow: 0 0 0 3px rgba(251,191,36,0.25);
 }
 
-/* Plato cerámico */
+/* Plato cerÃ¡mico */
 .tapa-card__plate {
   position: relative;
   width: 56px; height: 56px;
@@ -5776,7 +5798,7 @@ html, body {
   border-color: rgba(251,191,36,0.35);
 }
 
-/* ── CHEF EXTRA (sugerencia) ─────────────────────────────── */
+/* â”€â”€ CHEF EXTRA (sugerencia) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .chef-extra {
   position: relative;
   border-radius: 16px;
@@ -5873,7 +5895,7 @@ html, body {
 }
 .chef-extra__cta:hover { filter: brightness(1.06); transform: translateY(-1px); }
 
-/* ── FOOTER ──────────────────────────────────────────────── */
+/* â”€â”€ FOOTER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .tapas-foot--v2 {
   display: flex; gap: 10px;
   padding: 12px 14px;
@@ -5926,7 +5948,7 @@ html, body {
 .tapas-foot--v2 .tapas-foot__primary:hover .tapas-foot__arrow { transform: translateX(3px); }
 
 /* ============================================================
-   COBRO MIXTO · paso de PROPINA (nuevo) — conserva el fader;
+   COBRO MIXTO Â· paso de PROPINA (nuevo) â€” conserva el fader;
    estilos aditivos, no modifican el flujo existente.
    ============================================================ */
 .mixed-tipChips {
@@ -6014,16 +6036,16 @@ html, body {
 .mixed-tipSummary__row--total .v { font-size: 18px; color: var(--price-gold); }
 
 
-/* ════════════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    TICKET DESCARGABLE
-   - Botón de descarga (aparece sólo con pago confirmado)
+   - BotÃ³n de descarga (aparece sÃ³lo con pago confirmado)
    - Barra persistente "pago completado"
    - Modal de vista previa + descarga (imprimir / guardar PDF)
-   - 3 plantillas de recibo: classic · minimal · modern
+   - 3 plantillas de recibo: classic Â· minimal Â· modern
    El recibo se imprime SIEMPRE como papel (claro), aun en modo oscuro.
-   ════════════════════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
-/* ── Botón de descarga ───────────────────────────────────── */
+/* â”€â”€ BotÃ³n de descarga â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .ticket-dl {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
   font-family: var(--font-body); font-weight: 700; font-size: 14px;
@@ -6045,7 +6067,7 @@ html, body {
 [data-theme="dark"] .ticket-dl--ghost:hover { background: rgba(46,80,176,0.12); }
 .bill__doneTicket { width: 100%; margin-top: 12px; }
 
-/* ── Barra persistente: pago completado + descargar ───────── */
+/* â”€â”€ Barra persistente: pago completado + descargar â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .ticket-ready {
   position: absolute; left: 16px; right: 16px; bottom: 16px; z-index: 38;
   display: flex; align-items: center; gap: 12px;
@@ -6082,7 +6104,7 @@ html, body {
 }
 .ticket-ready__x:hover { background: var(--bg-chip); color: var(--fg-primary); }
 
-/* ── Modal de vista previa ────────────────────────────────── */
+/* â”€â”€ Modal de vista previa â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .ticket-modal__panel {
   width: 100%; max-width: 420px; padding: 0;
   display: flex; flex-direction: column; max-height: 88%;
@@ -6120,7 +6142,7 @@ html, body {
   font-family: var(--font-body); font-size: 11px; font-weight: 700;
   letter-spacing: 0.04em; text-transform: uppercase; color: var(--color-green-700);
 }
-.ticket-modal__routeLab::before { content: "🔒"; font-size: 11px; }
+.ticket-modal__routeLab::before { content: "ðŸ”’"; font-size: 11px; }
 [data-theme="dark"] .ticket-modal__routeLab { color: var(--color-green-400); }
 .ticket-modal__routeUrl {
   flex: 1 1 auto; min-width: 0;
@@ -6142,7 +6164,7 @@ html, body {
 .ticket-modal__foot .btn-primary { flex: 1 1 auto; width: auto; }
 .ticket-modal__dl { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
 
-/* ════ EL RECIBO — siempre papel claro ════ */
+/* â•â•â•â• EL RECIBO â€” siempre papel claro â•â•â•â• */
 .tk {
   --paper:   #FFFFFF;
   --ink:     #16130F;
@@ -6175,7 +6197,7 @@ html, body {
 .tk-tot__row--grand { color: var(--ink); font-weight: 800; }
 .tk-tot__row--grand span { font-weight: 900 !important; }
 
-/* ─── CLASSIC — recibo térmico ─── */
+/* â”€â”€â”€ CLASSIC â€” recibo tÃ©rmico â”€â”€â”€ */
 .tk--classic {
   font-family: var(--font-mono); font-size: 12px; line-height: 1.5;
   padding: 22px 20px 16px;
@@ -6211,7 +6233,7 @@ html, body {
 .tk-c__footer { white-space: pre-line; text-align: center; color: var(--ink-2); font-size: 10.5px; line-height: 1.5; margin-top: 12px; }
 .tk-c__star { text-align: center; color: var(--ink); margin-top: 12px; letter-spacing: 0.1em; }
 
-/* ─── MINIMAL — esencial, hairlines ─── */
+/* â”€â”€â”€ MINIMAL â€” esencial, hairlines â”€â”€â”€ */
 .tk--minimal {
   font-family: var(--font-body); font-size: 13px; line-height: 1.5;
   padding: 30px 26px; border-radius: 4px;
@@ -6227,7 +6249,7 @@ html, body {
 .tk-m__pay { margin-top: 18px; color: var(--ink-2); font-size: 12px; }
 .tk-m__footer { white-space: pre-line; color: var(--ink-3); font-size: 11px; line-height: 1.5; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--hair); }
 
-/* ─── MODERN — tarjeta con acento ─── */
+/* â”€â”€â”€ MODERN â€” tarjeta con acento â”€â”€â”€ */
 .tk--modern {
   font-family: var(--font-body); font-size: 13px; line-height: 1.5;
   padding: 20px; border-radius: 16px;
@@ -6273,3 +6295,462 @@ html, body {
 /* Mobile: keep the modal comfy */
 .carta[data-bp="mobile"] .ticket-modal__panel { max-height: 90%; }
 .carta[data-bp="mobile"] .ticket-modal__foot .btn-secondary { padding-left: 16px; padding-right: 16px; }
+
+
+/* ============================================================
+   Tapas modal â€” REDISEÃ‘O "tasca artesanal"
+   Paleta: Ã¡mbar/oro sobre crema cÃ¡lida (claro) o navy con velo
+   dorado (oscuro). TipografÃ­a display para tÃ­tulos, mono para
+   kicker/etiquetas. Tapa cards como platos cerÃ¡micos.
+   ============================================================ */
+
+.tapas-modal {
+  max-width: 480px;
+  padding: 0;
+  overflow: hidden;
+  display: flex; flex-direction: column;
+  max-height: 92%;
+  background:
+    radial-gradient(120% 80% at 0% 0%, color-mix(in oklab, var(--color-amber-100) 55%, var(--bg-surface)) 0%, var(--bg-surface) 50%);
+  border: 1px solid color-mix(in oklab, var(--color-amber-400) 30%, var(--border-subtle));
+}
+[data-theme="dark"] .tapas-modal {
+  background:
+    radial-gradient(120% 80% at 0% 0%, rgba(251,191,36,0.12) 0%, transparent 60%),
+    var(--bg-surface);
+  border-color: rgba(251,191,36,0.30);
+}
+
+/* â”€â”€ HEADER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.tapas-head--v2 {
+  position: relative;
+  padding: 22px 22px 16px;
+  background: none;
+  border-bottom: 1px dashed color-mix(in oklab, var(--color-amber-400) 35%, var(--border-subtle));
+}
+[data-theme="dark"] .tapas-head--v2 {
+  border-bottom-color: rgba(251,191,36,0.30);
+}
+.tapas-close {
+  position: absolute; top: 12px; right: 12px;
+  width: 32px; height: 32px; border-radius: 9999px;
+  background: rgba(0,0,0,0.04);
+  color: var(--fg-secondary);
+  border: none; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: background var(--duration-fast), color var(--duration-fast);
+}
+.tapas-close:hover { background: rgba(0,0,0,0.10); color: var(--fg-primary); }
+[data-theme="dark"] .tapas-close { background: rgba(255,255,255,0.05); }
+[data-theme="dark"] .tapas-close:hover { background: rgba(255,255,255,0.12); color: #FFF; }
+
+.tapas-head__pre {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 6px; margin-bottom: 4px;
+}
+.tapas-head__ornament {
+  font-family: var(--font-display);
+  font-size: 12px; color: var(--color-amber-800);
+  opacity: 0.65; letter-spacing: 0.3em;
+}
+[data-theme="dark"] .tapas-head__ornament { color: var(--color-amber-300); }
+.tapas-head__kicker {
+  font-family: var(--font-mono); font-size: 10.5px; font-weight: 700;
+  letter-spacing: 0.22em;
+  color: var(--color-amber-800);
+}
+[data-theme="dark"] .tapas-head__kicker { color: var(--color-amber-300); }
+
+.tapas-head__big {
+  margin: 6px 0 4px;
+  font-family: var(--font-display); font-weight: 900;
+  font-size: 30px; line-height: 1; letter-spacing: -0.025em;
+  color: var(--fg-primary);
+  text-align: center;
+}
+.tapas-head__lead {
+  margin: 0 auto 14px;
+  max-width: 320px;
+  font-family: var(--font-body); font-size: 13px;
+  color: var(--fg-secondary); line-height: 1.5;
+  text-align: center;
+}
+.tapas-head__lead strong {
+  color: var(--color-amber-800); font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+[data-theme="dark"] .tapas-head__lead strong { color: var(--color-amber-300); }
+
+/* Coins gilded */
+.tapas-coins {
+  display: flex; align-items: center; justify-content: center;
+  flex-wrap: wrap; gap: 6px;
+  margin: 14px auto 6px;
+  max-width: 100%;
+}
+.tapa-coin {
+  width: 30px; height: 30px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #F5DC92 0%, #B47B19 60%, #ECC25A 100%);
+  box-shadow:
+    0 2px 6px rgba(180,123,25,0.35),
+    inset 0 1px 0 rgba(255,255,255,0.45),
+    inset 0 -2px 4px rgba(0,0,0,0.10);
+  position: relative;
+  flex-shrink: 0;
+  transition: transform 200ms var(--ease-bounce);
+}
+.tapa-coin:hover { transform: rotate(8deg) scale(1.08); }
+.tapa-coin__face {
+  font-size: 14px;
+  filter: drop-shadow(0 1px 0 rgba(255,255,255,0.5));
+}
+.tapa-coin--used {
+  background: linear-gradient(135deg, #E5E5E5 0%, #999 100%);
+  box-shadow:
+    0 1px 3px rgba(0,0,0,0.10) inset,
+    0 0 0 1px rgba(0,0,0,0.05) inset;
+  opacity: 0.55;
+}
+.tapa-coin--used .tapa-coin__face { filter: grayscale(1); }
+[data-theme="dark"] .tapa-coin--used {
+  background: linear-gradient(135deg, #4B5563 0%, #1F2937 100%);
+}
+.tapa-coin--more {
+  background: rgba(180,123,25,0.18);
+  color: var(--color-amber-800);
+  font-family: var(--font-display); font-weight: 900; font-size: 12px;
+  width: auto; min-width: 30px; padding: 0 8px;
+  border-radius: 9999px;
+  box-shadow: none;
+  border: 1px dashed var(--color-amber-400);
+}
+[data-theme="dark"] .tapa-coin--more {
+  background: rgba(251,191,36,0.18); color: var(--color-amber-300);
+  border-color: rgba(251,191,36,0.55);
+}
+
+.tapas-rule {
+  display: flex; align-items: center; gap: 8px;
+  margin: 8px 0 4px;
+}
+.tapas-rule__line {
+  flex: 1; height: 1px;
+  background: linear-gradient(90deg, transparent, color-mix(in oklab, var(--color-amber-400) 50%, var(--border-strong)), transparent);
+}
+.tapas-rule__text {
+  font-family: var(--font-mono); font-size: 9.5px; font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--fg-muted); white-space: nowrap;
+}
+
+/* Variants v2 */
+.tapas-variants--v2 {
+  margin: 12px auto 0; max-width: 100%;
+  background: rgba(0,0,0,0.04);
+  padding: 8px 12px; border-radius: 10px;
+}
+[data-theme="dark"] .tapas-variants--v2 { background: rgba(255,255,255,0.04); }
+
+/* â”€â”€ BODY â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.tapas-body {
+  flex: 1; min-height: 0; overflow-y: auto;
+  padding: 14px 16px 16px;
+  display: flex; flex-direction: column; gap: 16px;
+}
+.tapas-listLabel {
+  font-family: var(--font-mono); font-size: 10px; font-weight: 700;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--fg-muted);
+  padding-left: 2px;
+}
+
+.tapas-list--v2 {
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 0;
+  flex-shrink: 0;
+}
+.tapas-list--v2[data-disabled="true"] { opacity: 0.55; pointer-events: none; }
+
+/* Tapa card como un platillo: aro dorado alrededor de la foto */
+.tapa-card--v2 {
+  display: flex; align-items: center; gap: 14px;
+  padding: 12px;
+  border: 1.5px solid var(--border-subtle);
+  border-radius: 16px;
+  background: var(--bg-surface);
+  cursor: pointer; text-align: left;
+  font: inherit; color: inherit;
+  flex-shrink: 0;
+  transition: border-color var(--duration-fast),
+              background-color var(--duration-fast),
+              transform 160ms var(--ease-bounce);
+  position: relative; overflow: hidden;
+  animation: tapaCard-in 380ms cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+  animation-delay: calc(var(--i, 0) * 50ms);
+}
+@keyframes tapaCard-in {
+  from { transform: translateY(8px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+.tapa-card--v2:hover:not(:disabled) {
+  border-color: var(--color-amber-400);
+  transform: translateY(-1px);
+  background: color-mix(in oklab, var(--color-amber-100) 25%, var(--bg-surface));
+}
+[data-theme="dark"] .tapa-card--v2:hover:not(:disabled) {
+  background: rgba(251,191,36,0.06);
+}
+.tapa-card--v2:disabled { cursor: not-allowed; opacity: 0.5; }
+.tapa-card--v2.tapa-card--selected {
+  border-color: var(--color-amber-400);
+  background: linear-gradient(135deg, color-mix(in oklab, var(--color-amber-100) 55%, var(--bg-surface)), var(--bg-surface));
+  box-shadow:
+    0 0 0 3px rgba(251,191,36,0.20),
+    0 6px 18px rgba(180,123,25,0.15);
+}
+[data-theme="dark"] .tapa-card--v2.tapa-card--selected {
+  background: linear-gradient(135deg, rgba(251,191,36,0.18), var(--bg-surface));
+  box-shadow: 0 0 0 3px rgba(251,191,36,0.25);
+}
+
+/* Plato cerÃ¡mico */
+.tapa-card__plate {
+  position: relative;
+  width: 56px; height: 56px;
+  flex-shrink: 0;
+}
+.tapa-card__plate::before {
+  content: ""; position: absolute; inset: 0;
+  border-radius: 50%;
+  background: var(--bg-base);
+  border: 2px solid color-mix(in oklab, var(--color-amber-400) 55%, var(--border-strong));
+  box-shadow:
+    inset 0 2px 4px rgba(0,0,0,0.05),
+    0 1px 3px rgba(180,123,25,0.18);
+}
+.tapa-card__plate::after {
+  content: ""; position: absolute; inset: 6px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, color-mix(in oklab, var(--color-amber-100) 60%, var(--bg-base)), var(--bg-base));
+  border: 1px dashed color-mix(in oklab, var(--color-amber-400) 40%, transparent);
+}
+[data-theme="dark"] .tapa-card__plate::before {
+  background: rgba(255,255,255,0.04);
+  border-color: rgba(251,191,36,0.45);
+}
+[data-theme="dark"] .tapa-card__plate::after {
+  background: linear-gradient(135deg, rgba(251,191,36,0.10), rgba(255,255,255,0.02));
+  border-color: rgba(251,191,36,0.25);
+}
+.tapa-card__plateInner {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 30px; z-index: 2;
+  filter: drop-shadow(0 1px 1px rgba(0,0,0,0.10));
+}
+
+.tapa-card__main { flex: 1; min-width: 0; }
+.tapa-card__name {
+  font-family: var(--font-display); font-weight: 800;
+  font-size: 16px; color: var(--fg-primary);
+  letter-spacing: -0.01em; line-height: 1.2;
+  margin-bottom: 2px;
+}
+.tapa-card__hint {
+  font-family: var(--font-body); font-size: 11.5px;
+  color: var(--fg-muted); line-height: 1.35;
+}
+
+.tapa-card__meta {
+  display: flex; flex-direction: column; align-items: flex-end; gap: 6px;
+  flex-shrink: 0;
+}
+.tapa-card__radio {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: transparent;
+  border: 1.5px solid var(--border-strong);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-weight: 900;
+  font-size: 12px; color: transparent;
+  transition: all var(--duration-fast);
+}
+.tapa-card__radio.is-on {
+  background: linear-gradient(135deg, var(--color-amber-300), #B47B19);
+  border-color: #B47B19;
+  color: #FFFFFF;
+  box-shadow: 0 2px 6px rgba(180,123,25,0.40);
+}
+[data-theme="dark"] .tapa-card__radio.is-on { color: #1A0F04; }
+
+.tapa-card__pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 9px; border-radius: 9999px;
+  font-family: var(--font-mono); font-weight: 800; font-size: 10.5px;
+  letter-spacing: 0.06em; text-transform: uppercase;
+}
+.tapa-card__pill--free {
+  background: linear-gradient(135deg, #F5DC92, #ECC25A);
+  color: #2A1B05;
+  box-shadow: 0 1px 3px rgba(180,123,25,0.30);
+}
+.tapa-card__pill--paid {
+  background: color-mix(in oklab, var(--color-amber-100) 80%, var(--bg-base));
+  color: var(--color-amber-800);
+  border: 1px solid var(--color-amber-300);
+}
+[data-theme="dark"] .tapa-card__pill--paid {
+  background: rgba(251,191,36,0.18);
+  color: var(--color-amber-300);
+  border-color: rgba(251,191,36,0.35);
+}
+
+/* â”€â”€ CHEF EXTRA (sugerencia) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.chef-extra {
+  position: relative;
+  border-radius: 16px;
+  background:
+    linear-gradient(135deg, #2A6FDB, #1B4D9A);
+  color: #E0EBFF;
+  padding: 14px 14px 14px 16px;
+  overflow: hidden;
+  margin-top: 6px;
+  isolation: isolate;
+  flex-shrink: 0;
+}
+.chef-extra::before {
+  content: ""; position: absolute; inset: 0; z-index: 0;
+  background:
+    radial-gradient(60% 80% at 100% 0%, rgba(255,255,255,0.10), transparent 60%);
+}
+.chef-extra__kicker {
+  display: inline-flex; align-items: center;
+  align-self: flex-start;
+  padding: 3px 10px; border-radius: 999px;
+  background: var(--color-amber-300); color: #2A1B05;
+  font-family: var(--font-mono); font-size: 9.5px; font-weight: 800;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  white-space: nowrap;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+  margin-bottom: 7px;
+}
+.chef-extra__head {
+  display: flex; align-items: center; gap: 12px;
+  width: 100%;
+  background: transparent;
+  border: none; padding: 0;
+  font: inherit; color: inherit;
+  cursor: pointer;
+  position: relative; z-index: 1;
+}
+.chef-extra__photo {
+  width: 48px; height: 48px; border-radius: 50%;
+  background: rgba(255,255,255,0.10);
+  border: 2px solid rgba(255,255,255,0.18);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 26px; flex-shrink: 0;
+}
+.chef-extra__main { flex: 1; min-width: 0; text-align: left; }
+.chef-extra__name {
+  font-family: var(--font-display); font-weight: 900; font-size: 16px;
+  color: #FFFFFF; letter-spacing: -0.005em; line-height: 1.2;
+}
+.chef-extra__hint {
+  font-family: var(--font-body); font-size: 11.5px;
+  color: rgba(255,255,255,0.75);
+  margin-top: 2px;
+}
+.chef-extra__meta {
+  display: flex; flex-direction: column; align-items: flex-end; gap: 4px;
+  flex-shrink: 0;
+}
+.chef-extra__price {
+  font-family: var(--font-display); font-weight: 900; font-size: 18px;
+  color: var(--color-amber-300); font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em; line-height: 1;
+}
+.chef-extra__chev {
+  width: 24px; height: 24px; border-radius: 50%;
+  background: rgba(255,255,255,0.16);
+  color: #FFFFFF;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-weight: 900; font-size: 16px;
+  line-height: 1;
+}
+.chef-extra__body {
+  position: relative; z-index: 1;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed rgba(255,255,255,0.22);
+}
+.chef-extra__body p {
+  margin: 0 0 10px;
+  font-family: var(--font-body); font-size: 12px;
+  color: rgba(255,255,255,0.85); line-height: 1.45;
+}
+.chef-extra__cta {
+  width: 100%;
+  padding: 11px 14px;
+  border: none; border-radius: 10px;
+  background: linear-gradient(135deg, var(--color-amber-300), #B47B19);
+  color: #1A0F04;
+  font-family: var(--font-body); font-weight: 800; font-size: 13.5px;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(180,123,25,0.45), inset 0 1px 0 rgba(255,255,255,0.30);
+  transition: filter var(--duration-fast), transform 140ms var(--ease-bounce);
+}
+.chef-extra__cta:hover { filter: brightness(1.06); transform: translateY(-1px); }
+
+/* â”€â”€ FOOTER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.tapas-foot--v2 {
+  display: flex; gap: 10px;
+  padding: 12px 14px;
+  border-top: 1px solid var(--border-subtle);
+  background: var(--bg-base);
+}
+.tapas-foot--v2 .tapas-foot__secondary {
+  flex: 0 0 auto;
+  padding: 12px 18px;
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  color: var(--fg-secondary);
+  font-family: var(--font-body); font-weight: 600; font-size: 13.5px;
+  cursor: pointer;
+  transition: background var(--duration-fast), color var(--duration-fast);
+}
+.tapas-foot--v2 .tapas-foot__secondary:hover {
+  background: var(--bg-chip);
+  color: var(--fg-primary);
+}
+.tapas-foot--v2 .tapas-foot__primary {
+  flex: 1;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 12px 16px;
+  border: none; border-radius: 12px;
+  background: linear-gradient(135deg, var(--color-amber-300), #B47B19);
+  color: #1A0F04;
+  font-family: var(--font-display); font-weight: 900; font-size: 14px;
+  letter-spacing: 0.005em;
+  cursor: pointer;
+  box-shadow:
+    0 6px 18px rgba(180,123,25,0.45),
+    inset 0 1px 0 rgba(255,255,255,0.30);
+  transition: filter var(--duration-fast), transform 140ms var(--ease-bounce);
+}
+.tapas-foot--v2 .tapas-foot__primary:hover:not(:disabled) {
+  filter: brightness(1.06); transform: translateY(-1px);
+}
+.tapas-foot--v2 .tapas-foot__primary:disabled {
+  background: var(--bg-chip);
+  color: var(--fg-muted);
+  cursor: not-allowed;
+  box-shadow: none;
+}
+.tapas-foot__arrow {
+  font-family: var(--font-display); font-weight: 900; font-size: 18px;
+  line-height: 1; transition: transform 200ms var(--ease-smooth);
+}
+.tapas-foot--v2 .tapas-foot__primary:hover .tapas-foot__arrow { transform: translateX(3px); }
+
