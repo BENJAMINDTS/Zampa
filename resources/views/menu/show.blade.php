@@ -465,7 +465,7 @@
                     <div class="header__bizname">
                         {{ $table->user->business_name ?: $table->user->name }}
                     </div>
-                    <div class="header__table">{{ $table->name }}</div>
+                    <div class="header__table">{{ $table->name }}{{ $table->zone ? ' · ' . $table->zone->name : '' }}</div>
                 </div>
             </div>
             <div class="header__actions">
