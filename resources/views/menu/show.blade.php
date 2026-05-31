@@ -362,9 +362,11 @@
         // El precio de cada tapa se resuelve en backend (getPriceForProduct) para que
         // Alpine no tenga que replicar la lógica de modalidad de precio.
         $tapaProductsForAlpine = $tapaProducts->map(fn ($p) => [
-            'id'    => $p->id,
-            'name'  => $p->name,
-            'price' => $tapaConfig ? (float) $tapaConfig->getPriceForProduct($p) : (float) $p->price,
+            'id'          => $p->id,
+            'name'        => $p->name,
+            'description' => $p->description ?? '',
+            'price'       => $tapaConfig ? (float) $tapaConfig->getPriceForProduct($p) : (float) $p->price,
+            'emoji'       => $getEmoji('tapas'),
         ])->values();
 
         $tapaConfigForAlpine = [
@@ -1131,31 +1133,32 @@
         </div>
         @endif
 
-        {{-- ── Indicador de tapas (DS: .tapas-indicator) ────────────────────── --}}
-        @if($tapaConfig && $tapaConfig->tapas_enabled && $barItemsCount > 0)
-        @php
-            $tapasLeft     = max(0, $barItemsCount - $tapaVariantsUsed);
-            $maxTokens     = 8;
-            $shownTokens   = min($barItemsCount, $maxTokens);
-            $overflowTokens = max(0, $barItemsCount - $maxTokens);
-        @endphp
+        {{-- ── Indicador de tapas (DS: .tapas-indicator) — reactivo Alpine ──── --}}
+        @if($tapaConfig && $tapaConfig->tapas_enabled)
         <button type="button"
                 class="tapas-indicator"
+                x-show="$store.cart.tapaConfig.enabled && $store.cart._barItemsCount > 0"
+                x-transition:enter="transition ease-out duration-200"
+                x-transition:enter-start="opacity-0 translate-y-1"
+                x-transition:enter-end="opacity-100 translate-y-0"
+                x-transition:leave="transition ease-in duration-150"
+                x-transition:leave-start="opacity-100"
+                x-transition:leave-end="opacity-0"
+                style="display:none"
                 @click="$store.cart.showTapaModal = true"
-                :title="'Tienes ' + {{ $tapasLeft }} + ' tapa(s) por canjear'"
-                aria-label="{{ $tapasLeft }} {{ $tapasLeft === 1 ? 'tapa' : 'tapas' }} {{ $tapaConfig->tapas_free ? 'de cortesía' : 'incluidas' }} — Pedir">
+                :aria-label="Math.max(0, $store.cart._barItemsCount - $store.cart._variantsUsed) + ' ' + (Math.max(0, $store.cart._barItemsCount - $store.cart._variantsUsed) === 1 ? 'tapa' : 'tapas') + ' ' + ($store.cart.tapaConfig.free ? 'de cortesía' : 'incluidas') + ' — Pedir'">
             <span class="tapas-indicator__glyph" aria-hidden="true">🍻</span>
             <span class="tapas-indicator__copy">
-                <strong>{{ $tapasLeft }}</strong>
-                <span>{{ $tapasLeft === 1 ? 'tapa' : 'tapas' }} {{ $tapaConfig->tapas_free ? 'de cortesía' : 'incluidas' }}</span>
+                <strong x-text="Math.max(0, $store.cart._barItemsCount - $store.cart._variantsUsed)"></strong>
+                <span x-text="(Math.max(0, $store.cart._barItemsCount - $store.cart._variantsUsed) === 1 ? 'tapa' : 'tapas') + ' ' + ($store.cart.tapaConfig.free ? 'de cortesía' : 'incluidas')"></span>
             </span>
             <span class="tapas-indicator__tokens" aria-hidden="true">
-                @for($t = 0; $t < $shownTokens; $t++)
-                    <span class="tk{{ $t < $tapaVariantsUsed ? ' tk--used' : '' }}"></span>
-                @endfor
-                @if($overflowTokens > 0)
-                    <span class="tapas-indicator__tokensMore">+{{ $overflowTokens }}</span>
-                @endif
+                <template x-for="i in Array.from({length: Math.min($store.cart._barItemsCount, 8)}, (_, idx) => idx)" :key="i">
+                    <span :class="'tk' + (i < $store.cart._variantsUsed ? ' tk--used' : '')"></span>
+                </template>
+                <span class="tapas-indicator__tokensMore"
+                      x-show="$store.cart._barItemsCount > 8"
+                      x-text="'+' + ($store.cart._barItemsCount - 8)"></span>
             </span>
             <span class="tapas-indicator__cta">Pedir →</span>
         </button>
@@ -1541,15 +1544,21 @@
                                     <span class="pcard__price">{{ number_format((float)$product->price, 2, ',', '.') }}&nbsp;€</span>
 
                                     @if($orderingAllowed)
-                                    {{-- btn-add cuando qty = 0 --}}
+                                    {{-- Tapa de cortesía: bloqueado --}}
+                                    <span x-show="$store.cart.items.some(i => i.productId === {{ $product->id }} && !i.variantId && i.isTapa)"
+                                          style="font-family:var(--font-body);font-size:11px;font-weight:700;color:var(--color-amber-800);background:linear-gradient(135deg,#F5DC92,#ECC25A);padding:3px 8px;border-radius:9999px;"
+                                          @click.stop>
+                                        🫕 Cortesía
+                                    </span>
+                                    {{-- btn-add cuando qty = 0 y no es tapa --}}
                                     <button type="button"
                                             class="btn-add"
                                             x-show="!$store.cart.items.some(i => i.productId === {{ $product->id }} && !i.variantId)"
                                             @click.stop="$store.cart.add(products.find(p => p.id === {{ $product->id }}))"
                                             aria-label="Añadir {{ $product->name }}">+</button>
-                                    {{-- qty control cuando qty > 0 --}}
+                                    {{-- qty control cuando qty > 0 y NO es tapa --}}
                                     <div class="qty"
-                                         x-show="$store.cart.items.some(i => i.productId === {{ $product->id }} && !i.variantId)"
+                                         x-show="$store.cart.items.some(i => i.productId === {{ $product->id }} && !i.variantId && !i.isTapa)"
                                          @click.stop>
                                         <button class="qty-minus"
                                                 @click.stop="$store.cart.dec('{{ $product->id }}:none')"
@@ -1762,15 +1771,24 @@
                                                 </template>
                                             </div>
                                             <div class="citem__side">
-                                                <div class="qty">
-                                                    <button class="qty-minus"
-                                                            @click="$store.cart.dec(item._key)"
-                                                            aria-label="Quitar uno">−</button>
-                                                    <span class="qty-n" x-text="item.quantity"></span>
-                                                    <button class="qty-plus"
-                                                            @click="$store.cart.inc(item._key)"
-                                                            aria-label="Añadir uno">+</button>
-                                                </div>
+                                                {{-- Tapa de cortesía: cantidad fija, sin controles --}}
+                                                <template x-if="item.isTapa">
+                                                    <span style="font-family:var(--font-body);font-size:11px;font-weight:700;color:var(--color-amber-800);background:linear-gradient(135deg,#F5DC92,#ECC25A);padding:3px 8px;border-radius:9999px;white-space:nowrap;">
+                                                        🫕 Cortesía
+                                                    </span>
+                                                </template>
+                                                {{-- Ítem normal: qty control --}}
+                                                <template x-if="!item.isTapa">
+                                                    <div class="qty">
+                                                        <button class="qty-minus"
+                                                                @click="$store.cart.dec(item._key)"
+                                                                aria-label="Quitar uno">−</button>
+                                                        <span class="qty-n" x-text="item.quantity"></span>
+                                                        <button class="qty-plus"
+                                                                @click="$store.cart.inc(item._key)"
+                                                                aria-label="Añadir uno">+</button>
+                                                    </div>
+                                                </template>
                                                 <span class="citem__price"
                                                       x-text="Number($store.cart.lineTotal(item)).toFixed(2).replace('.',',') + ' €'"></span>
                                             </div>
@@ -1825,10 +1843,21 @@
                             <span class="cart-foot__totalVal"
                                   x-text="Number($store.cart.total).toFixed(2).replace('.',',') + ' €'"></span>
                         </div>
+                        <template x-if="$store.cart._tapaPending">
+                            <button type="button"
+                                    class="cart-foot__tapaPending"
+                                    @click="$store.cart.showTapaModal = true"
+                                    aria-live="polite">
+                                <span aria-hidden="true">🫕</span>
+                                <span>Tienes <strong x-text="Math.max(0, $store.cart._barItemsCount - $store.cart._variantsUsed)"></strong> tapa<template x-if="Math.max(0, $store.cart._barItemsCount - $store.cart._variantsUsed) !== 1"><span>s</span></template> disponible<template x-if="Math.max(0, $store.cart._barItemsCount - $store.cart._variantsUsed) !== 1"><span>s</span></template> — Elegir →</span>
+                            </button>
+                        </template>
                         <button type="button"
                                 class="cart-foot__cta"
+                                :class="{ 'cart-foot__cta--sending': $store.cart.sending }"
                                 @click="$store.cart.send()"
-                                :disabled="$store.cart.sending || $store.cart.sent">
+                                :disabled="$store.cart.sending || $store.cart._tapaPending"
+                                :title="$store.cart._tapaPending ? 'Elige tus tapas antes de enviar' : ''">
                             <span class="cart-foot__ctaIc" aria-hidden="true">
                                 <template x-if="$store.cart.sent">✓</template>
                                 <template x-if="$store.cart.sending && !$store.cart.sent">
@@ -2991,9 +3020,9 @@
         </div>{{-- /scrim --}}
 
 
-                {{-- ══════════════════════════════════════════════════════════════════════
-             TAPA MODAL — DS: .modal > .modal__panel
-             ══════════════════════════════════════════════════════════════════════ --}}
+                {{-- ======================================================================
+             TAPA MODAL — DS: TapasModalRich v2
+             ====================================================================== --}}
         <div class="modal"
              x-show="$store.cart.showTapaModal"
              x-transition:enter="transition duration-200"
@@ -3004,44 +3033,122 @@
              x-transition:leave-end="opacity-0"
              @click.self="$store.cart.closeTapaModal()"
              role="dialog" aria-modal="true" aria-label="Tapas disponibles">
-            <div class="modal__panel" @click.stop>
-                <div class="modal__head">
-                    <div>
-                        <div class="modal__title">¿Te llevas una tapa?</div>
-                        <div class="modal__sub">
-                            @if($tapaConfig && $tapaConfig->tapas_free)
-                            La primera tapa es invitación de la casa 🍻
-                            @else
-                            Con cada bebida puedes añadir una tapa
-                            @endif
-                        </div>
-                    </div>
-                    <button type="button" class="icon-btn" @click="$store.cart.closeTapaModal()" aria-label="Cerrar">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+
+            <div class="modal__panel tapas-modal"
+                 x-data="{
+                     selectedTapaId: null,
+                     showChefExtra: false,
+                     get left()         { return Math.max(0, $store.cart._barItemsCount - $store.cart._variantsUsed); },
+                     get limitReached() { return $store.cart._variantsUsed >= $store.cart.tapaConfig.maxVariants && $store.cart.tapaConfig.maxVariants > 0; },
+                     get tokensShown()  { return Math.min(Math.max($store.cart._barItemsCount, 1), 12); },
+                     get tokensOver()   { return Math.max(0, $store.cart._barItemsCount - 12); },
+                 }"
+                 x-effect="if (!$store.cart.showTapaModal) { selectedTapaId = null; showChefExtra = false; }"
+                 @click.stop>
+
+                {{-- Header --}}
+                <header class="tapas-head tapas-head--v2">
+                    <button type="button" class="tapas-close"
+                            @click="$store.cart.closeTapaModal()" aria-label="Cerrar">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2.5"
+                             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M6 18L18 6M6 6l12 12"/>
                         </svg>
                     </button>
-                </div>
-                <div style="display:flex;flex-direction:column;gap:8px">
-                    <template x-for="tapa in $store.cart.tapaProducts" :key="tapa.id">
-                        <div class="tapa"
-                             @click="$store.cart.addTapa(tapa)">
-                            <div class="tapa__photo" aria-hidden="true">🍽️</div>
-                            <div class="tapa__main">
-                                <div class="tapa__name" x-text="tapa.name"></div>
-                                <div class="tapa__price"
-                                     :class="tapa.price === 0 ? 'tapa__price--free' : ''"
-                                     x-text="tapa.price === 0 ? 'Gratis' : '+ ' + Number(tapa.price).toFixed(2).replace('.',',') + ' €'"></div>
-                            </div>
+                    <div class="tapas-head__pre">
+                        <span class="tapas-head__ornament" aria-hidden="true">— ❦ —</span>
+                        <span class="tapas-head__kicker">LA CASA · TAPAS</span>
+                    </div>
+                    <h2 class="tapas-head__big"
+                        x-text="limitReached ? 'Has llegado al límite' : (left > 0 ? 'Lleva una tapa' : 'Sin tapas disponibles')">
+                    </h2>
+                    <p class="tapas-head__lead">
+                        <template x-if="limitReached">
+                            <span x-text="'Has elegido ' + $store.cart.tapaConfig.maxVariants + ' tapas distintas — máximo por pedido.'"></span>
+                        </template>
+                        <template x-if="!limitReached && left > 0">
+                            <span>Tienes <strong x-text="left"></strong>&nbsp;<span x-text="left === 1 ? 'tapa de cortesía' : 'tapas de cortesía'"></span> por canjear.</span>
+                        </template>
+                        <template x-if="!limitReached && left === 0">
+                            <span>Pide una bebida de barra y desbloquearás una tapa.</span>
+                        </template>
+                    </p>
+                    <div class="tapas-coins" aria-hidden="true">
+                        <template x-for="i in Array.from({length: tokensShown}, (_, idx) => idx)" :key="i">
+                            <span :class="'tapa-coin' + (i < $store.cart._variantsUsed ? ' tapa-coin--used' : '')">
+                                <span class="tapa-coin__face">🥟</span>
+                            </span>
+                        </template>
+                        <span class="tapa-coin tapa-coin--more"
+                              x-show="tokensOver > 0"
+                              x-text="'+' + tokensOver"></span>
+                    </div>
+                    <div class="tapas-rule">
+                        <span class="tapas-rule__line"></span>
+                        <span class="tapas-rule__text">1 tapa por bebida de barra</span>
+                        <span class="tapas-rule__line"></span>
+                    </div>
+                    <template x-if="!limitReached && $store.cart._variantsUsed > 0 && $store.cart.tapaConfig.maxVariants > 0">
+                        <div class="tapas-variants tapas-variants--v2">
+                            <span>Variantes usadas</span>
+                            <span class="tapas-variants__pips">
+                                <template x-for="i in Array.from({length: $store.cart.tapaConfig.maxVariants}, (_, idx) => idx)" :key="i">
+                                    <span :class="'pip' + (i < $store.cart._variantsUsed ? ' pip--on' : '')"></span>
+                                </template>
+                            </span>
+                            <span class="tapas-variants__num"
+                                  x-text="$store.cart._variantsUsed + '/' + $store.cart.tapaConfig.maxVariants"></span>
                         </div>
                     </template>
+                </header>
+
+                {{-- Body --}}
+                <div class="tapas-body">
+                    <div class="tapas-listLabel">Elige tu tapa</div>
+                    <div class="tapas-list tapas-list--v2"
+                         :data-disabled="(limitReached || left === 0).toString()">
+                        <template x-for="(tapa, idx) in $store.cart.tapaProducts" :key="tapa.id">
+                            <button type="button"
+                                    :class="'tapa-card tapa-card--v2' + (selectedTapaId === tapa.id ? ' tapa-card--selected' : '')"
+                                    :disabled="limitReached || left === 0"
+                                    :style="'--i:' + idx"
+                                    @click="selectedTapaId = selectedTapaId === tapa.id ? null : tapa.id"
+                                    :aria-pressed="(selectedTapaId === tapa.id).toString()">
+                                <div class="tapa-card__plate" aria-hidden="true">
+                                    <span class="tapa-card__plateInner" x-text="tapa.emoji || '🫕'"></span>
+                                </div>
+                                <div class="tapa-card__main">
+                                    <div class="tapa-card__name" x-text="tapa.name"></div>
+                                    <div class="tapa-card__hint" x-text="tapa.description || 'Sugerencia de la casa'"></div>
+                                </div>
+                                <div class="tapa-card__meta">
+                                    <span :class="'tapa-card__pill ' + (tapa.price === 0 ? 'tapa-card__pill--free' : 'tapa-card__pill--paid')"
+                                          x-text="tapa.price === 0 ? 'Cortesía' : '+ ' + Number(tapa.price).toFixed(2).replace('.',',') + ' €'"></span>
+                                    <span :class="'tapa-card__radio' + (selectedTapaId === tapa.id ? ' is-on' : '')"
+                                          aria-hidden="true"
+                                          x-text="selectedTapaId === tapa.id ? '&#10003;' : ''"></span>
+                                </div>
+                            </button>
+                        </template>
+                    </div>
                 </div>
-                <div style="display:flex;gap:8px;margin-top:4px">
-                    <button type="button" class="btn-secondary" style="flex:1" @click="$store.cart.closeTapaModal()">Ahora no</button>
-                </div>
+
+                {{-- Footer --}}
+                <footer class="tapas-foot tapas-foot--v2">
+                    <button type="button" class="tapas-foot__secondary"
+                            @click="$store.cart.closeTapaModal()">
+                        Ahora no
+                    </button>
+                    <button type="button" class="tapas-foot__primary"
+                            :disabled="!selectedTapaId || limitReached || left === 0"
+                            @click="$store.cart.addTapa($store.cart.tapaProducts.find(t => t.id === selectedTapaId)); selectedTapaId = null">
+                        <span x-text="limitReached ? 'Límite alcanzado' : (selectedTapaId ? 'Añadir tapa' : 'Elige una tapa')"></span>
+                        <span class="tapas-foot__arrow" x-show="selectedTapaId && !limitReached" aria-hidden="true">→</span>
+                    </button>
+                </footer>
             </div>
         </div>
-
         {{-- ══════════════════════════════════════════════════════════════════════
              PRODUCT DETAIL MODAL — DS: .scrim.scrim--center > .pdetail
              ══════════════════════════════════════════════════════════════════════ --}}
@@ -3208,3 +3315,5 @@
     </div>{{-- /carta (Alpine) --}}
 </body>
 </html>
+
+
