@@ -1231,6 +1231,7 @@
             {{-- DS: .scrim > .drawer.drawer--allergens (sheet móvil) --}}
             <div class="scrim"
                  x-show="allergensOpen"
+                 style="display:none"
                  x-transition:enter="transition duration-200"
                  x-transition:enter-start="opacity-0"
                  x-transition:enter-end="opacity-100"
@@ -1625,6 +1626,7 @@
              ══════════════════════════════════════════════════════════════════════ --}}
         <div class="fab-cluster"
              x-show="$store.bill.active && !$store.chat.open"
+             style="display:none"
              x-transition:enter="transition duration-200"
              x-transition:enter-start="opacity-0"
              x-transition:enter-end="opacity-100"
@@ -1691,6 +1693,7 @@
              ══════════════════════════════════════════════════════════════════════ --}}
         <div class="scrim"
              x-show="$store.cart.open"
+             style="display:none"
              x-transition:enter="transition duration-200"
              x-transition:enter-start="opacity-0"
              x-transition:enter-end="opacity-100"
@@ -1901,6 +1904,7 @@
         {{-- ── Scrim único — visible mientras step !== '' ─────────────────────── --}}
         <div class="scrim"
              x-show="$store.bill.step !== ''"
+             style="display:none"
              x-transition:enter="transition duration-200"
              x-transition:enter-start="opacity-0"
              x-transition:enter-end="opacity-100"
