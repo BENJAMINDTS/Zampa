@@ -65,6 +65,9 @@ export function registerBill() {
         tableHash:          ctx.tableHash ?? '',
         ticketDownloadBase: '/ticket',
 
+        /** Single step string — matches DS BillFlow states */
+        step: '',
+
         showingTip:  false,
         tipAmount:   0,
         tipPercent:  null,
@@ -133,10 +136,39 @@ export function registerBill() {
             if (this.requested || this.sending) return;
             this.error    = null;
             this.choosing = true;
+            this.step     = 'method';
         },
 
         close() {
-            this.choosing = false;
+            this.choosing         = false;
+            this.showingCashTip   = false;
+            this.showingTip       = false;
+            this.payingCard       = false;
+            this.stripeReady      = false;
+            this.showingSplit     = false;
+            this.splitShowItems   = false;
+            this.splitShowEq      = false;
+            this.showingSplitTip  = false;
+            this.showingMixed     = false;
+            this.showingMixedTip  = false;
+            this.mixedPayingCard  = false;
+            this.step             = '';
+        },
+
+        backToMethod() {
+            this.showingCashTip   = false;
+            this.showingTip       = false;
+            this.payingCard       = false;
+            this.stripeReady      = false;
+            this.showingSplit     = false;
+            this.splitShowItems   = false;
+            this.splitShowEq      = false;
+            this.showingSplitTip  = false;
+            this.showingMixed     = false;
+            this.showingMixedTip  = false;
+            this.mixedPayingCard  = false;
+            this.choosing         = true;
+            this.step             = 'method';
         },
 
         async requestCash() {
@@ -156,8 +188,10 @@ export function registerBill() {
                 });
                 const data = await res.json();
                 if (res.ok && data.success) {
-                    this.requested = true;
-                    this.method    = 'cash';
+                    this.requested      = true;
+                    this.method         = 'cash';
+                    this.showingCashTip = false;
+                    this.step           = 'cashDone';
                 } else {
                     if (res.status === 404) this.active = false;
                     this.error = data.message ?? 'Error al solicitar la cuenta.';
@@ -187,8 +221,9 @@ export function registerBill() {
                 // use cached total from page load
             }
             this.tipAmount  = 0;
-            this.tipPercent = null;
+            this.tipPercent = 10;
             this.showingTip = true;
+            this.step       = 'tip';
         },
 
         setTipPercent(pct) {
@@ -217,6 +252,7 @@ export function registerBill() {
             this.stripeReady = false;
             this.stripeError = null;
             this.sending     = true;
+            this.step        = 'pay';
             try {
                 const res = await fetch('/api/v1/payment/' + this.tableHash + '/intent', {
                     method:  'POST',
@@ -299,6 +335,7 @@ export function registerBill() {
                         this.requested   = true;
                         this.active      = false;
                         this.method      = 'card';
+                        this.step        = 'cardDone';
                     } else {
                         this.stripeError = data.message ?? 'Error al confirmar el pago.';
                     }
@@ -349,18 +386,22 @@ export function registerBill() {
 
         openSplit() {
             if (this.requested || this.sending) return;
-            this.choosing     = false;
-            this.showingSplit  = true;
+            this.choosing    = false;
+            this.showingSplit = true;
+            this.step        = 'split';
         },
 
         closeSplitSelector() {
             this.showingSplit = false;
+            this.step        = 'method';
+            this.choosing    = true;
         },
 
         async openSplitItems() {
             this.showingSplit    = false;
             this.splitMode      = 'items';
             this.splitShowItems = true;
+            this.step           = 'splitItems';
             await this._loadSplitItems();
         },
 
@@ -368,6 +409,8 @@ export function registerBill() {
             this.splitShowItems = false;
             this.splitMode      = null;
             this.splitSelected  = [];
+            this.showingSplit   = true;
+            this.step           = 'split';
         },
 
         openSplitEq() {
@@ -375,19 +418,23 @@ export function registerBill() {
             this.splitMode    = 'equitable';
             this.splitPeople  = 2;
             this.splitShowEq  = true;
+            this.step         = 'splitEq';
         },
 
         closeSplitEq() {
             this.splitShowEq = false;
             this.splitMode   = null;
+            this.showingSplit = true;
+            this.step        = 'split';
         },
 
         openCashTip() {
             this.choosing       = false;
             this.cashTipAmount  = 0;
-            this.cashTipPercent = null;
-            this.cashGrandTotal = this.orderTotal;
+            this.cashTipPercent = 10;
+            this.cashGrandTotal = this.orderTotal + calculateTipFromPercent(this.orderTotal, 10);
             this.showingCashTip = true;
+            this.step           = 'cashConfirm';
         },
 
         setCashTipPercent(pct) {
@@ -420,11 +467,12 @@ export function registerBill() {
             this.splitTipType       = type;
             this.splitTipItemIds    = itemIds || [];
             this.splitTipAmount     = 0;
-            this.splitTipPercent    = null;
-            this.splitTipGrandTotal = amount;
+            this.splitTipPercent    = 10;
+            this.splitTipGrandTotal = amount + calculateTipFromPercent(amount, 10);
             this.splitShowItems     = false;
             this.splitShowEq        = false;
             this.showingSplitTip    = true;
+            this.step               = 'splitTip';
         },
 
         setSplitTipPercent(pct) {
@@ -466,12 +514,14 @@ export function registerBill() {
             this.choosing        = false;
             this.mixedCashAmount = Math.round(this.orderTotal / 2 * 100) / 100;
             this.showingMixed    = true;
+            this.step            = 'mixed';
         },
 
         closeMixed() {
             this.showingMixed    = false;
             this.mixedCashAmount = 0;
             this.choosing        = true;
+            this.step            = 'method';
         },
 
         get mixedCardAmount() {
@@ -488,9 +538,10 @@ export function registerBill() {
             this.showingMixed       = false;
             this.mixedTipBase       = this.mixedCardAmount;
             this.mixedTipAmount     = 0;
-            this.mixedTipPercent    = null;
-            this.mixedTipGrandTotal = this.mixedCardAmount;
+            this.mixedTipPercent    = 10;
+            this.mixedTipGrandTotal = this.mixedCardAmount + calculateTipFromPercent(this.mixedCardAmount, 10);
             this.showingMixedTip    = true;
+            this.step               = 'mixedTip';
         },
 
         setMixedTipPercent(pct) {
@@ -511,6 +562,7 @@ export function registerBill() {
             this.mixedTipAmount  = 0;
             this.mixedTipPercent = null;
             this.showingMixed    = true;
+            this.step            = 'mixed';
         },
 
         async confirmMixedTip() {
@@ -523,6 +575,7 @@ export function registerBill() {
             this.mixedStripeReady = false;
             this.mixedStripeError = null;
             this.sending          = true;
+            this.step             = 'mixedPay';
             try {
                 const res = await fetch('/api/v1/payment/' + this.tableHash + '/mixed/intent', {
                     method:  'POST',
