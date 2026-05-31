@@ -356,7 +356,7 @@ window.dailyMenuBanner = function (hash) {
                 </span>
             </template>
             <template x-if="!agotado">
-                <span style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+                <span class="flex flex-col items-end gap-1.5">
                     <span class="dm-banner__price"
                           x-text="parseFloat(menuData?.menu?.price ?? 0).toFixed(2).replace('.', ',') + ' €'"
                           :aria-label="'Precio ' + parseFloat(menuData?.menu?.price ?? 0).toFixed(2).replace('.', ',') + ' euros'">
