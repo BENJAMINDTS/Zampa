@@ -65,6 +65,13 @@ export function registerBill() {
         tableHash:          ctx.tableHash ?? '',
         ticketDownloadBase: '/ticket',
 
+        /** Single step string — matches DS BillFlow states */
+        step: '',
+
+        /** Sub-flow stages */
+        splitStage:  'intro',   // intro | items | equit | pay | done
+        mixedStage:  'cash',    // cash | tip | pay | waiter | done
+
         showingTip:  false,
         tipAmount:   0,
         tipPercent:  null,
@@ -133,10 +140,39 @@ export function registerBill() {
             if (this.requested || this.sending) return;
             this.error    = null;
             this.choosing = true;
+            this.step     = 'method';
         },
 
         close() {
-            this.choosing = false;
+            this.choosing         = false;
+            this.showingCashTip   = false;
+            this.showingTip       = false;
+            this.payingCard       = false;
+            this.stripeReady      = false;
+            this.showingSplit     = false;
+            this.splitShowItems   = false;
+            this.splitShowEq      = false;
+            this.showingSplitTip  = false;
+            this.showingMixed     = false;
+            this.showingMixedTip  = false;
+            this.mixedPayingCard  = false;
+            this.step             = '';
+        },
+
+        backToMethod() {
+            this.showingCashTip   = false;
+            this.showingTip       = false;
+            this.payingCard       = false;
+            this.stripeReady      = false;
+            this.showingSplit     = false;
+            this.splitShowItems   = false;
+            this.splitShowEq      = false;
+            this.showingSplitTip  = false;
+            this.showingMixed     = false;
+            this.showingMixedTip  = false;
+            this.mixedPayingCard  = false;
+            this.choosing         = true;
+            this.step             = 'method';
         },
 
         async requestCash() {
@@ -156,8 +192,10 @@ export function registerBill() {
                 });
                 const data = await res.json();
                 if (res.ok && data.success) {
-                    this.requested = true;
-                    this.method    = 'cash';
+                    this.requested      = true;
+                    this.method         = 'cash';
+                    this.showingCashTip = false;
+                    this.step           = 'cashDone';
                 } else {
                     if (res.status === 404) this.active = false;
                     this.error = data.message ?? 'Error al solicitar la cuenta.';
@@ -187,8 +225,9 @@ export function registerBill() {
                 // use cached total from page load
             }
             this.tipAmount  = 0;
-            this.tipPercent = null;
+            this.tipPercent = 10;
             this.showingTip = true;
+            this.step       = 'tip';
         },
 
         setTipPercent(pct) {
@@ -217,6 +256,7 @@ export function registerBill() {
             this.stripeReady = false;
             this.stripeError = null;
             this.sending     = true;
+            this.step        = 'pay';
             try {
                 const res = await fetch('/api/v1/payment/' + this.tableHash + '/intent', {
                     method:  'POST',
@@ -299,6 +339,7 @@ export function registerBill() {
                         this.requested   = true;
                         this.active      = false;
                         this.method      = 'card';
+                        this.step        = 'cardDone';
                     } else {
                         this.stripeError = data.message ?? 'Error al confirmar el pago.';
                     }
@@ -349,18 +390,32 @@ export function registerBill() {
 
         openSplit() {
             if (this.requested || this.sending) return;
-            this.choosing     = false;
-            this.showingSplit  = true;
+            this.choosing    = false;
+            this.showingSplit = true;
+            this.splitStage  = 'intro';
+            this.step        = 'split';
+        },
+
+        setSplitStage(s) {
+            this.splitStage = s;
+            if (s === 'items') { this.step = 'splitItems'; this._loadSplitItems(); }
+            else if (s === 'equit') { this.step = 'splitEq'; }
+            else if (s === 'pay') { this.step = 'splitPay'; }
+            else if (s === 'done') { this.step = 'splitDone'; }
+            else { this.step = 'split'; }
         },
 
         closeSplitSelector() {
             this.showingSplit = false;
+            this.step        = 'method';
+            this.choosing    = true;
         },
 
         async openSplitItems() {
             this.showingSplit    = false;
             this.splitMode      = 'items';
             this.splitShowItems = true;
+            this.step           = 'splitItems';
             await this._loadSplitItems();
         },
 
@@ -368,6 +423,9 @@ export function registerBill() {
             this.splitShowItems = false;
             this.splitMode      = null;
             this.splitSelected  = [];
+            this.showingSplit   = true;
+            this.splitStage     = 'intro';
+            this.step           = 'split';
         },
 
         openSplitEq() {
@@ -375,19 +433,33 @@ export function registerBill() {
             this.splitMode    = 'equitable';
             this.splitPeople  = 2;
             this.splitShowEq  = true;
+            this.step         = 'splitEq';
         },
 
         closeSplitEq() {
             this.splitShowEq = false;
             this.splitMode   = null;
+            this.showingSplit = true;
+            this.splitStage  = 'intro';
+            this.step        = 'split';
+        },
+
+        paySelectedItems() {
+            if (!this.splitSelected || this.splitSelected.length === 0) return;
+            this.openSplitTip(this.splitItemsTotal, 'items', [...this.splitSelected]);
+        },
+
+        payEquitative() {
+            this.openSplitTip(this.splitMyPart, 'equit', []);
         },
 
         openCashTip() {
             this.choosing       = false;
             this.cashTipAmount  = 0;
-            this.cashTipPercent = null;
-            this.cashGrandTotal = this.orderTotal;
+            this.cashTipPercent = 10;
+            this.cashGrandTotal = this.orderTotal + calculateTipFromPercent(this.orderTotal, 10);
             this.showingCashTip = true;
+            this.step           = 'cashConfirm';
         },
 
         setCashTipPercent(pct) {
@@ -420,11 +492,12 @@ export function registerBill() {
             this.splitTipType       = type;
             this.splitTipItemIds    = itemIds || [];
             this.splitTipAmount     = 0;
-            this.splitTipPercent    = null;
-            this.splitTipGrandTotal = amount;
+            this.splitTipPercent    = 10;
+            this.splitTipGrandTotal = amount + calculateTipFromPercent(amount, 10);
             this.splitShowItems     = false;
             this.splitShowEq        = false;
             this.showingSplitTip    = true;
+            this.step               = 'splitTip';
         },
 
         setSplitTipPercent(pct) {
@@ -466,12 +539,34 @@ export function registerBill() {
             this.choosing        = false;
             this.mixedCashAmount = Math.round(this.orderTotal / 2 * 100) / 100;
             this.showingMixed    = true;
+            this.mixedStage      = 'cash';
+            this.mixedTipPercent = 0;
+            this.mixedTipAmount  = 0;
+            this.mixedTipGrandTotal = 0;
+            this.step            = 'mixed';
+        },
+
+        setMixedStage(s) {
+            this.mixedStage = s;
+            if (s === 'cash') { this.step = 'mixed'; }
+            else if (s === 'tip') {
+                this.mixedTipBase = this.mixedCardAmount;
+                this.mixedTipPercent = 0;
+                this.mixedTipAmount = 0;
+                this.mixedTipGrandTotal = this.mixedCardAmount;
+                this.step = 'mixedTip';
+            }
+            else if (s === 'pay') { this.step = 'mixedPay'; this._startMixedPayment(); }
+            else if (s === 'waiter') { this.step = 'mixedWaiter'; }
+            else if (s === 'done') { this.step = 'mixedDone'; }
         },
 
         closeMixed() {
             this.showingMixed    = false;
             this.mixedCashAmount = 0;
+            this.mixedStage      = 'cash';
             this.choosing        = true;
+            this.step            = 'method';
         },
 
         get mixedCardAmount() {
@@ -484,13 +579,24 @@ export function registerBill() {
                 && this.mixedCardAmount >= 0.5;
         },
 
+        proceedFromMixed() {
+            if (this.mixedCashAmount >= this.orderTotal - 0.001) {
+                this.showingMixed    = false;
+                this.mixedCashAmount = 0;
+                this.openCashTip();
+            } else {
+                this.openMixedTip();
+            }
+        },
+
         openMixedTip() {
             this.showingMixed       = false;
             this.mixedTipBase       = this.mixedCardAmount;
             this.mixedTipAmount     = 0;
-            this.mixedTipPercent    = null;
-            this.mixedTipGrandTotal = this.mixedCardAmount;
+            this.mixedTipPercent    = 10;
+            this.mixedTipGrandTotal = this.mixedCardAmount + calculateTipFromPercent(this.mixedCardAmount, 10);
             this.showingMixedTip    = true;
+            this.step               = 'mixedTip';
         },
 
         setMixedTipPercent(pct) {
@@ -511,6 +617,7 @@ export function registerBill() {
             this.mixedTipAmount  = 0;
             this.mixedTipPercent = null;
             this.showingMixed    = true;
+            this.step            = 'mixed';
         },
 
         async confirmMixedTip() {
@@ -523,6 +630,7 @@ export function registerBill() {
             this.mixedStripeReady = false;
             this.mixedStripeError = null;
             this.sending          = true;
+            this.step             = 'mixedPay';
             try {
                 const res = await fetch('/api/v1/payment/' + this.tableHash + '/mixed/intent', {
                     method:  'POST',
@@ -575,6 +683,7 @@ export function registerBill() {
             this._mixedStripe     = null;
             this._mixedElements   = null;
             this.showingMixed     = true;
+            this.step             = 'mixedTip';
         },
 
         async submitMixedPayment() {
@@ -611,6 +720,7 @@ export function registerBill() {
                         this.mixedCashPendingAmt = data.cash_amount ?? this.mixedCashAmount;
                         this.requested           = true;
                         this.method              = 'mixed';
+                        this.step                = 'mixedWaiter';
                     } else {
                         this.mixedStripeError = data.message ?? 'Error al confirmar el pago.';
                     }
@@ -630,6 +740,7 @@ export function registerBill() {
             this.splitStripeReady = false;
             this.splitStripeError = null;
             this.sending          = true;
+            this.step             = 'splitPay';
             try {
                 const url  = type === 'items'
                     ? '/api/v1/payment/' + this.tableHash + '/split/pay-items'
@@ -688,6 +799,12 @@ export function registerBill() {
             this.splitMode        = null;
             this._splitElements   = null;
             this._splitStripe     = null;
+            this.step             = 'method';
+            this.choosing         = true;
+        },
+
+        payMixedCard() {
+            return this.submitMixedPayment();
         },
 
         async submitSplitPayment() {
@@ -722,12 +839,14 @@ export function registerBill() {
                             this.paidOrderId     = data.order_id ?? null;
                             this.requested       = true;
                             this.active          = false;
+                            this.step            = 'splitDone';
                         } else {
                             this._splitStripe    = null;
                             this._splitElements  = null;
                             this.splitPayingCard = false;
                             await this._loadSplitItems();
                             this.splitShowItems  = true;
+                            this.step            = 'splitItems';
                         }
                     } else {
                         this.splitStripeError = data.message ?? 'Error al confirmar el pago.';

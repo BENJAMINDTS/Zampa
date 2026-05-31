@@ -1757,10 +1757,12 @@
         </div>
 
         {{-- ══════════════════════════════════════════════════════════════════════
-             BILL DRAWER — DS: .scrim > .drawer.drawer--bill (elección de método)
+             BILL DRAWER — DS: scrim único con step machine (BillFlow)
              ══════════════════════════════════════════════════════════════════════ --}}
+
+        {{-- ── Scrim único — visible mientras step !== '' ─────────────────────── --}}
         <div class="scrim"
-             x-show="$store.bill.choosing"
+             x-show="$store.bill.step !== ''"
              x-transition:enter="transition duration-200"
              x-transition:enter-start="opacity-0"
              x-transition:enter-end="opacity-100"
@@ -1768,87 +1770,171 @@
              x-transition:leave-start="opacity-100"
              x-transition:leave-end="opacity-0"
              @click.self="$store.bill.close()"
-             role="dialog" aria-modal="true" aria-label="Solicitar la cuenta">
-            <div class="drawer drawer--bill" @click.stop>
+             @keydown.escape.window="if ($store.bill.step !== '') $store.bill.close()"
+             role="dialog" aria-modal="true" aria-labelledby="bill-drawer-title">
+
+            {{-- Drawer: ancho extendido para split/mixed --}}
+            <div :class="'drawer drawer--bill' + (['split','splitItems','splitEq','splitTip','splitPay','mixed','mixedTip','mixedPay'].includes($store.bill.step) ? ' drawer--wide' : '')"
+                 @click.stop>
                 <div class="drawer__grabber" aria-hidden="true"></div>
+
+                {{-- ── CABECERA DINÁMICA ──────────────────────────────────────── --}}
                 <div class="drawer__head">
+
+                    {{-- Botón atrás (pasos intermedios) --}}
+                    <template x-if="['cashConfirm','tip','pay','split','splitItems','splitEq','mixed','mixedTip','splitTip','splitPay','mixedPay'].includes($store.bill.step)">
+                        <button type="button" class="icon-btn icon-btn--back"
+                                @click="$store.bill.step === 'splitItems' ? $store.bill.closeSplitItems()
+                                    : $store.bill.step === 'splitEq'   ? $store.bill.closeSplitEq()
+                                    : $store.bill.step === 'splitPay'  ? $store.bill.closeSplitPayment()
+                                    : $store.bill.step === 'mixedPay'  ? $store.bill.closeMixedPayment()
+                                    : $store.bill.backToMethod()"
+                                aria-label="Cambiar método de pago">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                 stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="15 18 9 12 15 6"/>
+                            </svg>
+                        </button>
+                    </template>
+
                     <div class="drawer__heading">
-                        <div class="drawer__title">Solicitar la cuenta</div>
-                        <div class="drawer__subtitle">¿Cómo quieres pagar?</div>
+                        <div class="drawer__title" id="bill-drawer-title"
+                             x-text="{
+                                method:      'Solicitar la cuenta',
+                                cashConfirm: '¿Quieres dejar propina?',
+                                cashDone:    'Camarero avisado',
+                                tip:         'Elige tu propina',
+                                pay:         'Pago con tarjeta',
+                                cardDone:    '¡Pago confirmado!',
+                                split:       'Cobro partido',
+                                splitItems:  'Pagar por ítems',
+                                splitEq:     'Dividir a partes iguales',
+                                splitTip:    'Propina (parte tarjeta)',
+                                mixed:       'Pago mixto',
+                                mixedTip:    'Propina (parte tarjeta)',
+                                mixedPay:    'Parte con tarjeta',
+                                splitPay:    'Pago con tarjeta',
+                                splitDone:   '¡Parte pagada!',
+                                mixedWaiter: 'Esperando al camarero',
+                                mixedDone:   'Cuenta cerrada',
+                             }[$store.bill.step] || 'Cuenta'">
+                        </div>
+                        <div class="drawer__subtitle"
+                             x-text="{
+                                method:      '¿Cómo quieres pagar?',
+                                cashConfirm: 'Pago en efectivo · propina opcional',
+                                cashDone:    'Pasará a tu mesa en unos instantes',
+                                tip:         'Añade una propina al servicio',
+                                pay:         ($store.bill.tipPercent || 0) + '% de propina incluida',
+                                cardDone:    '¡Gracias! Hasta pronto',
+                                split:       'Dividís la cuenta en tiempo real',
+                                splitItems:  'Marca los platos que quieres pagar tú',
+                                splitEq:     'El total se divide entre todos',
+                                splitTip:    'Propina sobre tu parte con tarjeta',
+                                mixed:       'Efectivo + tarjeta',
+                                mixedTip:    'Propina sobre la parte con tarjeta',
+                                mixedPay:    'Pago seguro · Stripe',
+                                splitPay:    'Pago seguro · Stripe',
+                                splitDone:   'Tu parte ha quedado saldada',
+                                mixedWaiter: 'Tarjeta confirmada · efectivo pendiente',
+                                mixedDone:   '¡Gracias! Hasta pronto',
+                             }[$store.bill.step] || ''">
+                        </div>
                     </div>
-                    <div class="drawer__total" aria-label="Total a pagar">
-                        <div class="lab">Total</div>
-                        <div class="val" x-text="Number($store.bill.orderTotal).toFixed(2).replace('.',',') + ' €'"></div>
-                    </div>
+
+                    {{-- Total (se oculta en las pantallas de éxito) --}}
+                    <template x-if="!['cashDone','cardDone','splitDone','mixedWaiter','mixedDone'].includes($store.bill.step)">
+                        <div class="drawer__total" aria-label="Total a pagar">
+                            <div class="lab">
+                                <span x-text="['splitItems','splitTip','splitEq'].includes($store.bill.step) ? 'Total' : 'Total'"></span>
+                            </div>
+                            <div class="val"
+                                 x-text="Number(
+                                    $store.bill.step === 'cashConfirm' ? $store.bill.cashGrandTotal :
+                                    $store.bill.step === 'tip'         ? ($store.bill.orderTotal + ($store.bill.tipAmount || 0)) :
+                                    $store.bill.step === 'pay'         ? $store.bill.grandTotal :
+                                    $store.bill.step === 'mixedTip'    ? $store.bill.mixedTipGrandTotal :
+                                    $store.bill.step === 'mixedPay'    ? $store.bill.mixedTipGrandTotal :
+                                    $store.bill.step === 'splitTip'    ? $store.bill.splitTipGrandTotal :
+                                    $store.bill.step === 'splitPay'    ? $store.bill.splitTipGrandTotal :
+                                    $store.bill.orderTotal
+                                 ).toFixed(2).replace('.',',') + ' €'">
+                            </div>
+                        </div>
+                    </template>
+
                     <button type="button" class="icon-btn" @click="$store.bill.close()" aria-label="Cerrar">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M6 18L18 6M6 6l12 12"/>
                         </svg>
                     </button>
                 </div>
+
+                {{-- ── CUERPO: contenido por step ──────────────────────────────── --}}
                 <div class="drawer__body">
-                    <div class="method-list">
-                        {{-- Efectivo --}}
-                        <button type="button" class="method method--cash" @click="$store.bill.openCashTip()">
-                            <span class="method__ic" aria-hidden="true">
-                                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
-                                    <rect x="2" y="7" width="20" height="14" rx="2"/>
-                                    <path d="M16 3H8l-2 4h12l-2-4z"/>
-                                    <circle cx="12" cy="14" r="2"/>
-                                </svg>
-                            </span>
-                            <span class="method__txt">
-                                <span class="method__nm">Efectivo</span>
-                                <span class="method__ds">Pagas al camarero · puedes añadir propina</span>
-                            </span>
-                            <span class="method__chev" aria-hidden="true">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
-                                    <polyline points="9 6 15 12 9 18"/>
-                                </svg>
-                            </span>
-                        </button>
-                        {{-- Tarjeta --}}
-                        <button type="button" class="method method--card" @click="$store.bill.openCardPayment()">
-                            <span class="method__ic" aria-hidden="true">
-                                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
-                                    <rect x="1" y="4" width="22" height="16" rx="2"/>
-                                    <line x1="1" y1="10" x2="23" y2="10"/>
-                                </svg>
-                            </span>
-                            <span class="method__txt">
-                                <span class="method__nm">Tarjeta</span>
-                                <span class="method__ds">Pago seguro · Stripe</span>
-                            </span>
-                            <span class="method__chev" aria-hidden="true">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
-                                    <polyline points="9 6 15 12 9 18"/>
-                                </svg>
-                            </span>
-                        </button>
-                        {{-- Cobro mixto --}}
-                        <button type="button" class="method method--mixed" @click="$store.bill.openMixed()">
-                            <span class="method__ic" aria-hidden="true">
-                                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
-                                    <rect x="2" y="6" width="9" height="12" rx="2"/>
-                                    <rect x="13" y="5" width="9" height="14" rx="2"/>
-                                    <path d="M6.5 12h.01M17 12h.01"/>
-                                </svg>
-                            </span>
-                            <span class="method__txt">
-                                <span class="method__nm">Cobro mixto</span>
-                                <span class="method__ds">Una parte en efectivo, otra con tarjeta</span>
-                            </span>
-                            <span class="method__chev" aria-hidden="true">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
-                                    <polyline points="9 6 15 12 9 18"/>
-                                </svg>
-                            </span>
-                        </button>
-                        {{-- Cobro partido --}}
-                        <template x-if="$store.bill.splitEnabled">
-                            <button type="button" class="method method--split" @click="$store.bill.openSplit()">
+
+                    {{-- ── method: selector de método ─── --}}
+                    <div x-show="$store.bill.step === 'method'">
+                        <div class="method-list">
+                            <button type="button" class="method method--cash"
+                                    @click="$store.bill.openCashTip()">
                                 <span class="method__ic" aria-hidden="true">
-                                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect x="2" y="6" width="20" height="12" rx="2"/>
+                                        <circle cx="12" cy="12" r="3"/>
+                                        <path d="M6 10h.01M18 10h.01M6 14h.01M18 14h.01"/>
+                                    </svg>
+                                </span>
+                                <span class="method__txt">
+                                    <span class="method__nm">Efectivo</span>
+                                    <span class="method__ds">Pagas al camarero · puedes añadir propina</span>
+                                </span>
+                                <span class="method__chev" aria-hidden="true">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+                                </span>
+                            </button>
+
+                            <button type="button" class="method method--card"
+                                    @click="$store.bill.openCardPayment()">
+                                <span class="method__ic" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect x="2" y="5" width="20" height="14" rx="2"/>
+                                        <path d="M2 10h20M6 15h4"/>
+                                    </svg>
+                                </span>
+                                <span class="method__txt">
+                                    <span class="method__nm">Tarjeta</span>
+                                    <span class="method__ds">Pago seguro · Stripe</span>
+                                </span>
+                                <span class="method__chev" aria-hidden="true">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+                                </span>
+                            </button>
+
+                            <button type="button" class="method method--mixed"
+                                    @click="$store.bill.openMixed()">
+                                <span class="method__ic" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect x="2" y="6" width="9" height="12" rx="2"/>
+                                        <rect x="13" y="5" width="9" height="14" rx="2"/>
+                                        <path d="M6.5 12h.01M17 12h.01"/>
+                                    </svg>
+                                </span>
+                                <span class="method__txt">
+                                    <span class="method__nm">Cobro mixto</span>
+                                    <span class="method__ds">Una parte en efectivo, otra con tarjeta</span>
+                                </span>
+                                <span class="method__chev" aria-hidden="true">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+                                </span>
+                            </button>
+
+                            @if($splitPaymentEnabled)
+                            <button type="button" class="method method--split"
+                                    @click="$store.bill.openSplit()">
+                                <span class="method__ic" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <circle cx="8" cy="9" r="3"/>
                                         <circle cx="16" cy="9" r="3"/>
                                         <path d="M3 20a5 5 0 0 1 10 0M11 20a5 5 0 0 1 10 0"/>
@@ -1859,544 +1945,945 @@
                                     <span class="method__ds">Dividir entre comensales</span>
                                 </span>
                                 <span class="method__chev" aria-hidden="true">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
-                                        <polyline points="9 6 15 12 9 18"/>
-                                    </svg>
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
                                 </span>
                             </button>
-                        </template>
-                    </div>
-                </div>
-                <div class="drawer__foot">
-                    <button type="button" class="btn-text" @click="$store.bill.close()">Cancelar</button>
-                </div>
-            </div>
-        </div>
-
-        {{-- ══════════════════════════════════════════════════════════════════════
-             BILL SUB-SHEETS — propina efectivo, tarjeta, confirmaciones
-             Mantenemos la lógica Alpine pero con estructura DS drawer
-             ══════════════════════════════════════════════════════════════════════ --}}
-
-        {{-- Propina efectivo (cashTip) --}}
-        <div class="scrim"
-             x-show="$store.bill.showingTip"
-             x-transition
-             @click.self="$store.bill.closeTip()"
-             role="dialog" aria-modal="true" aria-label="¿Quieres dejar propina?">
-            <div class="drawer drawer--bill" @click.stop>
-                <div class="drawer__grabber" aria-hidden="true"></div>
-                <div class="drawer__head">
-                    <button type="button" class="icon-btn icon-btn--back" @click="$store.bill.close()" aria-label="Cambiar método">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
-                            <polyline points="15 18 9 12 15 6"/>
-                        </svg>
-                    </button>
-                    <div class="drawer__heading">
-                        <div class="drawer__title">¿Quieres dejar propina?</div>
-                        <div class="drawer__subtitle">Pago en efectivo · es opcional</div>
-                    </div>
-                    <div class="drawer__total" aria-label="Total a pagar">
-                        <div class="lab">Total a pagar</div>
-                        <div class="val" x-text="Number($store.bill.orderTotal + ($store.bill.tipAmount || 0)).toFixed(2).replace('.',',') + ' €'"></div>
-                    </div>
-                    <button type="button" class="icon-btn" @click="$store.bill.closeTip()" aria-label="Cerrar">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
-                        </svg>
-                    </button>
-                </div>
-                <div class="drawer__body">
-                    <div class="cashTip">
-                        <div class="cashTip__hero">
-                            <span class="lab">Total del pedido</span>
-                            <span class="val" x-text="Number($store.bill.orderTotal).toFixed(2).replace('.',',') + ' €'"></span>
+                            @endif
                         </div>
-                        <section class="cashTip__section">
-                            <div class="cashTip__label">
-                                <span>Propina sugerida</span>
-                                <span class="hint">Toca para elegir</span>
+                    </div>
+
+                    {{-- ── cashConfirm: efectivo + propina opcional ─── --}}
+                    <div x-show="$store.bill.step === 'cashConfirm'">
+                        <div class="cashTip">
+                            <div class="cashTip__hero">
+                                <span class="lab">Total del pedido</span>
+                                <span class="val" x-text="Number($store.bill.orderTotal).toFixed(2).replace('.',',') + ' €'"></span>
                             </div>
-                            <div class="cashTip__grid">
-                                <template x-for="pct in [5, 10, 15, 20]" :key="pct">
-                                    <button type="button"
-                                            class="cashTip__chip"
-                                            :class="$store.bill.tipPercent === pct ? 'is-active' : ''"
-                                            :aria-pressed="($store.bill.tipPercent === pct).toString()"
-                                            @click="$store.bill.setTipPercent(pct)">
-                                        <span class="cashTip__pct" x-text="pct + '%'"></span>
-                                        <span class="cashTip__amt" x-text="Number(Math.round($store.bill.orderTotal * pct) / 100).toFixed(2).replace('.',',') + ' €'"></span>
-                                    </button>
-                                </template>
-                            </div>
-                            <div class="cashTip__input">
-                                <label for="cash-tip-input-ds" class="sr-only">Propina personalizada en euros</label>
-                                <input id="cash-tip-input-ds"
-                                       type="number" min="0" step="0.50" inputmode="decimal"
-                                       placeholder="Otra cantidad…"
-                                       @input="$store.bill.updateCustomTip($event.target.value)"
-                                       :value="$store.bill.tipPercent === null && $store.bill.tipAmount > 0 ? $store.bill.tipAmount : ''">
-                                <span class="cashTip__currency" aria-hidden="true">€</span>
-                            </div>
-                        </section>
-                        <section class="cashTip__summary" aria-live="polite">
-                            <div class="cashTip__row">
-                                <span>Pedido</span>
-                                <span class="v" x-text="Number($store.bill.orderTotal).toFixed(2).replace('.',',') + ' €'"></span>
-                            </div>
-                            <template x-if="($store.bill.tipAmount || 0) > 0">
-                                <div class="cashTip__row cashTip__row--tip">
+                            <section class="cashTip__section">
+                                <div class="cashTip__label">
+                                    <span>Propina sugerida</span>
+                                    <span class="hint">Toca para elegir</span>
+                                </div>
+                                <div class="cashTip__grid">
+                                    <template x-for="pct in [5, 10, 15, 20]" :key="pct">
+                                        <button type="button"
+                                                class="cashTip__chip"
+                                                :class="$store.bill.cashTipPercent === pct ? 'is-active' : ''"
+                                                :aria-pressed="($store.bill.cashTipPercent === pct).toString()"
+                                                @click="$store.bill.setCashTipPercent(pct)">
+                                            <span class="cashTip__pct" x-text="pct + '%'"></span>
+                                            <span class="cashTip__amt"
+                                                  x-text="Number(Math.round($store.bill.orderTotal * pct) / 100).toFixed(2).replace('.',',') + ' €'"></span>
+                                        </button>
+                                    </template>
+                                </div>
+                                <div class="cashTip__input">
+                                    <label for="cash-tip-bill" class="sr-only">Propina personalizada en euros</label>
+                                    <input id="cash-tip-bill"
+                                           type="number" min="0" step="0.50" inputmode="decimal"
+                                           placeholder="Otra cantidad…"
+                                           @input="$store.bill.updateCustomCashTip($event.target.value)"
+                                           :value="$store.bill.cashTipPercent === null && $store.bill.cashTipAmount > 0 ? $store.bill.cashTipAmount : ''">
+                                    <span class="cashTip__currency" aria-hidden="true">€</span>
+                                </div>
+                            </section>
+                            <section class="cashTip__summary" aria-live="polite">
+                                <div class="cashTip__row">
+                                    <span>Pedido</span>
+                                    <span class="v" x-text="Number($store.bill.orderTotal).toFixed(2).replace('.',',') + ' €'"></span>
+                                </div>
+                                <div class="cashTip__row cashTip__row--tip"
+                                     x-show="($store.bill.cashTipAmount || 0) > 0">
                                     <span>Propina</span>
-                                    <span class="v" x-text="'+ ' + Number($store.bill.tipAmount).toFixed(2).replace('.',',') + ' €'"></span>
+                                    <span class="v" x-text="'+ ' + Number($store.bill.cashTipAmount || 0).toFixed(2).replace('.',',') + ' €'"></span>
                                 </div>
-                            </template>
-                            <div class="cashTip__row cashTip__row--total">
-                                <span>Total a pagar</span>
-                                <span class="v" x-text="Number($store.bill.orderTotal + ($store.bill.tipAmount || 0)).toFixed(2).replace('.',',') + ' €'"></span>
-                            </div>
-                        </section>
-                    </div>
-                </div>
-                <div class="drawer__foot">
-                    <div class="bill__footRow bill__footRow--stack">
-                        <button type="button"
-                                class="btn-primary cashTip__cta"
-                                :disabled="$store.bill.sending"
-                                @click="$store.bill.confirmCashPayment ? $store.bill.confirmCashPayment() : $store.bill.requestCash()">
-                            <template x-if="$store.bill.sending">
-                                <span><span class="cashTip__spin" aria-hidden="true"></span> Enviando solicitud…</span>
-                            </template>
-                            <template x-if="!$store.bill.sending">
-                                <span x-text="($store.bill.tipAmount || 0) > 0
-                                    ? 'Solicitar cuenta · ' + Number($store.bill.orderTotal + ($store.bill.tipAmount || 0)).toFixed(2).replace('.',',') + ' €'
-                                    : 'Solicitar cuenta · ' + Number($store.bill.orderTotal).toFixed(2).replace('.',',') + ' €'"></span>
-                            </template>
-                        </button>
-                        <button type="button" class="btn-secondary" @click="$store.bill.close()">← Cambiar método</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        {{-- Pago con tarjeta (tip %) --}}
-        <div class="scrim"
-             x-show="$store.bill.payingCard && !$store.bill.stripeReady"
-             x-transition
-             @click.self="$store.bill.close()"
-             role="dialog" aria-modal="true" aria-label="Elige tu propina">
-            <div class="drawer drawer--bill" @click.stop>
-                <div class="drawer__grabber" aria-hidden="true"></div>
-                <div class="drawer__head">
-                    <button type="button" class="icon-btn icon-btn--back" @click="$store.bill.close()" aria-label="Cambiar método">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="15 18 9 12 15 6"/></svg>
-                    </button>
-                    <div class="drawer__heading">
-                        <div class="drawer__title">Elige tu propina</div>
-                        <div class="drawer__subtitle">Añade una propina al servicio</div>
-                    </div>
-                    <div class="drawer__total">
-                        <div class="lab">Total a pagar</div>
-                        <div class="val" x-text="Number($store.bill.grandTotal).toFixed(2).replace('.',',') + ' €'"></div>
-                    </div>
-                    <button type="button" class="icon-btn" @click="$store.bill.close()" aria-label="Cerrar">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-                    </button>
-                </div>
-                <div class="drawer__body">
-                    <div class="tip-row" role="group" aria-label="Porcentaje de propina">
-                        <template x-for="p in [0, 10, 15, 20]" :key="p">
-                            <div class="tip"
-                                 :class="$store.bill.tipPercent === p ? 'tip--selected' : ''"
-                                 @click="$store.bill.setTipPercent(p)"
-                                 :aria-pressed="($store.bill.tipPercent === p).toString()"
-                                 role="button" tabindex="0">
-                                <div class="pct" x-text="p + '%'"></div>
-                                <div class="amt" x-text="p === 0 ? '—' : Number($store.bill.orderTotal * p / 100).toFixed(2).replace('.',',') + ' €'"></div>
-                            </div>
-                        </template>
-                    </div>
-                </div>
-                <div class="drawer__foot">
-                    <div class="bill__footRow bill__footRow--stack">
-                        <button type="button" class="btn-primary"
-                                @click="$store.bill.proceedToStripe()">
-                            Continuar — <span x-text="Number($store.bill.grandTotal).toFixed(2).replace('.',',') + ' €'"></span>
-                        </button>
-                        <button type="button" class="btn-secondary" @click="$store.bill.close()">← Cambiar método</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        {{-- Stripe payment --}}
-        <div class="scrim"
-             x-show="$store.bill.stripeReady"
-             x-transition
-             @click.self="$store.bill.close()"
-             role="dialog" aria-modal="true" aria-label="Pago con tarjeta">
-            <div class="drawer drawer--bill" @click.stop>
-                <div class="drawer__grabber" aria-hidden="true"></div>
-                <div class="drawer__head">
-                    <div class="drawer__heading">
-                        <div class="drawer__title">Pago con tarjeta</div>
-                        <div class="drawer__subtitle" x-text="$store.bill.tipPercent + '% de propina incluida'"></div>
-                    </div>
-                    <div class="drawer__total">
-                        <div class="lab">Total a pagar</div>
-                        <div class="val" x-text="Number($store.bill.grandTotal).toFixed(2).replace('.',',') + ' €'"></div>
-                    </div>
-                    <button type="button" class="icon-btn" @click="$store.bill.close()" aria-label="Cerrar">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-                    </button>
-                </div>
-                <div class="drawer__body">
-                    <div style="display:flex;flex-direction:column;gap:16px">
-                        <div style="display:flex;align-items:center;gap:6px;font-family:var(--font-body);font-size:12px;font-weight:600;color:var(--fg-muted)">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                                <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
-                            </svg>
-                            PAGO SEGURO · STRIPE
-                        </div>
-                        <div id="stripe-card-element" style="padding:16px;border:1px solid var(--glass-border);border-radius:12px;background:var(--glass-bg-surface)"></div>
-                        <template x-if="$store.bill.stripeError">
-                            <p style="color:var(--color-red-400);font-size:13px" role="alert" x-text="$store.bill.stripeError"></p>
-                        </template>
-                    </div>
-                </div>
-                <div class="drawer__foot">
-                    <div class="bill__footRow bill__footRow--stack">
-                        <button type="button" class="btn-primary"
-                                @click="$store.bill.payWithStripe()"
-                                :disabled="$store.bill.sending">
-                            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
-                            </svg>
-                            <span x-text="$store.bill.sending ? 'Procesando…' : 'Pagar ' + Number($store.bill.grandTotal).toFixed(2).replace('.',',') + ' €'"></span>
-                        </button>
-                        <button type="button" class="btn-secondary" @click="$store.bill.close()">← Cambiar método</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        {{-- Efectivo confirmado --}}
-        <div class="scrim"
-             x-show="$store.bill.requested && $store.bill.method === 'cash' && !$store.bill.paymentDone"
-             x-transition
-             @click.self="$store.bill.close()"
-             role="dialog" aria-modal="true" aria-label="Camarero avisado">
-            <div class="drawer drawer--bill" @click.stop>
-                <div class="drawer__grabber" aria-hidden="true"></div>
-                <div class="drawer__body">
-                    <div class="bill__done" style="text-align:center;padding:24px 0">
-                        <div style="font-size:56px;line-height:1;margin-bottom:12px">✅</div>
-                        <div style="font-family:var(--font-display);font-weight:900;font-size:22px;color:var(--fg-primary)">Camarero avisado</div>
-                        <div style="font-family:var(--font-body);font-size:13px;color:var(--fg-muted);margin-top:8px;line-height:1.5">
-                            Pasará a tu mesa en unos instantes.
-                        </div>
-                    </div>
-                </div>
-                <div class="drawer__foot">
-                    <button type="button" class="btn-text" @click="$store.bill.close()">Cerrar</button>
-                </div>
-            </div>
-        </div>
-
-        {{-- Tarjeta confirmada --}}
-        <div class="scrim"
-             x-show="$store.bill.paymentDone && $store.bill.method !== 'cash' && !$store.bill.showingSplit && !$store.bill.showingMixed"
-             x-transition
-             @click.self="$store.bill.close()"
-             role="dialog" aria-modal="true" aria-label="Pago confirmado">
-            <div class="drawer drawer--bill" @click.stop>
-                <div class="drawer__grabber" aria-hidden="true"></div>
-                <div class="drawer__body">
-                    <div class="bill__done" style="text-align:center;padding:24px 0">
-                        <div style="font-size:56px;line-height:1;margin-bottom:12px">🎉</div>
-                        <div style="font-family:var(--font-display);font-weight:900;font-size:22px;color:var(--fg-primary)">¡Pago confirmado!</div>
-                        <div style="font-family:var(--font-body);font-size:13px;color:var(--fg-muted);margin-top:8px;line-height:1.5">
-                            Gracias por tu visita. ¡Hasta pronto!
-                        </div>
-                        <template x-if="$store.bill.paidOrderId">
-                            <a :href="$store.bill.ticketDownloadBase + '/' + $store.bill.paidOrderId + '/download?hash=' + $store.bill.tableHash"
-                               target="_blank" rel="noopener noreferrer"
-                               style="display:inline-flex;align-items:center;gap:8px;margin-top:16px;padding:10px 20px;border-radius:9999px;background:var(--glass-bg-surface);border:1px solid var(--glass-border);color:var(--fg-primary);text-decoration:none;font-family:var(--font-body);font-weight:600;font-size:13px">
-                                <svg aria-hidden="true" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 16v-8m0 8l-3-3m3 3l3-3M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2"/>
+                                <div class="cashTip__row cashTip__row--total">
+                                    <span>Total a pagar</span>
+                                    <span class="v" x-text="Number($store.bill.cashGrandTotal || $store.bill.orderTotal).toFixed(2).replace('.',',') + ' €'"></span>
+                                </div>
+                            </section>
+                            <p class="cashTip__info">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
                                 </svg>
-                                Descargar ticket
-                            </a>
-                        </template>
+                                <span>La propina se entrega directamente al camarero en efectivo.</span>
+                            </p>
+                        </div>
                     </div>
-                </div>
-                <div class="drawer__foot">
-                    <button type="button" class="btn-text" @click="$store.bill.close()">Cerrar</button>
-                </div>
-            </div>
-        </div>
 
-        {{-- SPLIT PAYMENT --}}
-        <div class="scrim"
-             x-show="$store.bill.showingSplit"
-             x-transition
-             @click.self="$store.bill.closeSplitSelector()"
-             role="dialog" aria-modal="true" aria-label="Cobro partido">
-            <div class="drawer drawer--bill drawer--wide" @click.stop>
-                <div class="drawer__grabber" aria-hidden="true"></div>
-                <div class="drawer__head">
-                    <button type="button" class="icon-btn icon-btn--back" @click="$store.bill.close()" aria-label="Cambiar método">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="15 18 9 12 15 6"/></svg>
-                    </button>
-                    <div class="drawer__heading">
-                        <div class="drawer__title">Cobro partido</div>
-                        <div class="drawer__subtitle">Dividís la cuenta en tiempo real</div>
-                    </div>
-                    <div class="drawer__total">
-                        <div class="lab">Total</div>
-                        <div class="val" x-text="Number($store.bill.orderTotal).toFixed(2).replace('.',',') + ' €'"></div>
-                    </div>
-                    <button type="button" class="icon-btn" @click="$store.bill.closeSplitSelector()" aria-label="Cerrar">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-                    </button>
-                </div>
-                <div class="drawer__body">
-                    <div style="display:flex;flex-direction:column;gap:12px">
-                        {{-- Por ítems --}}
-                        <button type="button"
-                                @click="!$store.bill.splitEquitativeLocked && $store.bill.openSplitItems()"
-                                :disabled="$store.bill.splitEquitativeLocked"
-                                style="width:100%;display:flex;align-items:center;gap:12px;padding:14px;border-radius:14px;background:var(--glass-bg-surface);border:1px solid var(--glass-border);cursor:pointer;text-align:left"
-                                :style="$store.bill.splitEquitativeLocked ? 'opacity:0.5;cursor:not-allowed' : ''">
-                            <span style="font-size:24px;flex-shrink:0" aria-hidden="true">🧾</span>
-                            <div>
-                                <div style="font-family:var(--font-body);font-weight:700;font-size:14px;color:var(--fg-primary)">Pagar por ítems</div>
-                                <div style="font-family:var(--font-body);font-size:12px;color:var(--fg-muted);margin-top:2px"
-                                     x-text="$store.bill.splitEquitativeLocked ? 'No disponible: ya hay pagos a partes iguales' : 'Elige exactamente qué platos pagas tú'"></div>
+                    {{-- ── cashDone: PaymentSuccess cash ─── --}}
+                    <div x-show="$store.bill.step === 'cashDone'">
+                        <div class="ps ps--cash">
+                            <div class="ps-medal ps-medal--cash">
+                                <span class="ps-medal__ring" aria-hidden="true"></span>
+                                <span class="ps-medal__disc" aria-hidden="true">
+                                    <span class="ps-medal__emoji">💶</span>
+                                </span>
                             </div>
-                        </button>
-                        {{-- Equitativo --}}
-                        <button type="button"
-                                @click="$store.bill.openSplitEq()"
-                                style="width:100%;display:flex;align-items:center;gap:12px;padding:14px;border-radius:14px;background:var(--glass-bg-surface);border:1px solid var(--glass-border);cursor:pointer;text-align:left">
-                            <span style="font-size:24px;flex-shrink:0" aria-hidden="true">➗</span>
-                            <div>
-                                <div style="font-family:var(--font-body);font-weight:700;font-size:14px;color:var(--fg-primary)">Dividir a partes iguales</div>
-                                <div style="font-family:var(--font-body);font-size:12px;color:var(--fg-muted);margin-top:2px">El total se divide entre todos por igual</div>
+                            <h3 class="ps__head">Camarero avisado</h3>
+                            <div class="ps__amount">
+                                <span class="ps__amountLab">Total solicitado</span>
+                                <span class="ps__amountVal"
+                                      x-text="Number($store.bill.cashGrandTotal || $store.bill.orderTotal).toFixed(2).replace('.',',') + ' €'"></span>
+                                <span class="ps__amountTip"
+                                      x-show="($store.bill.cashTipAmount || 0) > 0"
+                                      x-text="'incluye ' + Number($store.bill.cashTipAmount).toFixed(2).replace('.',',') + ' € de propina'">
+                                </span>
                             </div>
-                        </button>
+                            <div class="ps__meta">
+                                <span class="ps__chip">{{ $table->name }}</span>
+                                <span class="ps__chip ps__chip--method">Efectivo</span>
+                            </div>
+                            <p class="ps__note">Pasará a tu mesa en unos instantes a cobrar y traerte el cambio.</p>
+                            <div class="ps__cta">
+                                <template x-if="$store.bill.paidOrderId">
+                                    <a :href="$store.bill.ticketDownloadBase + '/' + $store.bill.paidOrderId + '/download?hash=' + $store.bill.tableHash"
+                                       target="_blank" rel="noopener noreferrer"
+                                       class="ps__btn ps__btn--soft">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                                        </svg>
+                                        Ticket de cortesía
+                                    </a>
+                                </template>
+                                <button type="button" class="ps__btn ps__btn--ghost" @click="$store.bill.close()">Ver carta</button>
+                            </div>
+                        </div>
                     </div>
-                </div>
-                <div class="drawer__foot">
-                    <button type="button" class="btn-text" @click="$store.bill.closeSplitSelector()">Cancelar</button>
-                </div>
-            </div>
-        </div>
 
-        {{-- SPLIT POR ÍTEMS --}}
-        <div class="scrim"
-             x-show="$store.bill.splitShowItems"
-             x-transition
-             @click.self="$store.bill.closeSplitItems()"
-             role="dialog" aria-modal="true" aria-label="Pagar por ítems">
-            <div class="drawer drawer--bill drawer--wide" @click.stop
-                 style="max-height:88dvh;overflow:hidden;display:flex;flex-direction:column">
-                <div class="drawer__grabber" aria-hidden="true"></div>
-                <div class="drawer__head" style="flex-shrink:0">
-                    <div class="drawer__heading">
-                        <div class="drawer__title">Pagar por ítems</div>
-                        <div class="drawer__subtitle">Marca los platos que quieres pagar tú</div>
-                    </div>
-                    <button type="button" class="icon-btn" @click="$store.bill.closeSplitItems()" aria-label="Cerrar">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-                    </button>
-                </div>
-                <div style="flex:1;overflow-y:auto;padding:14px 18px 0">
-                    <fieldset style="border:none;padding:0;display:flex;flex-direction:column;gap:8px">
-                        <legend class="sr-only">Selecciona los ítems que quieres pagar</legend>
-                        <template x-for="item in $store.bill.splitItems" :key="item.id">
-                            <label :for="'spi-' + item.id"
-                                   :class="$store.bill.isItemSelected(item.id) ? 'slot--you' : ''"
-                                   :style="'display:flex;align-items:center;gap:12px;padding:12px;border-radius:12px;border:2px solid var(--glass-border);cursor:pointer;background:var(--glass-bg-surface);' + (item.claimed ? 'opacity:0.5;cursor:not-allowed;' : '')">
-                                <input type="checkbox"
-                                       :id="'spi-' + item.id"
-                                       :checked="$store.bill.isItemSelected(item.id)"
-                                       :disabled="item.claimed"
-                                       @change="$store.bill.toggleSplitItem(item.id, item.claimed)"
-                                       style="width:18px;height:18px;flex-shrink:0">
-                                <div style="flex:1;min-width:0">
-                                    <div style="font-family:var(--font-body);font-weight:600;font-size:13px;color:var(--fg-primary)" x-text="item.name"></div>
-                                    <div style="font-family:var(--font-body);font-size:11px;color:var(--fg-muted);margin-top:2px"
-                                         x-text="item.quantity + ' × ' + Number(item.price).toFixed(2).replace('.',',') + ' €'"></div>
+                    {{-- ── tip: selector de propina para tarjeta ─── --}}
+                    <div x-show="$store.bill.step === 'tip'">
+                        <div class="tip-row" role="group" aria-label="Porcentaje de propina">
+                            <template x-for="pct in [0, 10, 15, 20]" :key="pct">
+                                <div :class="'tip' + ($store.bill.tipPercent === pct ? ' tip--selected' : '')"
+                                     @click="$store.bill.setTipPercent(pct)"
+                                     role="button" tabindex="0"
+                                     :aria-pressed="($store.bill.tipPercent === pct).toString()"
+                                     @keydown.enter="$store.bill.setTipPercent(pct)">
+                                    <div class="pct" x-text="pct + '%'"></div>
+                                    <div class="amt"
+                                         x-text="pct === 0 ? '—' : Number(Math.round($store.bill.orderTotal * pct) / 100).toFixed(2).replace('.',',') + ' €'"></div>
                                 </div>
-                                <template x-if="item.claimed">
-                                    <span style="font-size:11px;font-weight:600;color:var(--color-amber-600);background:var(--color-amber-100);border-radius:9999px;padding:3px 8px">Ya reclamado</span>
+                            </template>
+                        </div>
+                    </div>
+
+                    {{-- ── pay: formulario Stripe ─── --}}
+                    <div x-show="$store.bill.step === 'pay'">
+                        <div class="stripe-mock" style="display:flex;flex-direction:column;gap:16px">
+                            <div style="display:flex;align-items:center;gap:6px;font-family:var(--font-body);font-size:12px;font-weight:600;color:var(--fg-muted)">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                    <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
+                                </svg>
+                                PAGO SEGURO · STRIPE
+                            </div>
+                            <div id="stripe-payment-element"
+                                 style="padding:16px;border:1px solid var(--glass-border);border-radius:12px;background:var(--glass-bg-surface)"></div>
+                            <template x-if="$store.bill.stripeError">
+                                <p style="color:var(--color-red-400);font-size:13px" role="alert" x-text="$store.bill.stripeError"></p>
+                            </template>
+                        </div>
+                    </div>
+
+                    {{-- ── cardDone: PaymentSuccess card ─── --}}
+                    <div x-show="$store.bill.step === 'cardDone'">
+                        <div class="ps ps--card">
+                            <div class="ps-medal ps-medal--check">
+                                <div class="ps-medal__confetti" aria-hidden="true">
+                                    <span style="--cx:-54px;--cy:-8px;--cd:0ms;background:var(--color-green-500);width:9px;height:9px"></span>
+                                    <span style="--cx:50px;--cy:-14px;--cd:60ms;background:var(--price-gold);width:7px;height:7px"></span>
+                                    <span style="--cx:-38px;--cy:34px;--cd:120ms;background:var(--brand-primary);width:6px;height:6px"></span>
+                                    <span style="--cx:44px;--cy:30px;--cd:90ms;background:var(--color-green-400);width:8px;height:8px"></span>
+                                    <span style="--cx:-8px;--cy:-46px;--cd:150ms;background:var(--price-gold);width:6px;height:6px"></span>
+                                    <span style="--cx:14px;--cy:-42px;--cd:40ms;background:var(--brand-primary);width:7px;height:7px"></span>
+                                    <span style="--cx:60px;--cy:8px;--cd:180ms;background:var(--color-green-500);width:5px;height:5px"></span>
+                                    <span style="--cx:-60px;--cy:16px;--cd:30ms;background:var(--price-gold);width:6px;height:6px"></span>
+                                </div>
+                                <span class="ps-medal__ring" aria-hidden="true"></span>
+                                <span class="ps-medal__disc" aria-hidden="true">
+                                    <svg viewBox="0 0 52 52" class="ps-medal__svg" aria-hidden="true">
+                                        <path class="ps-medal__tick" d="M14 27l8 8 16-18" fill="none"
+                                              stroke="currentColor" stroke-width="5"
+                                              stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                </span>
+                            </div>
+                            <h3 class="ps__head">¡Pago confirmado!</h3>
+                            <div class="ps__amount">
+                                <span class="ps__amountLab">Total pagado</span>
+                                <span class="ps__amountVal"
+                                      x-text="Number($store.bill.grandTotal || $store.bill.orderTotal).toFixed(2).replace('.',',') + ' €'"></span>
+                                <span class="ps__amountTip"
+                                      x-show="($store.bill.tipAmount || 0) > 0"
+                                      x-text="'incluye ' + Number($store.bill.tipAmount).toFixed(2).replace('.',',') + ' € de propina'">
+                                </span>
+                            </div>
+                            <div class="ps__meta">
+                                <span class="ps__chip">{{ $table->name }}</span>
+                                <template x-if="$store.bill.paidOrderId">
+                                    <span class="ps__chip" x-text="'Pedido #' + $store.bill.paidOrderId"></span>
                                 </template>
-                                <template x-if="!item.claimed">
-                                    <span style="font-family:var(--font-display);font-weight:700;font-size:14px;color:var(--price-gold)"
-                                          x-text="Number(item.total).toFixed(2).replace('.',',') + ' €'"></span>
+                                <span class="ps__chip ps__chip--method">Tarjeta · Stripe</span>
+                            </div>
+                            <p class="ps__note">El ticket es tu comprobante. ¡Gracias por tu visita!</p>
+                            <div class="ps__cta">
+                                <template x-if="$store.bill.paidOrderId">
+                                    <a :href="$store.bill.ticketDownloadBase + '/' + $store.bill.paidOrderId + '/download?hash=' + $store.bill.tableHash"
+                                       target="_blank" rel="noopener noreferrer"
+                                       class="ps__btn ps__btn--primary">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                                        </svg>
+                                        Descargar ticket
+                                    </a>
                                 </template>
-                            </label>
-                        </template>
-                    </fieldset>
-                </div>
-                <div class="drawer__foot" style="flex-shrink:0">
-                    <div style="display:flex;justify-content:space-between;margin-bottom:10px;font-family:var(--font-body);font-size:13px">
-                        <span style="color:var(--fg-muted)">Mi parte</span>
-                        <span style="font-weight:700;color:var(--price-gold)"
-                              x-text="Number($store.bill.splitSelectedTotal || 0).toFixed(2).replace('.',',') + ' €'"></span>
-                    </div>
-                    <button type="button" class="btn-primary"
-                            :disabled="!$store.bill.splitSelected || $store.bill.splitSelected.length === 0"
-                            @click="$store.bill.paySelectedItems()">
-                        Pagar mi parte
-                    </button>
-                    <button type="button" class="btn-text" @click="$store.bill.closeSplitItems()">Cancelar</button>
-                </div>
-            </div>
-        </div>
-
-        {{-- SPLIT EQUITATIVO --}}
-        <div class="scrim"
-             x-show="$store.bill.splitShowEq"
-             x-transition
-             @click.self="$store.bill.closeSplitEq()"
-             role="dialog" aria-modal="true" aria-label="Dividir a partes iguales">
-            <div class="drawer drawer--bill" @click.stop>
-                <div class="drawer__grabber" aria-hidden="true"></div>
-                <div class="drawer__head">
-                    <div class="drawer__heading">
-                        <div class="drawer__title">Dividir a partes iguales</div>
-                        <div class="drawer__subtitle">El total se divide entre todos</div>
-                    </div>
-                    <div class="drawer__total">
-                        <div class="lab">Total</div>
-                        <div class="val" x-text="Number($store.bill.orderTotal).toFixed(2).replace('.',',') + ' €'"></div>
-                    </div>
-                    <button type="button" class="icon-btn" @click="$store.bill.closeSplitEq()" aria-label="Cerrar">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-                    </button>
-                </div>
-                <div class="drawer__body">
-                    <div style="display:flex;flex-direction:column;gap:16px">
-                        <label style="font-family:var(--font-body);font-size:13px;font-weight:600;color:var(--fg-secondary)">
-                            ¿Entre cuántas personas?
-                        </label>
-                        <input type="number"
-                               min="2"
-                               :max="$store.bill.splitMaxParts || 20"
-                               :value="$store.bill.splitPeople || 2"
-                               @input="$store.bill.splitPeople = parseInt($event.target.value) || 2"
-                               style="padding:12px;border-radius:12px;border:1px solid var(--glass-border);background:var(--glass-bg-surface);color:var(--fg-primary);font-family:var(--font-display);font-size:24px;font-weight:900;text-align:center;width:100%">
-                        <div style="text-align:center">
-                            <div style="font-family:var(--font-body);font-size:12px;color:var(--fg-muted)">Tu parte</div>
-                            <div style="font-family:var(--font-display);font-weight:900;font-size:32px;color:var(--price-gold)"
-                                 x-text="Number($store.bill.orderTotal / ($store.bill.splitPeople || 2)).toFixed(2).replace('.',',') + ' €'"></div>
+                                <button type="button" class="ps__btn ps__btn--ghost" @click="$store.bill.close()">Ver carta</button>
+                            </div>
                         </div>
                     </div>
-                </div>
+
+                    {{-- ── split: intro — elegir modo ─── --}}
+                    <div x-show="$store.bill.step === 'split'">
+                        <div class="split-flow">
+                            <div class="split-intro">
+                                <div class="split-intro__head">
+                                    <div class="split-intro__title">¿Cómo dividís la cuenta?</div>
+                                    <div class="split-intro__sub">Cualquiera del grupo puede empezar — los demás se sincronizan en tiempo real.</div>
+                                </div>
+                                <div class="split-intro__modes">
+                                    {{-- Modo por ítems --}}
+                                    <button type="button" class="split-mode split-mode--items"
+                                            :disabled="$store.bill.splitEquitativeLocked"
+                                            :style="$store.bill.splitEquitativeLocked ? 'opacity:0.5;cursor:not-allowed' : ''"
+                                            @click="!$store.bill.splitEquitativeLocked && $store.bill.setSplitStage('items')">
+                                        <div class="split-mode__art" aria-hidden="true">
+                                            <span class="rect rect--a"></span>
+                                            <span class="rect rect--b"></span>
+                                            <span class="rect rect--c"></span>
+                                            <span class="tag">M</span>
+                                            <span class="tag tag--b">I</span>
+                                        </div>
+                                        <div class="split-mode__h">Por ítems</div>
+                                        <div class="split-mode__p"
+                                             x-text="$store.bill.splitEquitativeLocked
+                                                 ? 'No disponible: ya hay pagos a partes iguales'
+                                                 : 'Cada uno reclama lo que ha pedido. Útil cuando hay distinto consumo.'">
+                                        </div>
+                                    </button>
+                                    {{-- Modo equitativo --}}
+                                    <button type="button" class="split-mode split-mode--equit"
+                                            @click="$store.bill.setSplitStage('equit')">
+                                        <div class="split-mode__art" aria-hidden="true">
+                                            <svg viewBox="0 0 60 60" width="60" height="60">
+                                                <circle cx="30" cy="30" r="22" fill="none" stroke="currentColor" stroke-width="2"></circle>
+                                                <path d="M30 30 L30 8 A22 22 0 0 1 49 41 Z" fill="currentColor" opacity="0.85"></path>
+                                                <path d="M30 30 L49 41 A22 22 0 0 1 11 41 Z" fill="currentColor" opacity="0.45"></path>
+                                                <path d="M30 30 L11 41 A22 22 0 0 1 30 8 Z" fill="currentColor" opacity="0.20"></path>
+                                            </svg>
+                                        </div>
+                                        <div class="split-mode__h">A partes iguales</div>
+                                        <div class="split-mode__p">Elige cuántos sois. Cada uno paga la misma parte.</div>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- ── splitItems: reclamar ítems ─── --}}
+                    <div x-show="$store.bill.step === 'splitItems'">
+                        <div class="split-items">
+                            <div class="split-items__head">
+                                <button type="button" class="back" @click="$store.bill.setSplitStage('intro')">← Cambiar modo</button>
+                            </div>
+
+                            <div class="split-items__status">
+                                <div class="split-items__progress">
+                                    <div class="bar">
+                                        <div class="bar__fill"
+                                             :style="'width: ' + (($store.bill.splitItems.filter(i => i.claimed).length / Math.max(1, $store.bill.splitItems.length)) * 100) + '%'">
+                                        </div>
+                                    </div>
+                                    <span class="ct"
+                                          x-text="$store.bill.splitItems.filter(i => i.claimed).length + '/' + $store.bill.splitItems.length + ' reclamados'">
+                                    </span>
+                                </div>
+                                <div class="split-items__legend">
+                                    Marca los platos que quieres pagar tú. Los ya marcados por otros están bloqueados.
+                                </div>
+                            </div>
+
+                            <div class="split-items__list">
+                                <template x-for="item in $store.bill.splitItems" :key="item.id">
+                                    <div class="split-line">
+                                        <div class="split-line__photo" aria-hidden="true">🍽️</div>
+                                        <div class="split-line__main">
+                                            <div class="split-line__name" x-text="item.name"></div>
+                                            <div class="split-line__price">
+                                                <span x-text="Number(item.price).toFixed(2).replace('.',',') + ' €'"></span>
+                                                <span>/ ud.</span>
+                                            </div>
+                                        </div>
+                                        <div class="split-line__slots">
+                                            <template x-for="idx in item.quantity" :key="idx">
+                                                <button type="button"
+                                                        :class="'slot' + ($store.bill.isItemSelected(item.id) && idx === 1 ? ' slot--you slot--just' : (item.claimed ? ' slot--other' : ''))"
+                                                        @click="!item.claimed && $store.bill.toggleSplitItem(item.id, item.claimed)"
+                                                        :disabled="item.claimed"
+                                                        :aria-label="item.claimed ? 'Ya reclamado' : 'Reclamar'">
+                                                    <span x-text="$store.bill.isItemSelected(item.id) && idx === 1 ? 'T' : (item.claimed ? '✓' : '+')"></span>
+                                                </button>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+
+                            <div class="split-items__foot">
+                                <div class="split-items__yourTotal">
+                                    <span class="lab">Tu parte</span>
+                                    <span class="val"
+                                          x-text="Number($store.bill.splitItemsTotal || 0).toFixed(2).replace('.',',') + ' €'"></span>
+                                </div>
+                                <button type="button" class="btn-primary"
+                                        :disabled="!$store.bill.splitSelected || $store.bill.splitSelected.length === 0"
+                                        @click="$store.bill.paySelectedItems()">
+                                    Pagar mi parte ·
+                                    <span x-text="Number($store.bill.splitItemsTotal || 0).toFixed(2).replace('.',',') + ' €'"></span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- ── splitEq: partes iguales con donut ─── --}}
+                    <div x-show="$store.bill.step === 'splitEq'">
+                        <div class="split-equit"
+                             x-data="{
+                                 parts: $store.bill.splitPeople || 2,
+                                 mySlice: 0,
+                                 get slice() { return $store.bill.orderTotal / this.parts; },
+                                 get fmt() { return (n) => Number(n).toFixed(2).replace('.',',') + ' €'; },
+                                 arc(i) {
+                                     const R_OUT = 48, R_IN = 26, CX = 60, CY = 60;
+                                     const a0 = (i / this.parts) * Math.PI * 2 - Math.PI / 2;
+                                     const a1 = ((i + 1) / this.parts) * Math.PI * 2 - Math.PI / 2;
+                                     const lg = (a1 - a0) > Math.PI ? 1 : 0;
+                                     const x0o = CX + R_OUT * Math.cos(a0), y0o = CY + R_OUT * Math.sin(a0);
+                                     const x1o = CX + R_OUT * Math.cos(a1), y1o = CY + R_OUT * Math.sin(a1);
+                                     const x0i = CX + R_IN  * Math.cos(a1), y0i = CY + R_IN  * Math.sin(a1);
+                                     const x1i = CX + R_IN  * Math.cos(a0), y1i = CY + R_IN  * Math.sin(a0);
+                                     return 'M '+x0o+' '+y0o+' A '+R_OUT+' '+R_OUT+' 0 '+lg+' 1 '+x1o+' '+y1o+' L '+x0i+' '+y0i+' A '+R_IN+' '+R_IN+' 0 '+lg+' 0 '+x1i+' '+y1i+' Z';
+                                 },
+                                 labelPos(i) {
+                                     const mid = ((i + 0.5) / this.parts) * Math.PI * 2 - Math.PI / 2;
+                                     const r = 37;
+                                     return { x: 60 + r * Math.cos(mid), y: 60 + r * Math.sin(mid) };
+                                 },
+                             }">
+                            <div class="split-items__head">
+                                <button type="button" class="back" @click="$store.bill.setSplitStage('intro')">← Cambiar modo</button>
+                                <div class="split-items__diners">
+                                    <span class="lab">Total a dividir</span>
+                                    <span class="val" x-text="Number($store.bill.orderTotal).toFixed(2).replace('.',',') + ' €'"></span>
+                                </div>
+                            </div>
+
+                            {{-- Donut SVG --}}
+                            <div class="split-equit__pie">
+                                <svg viewBox="0 0 120 120" width="220" height="220" aria-hidden="true">
+                                    <template x-for="i in Array.from({length: parts}, (_, k) => k)" :key="i">
+                                        <g :class="'slice' + (i === mySlice ? ' slice--mine' : '')"
+                                           @click="mySlice = i"
+                                           style="cursor:pointer">
+                                            <path :d="arc(i)"
+                                                  :fill="i === mySlice ? 'var(--brand-primary)' : 'var(--bg-chip)'"
+                                                  stroke="var(--bg-base)" stroke-width="2"
+                                                  :opacity="i === mySlice ? 1 : 0.55"/>
+                                            <text :x="labelPos(i).x" :y="labelPos(i).y"
+                                                  text-anchor="middle" dominant-baseline="middle"
+                                                  font-size="10" font-weight="800"
+                                                  :fill="i === mySlice ? '#fff' : 'var(--fg-secondary)'"
+                                                  x-text="i === mySlice ? 'TÚ' : (i + 1)">
+                                            </text>
+                                        </g>
+                                    </template>
+                                    {{-- Centro --}}
+                                    <circle cx="60" cy="60" r="24" fill="var(--bg-surface)"/>
+                                    <text x="60" y="57" text-anchor="middle" font-size="6.5" font-weight="600" fill="var(--fg-muted)">TU PARTE</text>
+                                    <text x="60" y="68" text-anchor="middle" font-size="13" font-weight="900" fill="var(--fg-primary)"
+                                          font-family="var(--font-display)"
+                                          x-text="Number(slice).toFixed(2).replace('.',',') + ' €'">
+                                    </text>
+                                </svg>
+                            </div>
+
+                            {{-- Stepper --}}
+                            <div class="split-equit__stepper">
+                                <span class="lab">¿Cuántos sois?</span>
+                                <div class="step">
+                                    <button type="button"
+                                            @click="parts = Math.max(2, parts - 1); $store.bill.splitPeople = parts"
+                                            :disabled="parts <= 2">−</button>
+                                    <span class="step__num" x-text="parts"></span>
+                                    <button type="button"
+                                            @click="parts = Math.min($store.bill.splitMaxParts || 10, parts + 1); $store.bill.splitPeople = parts"
+                                            :disabled="parts >= ($store.bill.splitMaxParts || 10)">+</button>
+                                </div>
+                                <span class="hint" x-text="'máx. ' + ($store.bill.splitMaxParts || 10)"></span>
+                            </div>
+
+                            <div class="split-equit__live">
+                                <span>Tú pagas</span>
+                                <div class="dots">
+                                    <template x-for="i in Array.from({length: parts}, (_, k) => k)" :key="i">
+                                        <span :class="'dot' + (i === mySlice ? ' dot--mine' : '')"></span>
+                                    </template>
+                                </div>
+                            </div>
+
+                            <button type="button" class="btn-primary"
+                                    @click="$store.bill.splitPeople = parts; $store.bill.payEquitative()">
+                                Pagar mi parte ·
+                                <span x-text="Number(slice).toFixed(2).replace('.',',') + ' €'"></span>
+                            </button>
+                        </div>
+                    </div>
+
+                    {{-- ── splitTip: propina para split ─── --}}
+                    <div x-show="$store.bill.step === 'splitTip'">
+                        <div class="split-pay">
+                            <button type="button" class="back" @click="$store.bill.backToMethod()">← Cambiar método</button>
+                            <div class="split-pay__amt">
+                                <span class="lab">Tu parte</span>
+                                <span class="val"
+                                      x-text="Number($store.bill.splitTipBase || 0).toFixed(2).replace('.',',') + ' €'"></span>
+                            </div>
+                            <div class="tip-row" role="group" aria-label="Porcentaje de propina">
+                                <template x-for="pct in [0, 10, 15, 20]" :key="pct">
+                                    <div :class="'tip' + ($store.bill.splitTipPercent === pct ? ' tip--selected' : '')"
+                                         @click="$store.bill.setSplitTipPercent(pct)"
+                                         role="button" tabindex="0"
+                                         :aria-pressed="($store.bill.splitTipPercent === pct).toString()"
+                                         @keydown.enter="$store.bill.setSplitTipPercent(pct)">
+                                        <div class="pct" x-text="pct + '%'"></div>
+                                        <div class="amt"
+                                             x-text="pct === 0 ? '—' : Number(Math.round($store.bill.splitTipBase * pct) / 100).toFixed(2).replace('.',',') + ' €'"></div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- ── splitPay: Stripe para cobro partido ─── --}}
+                    <div x-show="$store.bill.step === 'splitPay'">
+                        <div class="stripe-mock" style="display:flex;flex-direction:column;gap:16px">
+                            <div style="display:flex;align-items:center;gap:6px;font-family:var(--font-body);font-size:12px;font-weight:600;color:var(--fg-muted)">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                    <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
+                                </svg>
+                                PAGO SEGURO · STRIPE
+                            </div>
+                            <div id="split-stripe-element"
+                                 style="padding:16px;border:1px solid var(--glass-border);border-radius:12px;background:var(--glass-bg-surface)"></div>
+                            <template x-if="$store.bill.splitStripeError">
+                                <p style="color:var(--color-red-400);font-size:13px" role="alert" x-text="$store.bill.splitStripeError"></p>
+                            </template>
+                        </div>
+                    </div>
+
+                    {{-- ── splitDone: parte pagada ─── --}}
+                    <div x-show="$store.bill.step === 'splitDone'">
+                        <div class="ps ps--card">
+                            <div class="ps-medal ps-medal--check">
+                                <div class="ps-medal__confetti" aria-hidden="true">
+                                    <span style="--cx:-54px;--cy:-8px;--cd:0ms;background:var(--color-green-500);width:9px;height:9px"></span>
+                                    <span style="--cx:50px;--cy:-14px;--cd:60ms;background:var(--price-gold);width:7px;height:7px"></span>
+                                    <span style="--cx:-38px;--cy:34px;--cd:120ms;background:var(--brand-primary);width:6px;height:6px"></span>
+                                    <span style="--cx:44px;--cy:30px;--cd:90ms;background:var(--color-green-400);width:8px;height:8px"></span>
+                                </div>
+                                <span class="ps-medal__ring" aria-hidden="true"></span>
+                                <span class="ps-medal__disc" aria-hidden="true">
+                                    <svg viewBox="0 0 52 52" class="ps-medal__svg" aria-hidden="true">
+                                        <path class="ps-medal__tick" d="M14 27l8 8 16-18" fill="none"
+                                              stroke="currentColor" stroke-width="5"
+                                              stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                </span>
+                            </div>
+                            <h3 class="ps__head">¡Parte pagada!</h3>
+                            <div class="ps__amount">
+                                <span class="ps__amountLab">Tu parte</span>
+                                <span class="ps__amountVal"
+                                      x-text="Number($store.bill.splitStripeTotal || 0).toFixed(2).replace('.',',') + ' €'"></span>
+                                <span class="ps__amountTip"
+                                      x-show="($store.bill.splitStripeTip || 0) > 0"
+                                      x-text="'incluye ' + Number($store.bill.splitStripeTip || 0).toFixed(2).replace('.',',') + ' € de propina'">
+                                </span>
+                            </div>
+                            <div class="ps__meta">
+                                <span class="ps__chip">{{ $table->name }}</span>
+                                <span class="ps__chip ps__chip--method">Tarjeta · Stripe</span>
+                            </div>
+                            <p class="ps__note">Tu parte de la cuenta está pagada. ¡Gracias!</p>
+                            <div class="ps__cta">
+                                <button type="button" class="ps__btn ps__btn--ghost" @click="$store.bill.close()">Ver carta</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- ── mixed: fader efectivo/tarjeta ─── --}}
+                    <div x-show="$store.bill.step === 'mixed'"
+                         x-data="{
+                             get card() { return Math.max(0, $store.bill.orderTotal - ($store.bill.mixedCashAmount || 0)); },
+                             get cashRatio() { return Math.max(0, Math.min(1, ($store.bill.mixedCashAmount || 0) / $store.bill.orderTotal)); },
+                             get cashAllOnly() { return ($store.bill.mixedCashAmount || 0) >= $store.bill.orderTotal - 0.001; },
+                             get cardOnly() { return ($store.bill.mixedCashAmount || 0) <= 0.001; },
+                             get cardBelowMin() { return !this.cashAllOnly && this.card > 0 && this.card < 0.50; },
+                             get canContinue() { return !this.cardBelowMin; },
+                             fmt(n) { return Number(n).toFixed(2).replace('.',',') + ' €'; },
+                             presets: [],
+                             initPresets() {
+                                 const t = $store.bill.orderTotal;
+                                 this.presets = [
+                                     { label: '10 €',       value: 10 },
+                                     { label: '20 €',       value: 20 },
+                                     { label: '50 €',       value: Math.min(50, t) },
+                                     { label: 'Mitad',      value: Math.round(t / 2 * 2) / 2 },
+                                     { label: 'Solo efect.', value: t },
+                                 ];
+                             },
+                         }"
+                         x-init="initPresets()">
+                        <div class="mixed-flow">
+                            <div class="mixed-stage">
+                                <div class="mixed-stage__head">
+                                    <div class="mixed-stage__title">¿Cuánto en efectivo?</div>
+                                    <div class="mixed-stage__sub">
+                                        El resto lo cobramos con tarjeta. Total a pagar:
+                                        <strong x-text="Number($store.bill.orderTotal).toFixed(2).replace('.',',') + ' €'"></strong>
+                                    </div>
+                                </div>
+
+                                {{-- Fader visual --}}
+                                <div class="fader">
+                                    <div class="fader__bar">
+                                        <div class="fader__cash"
+                                             :style="'width: ' + (cashRatio * 100) + '%'">
+                                            <span class="fader__lab">EFECTIVO</span>
+                                            <span class="fader__amt"
+                                                  x-text="fmt($store.bill.mixedCashAmount || 0)"></span>
+                                        </div>
+                                        <div class="fader__card"
+                                             :style="'width: ' + ((1 - cashRatio) * 100) + '%'">
+                                            <span class="fader__lab">TARJETA</span>
+                                            <span class="fader__amt" x-text="fmt(card)"></span>
+                                        </div>
+                                    </div>
+                                    <input type="range"
+                                           min="0"
+                                           :max="$store.bill.orderTotal"
+                                           step="0.50"
+                                           :value="$store.bill.mixedCashAmount || 0"
+                                           @input="$store.bill.mixedCashAmount = Number($event.target.value)"
+                                           class="fader__range"
+                                           aria-label="Cantidad en efectivo">
+                                </div>
+
+                                {{-- Chips de presets --}}
+                                <div class="mixed-chips">
+                                    <template x-for="p in presets" :key="p.label">
+                                        <button type="button"
+                                                :class="'mixed-chip' + (Math.abs(p.value - ($store.bill.mixedCashAmount || 0)) < 0.01 ? ' mixed-chip--active' : '')"
+                                                @click="$store.bill.mixedCashAmount = Math.min($store.bill.orderTotal, p.value)">
+                                            <span x-text="p.label"></span>
+                                        </button>
+                                    </template>
+                                </div>
+
+                                {{-- Ajuste fino --}}
+                                <div class="mixed-precise">
+                                    <span class="lab">Ajuste fino</span>
+                                    <button type="button" class="mixed-precise__b"
+                                            @click="$store.bill.mixedCashAmount = Math.max(0, Math.round((($store.bill.mixedCashAmount || 0) - 0.5) * 100) / 100)">
+                                        −0,50
+                                    </button>
+                                    <span class="mixed-precise__num"
+                                          x-text="Number($store.bill.mixedCashAmount || 0).toFixed(2).replace('.',',') + ' €'"></span>
+                                    <button type="button" class="mixed-precise__b"
+                                            @click="$store.bill.mixedCashAmount = Math.min($store.bill.orderTotal, Math.round((($store.bill.mixedCashAmount || 0) + 0.5) * 100) / 100)">
+                                        +0,50
+                                    </button>
+                                </div>
+
+                                {{-- Avisos --}}
+                                <div class="mixed-warn" x-show="cardBelowMin">
+                                    <span class="mixed-warn__ic">!</span>
+                                    <div>
+                                        <strong>La parte de tarjeta debe ser al menos 0,50 €.</strong>
+                                        <span x-text="'Sube el efectivo a ' + fmt($store.bill.orderTotal) + ' (100% efectivo) o bájalo a ' + fmt($store.bill.orderTotal - 0.50) + '.'"></span>
+                                    </div>
+                                </div>
+                                <div class="mixed-note" x-show="cashAllOnly">
+                                    ✓ Pagarás el total en efectivo. Continuando te llevamos al cobro en efectivo.
+                                </div>
+                                <div class="mixed-note" x-show="cardOnly && !cashAllOnly">
+                                    ✓ Pagarás el total con tarjeta.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- ── mixedTip: propina sobre parte tarjeta ─── --}}
+                    <div x-show="$store.bill.step === 'mixedTip'"
+                         x-data="{
+                             get card() { return Math.max(0, $store.bill.orderTotal - ($store.bill.mixedCashAmount || 0)); },
+                             fmt(n) { return Number(n).toFixed(2).replace('.',',') + ' €'; },
+                         }">
+                        <div class="mixed-flow">
+                            <div class="mixed-stage">
+                                <div class="mixed-stage__head">
+                                    <div class="mixed-stage__title">Añadir propina</div>
+                                    <div class="mixed-stage__sub">Va incluida en la parte de tarjeta, nunca en el efectivo.</div>
+                                </div>
+
+                                {{-- Resumen del reparto --}}
+                                <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+                                    <span class="mixed-tile mixed-tile--cash"
+                                          x-text="'Efectivo ' + fmt($store.bill.mixedCashAmount || 0)"></span>
+                                    <span class="mixed-tile mixed-tile--card"
+                                          x-text="'Tarjeta base ' + fmt(card)"></span>
+                                </div>
+
+                                {{-- Chips de propina --}}
+                                <div class="mixed-tipChips">
+                                    <button type="button"
+                                            :class="'mixed-tipChip' + ($store.bill.mixedTipPercent === 0 ? ' mixed-tipChip--active' : '')"
+                                            :aria-pressed="$store.bill.mixedTipPercent === 0"
+                                            @click="$store.bill.setMixedTipPercent(0)">
+                                        <span class="pct">Sin</span>
+                                        <span class="amt">propina</span>
+                                    </button>
+                                    <template x-for="p in [5, 10, 15, 20]" :key="p">
+                                        <button type="button"
+                                                :class="'mixed-tipChip' + ($store.bill.mixedTipPercent === p ? ' mixed-tipChip--active' : '')"
+                                                :aria-pressed="$store.bill.mixedTipPercent === p"
+                                                @click="$store.bill.setMixedTipPercent(p)">
+                                            <span class="pct" x-text="p + '%'"></span>
+                                            <span class="amt"
+                                                  x-text="fmt(Math.round(card * p) / 100)"></span>
+                                        </button>
+                                    </template>
+                                </div>
+
+                                {{-- Importe libre --}}
+                                <label for="mixed-tip-free" class="sr-only">Propina personalizada en euros</label>
+                                <div class="mixed-tipInput">
+                                    <input id="mixed-tip-free"
+                                           type="number" min="0" max="500" step="0.50" inputmode="decimal"
+                                           placeholder="O introduce un importe…"
+                                           :value="$store.bill.mixedTipPercent === null && $store.bill.mixedTipAmount > 0 ? $store.bill.mixedTipAmount : ''"
+                                           @input="$store.bill.updateCustomMixedTip ? $store.bill.updateCustomMixedTip($event.target.value) : null">
+                                    <span class="mixed-tipInput__cur" aria-hidden="true">€</span>
+                                </div>
+
+                                {{-- Resumen --}}
+                                <div class="mixed-tipSummary" aria-live="polite">
+                                    <div class="mixed-tipSummary__row">
+                                        <span>Parte de tarjeta</span>
+                                        <span class="v" x-text="fmt(card)"></span>
+                                    </div>
+                                    <div class="mixed-tipSummary__row mixed-tipSummary__row--tip"
+                                         x-show="($store.bill.mixedTipAmount || 0) > 0">
+                                        <span>Propina</span>
+                                        <span class="v"
+                                              x-text="'+ ' + fmt($store.bill.mixedTipAmount || 0)"></span>
+                                    </div>
+                                    <div class="mixed-tipSummary__row mixed-tipSummary__row--total">
+                                        <span>Total con tarjeta</span>
+                                        <span class="v"
+                                              x-text="fmt($store.bill.mixedTipGrandTotal || card)"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- ── mixedPay: Stripe parte tarjeta ─── --}}
+                    <div x-show="$store.bill.step === 'mixedPay'"
+                         x-data="{
+                             get card() { return Math.max(0, $store.bill.orderTotal - ($store.bill.mixedCashAmount || 0)); },
+                             fmt(n) { return Number(n).toFixed(2).replace('.',',') + ' €'; },
+                         }">
+                        <div class="mixed-flow">
+                            <div class="mixed-stage">
+                                <div class="mixed-stage__head">
+                                    <div class="mixed-stage__title">Pago de la parte tarjeta</div>
+                                    <div class="mixed-stage__sub" style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+                                        <span class="mixed-tile mixed-tile--cash"
+                                              x-text="'Efectivo ' + fmt($store.bill.mixedCashAmount || 0)"></span>
+                                        <span class="mixed-tile mixed-tile--card"
+                                              x-text="'Tarjeta ' + fmt($store.bill.mixedTipGrandTotal || card)"></span>
+                                    </div>
+                                </div>
+                                <div id="mixed-stripe-element"
+                                     style="padding:16px;border:1px solid var(--glass-border);border-radius:12px;background:var(--glass-bg-surface)"></div>
+                                <template x-if="$store.bill.mixedStripeError">
+                                    <p style="color:var(--color-red-400);font-size:13px;margin-top:4px"
+                                       role="alert" x-text="$store.bill.mixedStripeError"></p>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- ── mixedWaiter: esperando al camarero ─── --}}
+                    <div x-show="$store.bill.step === 'mixedWaiter'"
+                         x-data="{
+                             get card() { return Math.max(0, $store.bill.orderTotal - ($store.bill.mixedCashAmount || 0)); },
+                             get grandTotal() { return $store.bill.orderTotal + ($store.bill.mixedTipAmount || 0); },
+                             get cardCharge() { return $store.bill.mixedTipGrandTotal || this.card; },
+                             fmt(n) { return Number(n).toFixed(2).replace('.',',') + ' €'; },
+                         }">
+                        <div class="mixed-flow">
+                            <div class="mixed-stage mixed-stage--waiting">
+                                <div class="mixed-waiting">
+                                    <div class="mixed-waiting__ic">
+                                        <div class="mixed-waiting__pulse"></div>
+                                        <span>🧑‍🍳</span>
+                                    </div>
+                                    <div class="mixed-stage__title">Esperando al camarero</div>
+                                    <div class="mixed-stage__sub">
+                                        Tu pago con tarjeta de
+                                        <strong x-text="fmt(cardCharge)"></strong>
+                                        está confirmado.<br>
+                                        El camarero recogerá
+                                        <strong x-text="fmt($store.bill.mixedCashAmount || 0)"></strong>
+                                        en efectivo para cerrar la cuenta.
+                                    </div>
+                                    <div class="mixed-receipt">
+                                        <div class="mixed-receipt__row">
+                                            <span>Total</span>
+                                            <span class="b" x-text="fmt(grandTotal)"></span>
+                                        </div>
+                                        <div class="mixed-receipt__row mixed-receipt__row--ok">
+                                            <span>· Tarjeta (confirmado)</span>
+                                            <span class="b" x-text="fmt(cardCharge)"></span>
+                                        </div>
+                                        <div class="mixed-receipt__row mixed-receipt__row--pending">
+                                            <span>· Efectivo (pendiente)</span>
+                                            <span class="b" x-text="fmt($store.bill.mixedCashAmount || 0)"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- ── mixedDone: cuenta cerrada ─── --}}
+                    <div x-show="$store.bill.step === 'mixedDone'"
+                         x-data="{
+                             get card() { return Math.max(0, $store.bill.orderTotal - ($store.bill.mixedCashAmount || 0)); },
+                             get cardCharge() { return $store.bill.mixedTipGrandTotal || this.card; },
+                             fmt(n) { return Number(n).toFixed(2).replace('.',',') + ' €'; },
+                         }">
+                        <div class="mixed-flow">
+                            <div class="mixed-stage">
+                                <div class="ps ps--card" style="padding-top:8px">
+                                    <div class="ps-medal ps-medal--check">
+                                        <div class="ps-medal__confetti" aria-hidden="true">
+                                            <span style="--cx:-54px;--cy:-8px;--cd:0ms;background:var(--color-green-500);width:9px;height:9px"></span>
+                                            <span style="--cx:50px;--cy:-14px;--cd:60ms;background:var(--price-gold);width:7px;height:7px"></span>
+                                            <span style="--cx:-38px;--cy:34px;--cd:120ms;background:var(--brand-primary);width:6px;height:6px"></span>
+                                            <span style="--cx:44px;--cy:30px;--cd:90ms;background:var(--color-green-400);width:8px;height:8px"></span>
+                                        </div>
+                                        <span class="ps-medal__ring" aria-hidden="true"></span>
+                                        <span class="ps-medal__disc" aria-hidden="true">
+                                            <svg viewBox="0 0 52 52" class="ps-medal__svg" aria-hidden="true">
+                                                <path class="ps-medal__tick" d="M14 27l8 8 16-18" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+                                            </svg>
+                                        </span>
+                                    </div>
+                                    <h3 class="ps__head">Cuenta cerrada · ¡Gracias!</h3>
+                                    <div class="ps__amount">
+                                        <span class="ps__amountLab">Total pagado</span>
+                                        <span class="ps__amountVal"
+                                              x-text="fmt($store.bill.orderTotal + ($store.bill.mixedTipAmount || 0))"></span>
+                                    </div>
+                                    <div class="ps__meta">
+                                        <span class="ps__chip">{{ $table->name }}</span>
+                                        <span class="ps__chip ps__chip--method">Pago mixto</span>
+                                    </div>
+                                    <p class="ps__note"
+                                       x-text="'Tarjeta ' + fmt(cardCharge) + ' · Efectivo ' + fmt($store.bill.mixedCashAmount || 0)">
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
+                </div>{{-- /drawer__body --}}
+
+                {{-- ── PIE: botones por step ───────────────────────────────────── --}}
                 <div class="drawer__foot">
-                    <button type="button" class="btn-primary" @click="$store.bill.payEquitative()">
-                        Pagar mi parte con tarjeta
-                    </button>
-                    <button type="button" class="btn-text" @click="$store.bill.closeSplitEq()">Cancelar</button>
-                </div>
-            </div>
-        </div>
 
-        {{-- MIXED PAYMENT --}}
-        <div class="scrim"
-             x-show="$store.bill.showingMixed"
-             x-transition
-             @click.self="$store.bill.closeMixed()"
-             role="dialog" aria-modal="true" aria-label="Cobro mixto">
-            <div class="drawer drawer--bill drawer--wide" @click.stop>
-                <div class="drawer__grabber" aria-hidden="true"></div>
-                <div class="drawer__head">
-                    <button type="button" class="icon-btn icon-btn--back" @click="$store.bill.close()" aria-label="Cambiar método">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="15 18 9 12 15 6"/></svg>
-                    </button>
-                    <div class="drawer__heading">
-                        <div class="drawer__title">Pago mixto</div>
-                        <div class="drawer__subtitle">Efectivo + tarjeta</div>
+                    {{-- method --}}
+                    <div x-show="$store.bill.step === 'method'">
+                        <button type="button" class="btn-text" @click="$store.bill.close()">Cancelar</button>
                     </div>
-                    <div class="drawer__total">
-                        <div class="lab">Total</div>
-                        <div class="val" x-text="Number($store.bill.orderTotal).toFixed(2).replace('.',',') + ' €'"></div>
-                    </div>
-                    <button type="button" class="icon-btn" @click="$store.bill.closeMixed()" aria-label="Cerrar">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-                    </button>
-                </div>
-                <div class="drawer__body">
-                    <div style="display:flex;flex-direction:column;gap:16px">
-                        <div style="font-family:var(--font-body);font-size:13px;color:var(--fg-muted);line-height:1.5">
-                            Indica cuánto pagas en efectivo. El resto se cobará con tarjeta.
-                        </div>
-                        <div style="display:flex;align-items:center;gap:8px">
-                            <label for="mixed-cash-input" style="font-family:var(--font-body);font-size:13px;font-weight:600;color:var(--fg-secondary);white-space:nowrap">Efectivo (€)</label>
-                            <input id="mixed-cash-input"
-                                   type="number" min="0" step="0.01"
-                                   :max="$store.bill.orderTotal"
-                                   :value="$store.bill.mixedCashAmount || ''"
-                                   @input="$store.bill.mixedCashAmount = parseFloat($event.target.value) || 0"
-                                   style="flex:1;padding:10px 12px;border-radius:10px;border:1px solid var(--glass-border);background:var(--glass-bg-surface);color:var(--fg-primary);font-family:var(--font-body);font-size:16px">
-                        </div>
-                        <div style="display:flex;justify-content:space-between;padding:12px;border-radius:10px;background:var(--glass-bg-surface);border:1px solid var(--glass-border)">
-                            <span style="font-family:var(--font-body);font-size:13px;color:var(--fg-muted)">Parte con tarjeta</span>
-                            <span style="font-family:var(--font-display);font-weight:700;font-size:16px;color:var(--price-gold)"
-                                  x-text="Number(Math.max(0, $store.bill.orderTotal - ($store.bill.mixedCashAmount || 0))).toFixed(2).replace('.',',') + ' €'"></span>
+
+                    {{-- cashConfirm --}}
+                    <div x-show="$store.bill.step === 'cashConfirm'">
+                        <div class="bill__footRow bill__footRow--stack">
+                            <button type="button" class="btn-primary cashTip__cta"
+                                    :disabled="$store.bill.sending"
+                                    @click="$store.bill.confirmCashPayment()">
+                                <span x-show="$store.bill.sending">
+                                    <span class="cashTip__spin" aria-hidden="true"></span>
+                                    Enviando solicitud…
+                                </span>
+                                <span x-show="!$store.bill.sending"
+                                      x-text="($store.bill.cashTipAmount || 0) > 0
+                                          ? 'Solicitar cuenta · ' + Number($store.bill.cashGrandTotal).toFixed(2).replace('.',',') + ' € (con propina)'
+                                          : 'Solicitar cuenta · ' + Number($store.bill.orderTotal).toFixed(2).replace('.',',') + ' € (sin propina)'">
+                                </span>
+                            </button>
+                            <button type="button" class="btn-secondary" @click="$store.bill.backToMethod()">← Cambiar método</button>
                         </div>
                     </div>
-                </div>
-                <div class="drawer__foot">
-                    <button type="button" class="btn-primary"
-                            :disabled="!$store.bill.mixedCashAmount || $store.bill.mixedCashAmount >= $store.bill.orderTotal"
-                            @click="$store.bill.processMixed()">
-                        Continuar con tarjeta
-                    </button>
-                    <button type="button" class="btn-text" @click="$store.bill.closeMixed()">Cancelar</button>
-                </div>
-            </div>
-        </div>
 
-        {{-- Mixed: Stripe de la parte tarjeta --}}
-        <div class="scrim"
-             x-show="$store.bill.showingMixedStripe"
-             x-transition
-             @click.self="$store.bill.close()"
-             role="dialog" aria-modal="true" aria-label="Pago parte tarjeta">
-            <div class="drawer drawer--bill" @click.stop>
-                <div class="drawer__grabber" aria-hidden="true"></div>
-                <div class="drawer__head">
-                    <div class="drawer__heading">
-                        <div class="drawer__title">Parte con tarjeta</div>
-                        <div class="drawer__subtitle">Pago seguro · Stripe</div>
+                    {{-- cashDone --}}
+                    <div x-show="$store.bill.step === 'cashDone'">
+                        <div class="bill__footRow">
+                            <button type="button" class="btn-text bill__cancelNotice" @click="$store.bill.backToMethod()">Cancelar aviso</button>
+                        </div>
                     </div>
-                    <div class="drawer__total">
-                        <div class="lab">A pagar</div>
-                        <div class="val" x-text="Number(Math.max(0, $store.bill.orderTotal - ($store.bill.mixedCashAmount || 0))).toFixed(2).replace('.',',') + ' €'"></div>
-                    </div>
-                    <button type="button" class="icon-btn" @click="$store.bill.close()" aria-label="Cerrar">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-                    </button>
-                </div>
-                <div class="drawer__body">
-                    <div id="stripe-card-element-mixed" style="padding:16px;border:1px solid var(--glass-border);border-radius:12px;background:var(--glass-bg-surface)"></div>
-                    <template x-if="$store.bill.stripeError">
-                        <p style="color:var(--color-red-400);font-size:13px;margin-top:8px" role="alert" x-text="$store.bill.stripeError"></p>
-                    </template>
-                </div>
-                <div class="drawer__foot">
-                    <button type="button" class="btn-primary"
-                            @click="$store.bill.payMixedCard()"
-                            :disabled="$store.bill.sending">
-                        <span x-text="$store.bill.sending ? 'Procesando…' : 'Pagar con tarjeta'"></span>
-                    </button>
-                </div>
-            </div>
-        </div>
 
-        {{-- ══════════════════════════════════════════════════════════════════════
+                    {{-- tip --}}
+                    <div x-show="$store.bill.step === 'tip'">
+                        <div class="bill__footRow bill__footRow--stack">
+                            <button type="button" class="btn-primary"
+                                    @click="$store.bill.proceedToStripe()">
+                                Continuar —
+                                <span x-text="Number($store.bill.orderTotal + ($store.bill.tipAmount || 0)).toFixed(2).replace('.',',') + ' €'"></span>
+                            </button>
+                            <button type="button" class="btn-secondary" @click="$store.bill.backToMethod()">← Cambiar método</button>
+                        </div>
+                    </div>
+
+                    {{-- pay --}}
+                    <div x-show="$store.bill.step === 'pay'">
+                        <div class="bill__footRow bill__footRow--stack">
+                            <button type="button" class="btn-primary"
+                                    @click="$store.bill.submitCardPayment ? $store.bill.submitCardPayment() : $store.bill.payWithStripe()"
+                                    :disabled="$store.bill.sending || !$store.bill.stripeReady">
+                                <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
+                                </svg>
+                                <span x-text="$store.bill.sending ? 'Procesando…' : 'Pagar ' + Number($store.bill.grandTotal || $store.bill.orderTotal).toFixed(2).replace('.',',') + ' €'"></span>
+                            </button>
+                            <button type="button" class="btn-secondary" @click="$store.bill.backToMethod()">← Cambiar método</button>
+                        </div>
+                    </div>
+
+                    {{-- cardDone: sin botones adicionales en el footer --}}
+
+                    {{-- split --}}
+                    <div x-show="$store.bill.step === 'split'">
+                        <button type="button" class="btn-text" @click="$store.bill.closeSplitSelector()">Cancelar</button>
+                    </div>
+
+                    {{-- splitItems --}}
+                    <div x-show="$store.bill.step === 'splitItems'">
+                        <div style="display:flex;justify-content:space-between;margin-bottom:10px;font-family:var(--font-body);font-size:13px">
+                            <span style="color:var(--fg-muted)">Mi parte</span>
+                            <span style="font-weight:700;color:var(--price-gold)"
+                                  x-text="Number($store.bill.splitItemsTotal || 0).toFixed(2).replace('.',',') + ' €'"></span>
+                        </div>
+                        <button type="button" class="btn-primary"
+                                :disabled="!$store.bill.splitSelected || $store.bill.splitSelected.length === 0"
+                                @click="$store.bill.paySelectedItems()">
+                            Pagar mi parte
+                        </button>
+                        <button type="button" class="btn-text" @click="$store.bill.closeSplitItems()">Atrás</button>
+                    </div>
+
+                    {{-- splitEq --}}
+                    <div x-show="$store.bill.step === 'splitEq'">
+                        <button type="button" class="btn-primary" @click="$store.bill.payEquitative()">
+                            Pagar mi parte con tarjeta
+                        </button>
+                        <button type="button" class="btn-text" @click="$store.bill.closeSplitEq()">Atrás</button>
+                    </div>
+
+                    {{-- splitTip --}}
+                    <div x-show="$store.bill.step === 'splitTip'">
+                        <div class="bill__footRow bill__footRow--stack">
+                            <button type="button" class="btn-primary"
+                                    @click="$store.bill.confirmSplitTip()">
+                                Continuar —
+                                <span x-text="Number($store.bill.splitTipGrandTotal || $store.bill.splitTipBase).toFixed(2).replace('.',',') + ' €'"></span>
+                            </button>
+                            <button type="button" class="btn-secondary" @click="$store.bill.backToMethod()">← Cambiar método</button>
+                        </div>
+                    </div>
+
+                    {{-- mixed --}}
+                    <div x-show="$store.bill.step === 'mixed'">
+                        <button type="button" class="btn-primary"
+                                :disabled="!$store.bill.mixedCashValid && !($store.bill.mixedCashAmount >= $store.bill.orderTotal - 0.001)"
+                                @click="$store.bill.proceedFromMixed()">
+                            <span x-text="($store.bill.mixedCashAmount >= $store.bill.orderTotal - 0.001) ? 'Continuar · Pago en efectivo' : 'Continuar con tarjeta'"></span>
+                        </button>
+                        <button type="button" class="btn-text" @click="$store.bill.closeMixed()">Cancelar</button>
+                    </div>
+
+                    {{-- mixedTip --}}
+                    <div x-show="$store.bill.step === 'mixedTip'">
+                        <div class="bill__footRow bill__footRow--stack">
+                            <button type="button" class="btn-primary"
+                                    @click="$store.bill.confirmMixedTip()">
+                                Continuar —
+                                <span x-text="Number($store.bill.mixedTipGrandTotal || $store.bill.mixedCardAmount).toFixed(2).replace('.',',') + ' €'"></span>
+                            </button>
+                            <button type="button" class="btn-secondary" @click="$store.bill.closeMixedTip()">← Atrás</button>
+                        </div>
+                    </div>
+
+                    {{-- splitPay --}}
+                    <div x-show="$store.bill.step === 'splitPay'">
+                        <div class="bill__footRow bill__footRow--stack">
+                            <button type="button" class="btn-primary"
+                                    @click="$store.bill.submitSplitPayment()"
+                                    :disabled="$store.bill.sending || !$store.bill.splitStripeReady">
+                                <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
+                                </svg>
+                                <span x-text="$store.bill.sending ? 'Procesando…' : 'Pagar ' + Number($store.bill.splitStripeTotal || 0).toFixed(2).replace('.',',') + ' €'"></span>
+                            </button>
+                            <button type="button" class="btn-secondary" @click="$store.bill.closeSplitPayment()">← Atrás</button>
+                        </div>
+                    </div>
+
+                    {{-- mixedPay --}}
+                    <div x-show="$store.bill.step === 'mixedPay'">
+                        <div class="bill__footRow bill__footRow--stack">
+                            <button type="button" class="btn-primary"
+                                    @click="$store.bill.payMixedCard()"
+                                    :disabled="$store.bill.sending || !$store.bill.mixedStripeReady">
+                                <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
+                                </svg>
+                                <span x-text="$store.bill.sending ? 'Procesando…' : 'Pagar ' + Number($store.bill.mixedTipGrandTotal || $store.bill.mixedCardAmount).toFixed(2).replace('.',',') + ' €'"></span>
+                            </button>
+                            <button type="button" class="btn-secondary" @click="$store.bill.closeMixedPayment()">← Atrás</button>
+                        </div>
+                    </div>
+
+                </div>{{-- /drawer__foot --}}
+            </div>{{-- /drawer--bill --}}
+        </div>{{-- /scrim --}}
+
+
+                {{-- ══════════════════════════════════════════════════════════════════════
              TAPA MODAL — DS: .modal > .modal__panel
              ══════════════════════════════════════════════════════════════════════ --}}
         <div class="modal"

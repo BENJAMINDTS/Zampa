@@ -153,7 +153,7 @@ class MenuController extends Controller
                 ->toArray()
             : [];
 
-        $theme = 'modern';
+        $theme = $table->user->menu_style ?: 'modern';
 
         return view('menu.show', compact(
             'theme', 'table', 'categories', 'allergens',
