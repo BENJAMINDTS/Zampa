@@ -737,6 +737,7 @@
                  x-transition:leave="transition ease-in duration-200"
                  x-transition:leave-start="opacity-100"
                  x-transition:leave-end="opacity-0"
+                 style="display:none"
                  class="zampi-overlay"
                  @keydown.escape.window="closeChat()"
                  aria-modal="true" role="dialog" aria-label="Asistente virtual Zampi">
@@ -3031,6 +3032,7 @@
              x-transition:leave="transition duration-200"
              x-transition:leave-start="opacity-100"
              x-transition:leave-end="opacity-0"
+             style="display:none"
              @click.self="$store.cart.closeTapaModal()"
              role="dialog" aria-modal="true" aria-label="Tapas disponibles">
 
