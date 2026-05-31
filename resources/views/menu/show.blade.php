@@ -443,7 +443,7 @@
 
     {{-- ── Componente Alpine raíz + wrapper DS ───────────────────── --}}
     <div x-data="menuFilters()"
-         class="carta"
+         class="carta carta--loading"
          data-theme="{{ $theme }}"
          x-init="
             if (document.documentElement.getAttribute('data-dark-pending') === '1') {
@@ -456,6 +456,11 @@
             };
             updateBp();
             window.addEventListener('resize', updateBp);
+            $nextTick(() => {
+                $el.classList.add('carta--reveal');
+                void $el.offsetWidth;
+                $el.classList.remove('carta--loading');
+            });
          ">
 
         {{-- ── Header DS ────────────────────────────────────────────── --}}
