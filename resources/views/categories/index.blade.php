@@ -29,10 +29,10 @@
       </a>
     </div>
 
-    {{-- Búsqueda --}}
+    {{-- Búsqueda y filtros --}}
     <form method="GET" action="{{ route('categories.index') }}"
           class="mb-6 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center"
-          role="search" aria-label="Buscar categorías">
+          role="search" aria-label="Buscar y filtrar categorías">
       <div class="relative flex-1">
         <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0z"/>
@@ -42,17 +42,28 @@
                aria-label="Buscar categoría por nombre"
                class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 py-2 pl-9 pr-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
       </div>
+      <div class="relative">
+        <select name="destination" id="destination" aria-label="Filtrar por destino"
+                class="w-full sm:w-44 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 py-2 pl-3 pr-8 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 appearance-none">
+          <option value="">Cocina y barra</option>
+          <option value="kitchen" {{ request('destination') === 'kitchen' ? 'selected' : '' }}>Solo cocina</option>
+          <option value="bar" {{ request('destination') === 'bar' ? 'selected' : '' }}>Solo barra</option>
+        </select>
+        <svg class="absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+        </svg>
+      </div>
       <button type="submit"
               class="inline-flex items-center justify-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm py-2.5 px-4 rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900 transition-colors">
         <svg class="h-4 w-4" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0z"/>
         </svg>
-        Buscar
+        Filtrar
       </button>
-      @if(request()->filled('search'))
+      @if(request()->hasAny(['search', 'destination']))
         <a href="{{ route('categories.index') }}"
            class="inline-flex items-center justify-center gap-1.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-semibold text-sm py-2.5 px-4 rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 dark:focus:ring-offset-gray-900 transition-colors"
-           aria-label="Limpiar búsqueda">
+           aria-label="Limpiar filtros">
           <svg class="h-4 w-4" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
           </svg>
