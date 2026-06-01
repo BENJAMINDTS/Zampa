@@ -46,13 +46,19 @@ class SuperAdminPlanController extends Controller
     {
         abort_if(!Auth::user()->isSuperAdmin(), 403);
 
-        $request->validate([
-            'name'       => 'required|string|max:255|unique:plans,name',
-            'price'      => 'required|numeric|min:0',
-            'max_tables' => 'required|integer|min:1|max:500',
+        $validated = $request->validate([
+            'name'          => 'required|string|max:255|unique:plans,name',
+            'price_monthly' => 'required|numeric|min:0',
+            'price_yearly'  => 'nullable|numeric|min:0',
+            'max_tables'    => 'nullable|integer|min:1',
+            'max_staff'     => 'nullable|integer|min:1',
+            'max_floors'    => 'nullable|integer|min:1',
         ]);
 
-        Plan::create($request->only('name', 'price', 'max_tables'));
+        // Mirror price_monthly → price for backward compatibility
+        $validated['price'] = $validated['price_monthly'];
+
+        Plan::create($validated);
 
         return redirect()->route('superadmin.plans.index')
                          ->with('success', 'Plan creado correctamente.');
@@ -78,13 +84,19 @@ class SuperAdminPlanController extends Controller
     {
         abort_if(!Auth::user()->isSuperAdmin(), 403);
 
-        $request->validate([
-            'name'       => 'required|string|max:255|unique:plans,name,' . $plan->id,
-            'price'      => 'required|numeric|min:0',
-            'max_tables' => 'required|integer|min:1|max:500',
+        $validated = $request->validate([
+            'name'          => 'required|string|max:255|unique:plans,name,' . $plan->id,
+            'price_monthly' => 'required|numeric|min:0',
+            'price_yearly'  => 'nullable|numeric|min:0',
+            'max_tables'    => 'nullable|integer|min:1',
+            'max_staff'     => 'nullable|integer|min:1',
+            'max_floors'    => 'nullable|integer|min:1',
         ]);
 
-        $plan->update($request->only('name', 'price', 'max_tables'));
+        // Mirror price_monthly → price for backward compatibility
+        $validated['price'] = $validated['price_monthly'];
+
+        $plan->update($validated);
 
         return redirect()->route('superadmin.plans.index')
                          ->with('success', 'Plan actualizado correctamente.');
