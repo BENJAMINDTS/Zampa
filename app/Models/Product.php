@@ -25,10 +25,27 @@ class Product extends Model
 {
     use HasFactory, SoftDeletes;
 
+    /** Almacena temporalmente un category_id pasado vía fill() para sincronizarlo en el evento created/updated. */
+    protected ?int $pendingCategoryId = null;
+
     protected static function booted(): void
     {
         static::deleting(function (Product $product) {
             $product->variants()->delete();
+        });
+
+        static::created(function (Product $product) {
+            if ($product->pendingCategoryId !== null) {
+                $product->categories()->attach($product->pendingCategoryId);
+                $product->pendingCategoryId = null;
+            }
+        });
+
+        static::updated(function (Product $product) {
+            if ($product->pendingCategoryId !== null) {
+                $product->categories()->sync([$product->pendingCategoryId]);
+                $product->pendingCategoryId = null;
+            }
         });
     }
 
@@ -43,6 +60,18 @@ class Product extends Model
     ];
 
     /**
+     * Intercepta category_id para redirigirlo al pivot en lugar de la columna.
+     * Mantiene compatibilidad con código legado que pase category_id por fill().
+     *
+     * @param int|null $value
+     */
+    public function setCategoryIdAttribute(?int $value): void
+    {
+        $this->pendingCategoryId = $value;
+        // No almacenar en $attributes — la columna ya no existe en la BD
+    }
+
+    /**
      * @return BelongsTo
      */
     public function user(): BelongsTo
@@ -51,11 +80,13 @@ class Product extends Model
     }
 
     /**
-     * Categoría a la que pertenece (Ej: Hamburguesas).
+     * Categorías a las que pertenece este producto (M:N).
+     *
+     * @return BelongsToMany
      */
-    public function category(): BelongsTo
+    public function categories(): BelongsToMany
     {
-        return $this->belongsTo(Category::class);
+        return $this->belongsToMany(Category::class, 'category_product');
     }
 
     /**
