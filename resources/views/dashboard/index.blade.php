@@ -73,6 +73,13 @@
     <main id="main-content" class="py-6">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
 
+            {{-- ─── Uso del plan ───────────────────────────────────────────────────── --}}
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="md:col-span-1">
+                    <x-plan-usage :planUsage="$planUsage" />
+                </div>
+            </div>
+
             {{-- ─── Bloque 9.1: Desglose de ingresos ─────────────────────────────── --}}
             <section aria-labelledby="income-heading">
                 <div class="flex items-center justify-between mb-4">
