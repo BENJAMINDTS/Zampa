@@ -135,12 +135,12 @@
             </a>
             <form action="{{ route('ingredients.destroy', $ingredient) }}" method="POST"
                   onsubmit="return confirm('¿Eliminar el ingrediente «{{ addslashes($ingredient->name) }}»?');"
-                  class="flex">
+                  class="flex flex-1">
               @csrf
               @method('DELETE')
               <button type="submit"
                       aria-label="Eliminar ingrediente {{ $ingredient->name }}"
-                      class="inline-flex items-center justify-center gap-1.5 text-sm font-semibold
+                      class="flex-1 inline-flex items-center justify-center gap-1.5 text-sm font-semibold
                              bg-white dark:bg-gray-700 text-red-600 dark:text-red-400
                              border border-red-200 dark:border-red-700
                              hover:bg-red-50 dark:hover:bg-red-900/20 shadow-sm hover:shadow
