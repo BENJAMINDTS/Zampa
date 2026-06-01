@@ -2087,6 +2087,83 @@ html, body {
 /* â”€â”€ "Mi ticket" pill â€” green, sits to the right of "Cuenta" â”€â”€ */
 .fab__ic { display: inline-flex; align-items: center; }
 .fab__label { white-space: nowrap; }
+
+/* ── Orders panel — Mis pedidos ─────────────────────────── */
+.drawer--orders { height: auto; max-height: 78%; }
+
+.order-card {
+  display: flex; align-items: center; gap: 12px;
+  width: 100%; padding: 12px 14px;
+  background: var(--glass-bg-surface);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px; cursor: pointer;
+  text-align: left;
+  transition: background-color var(--duration-fast);
+}
+.order-card:hover { background: var(--bg-chip); }
+
+.order-badge {
+  flex-shrink: 0;
+  min-width: 32px; height: 32px;
+  padding: 0 6px;
+  border-radius: 8px;
+  background: var(--fg-primary); color: var(--bg-base);
+  font-family: var(--font-display); font-size: 12px; font-weight: 900;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.order-badge--active {
+  background: var(--color-green-500); color: #fff;
+}
+
+.order-card__info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.order-card__name { font-family: var(--font-body); font-size: 14px; font-weight: 700; color: var(--fg-primary); }
+.order-card__meta { font-family: var(--font-body); font-size: 12px; color: var(--fg-muted); }
+.order-card__price { font-family: var(--font-display); font-size: 15px; font-weight: 800; color: var(--price-gold); flex-shrink: 0; }
+.order-card__chevron { flex-shrink: 0; color: var(--fg-muted); }
+
+.orders-back {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 6px 12px; border-radius: 9999px;
+  border: 1px solid var(--border-strong); background: transparent;
+  font-family: var(--font-body); font-size: 12px; font-weight: 600; color: var(--fg-secondary);
+  cursor: pointer; align-self: flex-start;
+  transition: background-color var(--duration-fast);
+}
+.orders-back:hover { background: var(--bg-chip); }
+
+.order-detail-card {
+  background: var(--glass-bg-surface);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px; overflow: hidden;
+}
+.order-detail-card__head {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px;
+}
+.order-detail-card__divider {
+  height: 1px; background: var(--glass-border); margin: 0;
+}
+.order-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px;
+}
+.order-item + .order-item { border-top: 1px solid var(--glass-border); }
+.order-item__qty { font-family: var(--font-body); font-size: 13px; color: var(--fg-muted); flex-shrink: 0; min-width: 24px; }
+.order-item__name { flex: 1; font-family: var(--font-body); font-size: 14px; color: var(--fg-primary); }
+.order-item__price { font-family: var(--font-display); font-size: 14px; font-weight: 700; color: var(--price-gold); flex-shrink: 0; }
+
+.orders-total {
+  display: flex; align-items: baseline; justify-content: space-between;
+  padding: 2px 0;
+}
+.orders-total__label {
+  font-family: var(--font-body); font-size: 11px; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-muted);
+}
+.orders-total__val {
+  font-family: var(--font-display); font-size: 20px; font-weight: 900;
+  color: var(--price-gold); font-variant-numeric: tabular-nums;
+}
 .fab--ticket {
   position: static;
   width: auto; height: 44px;
