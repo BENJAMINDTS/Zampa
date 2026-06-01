@@ -31,13 +31,15 @@ class IngredientController extends Controller
      */
     public function index(Request $request): \Illuminate\View\View
     {
-        $ownerId     = Auth::user()->ownerUserId();
-        $ingredients = Ingredient::where('user_id', $ownerId)
+        $ownerId      = Auth::user()->ownerUserId();
+        $allergenTypes = Ingredient::ALLERGEN_TYPES;
+        $ingredients  = Ingredient::where('user_id', $ownerId)
             ->when($request->filled('search'), fn ($q) => $q->where('name', 'like', '%' . $request->search . '%'))
+            ->when($request->filled('allergen'), fn ($q) => $q->whereJsonContains('allergen_types', $request->allergen))
             ->paginate(15)
             ->withQueryString();
 
-        return view('ingredients.index', compact('ingredients'));
+        return view('ingredients.index', compact('ingredients', 'allergenTypes'));
     }
 
     /**

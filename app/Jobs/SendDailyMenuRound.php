@@ -66,7 +66,7 @@ class SendDailyMenuRound implements ShouldQueue
         // PASO 3 — Obtener las selecciones que pertenecen a esta ronda
         $selections = $order->selections()
             ->whereHas('section', fn ($q) => $q->whereIn('type', $timingRule->section_types))
-            ->with(['section', 'product.category'])
+            ->with(['section', 'product.categories'])
             ->get();
 
         // PASO 4 — Crear los order_items dentro de una transacción
@@ -82,7 +82,7 @@ class SendDailyMenuRound implements ShouldQueue
                     'quantity'      => $selection->quantity,
                     'price'         => $price,
                     'status'        => 'queued',
-                    'destination'   => $selection->product->category->destination,
+                    'destination'   => $selection->product->categories->first()?->destination ?? 'kitchen',
                     'is_daily_menu' => true,
                 ]);
             }

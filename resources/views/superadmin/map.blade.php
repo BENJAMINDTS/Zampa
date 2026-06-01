@@ -25,8 +25,7 @@
 
     {{-- Mapa Leaflet --}}
     <div id="map"
-         style="height: 600px;"
-         class="rounded-lg border border-slate-700 shadow-sm"
+         class="h-64 sm:h-96 lg:h-[600px] rounded-lg border border-slate-700 shadow-sm"
          aria-label="Mapa de negocios registrados en Zampa"
          role="img">
     </div>
@@ -49,8 +48,7 @@
             Sin plan
         </span>
         <span class="flex items-center gap-2">
-            <span class="inline-block w-3 h-3 rounded-full border-2 border-white shadow"
-                  style="background: #ef4444"
+            <span class="inline-block w-3 h-3 rounded-full border-2 border-white shadow bg-red-500"
                   aria-hidden="true"></span>
             Inactivo
         </span>

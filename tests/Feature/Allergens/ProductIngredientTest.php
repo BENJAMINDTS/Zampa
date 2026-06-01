@@ -15,7 +15,6 @@ beforeEach(function () {
 
 it('redirects unauthenticated user away from product ingredients', function () {
     $product = Product::factory()
-        ->for(Category::factory()->for($this->user))
         ->for($this->user)
         ->create();
 
@@ -27,7 +26,6 @@ it('redirects unauthenticated user away from product ingredients', function () {
 
 it('shows ingredient management page for product owner', function () {
     $product = Product::factory()
-        ->for(Category::factory()->for($this->user))
         ->for($this->user)
         ->create();
 
@@ -38,7 +36,6 @@ it('shows ingredient management page for product owner', function () {
 
 it('returns 403 when user tries to view ingredients of another users product', function () {
     $product = Product::factory()
-        ->for(Category::factory()->for($this->other))
         ->for($this->other)
         ->create();
 
@@ -50,7 +47,7 @@ it('returns 403 when user tries to view ingredients of another users product', f
 // ─── Sync Ingredients ─────────────────────────────────────────────────────────
 
 it('assigns ingredients to a product with correct pivot data', function () {
-    $product    = Product::factory()->for(Category::factory()->for($this->user))->for($this->user)->create();
+    $product    = Product::factory()->for($this->user)->afterCreating(fn($p) => $p->categories()->attach(Category::factory()->for($this->user)->create()->id))->create();
     $ingredient = Ingredient::factory()->for($this->user)->create();
 
     $this->actingAs($this->user)
@@ -75,7 +72,7 @@ it('assigns ingredients to a product with correct pivot data', function () {
 });
 
 it('saves is_extra and extra_price in pivot table', function () {
-    $product    = Product::factory()->for(Category::factory()->for($this->user))->for($this->user)->create();
+    $product    = Product::factory()->for($this->user)->afterCreating(fn($p) => $p->categories()->attach(Category::factory()->for($this->user)->create()->id))->create();
     $ingredient = Ingredient::factory()->for($this->user)->create();
 
     $this->actingAs($this->user)
@@ -99,7 +96,7 @@ it('saves is_extra and extra_price in pivot table', function () {
 });
 
 it('saves is_removable in pivot table', function () {
-    $product    = Product::factory()->for(Category::factory()->for($this->user))->for($this->user)->create();
+    $product    = Product::factory()->for($this->user)->afterCreating(fn($p) => $p->categories()->attach(Category::factory()->for($this->user)->create()->id))->create();
     $ingredient = Ingredient::factory()->for($this->user)->create();
 
     $this->actingAs($this->user)
@@ -122,7 +119,7 @@ it('saves is_removable in pivot table', function () {
 });
 
 it('syncs with empty array removes all ingredients', function () {
-    $product    = Product::factory()->for(Category::factory()->for($this->user))->for($this->user)->create();
+    $product    = Product::factory()->for($this->user)->afterCreating(fn($p) => $p->categories()->attach(Category::factory()->for($this->user)->create()->id))->create();
     $ingredient = Ingredient::factory()->for($this->user)->create();
 
     $product->ingredients()->attach($ingredient->id, [
@@ -144,7 +141,7 @@ it('syncs with empty array removes all ingredients', function () {
 });
 
 it('replaces existing ingredients on sync no accumulation', function () {
-    $product      = Product::factory()->for(Category::factory()->for($this->user))->for($this->user)->create();
+    $product      = Product::factory()->for($this->user)->afterCreating(fn($p) => $p->categories()->attach(Category::factory()->for($this->user)->create()->id))->create();
     $ingredient1  = Ingredient::factory()->for($this->user)->create();
     $ingredient2  = Ingredient::factory()->for($this->user)->create();
 
@@ -178,7 +175,7 @@ it('replaces existing ingredients on sync no accumulation', function () {
 });
 
 it('returns 403 when user tries to sync ingredients of another users product', function () {
-    $product    = Product::factory()->for(Category::factory()->for($this->other))->for($this->other)->create();
+    $product    = Product::factory()->for($this->other)->afterCreating(fn($p) => $p->categories()->attach(Category::factory()->for($this->other)->create()->id))->create();
     $ingredient = Ingredient::factory()->for($this->other)->create();
 
     $this->actingAs($this->user)
@@ -189,7 +186,7 @@ it('returns 403 when user tries to sync ingredients of another users product', f
 });
 
 it('shows success flash message after sync', function () {
-    $product = Product::factory()->for(Category::factory()->for($this->user))->for($this->user)->create();
+    $product = Product::factory()->for($this->user)->afterCreating(fn($p) => $p->categories()->attach(Category::factory()->for($this->user)->create()->id))->create();
 
     $this->actingAs($this->user)
         ->post(route('products.ingredients.sync', $product), [

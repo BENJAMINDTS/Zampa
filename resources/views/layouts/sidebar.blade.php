@@ -285,7 +285,7 @@
                 @csrf
                 <button type="submit"
                         aria-label="Cerrar sesión"
-                        class="p-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200
+                        class="p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center text-gray-400 hover:text-gray-700 dark:hover:text-gray-200
                                rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors">
                     <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>

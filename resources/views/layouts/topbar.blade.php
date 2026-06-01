@@ -9,8 +9,8 @@
             :aria-expanded="sidebarOpen.toString()"
             aria-controls="sidebar"
             aria-label="Abrir menú lateral"
-            class="lg:hidden p-2 rounded-md text-gray-500 dark:text-gray-400
-                   hover:bg-gray-100 dark:hover:bg-gray-800
+            class="lg:hidden p-2.5 min-h-[44px] min-w-[44px] rounded-md text-gray-500 dark:text-gray-400
+                   hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center justify-center
                    focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors">
         <svg x-show="!sidebarOpen" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
@@ -42,8 +42,8 @@
                 @click="toggle()"
                 :aria-label="isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'"
                 :aria-pressed="isDark.toString()"
-                class="p-2 rounded-md text-gray-500 dark:text-gray-400
-                       hover:bg-gray-100 dark:hover:bg-gray-800
+                class="p-2.5 min-h-[44px] min-w-[44px] rounded-md text-gray-500 dark:text-gray-400
+                       hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center justify-center
                        focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors">
             {{-- Sun (shown in dark mode) --}}
             <svg x-show="isDark" x-cloak class="h-5 w-5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -58,7 +58,7 @@
         {{-- Profile --}}
         <a href="{{ route('profile.edit') }}"
            aria-label="Mi perfil"
-           class="flex items-center gap-2 px-2 py-1.5 rounded-md
+           class="flex items-center gap-2 px-2 py-1.5 min-h-[44px] rounded-md
                   hover:bg-gray-100 dark:hover:bg-gray-800
                   focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors">
             <div class="h-7 w-7 rounded-full bg-indigo-100 dark:bg-indigo-900/50

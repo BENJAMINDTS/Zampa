@@ -247,7 +247,7 @@ class DailyMenuController extends Controller
 
         $products = Product::where('user_id', Auth::user()->ownerUserId())
             ->where('is_active', true)
-            ->with('category')
+            ->with('categories')
             ->orderBy('name')
             ->get();
 

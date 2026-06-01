@@ -50,7 +50,10 @@
                     <tr>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Nombre</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Precio / mes</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Límite mesas</th>
+                        <th scope="col" class="hidden sm:table-cell px-6 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Precio / año</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Mesas</th>
+                        <th scope="col" class="hidden md:table-cell px-6 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Personal</th>
+                        <th scope="col" class="hidden md:table-cell px-6 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Plantas</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Negocios</th>
                         <th scope="col" class="px-6 py-3 text-right text-xs font-semibold text-slate-400 uppercase tracking-wider">Acciones</th>
                     </tr>
@@ -59,8 +62,19 @@
                     @forelse($plans as $plan)
                         <tr class="hover:bg-slate-800/30 transition-colors">
                             <td class="px-6 py-4 text-sm font-medium text-white">{{ $plan->name }}</td>
-                            <td class="px-6 py-4 text-sm text-slate-300">{{ number_format($plan->price, 2, ',', '.') }} €</td>
-                            <td class="px-6 py-4 text-sm text-slate-300">{{ $plan->max_tables }}</td>
+                            <td class="px-6 py-4 text-sm text-slate-300">{{ number_format($plan->price_monthly ?? $plan->price, 2, ',', '.') }} €</td>
+                            <td class="hidden sm:table-cell px-6 py-4 text-sm text-slate-300">
+                                {{ $plan->price_yearly ? number_format($plan->price_yearly, 2, ',', '.') . ' €' : '—' }}
+                            </td>
+                            <td class="px-6 py-4 text-sm text-slate-300">
+                                {{ $plan->max_tables !== null ? $plan->max_tables : '∞' }}
+                            </td>
+                            <td class="hidden md:table-cell px-6 py-4 text-sm text-slate-300">
+                                {{ $plan->max_staff !== null ? $plan->max_staff : '∞' }}
+                            </td>
+                            <td class="hidden md:table-cell px-6 py-4 text-sm text-slate-300">
+                                {{ $plan->max_floors !== null ? $plan->max_floors : '∞' }}
+                            </td>
                             <td class="px-6 py-4 text-sm">
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
                                              {{ $plan->users_count > 0 ? 'bg-amber-400/10 text-amber-400' : 'bg-slate-700 text-slate-400' }}">
@@ -108,7 +122,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="px-6 py-12 text-center text-slate-500 text-sm">
+                            <td colspan="8" class="px-6 py-12 text-center text-slate-500 text-sm">
                                 No hay planes creados todavía.
                                 <a href="{{ route('superadmin.plans.create') }}" class="text-amber-400 hover:text-amber-300 ml-1">Crear el primero</a>.
                             </td>

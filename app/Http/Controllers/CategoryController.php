@@ -35,6 +35,7 @@ class CategoryController extends Controller
         $ownerId    = Auth::user()->ownerUserId();
         $categories = Category::where('user_id', $ownerId)
             ->when($request->filled('search'), fn ($q) => $q->where('name', 'like', '%' . $request->search . '%'))
+            ->when($request->filled('destination'), fn ($q) => $q->where('destination', $request->destination))
             ->paginate(15)
             ->withQueryString();
 

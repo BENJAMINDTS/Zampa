@@ -26,7 +26,7 @@ it('gerente can add variants to a product', function () {
         ->put(route('products.update', $product), [
             'name'        => $product->name,
             'description' => $product->description,
-            'category_id' => $cat->id,
+            'category_ids' => [$cat->id],
             'variants'    => [
                 ['name' => 'Ración entera', 'price' => 12.00, 'sort_order' => 0],
                 ['name' => 'Media ración',  'price' => 7.50,  'sort_order' => 1],
@@ -47,7 +47,7 @@ it('gerente can edit an existing variant by resaving', function () {
         ->put(route('products.update', $product), [
             'name'        => $product->name,
             'description' => $product->description,
-            'category_id' => $cat->id,
+            'category_ids' => [$cat->id],
             'variants'    => [
                 ['name' => 'Ración entera', 'price' => 14.00, 'sort_order' => 0],
             ],
@@ -68,7 +68,7 @@ it('gerente can remove a variant from a product', function () {
             'name'        => $product->name,
             'description' => $product->description,
             'price'       => 9.99,
-            'category_id' => $cat->id,
+            'category_ids' => [$cat->id],
         ])
         ->assertRedirect(route('products.index'));
 
@@ -84,7 +84,7 @@ it('product with variants does not require direct price', function () {
         ->put(route('products.update', $product), [
             'name'        => $product->name,
             'description' => $product->description,
-            'category_id' => $cat->id,
+            'category_ids' => [$cat->id],
             'variants'    => [
                 ['name' => 'Ración entera', 'price' => 12.00, 'sort_order' => 0],
             ],
@@ -100,7 +100,7 @@ it('product without variants requires direct price', function () {
         ->put(route('products.update', $product), [
             'name'        => $product->name,
             'description' => $product->description,
-            'category_id' => $cat->id,
+            'category_ids' => [$cat->id],
         ])
         ->assertSessionHasErrors('price');
 });
@@ -113,7 +113,7 @@ it('variant name is required', function () {
         ->put(route('products.update', $product), [
             'name'        => $product->name,
             'description' => $product->description,
-            'category_id' => $cat->id,
+            'category_ids' => [$cat->id],
             'variants'    => [
                 ['name' => '', 'price' => 12.00, 'sort_order' => 0],
             ],
@@ -129,7 +129,7 @@ it('variant price must be positive', function () {
         ->put(route('products.update', $product), [
             'name'        => $product->name,
             'description' => $product->description,
-            'category_id' => $cat->id,
+            'category_ids' => [$cat->id],
             'variants'    => [
                 ['name' => 'Ración', 'price' => 0, 'sort_order' => 0],
             ],
@@ -145,7 +145,7 @@ it('variant price cannot be negative', function () {
         ->put(route('products.update', $product), [
             'name'        => $product->name,
             'description' => $product->description,
-            'category_id' => $cat->id,
+            'category_ids' => [$cat->id],
             'variants'    => [
                 ['name' => 'Ración', 'price' => -5.00, 'sort_order' => 0],
             ],
@@ -176,7 +176,7 @@ it('gerente cannot add variants to another admins product', function () {
         ->put(route('products.update', $otherProduct), [
             'name'        => $otherProduct->name,
             'description' => $otherProduct->description,
-            'category_id' => $cat->id,
+            'category_ids' => [$cat->id],
             'variants'    => [
                 ['name' => 'Ración entera', 'price' => 12.00, 'sort_order' => 0],
             ],

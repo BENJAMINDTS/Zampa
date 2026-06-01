@@ -32,8 +32,8 @@ class NotificationController extends Controller
                     ->where('destination', 'kitchen')
                     ->select(['id', 'order_id', 'destination', 'quantity', 'product_id'])
                     ->with([
-                        'product:id,name,category_id',
-                        'product.category:id,name',
+                        'product:id,name',
+                        'product.categories:id,name',
                     ]),
             ])
             ->select(['id', 'table_id', 'notification_ready'])
@@ -46,7 +46,7 @@ class NotificationController extends Controller
                 'items' => $order->items->map(fn($item) => [
                     'name'     => $item->product->name,
                     'quantity' => $item->quantity,
-                    'is_tapa'  => $item->product->category?->name === 'Tapas',
+                    'is_tapa'  => $item->product->categories->contains('name', 'Tapas'),
                 ])->values(),
             ])
             ->values();

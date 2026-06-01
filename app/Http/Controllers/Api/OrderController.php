@@ -61,9 +61,9 @@ class OrderController extends Controller
         }
 
         if ($tapaConfig && ! $tapaConfig->isKitchenOpen()) {
-            $hasKitchenItems = Product::with('category')
+            $hasKitchenItems = Product::with('categories')
                 ->whereIn('id', collect($validated['items'])->pluck('product_id'))
-                ->whereHas('category', fn ($q) => $q->where('destination', 'kitchen'))
+                ->whereHas('categories', fn ($q) => $q->where('destination', 'kitchen'))
                 ->exists();
 
             if ($hasKitchenItems) {
@@ -77,7 +77,7 @@ class OrderController extends Controller
         // Pre-validate variant ownership and product/variant consistency before opening transaction.
         $resolvedItems = [];
         foreach ($validated['items'] as $itemData) {
-            $product   = Product::with('category')->findOrFail($itemData['product_id']);
+            $product   = Product::with('categories')->findOrFail($itemData['product_id']);
             $variantId = $itemData['variant_id'] ?? null;
             $variant   = null;
 
@@ -152,7 +152,7 @@ class OrderController extends Controller
                     'quantity'    => $item['quantity'],
                     'price'       => $item['basePrice'],
                     'status'      => 'queued',
-                    'destination' => $item['product']->category->destination,
+                    'destination' => $item['product']->categories->first()?->destination ?? 'kitchen',
                 ]);
 
                 foreach ($item['modifications'] as $mod) {

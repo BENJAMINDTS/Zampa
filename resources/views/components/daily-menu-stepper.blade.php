@@ -128,7 +128,7 @@
                                     <template x-if="product.image">
                                         <img :src="'/storage/' + product.image"
                                              :alt="product.name"
-                                             style="width:100%;height:100%;object-fit:cover;border-radius:inherit">
+                                             class="w-full h-full object-cover rounded-[inherit]">
                                     </template>
                                 </div>
 
@@ -150,7 +150,7 @@
                     {{-- Alerta obligatorio --}}
                     <div x-show="intentoAvanzar && pasoActualObj?.required && !((selections[pasoActualObj?.sectionId] ?? []).filter(s => s.product_id !== '__skipped__').length > 0)"
                          role="alert"
-                         style="margin-top:10px;padding:10px 14px;border-radius:10px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);font-family:var(--font-body);font-size:13px;color:var(--color-red-400);display:flex;align-items:center;gap:8px">
+                         class="dm-step__error mt-[10px]">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                             <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
                         </svg>
@@ -233,7 +233,7 @@
 
                     {{-- Error --}}
                     <div x-show="errorMsg" role="alert"
-                         style="margin-top:12px;padding:10px 14px;border-radius:10px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);font-family:var(--font-body);font-size:13px;color:var(--color-red-400)">
+                         class="dm-step__error mt-3">
                         <span x-text="errorMsg"></span>
                     </div>
                 </div>
@@ -251,7 +251,7 @@
 
             {{-- Confirmación: atrás + confirmar --}}
             <template x-if="!enviado && isLastStep">
-                <span style="display:contents">
+                <span class="contents">
                     <button type="button" class="btn-text" @click="anterior()" :disabled="enviando">
                         Atrás
                     </button>
@@ -268,7 +268,7 @@
 
             {{-- Pasos intermedios: cancelar/atrás + siguiente --}}
             <template x-if="!enviado && !isLastStep">
-                <span style="display:contents">
+                <span class="contents">
                     <button type="button" class="btn-text" @click="anterior()">
                         <span x-text="isFirstStep ? 'Cancelar' : 'Atrás'"></span>
                     </button>

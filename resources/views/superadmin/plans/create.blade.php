@@ -44,59 +44,128 @@
                     @enderror
                 </div>
 
-                {{-- Precio --}}
+                {{-- Precio mensual --}}
                 <div>
-                    <label for="price" class="block text-sm font-medium text-slate-300 mb-1.5">
+                    <label for="price_monthly" class="block text-sm font-medium text-slate-300 mb-1.5">
                         Precio mensual (€) <span class="text-red-400" aria-hidden="true">*</span>
                     </label>
-                    <input id="price"
-                           name="price"
+                    <input id="price_monthly"
+                           name="price_monthly"
                            type="number"
                            min="0"
                            step="0.01"
-                           value="{{ old('price') }}"
+                           value="{{ old('price_monthly') }}"
                            aria-required="true"
-                           aria-describedby="{{ $errors->has('price') ? 'error-price' : '' }}"
+                           aria-describedby="{{ $errors->has('price_monthly') ? 'error-price_monthly' : '' }}"
                            class="w-full rounded-lg bg-slate-800 border border-slate-700 text-white placeholder-slate-500
                                   px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400
-                                  {{ $errors->has('price') ? 'border-red-500 focus:ring-red-500' : '' }}"
-                           placeholder="0.00">
-                    @error('price')
-                        <p id="error-price" role="alert" class="mt-1.5 text-xs text-red-400">{{ $message }}</p>
+                                  {{ $errors->has('price_monthly') ? 'border-red-500 focus:ring-red-500' : '' }}"
+                           placeholder="29.99">
+                    @error('price_monthly')
+                        <p id="error-price_monthly" role="alert" class="mt-1.5 text-xs text-red-400">{{ $message }}</p>
                     @enderror
                 </div>
 
-                {{-- Límite de mesas --}}
+                {{-- Precio anual --}}
                 <div>
-                    <label for="max_tables" class="block text-sm font-medium text-slate-300 mb-1.5">
-                        Límite de mesas <span class="text-red-400" aria-hidden="true">*</span>
+                    <label for="price_yearly" class="block text-sm font-medium text-slate-300 mb-1.5">
+                        Precio anual (€)
+                        <span class="text-slate-500 text-xs">(opcional)</span>
                     </label>
-                    <input id="max_tables"
-                           name="max_tables"
+                    <input id="price_yearly"
+                           name="price_yearly"
                            type="number"
-                           min="1"
-                           max="500"
-                           value="{{ old('max_tables') }}"
-                           aria-required="true"
-                           aria-describedby="{{ $errors->has('max_tables') ? 'error-max_tables' : '' }}"
+                           min="0"
+                           step="0.01"
+                           value="{{ old('price_yearly') }}"
+                           aria-describedby="{{ $errors->has('price_yearly') ? 'error-price_yearly' : '' }}"
                            class="w-full rounded-lg bg-slate-800 border border-slate-700 text-white placeholder-slate-500
                                   px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400
-                                  {{ $errors->has('max_tables') ? 'border-red-500 focus:ring-red-500' : '' }}"
-                           placeholder="Ej: 10">
-                    @error('max_tables')
-                        <p id="error-max_tables" role="alert" class="mt-1.5 text-xs text-red-400">{{ $message }}</p>
+                                  {{ $errors->has('price_yearly') ? 'border-red-500 focus:ring-red-500' : '' }}"
+                           placeholder="299.90">
+                    @error('price_yearly')
+                        <p id="error-price_yearly" role="alert" class="mt-1.5 text-xs text-red-400">{{ $message }}</p>
                     @enderror
+                </div>
+
+                {{-- Límites --}}
+                <p class="text-xs text-slate-500">
+                    Deja en blanco los límites para plan ilimitado (Premium).
+                </p>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+
+                    {{-- Límite de mesas --}}
+                    <div>
+                        <label for="max_tables" class="block text-sm font-medium text-slate-300 mb-1.5">
+                            Máx. mesas
+                        </label>
+                        <input id="max_tables"
+                               name="max_tables"
+                               type="number"
+                               min="1"
+                               value="{{ old('max_tables') }}"
+                               aria-describedby="{{ $errors->has('max_tables') ? 'error-max_tables' : '' }}"
+                               class="w-full rounded-lg bg-slate-800 border border-slate-700 text-white placeholder-slate-500
+                                      px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400
+                                      {{ $errors->has('max_tables') ? 'border-red-500 focus:ring-red-500' : '' }}"
+                               placeholder="∞">
+                        @error('max_tables')
+                            <p id="error-max_tables" role="alert" class="mt-1.5 text-xs text-red-400">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    {{-- Límite de personal --}}
+                    <div>
+                        <label for="max_staff" class="block text-sm font-medium text-slate-300 mb-1.5">
+                            Máx. personal
+                        </label>
+                        <input id="max_staff"
+                               name="max_staff"
+                               type="number"
+                               min="1"
+                               value="{{ old('max_staff') }}"
+                               aria-describedby="{{ $errors->has('max_staff') ? 'error-max_staff' : '' }}"
+                               class="w-full rounded-lg bg-slate-800 border border-slate-700 text-white placeholder-slate-500
+                                      px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400
+                                      {{ $errors->has('max_staff') ? 'border-red-500 focus:ring-red-500' : '' }}"
+                               placeholder="∞">
+                        @error('max_staff')
+                            <p id="error-max_staff" role="alert" class="mt-1.5 text-xs text-red-400">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    {{-- Límite de plantas --}}
+                    <div>
+                        <label for="max_floors" class="block text-sm font-medium text-slate-300 mb-1.5">
+                            Máx. plantas
+                        </label>
+                        <input id="max_floors"
+                               name="max_floors"
+                               type="number"
+                               min="1"
+                               value="{{ old('max_floors') }}"
+                               aria-describedby="{{ $errors->has('max_floors') ? 'error-max_floors' : '' }}"
+                               class="w-full rounded-lg bg-slate-800 border border-slate-700 text-white placeholder-slate-500
+                                      px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400
+                                      {{ $errors->has('max_floors') ? 'border-red-500 focus:ring-red-500' : '' }}"
+                               placeholder="∞">
+                        @error('max_floors')
+                            <p id="error-max_floors" role="alert" class="mt-1.5 text-xs text-red-400">{{ $message }}</p>
+                        @enderror
+                    </div>
+
                 </div>
 
             </div>
 
             <div class="flex items-center justify-end gap-3 mt-8 pt-5 border-t border-slate-800">
                 <a href="{{ route('superadmin.plans.index') }}"
-                   class="px-4 py-2 rounded-lg text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition-colors focus:outline-none focus:ring-2 focus:ring-slate-600">
+                   class="inline-flex items-center px-4 py-2.5 min-h-[44px] rounded-lg text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition-colors focus:outline-none focus:ring-2 focus:ring-slate-600">
                     Cancelar
                 </a>
                 <button type="submit"
-                        class="px-5 py-2 rounded-lg bg-amber-400 text-slate-900 text-sm font-semibold hover:bg-amber-300 transition-colors focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 focus:ring-offset-slate-900">
+                        class="inline-flex items-center px-5 py-2.5 min-h-[44px] rounded-lg bg-amber-400 text-slate-900 text-sm font-semibold hover:bg-amber-300 transition-colors focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 focus:ring-offset-slate-900">
                     Crear plan
                 </button>
             </div>

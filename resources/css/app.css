@@ -1,11 +1,41 @@
 @import './components/menu.css';
 @import './components/table-map.css';
+@import './components/landing.css';
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
+    /* Custom scrollbar — thin, rounded, Zampa palette */
+    ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+        background: #D1D5DB; /* gray-300 */
+        border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        background: #9CA3AF; /* gray-400 */
+    }
+    .dark ::-webkit-scrollbar-thumb {
+        background: #4B5563; /* gray-600 */
+    }
+    .dark ::-webkit-scrollbar-thumb:hover {
+        background: #6B7280; /* gray-500 */
+    }
+    * {
+        scrollbar-width: thin;
+        scrollbar-color: #D1D5DB transparent;
+    }
+    .dark * {
+        scrollbar-color: #4B5563 transparent;
+    }
+
     :root {
         --zampa-50:  #FDF6EC;
         --zampa-100: #FAE8CA;

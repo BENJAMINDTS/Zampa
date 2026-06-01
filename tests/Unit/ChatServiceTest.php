@@ -42,7 +42,7 @@ it('buildContext includes restaurant name in system prompt', function () {
 
 it('buildContext includes active products in system prompt', function () {
     $category = Category::factory()->for($this->user)->create();
-    Product::factory()->for($this->user)->for($category)->create([
+    Product::factory()->for($this->user)->create(['category_id' => $category->id, 
         'name'      => 'Paella Valenciana',
         'is_active' => true,
     ]);
@@ -58,7 +58,7 @@ it('buildContext includes active products in system prompt', function () {
 
 it('buildContext does not include inactive products', function () {
     $category = Category::factory()->for($this->user)->create();
-    Product::factory()->for($this->user)->for($category)->create([
+    Product::factory()->for($this->user)->create(['category_id' => $category->id, 
         'name'      => 'Plato Oculto',
         'is_active' => false,
     ]);
@@ -76,7 +76,7 @@ it('buildContext does not include inactive products', function () {
 
 it('buildContext includes allergens in system prompt', function () {
     $category  = Category::factory()->for($this->user)->create();
-    $product   = Product::factory()->for($this->user)->for($category)->create(['is_active' => true]);
+    $product   = Product::factory()->for($this->user)->create(['category_id' => $category->id, 'is_active' => true]);
     $allergen  = Ingredient::factory()->for($this->user)->create([
         'name'        => 'Gluten',
         'is_allergen' => true,

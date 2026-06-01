@@ -76,8 +76,7 @@
                         Ubicación <span class="text-slate-500 font-normal">(opcional — haz clic en el mapa)</span>
                     </label>
                     <div id="location-picker"
-                         style="height: 300px;"
-                         class="rounded-lg border border-slate-700 mb-3"
+                         class="h-[300px] rounded-lg border border-slate-700 mb-3"
                          aria-label="Selector de ubicación en mapa"
                          role="img">
                     </div>
@@ -134,7 +133,11 @@
                         <option value="">-- Selecciona un plan --</option>
                         @foreach($plans as $plan)
                             <option value="{{ $plan->id }}" {{ old('plan_id') == $plan->id ? 'selected' : '' }}>
-                                {{ $plan->name }} — {{ number_format($plan->price, 2, ',', '.') }} €/mes · {{ $plan->max_tables }} mesas
+                                {{ $plan->name }}
+                                — {{ number_format($plan->price_monthly ?? $plan->price, 2, ',', '.') }} €/mes
+                                · {{ $plan->max_tables !== null ? $plan->max_tables . ' mesas' : '∞ mesas' }}
+                                · {{ $plan->max_staff !== null ? $plan->max_staff . ' staff' : '∞ staff' }}
+                                · {{ $plan->max_floors !== null ? $plan->max_floors . ' planta(s)' : '∞ plantas' }}
                             </option>
                         @endforeach
                     </select>
@@ -225,11 +228,11 @@
 
             <div class="flex items-center justify-end gap-3 mt-8 pt-5 border-t border-slate-800">
                 <a href="{{ route('superadmin.businesses.index') }}"
-                   class="px-4 py-2 rounded-lg text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition-colors focus:outline-none focus:ring-2 focus:ring-slate-600">
+                   class="inline-flex items-center px-4 py-2.5 min-h-[44px] rounded-lg text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition-colors focus:outline-none focus:ring-2 focus:ring-slate-600">
                     Cancelar
                 </a>
                 <button type="submit"
-                        class="px-5 py-2 rounded-lg bg-amber-400 text-slate-900 text-sm font-semibold hover:bg-amber-300 transition-colors focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 focus:ring-offset-slate-900">
+                        class="inline-flex items-center px-5 py-2.5 min-h-[44px] rounded-lg bg-amber-400 text-slate-900 text-sm font-semibold hover:bg-amber-300 transition-colors focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 focus:ring-offset-slate-900">
                     Crear negocio
                 </button>
             </div>

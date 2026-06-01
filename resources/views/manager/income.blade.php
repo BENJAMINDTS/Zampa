@@ -36,7 +36,7 @@
                            + $summary->split_cash_tip_revenue + $summary->split_card_tip_revenue;
                 @endphp
 
-                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
 
                     {{-- Efectivo --}}
                     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm
@@ -110,7 +110,7 @@
                 </div>
 
                 {{-- Propinas desglosadas --}}
-                <div class="grid grid-cols-2 gap-4 mt-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
 
                     {{-- Propina en efectivo --}}
                     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm

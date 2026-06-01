@@ -6,7 +6,7 @@
         <div class="flex items-center gap-3 mb-6">
             <a href="{{ route('products.index') }}"
                aria-label="Volver al listado de productos"
-               class="p-1.5 rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-gray-300
+               class="p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-gray-300
                       hover:bg-gray-100 dark:hover:bg-gray-700
                       focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2
                       transition-colors">
@@ -209,29 +209,32 @@
                 </div>
             </div>
 
-            {{-- Categoría --}}
+            {{-- Categorías --}}
             <div>
-                <label for="category_id" class="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    <svg aria-hidden="true" class="h-4 w-4 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
-                    </svg>
-                    Categoría
-                    <span aria-hidden="true" class="text-red-500">*</span>
-                    <span class="sr-only">(obligatorio)</span>
-                </label>
-                <select name="category_id" id="category_id" required aria-required="true"
-                        aria-invalid="{{ $errors->has('category_id') ? 'true' : 'false' }}"
-                        class="block w-full h-10 rounded-md border-gray-300 dark:border-gray-600
-                               bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100
-                               shadow-sm focus:border-indigo-500 focus:ring-indigo-500
-                               @error('category_id') border-red-500 @enderror">
-                    @foreach($categories as $category)
-                    <option value="{{ $category->id }}" {{ $product->category_id == $category->id ? 'selected' : '' }}>
-                        {{ $category->name }}
-                    </option>
-                    @endforeach
-                </select>
-                @error('category_id')
+                @php $selectedCatIds = old('category_ids', $product->categories->pluck('id')->toArray()); @endphp
+                <fieldset>
+                    <legend class="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        <svg aria-hidden="true" class="h-4 w-4 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+                        </svg>
+                        Categorías
+                        <span aria-hidden="true" class="text-red-500">*</span>
+                        <span class="sr-only">(obligatorio, al menos una)</span>
+                    </legend>
+                    <div class="space-y-1.5 @error('category_ids') ring-1 ring-red-500 rounded-md p-2 @enderror">
+                        @foreach($categories as $category)
+                        <label class="flex items-center gap-2 cursor-pointer text-sm text-gray-700 dark:text-gray-300">
+                            <input type="checkbox"
+                                   name="category_ids[]"
+                                   value="{{ $category->id }}"
+                                   {{ in_array($category->id, $selectedCatIds) ? 'checked' : '' }}
+                                   class="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500">
+                            {{ $category->name }}
+                        </label>
+                        @endforeach
+                    </div>
+                </fieldset>
+                @error('category_ids')
                 <p id="category-error" role="alert" class="mt-1 text-xs text-red-600 dark:text-red-400">{{ $message }}</p>
                 @enderror
             </div>

@@ -12,6 +12,7 @@ import { registerBill }          from './alpine/bill.js';
 import { registerOrders }        from './alpine/orders.js';
 import { registerChatWidget }    from './alpine/chat-widget.js';
 import { registerTableMap }      from './pages/table-map.js';
+import { registerLanding }       from './alpine/landing.js';
 
 window.Alpine = Alpine;
 
@@ -26,6 +27,7 @@ document.addEventListener('alpine:init', () => {
     registerOrders();
     registerChatWidget();
     registerTableMap();
+    registerLanding();
 });
 
 Alpine.start();
