@@ -85,7 +85,7 @@
 
           <div class="grid grid-cols-2 gap-3" x-data="{ dest: '{{ old('destination', 'kitchen') }}' }">
 
-            <label class="cursor-pointer">
+            <label class="cursor-pointer block rounded-xl focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-2 dark:focus-within:ring-offset-gray-800">
               <input type="radio" name="destination" value="kitchen" x-model="dest" class="sr-only">
               <div class="flex flex-col items-center gap-2 p-4 rounded-xl border bg-white dark:bg-gray-700 transition-all"
                    :class="dest === 'kitchen'
@@ -102,7 +102,7 @@
               </div>
             </label>
 
-            <label class="cursor-pointer">
+            <label class="cursor-pointer block rounded-xl focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-2 dark:focus-within:ring-offset-gray-800">
               <input type="radio" name="destination" value="bar" x-model="dest" class="sr-only">
               <div class="flex flex-col items-center gap-2 p-4 rounded-xl border bg-white dark:bg-gray-700 transition-all"
                    :class="dest === 'bar'
