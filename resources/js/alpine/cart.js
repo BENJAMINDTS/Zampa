@@ -349,6 +349,20 @@ export function registerCart() {
                 });
                 const data = await res.json();
                 if (res.ok && data.success) {
+                    const ordersStore = Alpine.store('orders');
+                    ordersStore.push({
+                        id:        data.order_id,
+                        number:    ordersStore.list.length + 1,
+                        itemCount: this.items.reduce((s, i) => s + i.quantity, 0),
+                        total:     parseFloat(data.total) || 0,
+                        sentAt:    new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+                        items:     this.items.map(i => ({
+                            name:     i.name,
+                            quantity: i.quantity,
+                            price:    i.price,
+                        })),
+                    });
+
                     const bill              = Alpine.store('bill');
                     bill.active             = true;
                     bill.requested          = false;
