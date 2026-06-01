@@ -44,12 +44,24 @@ class StaffController extends Controller
 
     /**
      * Valida y crea un nuevo miembro de personal asociado al admin autenticado.
+     * Comprueba el límite max_staff del plan antes de crear el usuario.
      *
      * @param  Request  $request
      * @return RedirectResponse
      */
     public function store(Request $request): RedirectResponse
     {
+        $owner        = Auth::user();
+        $plan         = $owner->plan;
+        $currentStaff = $owner->staff()->count();
+
+        if ($plan && $plan->isLimitReached('staff', $currentStaff)) {
+            return redirect()
+                ->route('staff.create')
+                ->with('error', "Has alcanzado el límite de {$plan->max_staff} miembros de personal de tu plan {$plan->name}. Actualiza al plan Profesional para añadir hasta 25 personas.")
+                ->withInput();
+        }
+
         $validated = $request->validate([
             'name'                  => 'required|string|max:255',
             'email'                 => 'required|email|unique:users,email',
