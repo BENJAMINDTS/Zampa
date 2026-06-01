@@ -35,17 +35,19 @@ class ProductController extends Controller
    */
   public function index(Request $request): View
   {
-    $ownerId    = Auth::user()->ownerUserId();
-    $categories = Category::where('user_id', $ownerId)->orderBy('name')->get();
+    $ownerId      = Auth::user()->ownerUserId();
+    $categories   = Category::where('user_id', $ownerId)->orderBy('name')->get();
+    $allergenTypes = Ingredient::ALLERGEN_TYPES;
 
     $products = Product::where('user_id', $ownerId)
       ->with(['allergens', 'variants', 'categories'])
       ->when($request->filled('search'), fn ($q) => $q->where('name', 'like', '%' . $request->search . '%'))
       ->when($request->filled('category'), fn ($q) => $q->whereHas('categories', fn ($q2) => $q2->where('categories.id', $request->category)))
+      ->when($request->filled('allergen'), fn ($q) => $q->whereHas('ingredients', fn ($q2) => $q2->whereJsonContains('allergen_types', $request->allergen)))
       ->paginate(15)
       ->withQueryString();
 
-    return view('products.index', compact('products', 'categories'));
+    return view('products.index', compact('products', 'categories', 'allergenTypes'));
   }
 
   /**
