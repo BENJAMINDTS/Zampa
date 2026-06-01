@@ -33,7 +33,7 @@ it('returns 404 with invalid hash', function () {
 it('shows only active products on public menu', function () {
     $table    = Table::factory()->for($this->user)->create();
     $category = Category::factory()->for($this->user)->create(['destination' => 'kitchen']);
-    $active   = Product::factory()->for($category)->for($this->user)->create(['name' => 'Plato Activo', 'is_active' => true]);
+    $active   = Product::factory()->for($this->user)->create(['category_id' => $category->id, 'name' => 'Plato Activo', 'is_active' => true]);
 
     $this->get(route('menu.show', $table->unique_hash))
         ->assertOk()
@@ -43,7 +43,7 @@ it('shows only active products on public menu', function () {
 it('does not show inactive products', function () {
     $table    = Table::factory()->for($this->user)->create();
     $category = Category::factory()->for($this->user)->create(['destination' => 'kitchen']);
-    Product::factory()->for($category)->for($this->user)->create(['name' => 'Plato Oculto', 'is_active' => false]);
+    Product::factory()->for($this->user)->create(['category_id' => $category->id, 'name' => 'Plato Oculto', 'is_active' => false]);
 
     $this->get(route('menu.show', $table->unique_hash))
         ->assertOk()
@@ -55,7 +55,7 @@ it('does not show inactive products', function () {
 it('shows categories with their products', function () {
     $table    = Table::factory()->for($this->user)->create();
     $category = Category::factory()->for($this->user)->create(['name' => 'Entrantes', 'destination' => 'kitchen']);
-    Product::factory()->for($category)->for($this->user)->create(['name' => 'Patatas Bravas', 'is_active' => true]);
+    Product::factory()->for($this->user)->create(['category_id' => $category->id, 'name' => 'Patatas Bravas', 'is_active' => true]);
 
     $this->get(route('menu.show', $table->unique_hash))
         ->assertOk()
@@ -66,10 +66,10 @@ it('shows categories with their products', function () {
 it('only shows products of the restaurant that owns the table', function () {
     $myTable       = Table::factory()->for($this->user)->create();
     $myCategory    = Category::factory()->for($this->user)->create(['destination' => 'kitchen']);
-    $myProduct     = Product::factory()->for($myCategory)->for($this->user)->create(['name' => 'Mi Producto', 'is_active' => true]);
+    $myProduct     = Product::factory()->for($this->user)->create(['category_id' => $myCategory->id, 'name' => 'Mi Producto', 'is_active' => true]);
 
     $otherCategory = Category::factory()->for($this->other)->create(['destination' => 'kitchen']);
-    $otherProduct  = Product::factory()->for($otherCategory)->for($this->other)->create(['name' => 'Producto Ajeno', 'is_active' => true]);
+    $otherProduct  = Product::factory()->for($this->other)->create(['category_id' => $otherCategory->id, 'name' => 'Producto Ajeno', 'is_active' => true]);
 
     $this->get(route('menu.show', $myTable->unique_hash))
         ->assertOk()
@@ -91,7 +91,7 @@ it('passes table to view', function () {
 it('passes categories to view', function () {
     $table    = Table::factory()->for($this->user)->create();
     $category = Category::factory()->for($this->user)->create(['destination' => 'kitchen']);
-    Product::factory()->for($category)->for($this->user)->create(['is_active' => true]);
+    Product::factory()->for($this->user)->create(['category_id' => $category->id, 'is_active' => true]);
 
     $response = $this->get(route('menu.show', $table->unique_hash));
 
@@ -102,7 +102,7 @@ it('passes categories to view', function () {
 it('passes allergens to view for filters', function () {
     $table    = Table::factory()->for($this->user)->create();
     $category = Category::factory()->for($this->user)->create(['destination' => 'kitchen']);
-    $product  = Product::factory()->for($category)->for($this->user)->create(['is_active' => true]);
+    $product  = Product::factory()->for($this->user)->create(['category_id' => $category->id, 'is_active' => true]);
     $allergen = Ingredient::factory()->for($this->user)->create(['name' => 'Queso', 'is_allergen' => true, 'allergen_types' => ['lacteos']]);
 
     $product->ingredients()->attach($allergen->id, [
