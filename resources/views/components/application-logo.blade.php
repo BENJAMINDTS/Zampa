@@ -1,3 +1,94 @@
-<svg viewBox="0 0 316 316" xmlns="http://www.w3.org/2000/svg" {{ $attributes }}>
-    <path d="M305.8 81.125C305.77 80.995 305.69 80.885 305.65 80.755C305.56 80.525 305.49 80.285 305.37 80.075C305.29 79.935 305.17 79.815 305.07 79.685C304.94 79.515 304.83 79.325 304.68 79.175C304.55 79.045 304.39 78.955 304.25 78.845C304.09 78.715 303.95 78.575 303.77 78.475L251.32 48.275C249.97 47.495 248.31 47.495 246.96 48.275L194.51 78.475C194.33 78.575 194.19 78.725 194.03 78.845C193.89 78.955 193.73 79.045 193.6 79.175C193.45 79.325 193.34 79.515 193.21 79.685C193.11 79.815 192.99 79.935 192.91 80.075C192.79 80.285 192.71 80.525 192.63 80.755C192.58 80.875 192.51 80.995 192.48 81.125C192.38 81.495 192.33 81.875 192.33 82.265V139.625L148.62 164.795V52.575C148.62 52.185 148.57 51.805 148.47 51.435C148.44 51.305 148.36 51.195 148.32 51.065C148.23 50.835 148.16 50.595 148.04 50.385C147.96 50.245 147.84 50.125 147.74 49.995C147.61 49.825 147.5 49.635 147.35 49.485C147.22 49.355 147.06 49.265 146.92 49.155C146.76 49.025 146.62 48.885 146.44 48.785L93.99 18.585C92.64 17.805 90.98 17.805 89.63 18.585L37.18 48.785C37 48.885 36.86 49.035 36.7 49.155C36.56 49.265 36.4 49.355 36.27 49.485C36.12 49.635 36.01 49.825 35.88 49.995C35.78 50.125 35.66 50.245 35.58 50.385C35.46 50.595 35.38 50.835 35.3 51.065C35.25 51.185 35.18 51.305 35.15 51.435C35.05 51.805 35 52.185 35 52.575V232.235C35 233.795 35.84 235.245 37.19 236.025L142.1 296.425C142.33 296.555 142.58 296.635 142.82 296.725C142.93 296.765 143.04 296.835 143.16 296.865C143.53 296.965 143.9 297.015 144.28 297.015C144.66 297.015 145.03 296.965 145.4 296.865C145.5 296.835 145.59 296.775 145.69 296.745C145.95 296.655 146.21 296.565 146.45 296.435L251.36 236.035C252.72 235.255 253.55 233.815 253.55 232.245V174.885L303.81 145.945C305.17 145.165 306 143.725 306 142.155V82.265C305.95 81.875 305.89 81.495 305.8 81.125ZM144.2 227.205L100.57 202.515L146.39 176.135L196.66 147.195L240.33 172.335L208.29 190.625L144.2 227.205ZM244.75 114.995V164.795L226.39 154.225L201.03 139.625V89.825L219.39 100.395L244.75 114.995ZM249.12 57.105L292.81 82.265L249.12 107.425L205.43 82.265L249.12 57.105ZM114.49 184.425L96.13 194.995V85.305L121.49 70.705L139.85 60.135V169.815L114.49 184.425ZM91.76 27.425L135.45 52.585L91.76 77.745L48.07 52.585L91.76 27.425ZM43.67 60.135L62.03 70.705L87.39 85.305V202.545V202.555V202.565C87.39 202.735 87.44 202.895 87.46 203.055C87.49 203.265 87.49 203.485 87.55 203.695V203.705C87.6 203.875 87.69 204.035 87.76 204.195C87.84 204.375 87.89 204.575 87.99 204.745C87.99 204.745 87.99 204.755 88 204.755C88.09 204.905 88.22 205.035 88.33 205.175C88.45 205.335 88.55 205.495 88.69 205.635L88.7 205.645C88.82 205.765 88.98 205.855 89.12 205.965C89.28 206.085 89.42 206.225 89.59 206.325C89.6 206.325 89.6 206.325 89.61 206.335C89.62 206.335 89.62 206.345 89.63 206.345L139.87 234.775V285.065L43.67 229.705V60.135ZM244.75 229.705L148.58 285.075V234.775L219.8 194.115L244.75 179.875V229.705ZM297.2 139.625L253.49 164.795V114.995L278.85 100.395L297.21 89.825V139.625H297.2Z"/>
+@php $uid = uniqid('zm'); @endphp
+<svg viewBox="0 0 120 110" xmlns="http://www.w3.org/2000/svg" {{ $attributes }}>
+    <defs>
+        <radialGradient id="{{ $uid }}-bT" cx="38%" cy="28%" r="62%">
+            <stop offset="0%"   stop-color="#FBDF6A"/>
+            <stop offset="45%"  stop-color="#E8980C"/>
+            <stop offset="100%" stop-color="#A05500"/>
+        </radialGradient>
+        <radialGradient id="{{ $uid }}-bB" cx="38%" cy="22%" r="65%">
+            <stop offset="0%"   stop-color="#F5C830"/>
+            <stop offset="55%"  stop-color="#CC7008"/>
+            <stop offset="100%" stop-color="#8B4000"/>
+        </radialGradient>
+        <linearGradient id="{{ $uid }}-ch" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%"   stop-color="#FFD740"/>
+            <stop offset="100%" stop-color="#F59000"/>
+        </linearGradient>
+        <linearGradient id="{{ $uid }}-mt" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%"   stop-color="#7B3010"/>
+            <stop offset="100%" stop-color="#4A1800"/>
+        </linearGradient>
+        <linearGradient id="{{ $uid }}-lt" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%"   stop-color="#5CC830"/>
+            <stop offset="100%" stop-color="#348010"/>
+        </linearGradient>
+        <radialGradient id="{{ $uid }}-sc" cx="50%" cy="38%" r="55%">
+            <stop offset="0%"   stop-color="#0C0620"/>
+            <stop offset="100%" stop-color="#04000E"/>
+        </radialGradient>
+        <filter id="{{ $uid }}-sh">
+            <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#3A1800" flood-opacity="0.45"/>
+        </filter>
+        <filter id="{{ $uid }}-gP">
+            <feGaussianBlur stdDeviation="3.5" result="b"/>
+            <feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <filter id="{{ $uid }}-gC">
+            <feGaussianBlur stdDeviation="2" result="b"/>
+            <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+    </defs>
+
+    {{-- Shadow --}}
+    <ellipse cx="60" cy="107" rx="40" ry="4" fill="#2A0800" opacity="0.25"/>
+    {{-- Antenna --}}
+    <line x1="60" y1="2" x2="60" y2="22" stroke="#7A5010" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M60 3 L78 9 L60 16 Z" fill="#D80E1A"/>
+    <ellipse cx="68" cy="8" rx="4" ry="1.8" fill="white" opacity="0.25" transform="rotate(-10,68,8)"/>
+    {{-- Mushroom cap top --}}
+    <ellipse cx="60" cy="28" rx="48" ry="22" fill="url(#{{ $uid }}-bT)" filter="url(#{{ $uid }}-sh)"/>
+    <ellipse cx="44" cy="20" rx="16" ry="8" fill="white" opacity="0.25" transform="rotate(-10,44,20)"/>
+    <ellipse cx="42" cy="16" rx="4.5" ry="1.8" fill="#FFF0A0" opacity="0.9" transform="rotate(-18,42,16)"/>
+    <ellipse cx="60" cy="12" rx="4.5" ry="1.8" fill="#FFF0A0" opacity="0.9"/>
+    <ellipse cx="78" cy="17" rx="4.5" ry="1.8" fill="#FFF0A0" opacity="0.9" transform="rotate(18,78,17)"/>
+    <ellipse cx="32" cy="26" rx="4"   ry="1.6" fill="#FFF0A0" opacity="0.85" transform="rotate(-22,32,26)"/>
+    <ellipse cx="88" cy="27" rx="4"   ry="1.6" fill="#FFF0A0" opacity="0.85" transform="rotate(22,88,27)"/>
+    {{-- Cap rim --}}
+    <ellipse cx="60" cy="48" rx="48" ry="6" fill="#B06010"/>
+    <path d="M12 51 Q28 46 42 53 Q54 59 60 52 Q66 45 78 53 Q92 60 108 51 L108 59 Q92 66 78 60 Q66 54 60 60 Q54 66 42 60 Q28 53 12 59 Z" fill="url(#{{ $uid }}-ch)"/>
+    {{-- Ear left --}}
+    <path d="M16 55 C11 60 11 68 16 71 L19 71 C15 66 16 55 16 55 Z" fill="#FBBF24"/>
+    <ellipse cx="16.5" cy="71.5" rx="3" ry="2" fill="#F59000"/>
+    {{-- Ear right --}}
+    <path d="M104 55 C109 60 109 68 104 71 L101 71 C105 66 104 55 104 55 Z" fill="#FBBF24"/>
+    <ellipse cx="103.5" cy="71.5" rx="3" ry="2" fill="#F59000"/>
+    {{-- Collar --}}
+    <path d="M12 59 Q22 55 34 62 Q46 68 60 61 Q74 54 86 62 Q98 68 108 59 L108 65 Q98 73 86 66 Q74 60 60 66 Q46 72 34 66 Q22 60 12 65 Z" fill="url(#{{ $uid }}-lt)"/>
+    {{-- Stem --}}
+    <ellipse cx="60" cy="70"  rx="48" ry="9"  fill="url(#{{ $uid }}-mt)" filter="url(#{{ $uid }}-sh)"/>
+    <ellipse cx="60" cy="84"  rx="48" ry="14" fill="url(#{{ $uid }}-bB)" filter="url(#{{ $uid }}-sh)"/>
+    <ellipse cx="60" cy="95"  rx="43" ry="8"  fill="#8B4000"/>
+    <ellipse cx="60" cy="101" rx="36" ry="5"  fill="#6A3000"/>
+    <ellipse cx="46" cy="80"  rx="16" ry="5"  fill="white" opacity="0.15"/>
+    {{-- Crystal orb / face --}}
+    <ellipse cx="60" cy="66" rx="34" ry="28" fill="#6010B0" opacity="0.45" filter="url(#{{ $uid }}-gP)"/>
+    <ellipse cx="60" cy="66" rx="32" ry="26" fill="#40087A" stroke="#CC60F8" stroke-width="3"/>
+    <ellipse cx="60" cy="66" rx="29" ry="23" fill="#2C0660" stroke="#7828B8" stroke-width="1.2"/>
+    <ellipse cx="60" cy="66" rx="27" ry="21" fill="url(#{{ $uid }}-sc)"/>
+    {{-- Left eye --}}
+    <rect x="34" y="54" width="18" height="20" rx="7" fill="#22D3EE" opacity="0.25" filter="url(#{{ $uid }}-gC)"/>
+    <rect x="35" y="55" width="16" height="18" rx="6" fill="#030E1A"/>
+    <rect x="36" y="56" width="14" height="16" rx="5" fill="#22D3EE"/>
+    <ellipse cx="39" cy="58.5" rx="3.5" ry="2" fill="white" opacity="0.65"/>
+    <rect x="35" y="55" width="16" height="18" rx="6" fill="none" stroke="#A5F3FC" stroke-width="0.8" opacity="0.8"/>
+    {{-- Right eye --}}
+    <rect x="68" y="54" width="18" height="20" rx="7" fill="#22D3EE" opacity="0.25" filter="url(#{{ $uid }}-gC)"/>
+    <rect x="69" y="55" width="16" height="18" rx="6" fill="#030E1A"/>
+    <rect x="70" y="56" width="14" height="16" rx="5" fill="#22D3EE"/>
+    <ellipse cx="73" cy="58.5" rx="3.5" ry="2" fill="white" opacity="0.65"/>
+    <rect x="69" y="55" width="16" height="18" rx="6" fill="none" stroke="#A5F3FC" stroke-width="0.8" opacity="0.8"/>
+    {{-- Smile --}}
+    <path d="M51 79 Q60 86 69 79" fill="none" stroke="#22D3EE" stroke-width="4" stroke-linecap="round" opacity="0.2"/>
+    <path d="M51 79 Q60 86 69 79" fill="none" stroke="#22D3EE" stroke-width="2" stroke-linecap="round"/>
 </svg>
