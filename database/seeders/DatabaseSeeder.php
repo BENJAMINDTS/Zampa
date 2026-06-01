@@ -21,8 +21,8 @@ class DatabaseSeeder extends Seeder
      *
      * Crea un escenario completo de prueba:
      * 1. Tres superadmins del equipo Zampa (BenjaminDTS, SebastianBCF, Ayrton)
-     * 2. Plan Premium
-     * 3. Usuario Admin de demo (admin@zampa.app / password) con datos de negocio
+     * 2. Tres planes: Básico · Profesional · Premium
+     * 3. Usuario Admin de demo (admin@zampa.app / password) con plan Premium
      * 4. 10 Mesas, 20 Ingredientes, 5 Categorías con Productos conectados
      *
      * @return void
@@ -60,10 +60,41 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        // 2. Crear un Plan Premium
-        $plan = Plan::firstOrCreate(
-            ['name' => 'Plan Premium'],
-            ['price' => 29.99, 'max_tables' => 50]
+        // 2. Crear los tres planes de Zampa
+        Plan::updateOrCreate(
+            ['name' => 'Básico'],
+            [
+                'price'         => 29.99,
+                'price_monthly' => 29.99,
+                'price_yearly'  => 299.90,
+                'max_tables'    => 20,
+                'max_staff'     => 10,
+                'max_floors'    => 1,
+            ]
+        );
+
+        Plan::updateOrCreate(
+            ['name' => 'Profesional'],
+            [
+                'price'         => 74.99,
+                'price_monthly' => 74.99,
+                'price_yearly'  => 749.90,
+                'max_tables'    => 50,
+                'max_staff'     => 25,
+                'max_floors'    => 3,
+            ]
+        );
+
+        $plan = Plan::updateOrCreate(
+            ['name' => 'Premium'],
+            [
+                'price'         => 119.99,
+                'price_monthly' => 119.99,
+                'price_yearly'  => 1199.90,
+                'max_tables'    => null,
+                'max_staff'     => null,
+                'max_floors'    => null,
+            ]
         );
 
         // 3. Admin de demo con datos de negocio
