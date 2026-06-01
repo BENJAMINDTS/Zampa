@@ -63,9 +63,11 @@ it('plans index shows number of businesses per plan', function () {
 it('superadmin can create a plan with valid data', function () {
     $this->actingAs($this->superadmin)
          ->post(route('superadmin.plans.store'), [
-             'name'       => 'Plan Premium',
-             'price'      => 29.99,
-             'max_tables' => 20,
+             'name'          => 'Plan Premium',
+             'price_monthly' => 29.99,
+             'max_tables'    => 20,
+             'max_staff'     => 10,
+             'max_floors'    => 1,
          ])
          ->assertRedirect(route('superadmin.plans.index'))
          ->assertSessionHas('success');
@@ -76,12 +78,27 @@ it('superadmin can create a plan with valid data', function () {
     ]);
 });
 
+it('superadmin can create a plan with null limits (ilimitado)', function () {
+    $this->actingAs($this->superadmin)
+         ->post(route('superadmin.plans.store'), [
+             'name'          => 'Plan Ilimitado',
+             'price_monthly' => 119.99,
+             'max_tables'    => null,
+             'max_staff'     => null,
+             'max_floors'    => null,
+         ])
+         ->assertRedirect(route('superadmin.plans.index'))
+         ->assertSessionHas('success');
+
+    $this->assertDatabaseHas('plans', ['name' => 'Plan Ilimitado', 'max_tables' => null]);
+});
+
 it('fails to create plan without name', function () {
     $this->actingAs($this->superadmin)
          ->post(route('superadmin.plans.store'), [
-             'name'       => '',
-             'price'      => 9.99,
-             'max_tables' => 5,
+             'name'          => '',
+             'price_monthly' => 9.99,
+             'max_tables'    => 5,
          ])
          ->assertSessionHasErrors('name');
 });
@@ -89,19 +106,19 @@ it('fails to create plan without name', function () {
 it('fails to create plan with negative price', function () {
     $this->actingAs($this->superadmin)
          ->post(route('superadmin.plans.store'), [
-             'name'       => 'Plan X',
-             'price'      => -5,
-             'max_tables' => 5,
+             'name'          => 'Plan X',
+             'price_monthly' => -5,
+             'max_tables'    => 5,
          ])
-         ->assertSessionHasErrors('price');
+         ->assertSessionHasErrors('price_monthly');
 });
 
 it('fails to create plan with zero max_tables', function () {
     $this->actingAs($this->superadmin)
          ->post(route('superadmin.plans.store'), [
-             'name'       => 'Plan X',
-             'price'      => 9.99,
-             'max_tables' => 0,
+             'name'          => 'Plan X',
+             'price_monthly' => 9.99,
+             'max_tables'    => 0,
          ])
          ->assertSessionHasErrors('max_tables');
 });
@@ -111,9 +128,9 @@ it('fails to create plan with duplicate name', function () {
 
     $this->actingAs($this->superadmin)
          ->post(route('superadmin.plans.store'), [
-             'name'       => 'Plan Básico',
-             'price'      => 19.99,
-             'max_tables' => 10,
+             'name'          => 'Plan Básico',
+             'price_monthly' => 19.99,
+             'max_tables'    => 10,
          ])
          ->assertSessionHasErrors('name');
 });
@@ -127,9 +144,11 @@ it('superadmin can update a plan', function () {
 
     $this->actingAs($this->superadmin)
          ->put(route('superadmin.plans.update', $plan), [
-             'name'       => 'Plan Nuevo',
-             'price'      => 19.99,
-             'max_tables' => 15,
+             'name'          => 'Plan Nuevo',
+             'price_monthly' => 19.99,
+             'max_tables'    => 15,
+             'max_staff'     => 8,
+             'max_floors'    => 1,
          ])
          ->assertRedirect(route('superadmin.plans.index'))
          ->assertSessionHas('success');
@@ -146,9 +165,9 @@ it('update allows keeping the same name on the same plan', function () {
 
     $this->actingAs($this->superadmin)
          ->put(route('superadmin.plans.update', $plan), [
-             'name'       => 'Plan Único',
-             'price'      => 49.99,
-             'max_tables' => 30,
+             'name'          => 'Plan Único',
+             'price_monthly' => 49.99,
+             'max_tables'    => 30,
          ])
          ->assertRedirect(route('superadmin.plans.index'))
          ->assertSessionHas('success');
