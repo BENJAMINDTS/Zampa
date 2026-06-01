@@ -74,7 +74,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
                 </svg>
             </button>
-            <div id="nav-carta" x-show="cartaOpen" class="mt-0.5 ml-7 pl-3 border-l border-gray-200 dark:border-gray-700 space-y-0.5">
+            <div id="nav-carta" x-show="cartaOpen" x-cloak class="mt-0.5 ml-7 pl-3 border-l border-gray-200 dark:border-gray-700 space-y-0.5">
                 <a href="{{ route('categories.index') }}"
                    aria-current="{{ request()->routeIs('categories.*') ? 'page' : 'false' }}"
                    class="flex items-center px-3 py-1.5 rounded-md text-sm transition-colors
@@ -131,7 +131,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
                 </svg>
             </button>
-            <div id="nav-local" x-show="localOpen" class="mt-0.5 ml-7 pl-3 border-l border-gray-200 dark:border-gray-700 space-y-0.5">
+            <div id="nav-local" x-show="localOpen" x-cloak class="mt-0.5 ml-7 pl-3 border-l border-gray-200 dark:border-gray-700 space-y-0.5">
                 <a href="{{ route('tables.map') }}"
                    aria-current="{{ request()->routeIs('tables.*', 'zones.*') ? 'page' : 'false' }}"
                    class="flex items-center px-3 py-1.5 rounded-md text-sm transition-colors
@@ -172,7 +172,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
                 </svg>
             </button>
-            <div id="nav-negocio" x-show="negocioOpen" class="mt-0.5 ml-7 pl-3 border-l border-gray-200 dark:border-gray-700 space-y-0.5">
+            <div id="nav-negocio" x-show="negocioOpen" x-cloak class="mt-0.5 ml-7 pl-3 border-l border-gray-200 dark:border-gray-700 space-y-0.5">
                 <a href="{{ route('negocio.config.edit') }}"
                    aria-current="{{ request()->routeIs('negocio.*', 'tapas.*') ? 'page' : 'false' }}"
                    class="flex items-center px-3 py-1.5 rounded-md text-sm transition-colors
