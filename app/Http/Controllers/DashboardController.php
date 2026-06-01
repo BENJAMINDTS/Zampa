@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
+use App\Models\Table;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -127,7 +128,40 @@ class DashboardController extends Controller
             ? round($grand / $summary->total_count, 2)
             : 0.0;
 
-        return view('dashboard.index', compact('period', 'from', 'to', 'summary', 'topTable', 'topProducts', 'peakHours', 'avgTicket', 'grand'));
+        $planUsage = $this->buildPlanUsage($ownerUserId);
+
+        return view('dashboard.index', compact('period', 'from', 'to', 'summary', 'topTable', 'topProducts', 'peakHours', 'avgTicket', 'grand', 'planUsage'));
+    }
+
+    /**
+     * Construye el array de uso del plan para el widget del dashboard.
+     *
+     * @param  int  $ownerUserId
+     * @return array<string, mixed>
+     */
+    private function buildPlanUsage(int $ownerUserId): array
+    {
+        $owner = Auth::user()->isAdmin() ? Auth::user() : Auth::user()->admin;
+        $plan  = $owner?->plan;
+
+        return [
+            'plan'   => $plan,
+            'tables' => [
+                'current'   => Table::where('user_id', $ownerUserId)->servicePoints()->count(),
+                'limit'     => $plan?->max_tables,
+                'unlimited' => $plan?->hasUnlimitedTables() ?? true,
+            ],
+            'staff'  => [
+                'current'   => $owner?->staff()->count() ?? 0,
+                'limit'     => $plan?->max_staff,
+                'unlimited' => $plan?->hasUnlimitedStaff() ?? true,
+            ],
+            'floors' => [
+                'current'   => (int) ($owner?->floor_count ?? 1),
+                'limit'     => $plan?->max_floors,
+                'unlimited' => $plan?->hasUnlimitedFloors() ?? true,
+            ],
+        ];
     }
 
     /**

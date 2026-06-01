@@ -133,7 +133,11 @@
                         <option value="">-- Selecciona un plan --</option>
                         @foreach($plans as $plan)
                             <option value="{{ $plan->id }}" {{ old('plan_id') == $plan->id ? 'selected' : '' }}>
-                                {{ $plan->name }} — {{ number_format($plan->price, 2, ',', '.') }} €/mes · {{ $plan->max_tables }} mesas
+                                {{ $plan->name }}
+                                — {{ number_format($plan->price_monthly ?? $plan->price, 2, ',', '.') }} €/mes
+                                · {{ $plan->max_tables !== null ? $plan->max_tables . ' mesas' : '∞ mesas' }}
+                                · {{ $plan->max_staff !== null ? $plan->max_staff . ' staff' : '∞ staff' }}
+                                · {{ $plan->max_floors !== null ? $plan->max_floors . ' planta(s)' : '∞ plantas' }}
                             </option>
                         @endforeach
                     </select>

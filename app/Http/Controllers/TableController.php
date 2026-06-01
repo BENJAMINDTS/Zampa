@@ -38,7 +38,7 @@ class TableController extends Controller
     public function index(): View
     {
         $tables    = Table::where('user_id', Auth::id())->servicePoints()->orderBy('name')->get();
-        $maxTables = Auth::user()->plan?->max_tables ?? 10;
+        $maxTables = Auth::user()->plan?->max_tables;
 
         return view('tables.index', compact('tables', 'maxTables'));
     }
@@ -69,7 +69,7 @@ class TableController extends Controller
                            ->get();
         $zones       = Zone::where('user_id', $ownerId)->orderBy('name')->get();
         $owner         = Auth::user()->isAdmin() ? Auth::user() : Auth::user()->admin;
-        $maxTables     = $owner?->plan?->max_tables ?? 10;
+        $maxTables     = $owner?->plan?->max_tables;
         $floorWidth    = $owner?->floor_width    ?? 1200;
         $floorHeight   = $owner?->floor_height   ?? 800;
         $floorCount    = $owner?->floor_count    ?? 1;
@@ -158,10 +158,31 @@ class TableController extends Controller
      */
     public function updateFloorSettings(Request $request): JsonResponse
     {
+        $plan          = Auth::user()->plan;
+        $floorCountMax = $plan?->max_floors;
+
+        // max:null would be an invalid rule; use a hard cap of 99 only as a UI safety net for unlimited plans.
+        $floorValidation = $floorCountMax !== null
+            ? "sometimes|integer|min:1|max:{$floorCountMax}"
+            : 'sometimes|integer|min:1|max:99';
+
         $data = $request->validate([
-            'floor_count'    => 'sometimes|integer|min:1|max:5',
+            'floor_count'    => $floorValidation,
             'floors_enabled' => 'sometimes|boolean',
         ]);
+
+        if (isset($data['floor_count'])) {
+            $newCount = (int) $data['floor_count'];
+
+            // isLimitReached uses current >= limit. newCount is the desired final count,
+            // so pass newCount - 1 to represent existing floors before adding the new one.
+            if ($plan && $plan->isLimitReached('floors', $newCount - 1)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Tu plan {$plan->name} permite un máximo de {$plan->max_floors} planta(s). Actualiza al plan Premium para tener plantas ilimitadas.",
+                ], 422);
+            }
+        }
 
         Auth::user()->update($data);
 
@@ -256,13 +277,18 @@ class TableController extends Controller
         }
 
         if ($isServicePoint) {
-            $count     = Table::where('user_id', Auth::id())->servicePoints()->count();
-            $maxTables = Auth::user()->plan?->max_tables ?? 10;
+            $count = Table::where('user_id', Auth::id())->servicePoints()->count();
+            $plan  = Auth::user()->plan;
 
-            if ($count >= $maxTables) {
+            $limitHit = $plan !== null
+                ? $plan->isLimitReached('tables', $count)
+                : $count >= 10;
+
+            if ($limitHit) {
+                $limit = $plan?->max_tables ?? 10;
                 return response()->json([
                     'success' => false,
-                    'message' => "Has alcanzado el límite de {$maxTables} mesas de tu plan.",
+                    'message' => "Has alcanzado el límite de {$limit} mesas de tu plan {$plan?->name}.",
                 ], 422);
             }
         }
