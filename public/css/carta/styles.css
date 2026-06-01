@@ -580,10 +580,15 @@ html, body {
 }
 .fab--chat {
   right: 16px; bottom: 92px;
+  width: auto; height: 44px;
+  padding: 0 16px 0 10px;
+  gap: 8px;
   background: linear-gradient(135deg, #2E50B0, #1A3380);
-  overflow: hidden;
+  font-family: var(--font-display); font-size: 14px; font-weight: 800;
+  letter-spacing: 0.01em;
+  transition: filter var(--duration-fast);
 }
-.fab--chat img { width: 48px; height: 48px; }
+.fab--chat:hover { filter: brightness(1.1); }
 .fab--bill {
   /* Horizontal pill so the "Cuenta" label reads at first glance.
      Width is intrinsic â€” grows with the label, fixed height. */
