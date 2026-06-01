@@ -23,12 +23,11 @@ use App\Http\Controllers\SuperAdmin\SuperAdminDashboardController;
 use App\Http\Controllers\SuperAdmin\SuperAdminPlanController;
 use App\Http\Controllers\SuperAdmin\SuperAdminBusinessController;
 use App\Http\Controllers\SuperAdmin\SuperAdminMapController;
+use App\Http\Controllers\LandingController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('welcome');
-})->name('welcome');
+Route::get('/', [LandingController::class, 'index'])->name('welcome');
 
 // Carta digital pública — accesible sin autenticación mediante QR
 Route::get('/carta/{hash}', [MenuController::class, 'show'])
