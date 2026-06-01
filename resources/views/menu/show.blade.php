@@ -403,6 +403,7 @@
     <script id="tapa-config" type="application/json">@json($tapaConfigForAlpine)</script>
     <script id="tapa-products" type="application/json">@json($tapaProductsForAlpine)</script>
     <script id="order-items" type="application/json">@json($activeOrderItemsForAlpine)</script>
+    <script id="all-orders" type="application/json">@json($allOrdersForAlpine)</script>
     <script id="menu-context" type="application/json">@json($menuContext)</script>
 
     {{-- Inicializa los badges de alérgenos con los pictogramas oficiales del DS --}}
@@ -1647,7 +1648,7 @@
              FAB CLUSTER — DS: .fab-cluster (Mis pedidos + Cuenta + Mi ticket)
              ══════════════════════════════════════════════════════════════════════ --}}
         <div class="fab-cluster"
-             x-show="$store.bill.active && !$store.chat.open"
+             x-show="($store.orders.count > 0 || $store.bill.active) && !$store.chat.open"
              style="display:none"
              x-transition:enter="transition duration-200"
              x-transition:enter-start="opacity-0"
@@ -1656,21 +1657,21 @@
              x-transition:leave-start="opacity-100"
              x-transition:leave-end="opacity-0">
 
-            {{-- fab--orders: Mis pedidos (visible cuando hay pedido activo no pagado) --}}
+            {{-- fab--orders: Mis pedidos (visible cuando hay pedidos activos) --}}
             <button type="button"
                     class="fab fab--orders"
-                    x-show="$store.bill.active && !$store.bill.paymentDone"
-                    @click="$store.bill.open()"
-                    :aria-label="'Mi pedido activo — ver cuenta'">
+                    x-show="$store.orders.count > 0 && !$store.bill.paymentDone"
+                    @click="$store.orders.openList()"
+                    :aria-label="'Mis pedidos — ' + $store.orders.count + ' enviado' + ($store.orders.count !== 1 ? 's' : '')">
                 <span class="fab--orders__ic" aria-hidden="true">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
                          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M5 3h14v18l-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5L5 21V3z"/>
                         <path d="M8 8h8M8 12h8M8 16h5" stroke-width="2.4"/>
                     </svg>
-                    <span class="fab--orders__badge" aria-hidden="true">1</span>
+                    <span class="fab--orders__badge" x-text="$store.orders.count" aria-hidden="true"></span>
                 </span>
-                <span class="fab--orders__label">Mi pedido</span>
+                <span class="fab--orders__label">Mis pedidos</span>
             </button>
 
             {{-- fab--bill: Cuenta --}}
@@ -3046,6 +3047,136 @@
             </div>{{-- /drawer--bill --}}
         </div>{{-- /scrim --}}
 
+
+                {{-- ======================================================================
+             ORDERS PANEL — Mis pedidos (lista + detalle)
+             ====================================================================== --}}
+        <div class="scrim"
+             x-show="$store.orders.open"
+             style="display:none"
+             x-transition:enter="transition duration-200"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             @click.self="$store.orders.close()"
+             role="dialog" aria-modal="true" aria-label="Mis pedidos">
+
+            <div class="drawer drawer--orders" @click.stop>
+                <div class="drawer__grabber" aria-hidden="true"></div>
+
+                {{-- Header — cambia entre vista lista y detalle --}}
+                <div class="drawer__head">
+                    <div class="drawer__heading">
+                        <div class="drawer__title"
+                             x-text="$store.orders.selectedId === null ? 'Mis pedidos' : 'Pedido #' + $store.orders.selected?.number">
+                        </div>
+                        <div class="drawer__subtitle"
+                             x-text="$store.orders.selectedId === null
+                                 ? ($store.orders.count + ' pedido' + ($store.orders.count !== 1 ? 's' : '') + ' enviado' + ($store.orders.count !== 1 ? 's' : ''))
+                                 : (($store.orders.selected?.itemCount ?? 0) + ' artículo' + (($store.orders.selected?.itemCount ?? 0) !== 1 ? 's' : '') + ' · ' + $store.orders.fmt($store.orders.selected?.total ?? 0))">
+                        </div>
+                    </div>
+                    <button type="button" class="icon-btn" @click="$store.orders.close()" aria-label="Cerrar">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+
+                {{-- Body lista --}}
+                <template x-if="$store.orders.selectedId === null">
+                    <div class="drawer__body">
+                        <template x-for="order in $store.orders.list" :key="order.id">
+                            <button type="button" class="order-card" @click="$store.orders.openDetail(order.id)">
+                                <span class="order-badge" x-text="'#' + order.number"></span>
+                                <div class="order-card__info">
+                                    <div class="order-card__name" x-text="'Pedido #' + order.number"></div>
+                                    <div class="order-card__meta"
+                                         x-text="order.itemCount + ' artículo' + (order.itemCount !== 1 ? 's' : '') + ' · ' + order.sentAt">
+                                    </div>
+                                </div>
+                                <span class="order-card__price" x-text="$store.orders.fmt(order.total)"></span>
+                                <svg class="order-card__chevron" width="14" height="14" viewBox="0 0 24 24"
+                                     fill="none" stroke="currentColor" stroke-width="2.5"
+                                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M9 18l6-6-6-6"/>
+                                </svg>
+                            </button>
+                        </template>
+                    </div>
+                </template>
+
+                {{-- Body detalle --}}
+                <template x-if="$store.orders.selectedId !== null">
+                    <div class="drawer__body">
+                        <button type="button" class="orders-back" @click="$store.orders.backToList()">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M15 18l-6-6 6-6"/>
+                            </svg>
+                            Volver a mis pedidos
+                        </button>
+
+                        <div class="order-detail-card">
+                            <div class="order-detail-card__head">
+                                <span class="order-badge order-badge--active"
+                                      x-text="'#' + $store.orders.selected?.number"></span>
+                                <div class="order-card__info">
+                                    <div class="order-card__name"
+                                         x-text="'Pedido #' + $store.orders.selected?.number"></div>
+                                    <div class="order-card__meta"
+                                         x-text="($store.orders.selected?.itemCount ?? 0) + ' artículo' + (($store.orders.selected?.itemCount ?? 0) !== 1 ? 's' : '') + ' · Enviado a las ' + $store.orders.selected?.sentAt">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="order-detail-card__divider"></div>
+                            <template x-for="item in ($store.orders.selected?.items ?? [])" :key="item.name + item.price">
+                                <div class="order-item">
+                                    <span class="order-item__qty" x-text="item.quantity + '×'"></span>
+                                    <span class="order-item__name" x-text="item.name"></span>
+                                    <span class="order-item__price"
+                                          x-text="$store.orders.fmt(item.price * item.quantity)"></span>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+
+                {{-- Footer lista --}}
+                <template x-if="$store.orders.selectedId === null">
+                    <div class="drawer__foot">
+                        <div class="orders-total">
+                            <span class="orders-total__label">TOTAL CUENTA</span>
+                            <span class="orders-total__val"
+                                  x-text="$store.orders.fmt($store.orders.grandTotal)"></span>
+                        </div>
+                        <button type="button" class="btn-primary"
+                                @click="$store.orders.close(); $store.bill.open()">
+                            <svg aria-hidden="true" width="14" height="14" fill="none" stroke="currentColor"
+                                 stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                      d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"/>
+                            </svg>
+                            Solicitar cuenta
+                        </button>
+                    </div>
+                </template>
+
+                {{-- Footer detalle --}}
+                <template x-if="$store.orders.selectedId !== null">
+                    <div class="drawer__foot">
+                        <div class="orders-total">
+                            <span class="orders-total__label">SUBTOTAL DEL PEDIDO</span>
+                            <span class="orders-total__val"
+                                  x-text="$store.orders.fmt($store.orders.selected?.total ?? 0)"></span>
+                        </div>
+                    </div>
+                </template>
+
+            </div>
+        </div>
 
                 {{-- ======================================================================
              TAPA MODAL — DS: TapasModalRich v2
