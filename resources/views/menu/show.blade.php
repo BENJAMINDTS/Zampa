@@ -1676,11 +1676,10 @@
 
             {{-- fab--bill: Cuenta --}}
             <button type="button"
-                    :class="'fab fab--bill' + ($store.bill.active && !$store.bill.paymentDone ? ' fab--in-cluster' : '')"
-                    x-show="!$store.bill.paymentDone"
+                    :class="'fab fab--bill' + ($store.orders.count > 0 && !$store.bill.paymentDone ? ' fab--in-cluster' : '')"
+                    x-show="$store.orders.count > 0 && !$store.bill.paymentDone"
                     @click="$store.bill.open()"
-                    :disabled="$store.bill.requested && !$store.bill.paymentDone ? undefined : undefined"
-                    :aria-label="$store.bill.requested ? 'Cuenta solicitada' : 'Solicitar la cuenta'">
+                    aria-label="Solicitar la cuenta">
                 <span class="fab__ic" aria-hidden="true">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
                          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
