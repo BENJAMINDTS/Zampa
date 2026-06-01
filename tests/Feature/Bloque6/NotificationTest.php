@@ -3,6 +3,7 @@
 /**
  * @author AyrtonAlania
  * @author SebastianBCF
+ * @author BenjaminDTS
  */
 
 use App\Models\Order;
@@ -131,6 +132,50 @@ it('bar panel initial html has no ready orders when notification_ready is false'
 
     $response->assertOk();
     $response->assertSee('<script id="bar-ready-orders" type="application/json">[]</script>', false);
+});
+
+// ─── Regresión: carga de vista no borra notification_ready (ghost fix) ───────
+
+it('loading bar index does not clear notification_ready', function () {
+    $waiter = User::factory()->create(['role' => 'waiter']);
+    $table  = Table::factory()->create(['user_id' => $waiter->id]);
+
+    $order = Order::factory()->create([
+        'table_id'           => $table->id,
+        'status'             => 'ready',
+        'notification_ready' => true,
+    ]);
+
+    // Simula varias recargas de página: el flag debe mantenerse true en BD.
+    $this->actingAs($waiter)->get(route('bar.index'))->assertOk();
+    $this->actingAs($waiter)->get(route('bar.index'))->assertOk();
+    $this->actingAs($waiter)->get(route('bar.index'))->assertOk();
+
+    expect($order->fresh()->notification_ready)->toBeTrue();
+});
+
+it('notification_ready is cleared when all bar items are marked served', function () {
+    $waiter  = User::factory()->create(['role' => 'waiter']);
+    $table   = Table::factory()->create(['user_id' => $waiter->id]);
+    $product = \App\Models\Product::factory()->create(['user_id' => $waiter->id]);
+
+    $order = Order::factory()->create([
+        'table_id'           => $table->id,
+        'status'             => 'ready',
+        'notification_ready' => true,
+    ]);
+    $item = \App\Models\OrderItem::factory()->create([
+        'order_id'    => $order->id,
+        'product_id'  => $product->id,
+        'status'      => 'ready',
+        'destination' => 'bar',
+    ]);
+
+    $this->actingAs($waiter)
+        ->patchJson(route('bar.items.served', $item))
+        ->assertOk();
+
+    expect($order->fresh()->notification_ready)->toBeFalse();
 });
 
 // ─── Endpoint GET /notifications/bill-requests ────────────────────────────────
