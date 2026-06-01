@@ -158,17 +158,24 @@ class TableController extends Controller
      */
     public function updateFloorSettings(Request $request): JsonResponse
     {
+        $plan          = Auth::user()->plan;
+        $floorCountMax = $plan?->max_floors;
+
+        // max:null would be an invalid rule; use a hard cap of 99 only as a UI safety net for unlimited plans.
+        $floorValidation = $floorCountMax !== null
+            ? "sometimes|integer|min:1|max:{$floorCountMax}"
+            : 'sometimes|integer|min:1|max:99';
+
         $data = $request->validate([
-            'floor_count'    => 'sometimes|integer|min:1|max:5',
+            'floor_count'    => $floorValidation,
             'floors_enabled' => 'sometimes|boolean',
         ]);
 
         if (isset($data['floor_count'])) {
-            $plan     = Auth::user()->plan;
             $newCount = (int) $data['floor_count'];
 
-            // Pasamos newCount - 1 porque la convención es "bloquear cuando
-            // current >= limit", y aquí current es el valor objetivo menos la nueva planta.
+            // isLimitReached uses current >= limit. newCount is the desired final count,
+            // so pass newCount - 1 to represent existing floors before adding the new one.
             if ($plan && $plan->isLimitReached('floors', $newCount - 1)) {
                 return response()->json([
                     'success' => false,

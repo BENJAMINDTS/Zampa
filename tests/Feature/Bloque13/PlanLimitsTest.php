@@ -322,12 +322,12 @@ it('admin with basic plan cannot enable more than max_floors', function () {
     $plan  = makePlan(['max_floors' => 1]);
     $admin = makeAdmin($plan);
 
+    // Validation rejects floor_count > max_floors before reaching isLimitReached
     $this->actingAs($admin)
          ->patchJson(route('tables.floor-settings'), [
              'floor_count' => 2,
          ])
-         ->assertStatus(422)
-         ->assertJsonPath('success', false);
+         ->assertStatus(422);
 });
 
 it('admin can set floor_count exactly equal to max_floors', function () {

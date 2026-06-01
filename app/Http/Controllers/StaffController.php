@@ -58,7 +58,7 @@ class StaffController extends Controller
         if ($plan && $plan->isLimitReached('staff', $currentStaff)) {
             return redirect()
                 ->route('staff.create')
-                ->with('error', "Has alcanzado el límite de {$plan->max_staff} miembros de personal de tu plan {$plan->name}. Actualiza al plan Profesional para añadir hasta 25 personas.")
+                ->with('error', "Has alcanzado el límite de {$plan->max_staff} miembros de personal de tu plan {$plan->name}. Actualiza tu plan para añadir más personal.")
                 ->withInput();
         }
 
