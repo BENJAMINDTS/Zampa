@@ -39,9 +39,9 @@ class ProductController extends Controller
     $categories = Category::where('user_id', $ownerId)->orderBy('name')->get();
 
     $products = Product::where('user_id', $ownerId)
-      ->with(['allergens', 'variants', 'category'])
+      ->with(['allergens', 'variants', 'categories'])
       ->when($request->filled('search'), fn ($q) => $q->where('name', 'like', '%' . $request->search . '%'))
-      ->when($request->filled('category'), fn ($q) => $q->where('category_id', $request->category))
+      ->when($request->filled('category'), fn ($q) => $q->whereHas('categories', fn ($q2) => $q2->where('categories.id', $request->category)))
       ->paginate(15)
       ->withQueryString();
 
@@ -76,7 +76,8 @@ class ProductController extends Controller
       'name'               => 'required|string|max:255',
       'description'        => 'nullable|string',
       'price'              => $hasVariants ? 'nullable|numeric|min:0' : 'required|numeric|min:0',
-      'category_id'        => ['required', Rule::exists('categories', 'id')->where('user_id', Auth::user()->ownerUserId())],
+      'category_ids'       => ['required', 'array', 'min:1'],
+      'category_ids.*'     => [Rule::exists('categories', 'id')->where('user_id', Auth::user()->ownerUserId())],
       'image'              => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
       'variants'           => 'nullable|array',
       'variants.*.name'    => 'required_with:variants|string|max:100',
@@ -97,7 +98,8 @@ class ProductController extends Controller
     }
 
     $product = DB::transaction(function () use ($validatedData, $hasVariants) {
-      $product = Product::create(collect($validatedData)->except('variants')->toArray());
+      $product = Product::create(collect($validatedData)->except(['variants', 'category_ids'])->toArray());
+      $product->categories()->sync($validatedData['category_ids']);
 
       if ($hasVariants) {
         foreach ($validatedData['variants'] as $idx => $variantData) {
@@ -144,7 +146,7 @@ class ProductController extends Controller
         $ownerId = Auth::user()->ownerUserId();
         abort_if($product->user_id !== $ownerId, 403, 'No tienes permiso para editar este plato.');
 
-        $product->load(['allergens', 'variants']);
+        $product->load(['allergens', 'variants', 'categories']);
 
         $categories = Category::where('user_id', $ownerId)->get();
 
@@ -178,7 +180,8 @@ class ProductController extends Controller
             'name'               => 'required|string|max:255',
             'description'        => 'nullable|string',
             'price'              => $hasVariants ? 'nullable|numeric|min:0' : 'required|numeric|min:0',
-            'category_id'        => ['required', Rule::exists('categories', 'id')->where('user_id', Auth::user()->ownerUserId())],
+            'category_ids'       => ['required', 'array', 'min:1'],
+            'category_ids.*'     => [Rule::exists('categories', 'id')->where('user_id', Auth::user()->ownerUserId())],
             'image'              => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
             'variants'           => 'nullable|array',
             'variants.*.name'    => 'required_with:variants|string|max:100',
@@ -195,10 +198,11 @@ class ProductController extends Controller
         }
 
         DB::transaction(function () use ($request, $product, $validatedData, $hasVariants) {
-            $productData          = collect($validatedData)->except('variants')->toArray();
+            $productData          = collect($validatedData)->except(['variants', 'category_ids'])->toArray();
             $productData['price'] = $hasVariants ? null : $validatedData['price'];
 
             $product->update($productData);
+            $product->categories()->sync($validatedData['category_ids']);
 
             $product->variants()->delete();
 
