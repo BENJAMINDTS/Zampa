@@ -63,7 +63,7 @@ it('creates a product without image', function () {
             'name'        => 'Ensalada César',
             'description' => 'Clásica ensalada',
             'price'       => '8.50',
-            'category_id' => $this->category->id,
+            'category_ids' => [$this->category->id],
         ])
         ->assertRedirect(route('products.index'));
 
@@ -80,7 +80,7 @@ it('creates a product with image', function () {
         ->post(route('products.store'), [
             'name'        => 'Burger Deluxe',
             'price'       => '12.00',
-            'category_id' => $this->category->id,
+            'category_ids' => [$this->category->id],
             'image'       => $image,
         ])
         ->assertRedirect(route('products.index'));
@@ -96,7 +96,7 @@ it('saves image in storage products folder', function () {
         ->post(route('products.store'), [
             'name'        => 'Producto Con Foto',
             'price'       => '10.00',
-            'category_id' => $this->category->id,
+            'category_ids' => [$this->category->id],
             'image'       => $image,
         ]);
 
@@ -110,7 +110,7 @@ it('assigns user_id of authenticated user on create', function () {
         ->post(route('products.store'), [
             'name'        => 'Plato Propio',
             'price'       => '9.00',
-            'category_id' => $this->category->id,
+            'category_ids' => [$this->category->id],
         ]);
 
     $this->assertDatabaseHas('products', [
@@ -125,7 +125,7 @@ it('fails to create a product without name', function () {
     $this->actingAs($this->user)
         ->post(route('products.store'), [
             'price'       => '10.00',
-            'category_id' => $this->category->id,
+            'category_ids' => [$this->category->id],
         ])
         ->assertSessionHasErrors('name');
 });
@@ -134,7 +134,7 @@ it('fails to create a product without price', function () {
     $this->actingAs($this->user)
         ->post(route('products.store'), [
             'name'        => 'Sin Precio',
-            'category_id' => $this->category->id,
+            'category_ids' => [$this->category->id],
         ])
         ->assertSessionHasErrors('price');
 });
@@ -144,7 +144,7 @@ it('fails to create a product with negative price', function () {
         ->post(route('products.store'), [
             'name'        => 'Precio Negativo',
             'price'       => '-5.00',
-            'category_id' => $this->category->id,
+            'category_ids' => [$this->category->id],
         ])
         ->assertSessionHasErrors('price');
 });
@@ -156,7 +156,7 @@ it('fails to create a product with category belonging to another user', function
         ->post(route('products.store'), [
             'name'        => 'Intento de fraude',
             'price'       => '10.00',
-            'category_id' => $otherCategory->id,
+            'category_ids' => [$otherCategory->id],
         ]);
 
     $this->assertDatabaseMissing('products', ['name' => 'Intento de fraude']);
@@ -169,7 +169,7 @@ it('fails to create a product with invalid image type', function () {
         ->post(route('products.store'), [
             'name'        => 'Con PDF',
             'price'       => '10.00',
-            'category_id' => $this->category->id,
+            'category_ids' => [$this->category->id],
             'image'       => $pdf,
         ])
         ->assertSessionHasErrors('image');
@@ -182,7 +182,7 @@ it('fails to create a product with image larger than 2MB', function () {
         ->post(route('products.store'), [
             'name'        => 'Imagen Grande',
             'price'       => '10.00',
-            'category_id' => $this->category->id,
+            'category_ids' => [$this->category->id],
             'image'       => $bigImage,
         ])
         ->assertSessionHasErrors('image');
@@ -225,7 +225,7 @@ it('updates product name and price', function () {
         ->put(route('products.update', $product), [
             'name'        => 'Nombre Actualizado',
             'price'       => '15.00',
-            'category_id' => $this->category->id,
+            'category_ids' => [$this->category->id],
         ])
         ->assertRedirect(route('products.index'));
 
@@ -252,7 +252,7 @@ it('replaces old image when updating with a new one', function () {
         ->put(route('products.update', $product), [
             'name'        => $product->name,
             'price'       => $product->price,
-            'category_id' => $this->category->id,
+            'category_ids' => [$this->category->id],
             'image'       => $newImage,
         ]);
 
@@ -274,7 +274,7 @@ it('returns 403 when user tries to update another users product', function () {
         ->put(route('products.update', $product), [
             'name'        => 'Hack',
             'price'       => '1.00',
-            'category_id' => $this->category->id,
+            'category_ids' => [$this->category->id],
         ])
         ->assertStatus(403);
 });
