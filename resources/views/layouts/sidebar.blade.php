@@ -232,6 +232,7 @@
                     </svg>
                     Cocina
                     <span x-show="count > 0"
+                          x-cloak
                           x-text="count"
                           class="ml-auto inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 text-xs font-bold text-white bg-red-500 rounded-full"
                           :aria-label="count + ' pedidos nuevos sin atender'">
@@ -254,6 +255,7 @@
                     </svg>
                     Barra
                     <span x-show="count > 0"
+                          x-cloak
                           x-text="count"
                           class="ml-auto inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 text-xs font-bold text-white bg-amber-500 rounded-full"
                           :aria-label="count + ' bebidas pendientes en barra'">
