@@ -287,14 +287,18 @@ class TapaConfig extends Model
     }
 
     /**
-     * @param  Product  $product  Debe tener la relación 'category' cargada
+     * @param  Product  $product  Debe tener la relación 'categories' cargada
      * @return bool
      */
     public function isTapaProduct(Product $product): bool
     {
-        return $product->category_id !== null
-            && $product->category?->name === 'Tapas'
-            && $product->category?->user_id === $this->user_id;
+        $categories = $product->relationLoaded('categories')
+            ? $product->categories
+            : $product->categories()->get();
+
+        return $categories->where('name', 'Tapas')
+                          ->where('user_id', $this->user_id)
+                          ->isNotEmpty();
     }
 
     // ─── Helpers privados ────────────────────────────────────────────────────

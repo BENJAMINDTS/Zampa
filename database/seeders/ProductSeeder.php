@@ -25,39 +25,35 @@ class ProductSeeder extends Seeder
             return;
         }
 
-        // 2. Creamos productos de ejemplo
-
-        // Hamburguesa
-        Product::create([
-            'user_id' => $user->id,
-            'category_id' => $category->id,
-            'name' => 'Hamburguesa Kevin Bacon',
+        // 2. Creamos productos de ejemplo y adjuntamos la categoría via pivot
+        $hamburguesa = Product::create([
+            'user_id'     => $user->id,
+            'name'        => 'Hamburguesa Kevin Bacon',
             'description' => 'La best seller. Carne picada fresca, bacon crujiente y salsa secreta.',
-            'price' => 12.50,
-            'image' => 'products/burger-ejemplo.jpg', // Ruta simulada
-            'is_active' => true,
+            'price'       => 12.50,
+            'image'       => 'products/burger-ejemplo.jpg',
+            'is_active'   => true,
         ]);
+        $hamburguesa->categories()->attach($category->id);
 
-        // Bebida (Asumiendo que usamos la misma categoría por simplificar ahora)
-        Product::create([
-            'user_id' => $user->id,
-            'category_id' => $category->id,
-            'name' => 'Coca Cola Zero',
+        $cola = Product::create([
+            'user_id'     => $user->id,
+            'name'        => 'Coca Cola Zero',
             'description' => 'Lata de 33cl bien fría.',
-            'price' => 2.50,
-            'image' => 'products/coca-cola.jpg',
-            'is_active' => true,
+            'price'       => 2.50,
+            'image'       => 'products/coca-cola.jpg',
+            'is_active'   => true,
         ]);
+        $cola->categories()->attach($category->id);
 
-        // Patatas
-        Product::create([
-            'user_id' => $user->id,
-            'category_id' => $category->id,
-            'name' => 'Patatas Fritas Caseras',
+        $patatas = Product::create([
+            'user_id'     => $user->id,
+            'name'        => 'Patatas Fritas Caseras',
             'description' => 'Cortadas a mano y con doble fritura.',
-            'price' => 4.00,
-            'image' => 'products/fries.jpg',
-            'is_active' => true,
+            'price'       => 4.00,
+            'image'       => 'products/fries.jpg',
+            'is_active'   => true,
         ]);
+        $patatas->categories()->attach($category->id);
     }
 }

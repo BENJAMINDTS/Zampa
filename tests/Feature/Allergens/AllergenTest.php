@@ -15,7 +15,7 @@ beforeEach(function () {
 // ─── Relación allergens() en el modelo Product ────────────────────────────────
 
 it('allergens relation returns only ingredients with is_allergen true', function () {
-    $product     = Product::factory()->for(Category::factory()->for($this->user))->for($this->user)->create();
+    $product     = Product::factory()->for($this->user)->afterCreating(fn($p) => $p->categories()->attach(Category::factory()->for($this->user)->create()->id))->create();
     $allergen    = Ingredient::factory()->for($this->user)->create(['name' => 'Queso', 'is_allergen' => true, 'allergen_types' => ['lacteos']]);
     $nonAllergen = Ingredient::factory()->for($this->user)->create(['name' => 'Lechuga', 'is_allergen' => false]);
 
@@ -29,7 +29,7 @@ it('allergens relation returns only ingredients with is_allergen true', function
 });
 
 it('allergens relation returns empty when no allergens assigned', function () {
-    $product     = Product::factory()->for(Category::factory()->for($this->user))->for($this->user)->create();
+    $product     = Product::factory()->for($this->user)->afterCreating(fn($p) => $p->categories()->attach(Category::factory()->for($this->user)->create()->id))->create();
     $nonAllergen = Ingredient::factory()->for($this->user)->create(['name' => 'Lechuga', 'is_allergen' => false]);
 
     $product->ingredients()->attach($nonAllergen->id, ['quantity_base' => 1, 'is_removable' => false, 'is_extra' => false, 'extra_price' => 0]);
@@ -38,13 +38,13 @@ it('allergens relation returns empty when no allergens assigned', function () {
 });
 
 it('allergens relation returns empty when no ingredients assigned', function () {
-    $product = Product::factory()->for(Category::factory()->for($this->user))->for($this->user)->create();
+    $product = Product::factory()->for($this->user)->afterCreating(fn($p) => $p->categories()->attach(Category::factory()->for($this->user)->create()->id))->create();
 
     expect($product->allergens()->get())->toBeEmpty();
 });
 
 it('product with multiple allergens returns all of them', function () {
-    $product   = Product::factory()->for(Category::factory()->for($this->user))->for($this->user)->create();
+    $product   = Product::factory()->for($this->user)->afterCreating(fn($p) => $p->categories()->attach(Category::factory()->for($this->user)->create()->id))->create();
     $allergen1 = Ingredient::factory()->for($this->user)->create(['name' => 'Queso', 'is_allergen' => true, 'allergen_types' => ['lacteos']]);
     $allergen2 = Ingredient::factory()->for($this->user)->create(['name' => 'Huevo', 'is_allergen' => true, 'allergen_types' => ['huevos']]);
 
@@ -59,7 +59,7 @@ it('product with multiple allergens returns all of them', function () {
 it('public menu shows allergen names for products with allergens', function () {
     $table    = Table::factory()->for($this->user)->create();
     $category = Category::factory()->for($this->user)->create(['destination' => 'kitchen']);
-    $product  = Product::factory()->for($category)->for($this->user)->create(['is_active' => true]);
+    $product  = Product::factory()->for($this->user)->create(['category_id' => $category->id, 'is_active' => true]);
     $allergen = Ingredient::factory()->for($this->user)->create(['name' => 'Queso', 'is_allergen' => true, 'allergen_types' => ['lacteos']]);
 
     $product->ingredients()->attach($allergen->id, ['quantity_base' => 1, 'is_removable' => false, 'is_extra' => false, 'extra_price' => 0]);
@@ -72,7 +72,7 @@ it('public menu shows allergen names for products with allergens', function () {
 it('public menu view contains allergen data', function () {
     $table    = Table::factory()->for($this->user)->create();
     $category = Category::factory()->for($this->user)->create(['destination' => 'kitchen']);
-    $product  = Product::factory()->for($category)->for($this->user)->create(['is_active' => true]);
+    $product  = Product::factory()->for($this->user)->create(['category_id' => $category->id, 'is_active' => true]);
     $allergen = Ingredient::factory()->for($this->user)->create(['name' => 'Bacon', 'is_allergen' => true, 'allergen_types' => ['gluten']]);
 
     $product->ingredients()->attach($allergen->id, ['quantity_base' => 1, 'is_removable' => false, 'is_extra' => false, 'extra_price' => 0]);
@@ -88,8 +88,8 @@ it('public menu view contains allergen data', function () {
 it('allergen filter uses only active products', function () {
     $table           = Table::factory()->for($this->user)->create();
     $category        = Category::factory()->for($this->user)->create(['destination' => 'kitchen']);
-    $activeProduct   = Product::factory()->for($category)->for($this->user)->create(['is_active' => true]);
-    $inactiveProduct = Product::factory()->for($category)->for($this->user)->create(['is_active' => false]);
+    $activeProduct   = Product::factory()->for($this->user)->create(['category_id' => $category->id, 'is_active' => true]);
+    $inactiveProduct = Product::factory()->for($this->user)->create(['category_id' => $category->id, 'is_active' => false]);
 
     $allergen         = Ingredient::factory()->for($this->user)->create(['name' => 'Queso', 'is_allergen' => true, 'allergen_types' => ['lacteos']]);
     $inactiveAllergen = Ingredient::factory()->for($this->user)->create(['name' => 'Bacon', 'is_allergen' => true, 'allergen_types' => ['gluten']]);

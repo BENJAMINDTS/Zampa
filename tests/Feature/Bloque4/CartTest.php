@@ -20,7 +20,7 @@ beforeEach(function () {
 it('creates an order from public cart with valid items', function () {
     $table    = Table::factory()->for($this->user)->create();
     $category = Category::factory()->for($this->user)->create(['destination' => 'kitchen']);
-    $product  = Product::factory()->for($category)->for($this->user)->create(['price' => 10.00]);
+    $product  = Product::factory()->for($this->user)->create(['category_id' => $category->id, 'price' => 10.00]);
 
     $this->postJson('/api/v1/orders', [
         'table_hash' => $table->unique_hash,
@@ -38,7 +38,7 @@ it('creates an order from public cart with valid items', function () {
 it('creates order items with correct quantity', function () {
     $table    = Table::factory()->for($this->user)->create();
     $category = Category::factory()->for($this->user)->create(['destination' => 'kitchen']);
-    $product  = Product::factory()->for($category)->for($this->user)->create(['price' => 5.00]);
+    $product  = Product::factory()->for($this->user)->create(['category_id' => $category->id, 'price' => 5.00]);
 
     $this->postJson('/api/v1/orders', [
         'table_hash' => $table->unique_hash,
@@ -56,7 +56,7 @@ it('creates order items with correct quantity', function () {
 it('calculates total correctly', function () {
     $table    = Table::factory()->for($this->user)->create();
     $category = Category::factory()->for($this->user)->create(['destination' => 'kitchen']);
-    $product  = Product::factory()->for($category)->for($this->user)->create(['price' => 8.00]);
+    $product  = Product::factory()->for($this->user)->create(['category_id' => $category->id, 'price' => 8.00]);
 
     $response = $this->postJson('/api/v1/orders', [
         'table_hash' => $table->unique_hash,
@@ -71,7 +71,7 @@ it('calculates total correctly', function () {
 it('creates order with pending status by default', function () {
     $table    = Table::factory()->for($this->user)->create();
     $category = Category::factory()->for($this->user)->create(['destination' => 'kitchen']);
-    $product  = Product::factory()->for($category)->for($this->user)->create(['price' => 5.00]);
+    $product  = Product::factory()->for($this->user)->create(['category_id' => $category->id, 'price' => 5.00]);
 
     $this->postJson('/api/v1/orders', [
         'table_hash' => $table->unique_hash,
@@ -88,7 +88,7 @@ it('creates order with pending status by default', function () {
 
 it('returns 404 with invalid table hash', function () {
     $category = Category::factory()->for($this->user)->create(['destination' => 'kitchen']);
-    $product  = Product::factory()->for($category)->for($this->user)->create();
+    $product  = Product::factory()->for($this->user)->create(['category_id' => $category->id]);
 
     $this->postJson('/api/v1/orders', [
         'table_hash' => 'hash-invalido-xyz',
@@ -110,7 +110,7 @@ it('returns 422 with empty items array', function () {
 it('returns 422 with product from another restaurant', function () {
     $myTable      = Table::factory()->for($this->user)->create();
     $otherCategory = Category::factory()->for($this->other)->create(['destination' => 'kitchen']);
-    $otherProduct  = Product::factory()->for($otherCategory)->for($this->other)->create();
+    $otherProduct  = Product::factory()->for($this->other)->create(['category_id' => $otherCategory->id]);
 
     // The OrderController looks up the product by ID without tenant check, but the
     // validation layer requires the product to exist in the products table (which it does).
@@ -132,7 +132,7 @@ it('returns 422 with product from another restaurant', function () {
 it('saves item price at moment of order creation snapshot', function () {
     $table    = Table::factory()->for($this->user)->create();
     $category = Category::factory()->for($this->user)->create(['destination' => 'kitchen']);
-    $product  = Product::factory()->for($category)->for($this->user)->create(['price' => 12.50]);
+    $product  = Product::factory()->for($this->user)->create(['category_id' => $category->id, 'price' => 12.50]);
 
     $this->postJson('/api/v1/orders', [
         'table_hash' => $table->unique_hash,
@@ -148,7 +148,7 @@ it('saves item price at moment of order creation snapshot', function () {
 it('price snapshot is not affected when product price changes later', function () {
     $table    = Table::factory()->for($this->user)->create();
     $category = Category::factory()->for($this->user)->create(['destination' => 'kitchen']);
-    $product  = Product::factory()->for($category)->for($this->user)->create(['price' => 12.50]);
+    $product  = Product::factory()->for($this->user)->create(['category_id' => $category->id, 'price' => 12.50]);
 
     $this->postJson('/api/v1/orders', [
         'table_hash' => $table->unique_hash,
@@ -169,7 +169,7 @@ it('price snapshot is not affected when product price changes later', function (
 it('saves ingredient add modification in order item modifications table', function () {
     $table      = Table::factory()->for($this->user)->create();
     $category   = Category::factory()->for($this->user)->create(['destination' => 'kitchen']);
-    $product    = Product::factory()->for($category)->for($this->user)->create(['price' => 10.00]);
+    $product    = Product::factory()->for($this->user)->create(['category_id' => $category->id, 'price' => 10.00]);
     $ingredient = Ingredient::factory()->for($this->user)->create();
 
     $this->postJson('/api/v1/orders', [
@@ -197,7 +197,7 @@ it('saves ingredient add modification in order item modifications table', functi
 it('saves ingredient remove modification in order item modifications table', function () {
     $table      = Table::factory()->for($this->user)->create();
     $category   = Category::factory()->for($this->user)->create(['destination' => 'kitchen']);
-    $product    = Product::factory()->for($category)->for($this->user)->create(['price' => 10.00]);
+    $product    = Product::factory()->for($this->user)->create(['category_id' => $category->id, 'price' => 10.00]);
     $ingredient = Ingredient::factory()->for($this->user)->create();
 
     $this->postJson('/api/v1/orders', [

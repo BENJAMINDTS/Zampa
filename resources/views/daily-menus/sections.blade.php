@@ -305,7 +305,7 @@
                     @csrf
                     @php
                       $assignedProductIds = $section->products->pluck('id')->toArray();
-                      $grouped = $products->groupBy(fn($p) => $p->category?->name ?? 'Sin categoría');
+                      $grouped = $products->groupBy(fn($p) => $p->categories->first()?->name ?? 'Sin categoría');
                     @endphp
 
                     <div class="border-t border-dashed border-gray-200 dark:border-gray-700 pt-5">

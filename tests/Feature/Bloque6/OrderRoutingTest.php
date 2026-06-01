@@ -24,7 +24,7 @@ beforeEach(function () {
 it('assigns kitchen destination to items of kitchen category', function () {
     $table    = Table::factory()->for($this->user)->create();
     $category = Category::factory()->for($this->user)->create(['destination' => 'kitchen']);
-    $product  = Product::factory()->for($category)->for($this->user)->create();
+    $product  = Product::factory()->for($this->user)->create(['category_id' => $category->id]);
 
     $this->postJson('/api/v1/orders', [
         'table_hash' => $table->unique_hash,
@@ -42,7 +42,7 @@ it('assigns kitchen destination to items of kitchen category', function () {
 it('assigns bar destination to items of bar category', function () {
     $table    = Table::factory()->for($this->user)->create();
     $category = Category::factory()->for($this->user)->create(['destination' => 'bar']);
-    $product  = Product::factory()->for($category)->for($this->user)->create();
+    $product  = Product::factory()->for($this->user)->create(['category_id' => $category->id]);
 
     $this->postJson('/api/v1/orders', [
         'table_hash' => $table->unique_hash,
@@ -61,8 +61,8 @@ it('assigns correct destination when order has mixed kitchen and bar items', fun
     $table           = Table::factory()->for($this->user)->create();
     $kitchenCategory = Category::factory()->for($this->user)->create(['destination' => 'kitchen']);
     $barCategory     = Category::factory()->for($this->user)->create(['destination' => 'bar']);
-    $kitchenProduct  = Product::factory()->for($kitchenCategory)->for($this->user)->create();
-    $barProduct      = Product::factory()->for($barCategory)->for($this->user)->create();
+    $kitchenProduct  = Product::factory()->for($this->user)->create(['category_id' => $kitchenCategory->id]);
+    $barProduct      = Product::factory()->for($this->user)->create(['category_id' => $barCategory->id]);
 
     $this->postJson('/api/v1/orders', [
         'table_hash' => $table->unique_hash,

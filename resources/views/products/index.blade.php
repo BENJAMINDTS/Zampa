@@ -177,10 +177,10 @@
                     </span>
                   @endif
 
-                  {{-- Categoría --}}
-                  @if($product->category)
+                  {{-- Categorías --}}
+                  @foreach($product->categories as $cat)
                     <span class="inline-flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
-                      @if($product->category->destination === 'kitchen')
+                      @if($cat->destination === 'kitchen')
                         <svg class="h-3 w-3" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
                         </svg>
@@ -189,9 +189,9 @@
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
                         </svg>
                       @endif
-                      {{ $product->category->name }}
+                      {{ $cat->name }}
                     </span>
-                  @endif
+                  @endforeach
                 </div>
               </div>
             </td>
