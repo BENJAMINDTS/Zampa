@@ -208,12 +208,10 @@ class DatabaseSeeder extends Seeder
 
         // 7. Crear 5 Categorías y llenarlas de productos
         Category::factory(5)->create(['user_id' => $user->id])->each(function ($category) use ($user, $ingredients) {
-            $products = Product::factory(4)->create([
-                'user_id'     => $user->id,
-                'category_id' => $category->id,
-            ]);
+            $products = Product::factory(4)->create(['user_id' => $user->id]);
 
             foreach ($products as $product) {
+                $product->categories()->syncWithoutDetaching([$category->id]);
                 $product->ingredients()->attach(
                     $ingredients->random(3),
                     ['quantity_base' => 1]
