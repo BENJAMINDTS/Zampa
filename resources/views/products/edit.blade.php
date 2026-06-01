@@ -209,29 +209,33 @@
                 </div>
             </div>
 
-            {{-- Categoría --}}
+            {{-- Categorías --}}
             <div>
-                <label for="category_id" class="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label for="category_ids" class="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     <svg aria-hidden="true" class="h-4 w-4 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
                     </svg>
-                    Categoría
+                    Categorías
                     <span aria-hidden="true" class="text-red-500">*</span>
                     <span class="sr-only">(obligatorio)</span>
                 </label>
-                <select name="category_id" id="category_id" required aria-required="true"
-                        aria-invalid="{{ $errors->has('category_id') ? 'true' : 'false' }}"
-                        class="block w-full h-10 rounded-md border-gray-300 dark:border-gray-600
+                @php $selectedCatIds = old('category_ids', $product->categories->pluck('id')->toArray()); @endphp
+                <select name="category_ids[]" id="category_ids" multiple required aria-required="true"
+                        aria-multiselectable="true"
+                        aria-invalid="{{ $errors->has('category_ids') ? 'true' : 'false' }}"
+                        size="{{ min($categories->count(), 6) }}"
+                        class="block w-full rounded-md border-gray-300 dark:border-gray-600
                                bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100
                                shadow-sm focus:border-indigo-500 focus:ring-indigo-500
-                               @error('category_id') border-red-500 @enderror">
+                               @error('category_ids') border-red-500 @enderror">
                     @foreach($categories as $category)
-                    <option value="{{ $category->id }}" {{ $product->category_id == $category->id ? 'selected' : '' }}>
+                    <option value="{{ $category->id }}" {{ in_array($category->id, $selectedCatIds) ? 'selected' : '' }}>
                         {{ $category->name }}
                     </option>
                     @endforeach
                 </select>
-                @error('category_id')
+                <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">Mantén Ctrl para seleccionar varias categorías</p>
+                @error('category_ids')
                 <p id="category-error" role="alert" class="mt-1 text-xs text-red-600 dark:text-red-400">{{ $message }}</p>
                 @enderror
             </div>
