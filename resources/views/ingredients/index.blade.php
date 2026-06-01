@@ -98,24 +98,24 @@
 
         <div class="flex flex-col flex-1 p-5">
           {{-- Emoji + nombre --}}
-          <div class="flex items-start gap-3 mb-4">
-            <span class="text-3xl mt-0.5" role="img" aria-hidden="true">{{ $ingredient->ingredientEmoji() }}</span>
-            <div class="flex-1 min-w-0">
-              <h2 class="text-base font-bold text-gray-900 dark:text-gray-100 leading-snug">
-                {{ $ingredient->name }}
-              </h2>
-              @if($ingredient->is_allergen && !empty($ingredient->allergen_types))
-                <div class="mt-2 flex flex-wrap gap-1" role="list" aria-label="Alérgenos de {{ $ingredient->name }}">
-                  @foreach($ingredient->allergen_types as $allergenSlug)
-                    <x-allergen-badge :slug="$allergenSlug" />
-                  @endforeach
-                </div>
-              @else
-                <span class="inline-flex items-center gap-1 mt-1 text-xs text-gray-400 dark:text-gray-500">
-                  Sin alérgenos
-                </span>
-              @endif
-            </div>
+          <div class="flex items-center gap-3 mb-3">
+            <span class="text-2xl shrink-0 leading-none" role="img" aria-hidden="true">{{ $ingredient->ingredientEmoji() }}</span>
+            <h2 class="text-base font-bold text-gray-900 dark:text-gray-100 leading-snug min-w-0 break-words">
+              {{ $ingredient->name }}
+            </h2>
+          </div>
+
+          {{-- Badges — flex-1 so buttons always align to bottom --}}
+          <div class="flex-1 mb-3">
+            @if($ingredient->is_allergen && !empty($ingredient->allergen_types))
+              <div class="flex flex-wrap gap-1" role="list" aria-label="Alérgenos de {{ $ingredient->name }}">
+                @foreach($ingredient->allergen_types as $allergenSlug)
+                  <x-allergen-badge :slug="$allergenSlug" />
+                @endforeach
+              </div>
+            @else
+              <span class="text-xs text-gray-400 dark:text-gray-500">Sin alérgenos</span>
+            @endif
           </div>
 
           {{-- Botones --}}
