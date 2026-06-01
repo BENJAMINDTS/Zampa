@@ -150,16 +150,63 @@ export function billRequestPolling(urls) {
 /**
  * Alpine component for showing notifications when kitchen marks orders ready.
  *
+ * Uses sessionStorage to track acknowledged order IDs so that a page refresh
+ * does not re-surface notifications the waiter already saw. Only genuinely new
+ * notifications (order IDs not previously acknowledged in this browser session)
+ * are shown. Explicit dismiss clears both the server flag and the local record
+ * so a future re-trigger for the same order will show again correctly.
+ *
  * @param {Array<Object>} initialOrders - Pre-loaded ready orders from PHP.
  * @param {Object}        urls          - API endpoint URL map.
  * @returns {Object} Alpine component definition.
  */
 export function notificationPolling(initialOrders, urls) {
+    const STORAGE_KEY = 'zampa:bar:ack-notifications';
+
+    /** @returns {Set<number>} Order IDs already acknowledged in this session. */
+    function getAcknowledged() {
+        try {
+            return new Set(JSON.parse(sessionStorage.getItem(STORAGE_KEY) || '[]'));
+        } catch {
+            return new Set();
+        }
+    }
+
+    /** @param {number} id */
+    function addAcknowledged(id) {
+        try {
+            const set = getAcknowledged();
+            set.add(id);
+            sessionStorage.setItem(STORAGE_KEY, JSON.stringify([...set]));
+        } catch {
+            // sessionStorage unavailable — degrade silently
+        }
+    }
+
+    /** @param {number} id */
+    function removeAcknowledged(id) {
+        try {
+            const set = getAcknowledged();
+            set.delete(id);
+            sessionStorage.setItem(STORAGE_KEY, JSON.stringify([...set]));
+        } catch {
+            // silent
+        }
+    }
+
     return {
-        /** @type {Array<Object>} Orders ready to be served. */
-        readyOrders: initialOrders,
+        /**
+         * Orders ready to be served, pre-filtered so previously-acknowledged
+         * orders do not reappear as ghost notifications after a page refresh.
+         *
+         * @type {Array<Object>}
+         */
+        readyOrders: initialOrders.filter(o => !getAcknowledged().has(o.id)),
 
         init() {
+            // Mark currently-visible orders as acknowledged so a page refresh
+            // does not re-surface them before the waiter takes action.
+            this.readyOrders.forEach(o => addAcknowledged(o.id));
             this.poll();
             setInterval(() => this.poll(), 20000);
         },
@@ -170,8 +217,22 @@ export function notificationPolling(initialOrders, urls) {
                     headers: { 'X-Requested-With': 'XMLHttpRequest' },
                 });
                 if (!res.ok) return;
-                const data   = await res.json();
-                this.readyOrders = data.orders;
+                const data      = await res.json();
+                const acked     = getAcknowledged();
+                const serverIds = new Set(data.orders.map(o => o.id));
+
+                // Genuinely new orders: server reports ready, never shown before.
+                const newOrders = data.orders.filter(o => !acked.has(o.id));
+                newOrders.forEach(o => addAcknowledged(o.id));
+
+                const visibleIds = new Set(this.readyOrders.map(o => o.id));
+
+                this.readyOrders = [
+                    // Keep currently-visible orders that the server still reports as ready.
+                    ...this.readyOrders.filter(o => serverIds.has(o.id)),
+                    // Append new orders not yet in the visible list.
+                    ...newOrders.filter(o => !visibleIds.has(o.id)),
+                ];
             } catch {
                 // silent
             }
@@ -189,6 +250,8 @@ export function notificationPolling(initialOrders, urls) {
                     },
                 });
                 if (!res.ok) return;
+                // Remove acknowledgement so a future re-trigger shows the notification again.
+                removeAcknowledged(id);
                 this.readyOrders = this.readyOrders.filter(o => o.id !== id);
             } catch {
                 // keep item — next poll will reflect DB
