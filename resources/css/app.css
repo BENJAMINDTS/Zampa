@@ -1,5 +1,6 @@
 @import './components/menu.css';
 @import './components/table-map.css';
+@import './components/landing.css';
 
 @tailwind base;
 @tailwind components;
