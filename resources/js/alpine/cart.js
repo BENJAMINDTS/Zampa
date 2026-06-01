@@ -39,11 +39,12 @@ export function calculateCartTotal(items) {
  * @returns {boolean}
  */
 export function shouldShowTapaModal(cfg, barItemsCount, variantsUsed, tapaProducts) {
-    if (!cfg.enabled)                    return false;
-    if (!cfg.kitchenOpen)                return false;
-    if (barItemsCount <= 0)              return false;
-    if (variantsUsed >= cfg.maxVariants) return false;
-    if (tapaProducts.length === 0)       return false;
+    if (!cfg.enabled)                       return false;
+    if (!cfg.kitchenOpen)                   return false;
+    if (barItemsCount <= 0)                 return false;
+    if (variantsUsed >= cfg.maxVariants)    return false;
+    if (tapaProducts.length === 0)          return false;
+    if (variantsUsed >= tapaProducts.length) return false;
     return true;
 }
 
@@ -94,6 +95,14 @@ export function registerCart() {
         items:   [],
         /** @type {boolean} Whether the cart drawer is open. */
         open:    false,
+        /** @type {boolean} True while the close animation is running. */
+        closing: false,
+        /** @type {number} Last non-zero count — keeps cart bar display stable during leave animation. */
+        _snapCount: 0,
+        /** @type {number} Last non-zero total — keeps cart bar display stable during leave animation. */
+        _snapTotal: 0,
+        /** @type {boolean} True while the slide-down exit animation is running. */
+        _barLeaving: false,
         /** @type {boolean} Submission in progress. */
         sending: false,
         /** @type {boolean} Order successfully sent. */
@@ -103,13 +112,46 @@ export function registerCart() {
         /** @type {string} Unique table hash from URL. */
         tableHash: ctx.tableHash ?? '',
 
-        showTapaModal:  false,
-        tapaConfig:     tapaConfig,
-        tapaProducts:   tapaProdList,
-        _barItemsCount: tapaConfig.barItemsCount ?? 0,
-        _variantsUsed:  tapaConfig.variantsUsed  ?? 0,
+        showTapaModal:     false,
+        tapaConfig:        tapaConfig,
+        tapaProducts:      tapaProdList,
+        /** Server-side base counts (submitted orders before this session). */
+        _initBarCount:     tapaConfig.barItemsCount ?? 0,
+        _initVariantsUsed: tapaConfig.variantsUsed  ?? 0,
+
+        /** Reactive: bar items in current cart + server-side base. */
+        get _barItemsCount() {
+            const cart = this.items
+                .filter(i => i.destination === 'bar' && !i.isTapa)
+                .reduce((s, i) => s + i.quantity, 0);
+            return this._initBarCount + cart;
+        },
+
+        /** Reactive: distinct tapa product IDs in cart + server-side base. */
+        get _variantsUsed() {
+            const ids = new Set(this.items.filter(i => i.isTapa).map(i => i.productId));
+            return this._initVariantsUsed + ids.size;
+        },
+
+        /** Reactive: true when tapas are available but not yet chosen in the current cart. */
+        get _tapaPending() {
+            return shouldShowTapaModal(
+                this.tapaConfig,
+                this._barItemsCount,
+                this._variantsUsed,
+                this.tapaProducts,
+            );
+        },
+
+        close() {
+            if (this.closing) return;
+            this.closing = true;
+            this.open = false;
+            setTimeout(() => { this.closing = false; }, 260);
+        },
 
         add(product) {
+            if (this.sent) this.sent = false;
             const key      = product.id + ':none';
             const existing = this.items.find(i => i._key === key);
             if (existing) {
@@ -130,12 +172,12 @@ export function registerCart() {
                 });
             }
             if (product.destination === 'bar') {
-                this._barItemsCount++;
                 this._checkTapaSuggestion();
             }
         },
 
         addWithVariant(productId, variantId, variantName, variantPrice, productData) {
+            if (this.sent) this.sent = false;
             const key      = productId + ':' + variantId;
             const existing = this.items.find(i => i._key === key);
             if (existing) {
@@ -156,7 +198,6 @@ export function registerCart() {
                 });
             }
             if (productData?.destination === 'bar') {
-                this._barItemsCount++;
                 this._checkTapaSuggestion();
             }
         },
@@ -175,15 +216,27 @@ export function registerCart() {
         },
 
         addTapa(tapaProduct) {
-            this.add({
-                id:          tapaProduct.id,
-                name:        tapaProduct.name,
-                price:       tapaProduct.price,
-                destination: 'kitchen',
-                removable:   [],
-                extras:      [],
-            });
-            this._variantsUsed++;
+            const key      = tapaProduct.id + ':none';
+            const existing = this.items.find(i => i._key === key);
+            if (existing) {
+                // already in cart — just mark as tapa if not already
+                existing.isTapa = true;
+            } else {
+                this.items.push({
+                    _key:        key,
+                    productId:   tapaProduct.id,
+                    variantId:   null,
+                    variantName: null,
+                    name:        tapaProduct.name,
+                    price:       tapaProduct.price,
+                    quantity:    1,
+                    destination: 'kitchen',
+                    mods:        [],
+                    removable:   [],
+                    extras:      [],
+                    isTapa:      true,
+                });
+            }
             this.showTapaModal = false;
         },
 
@@ -195,8 +248,18 @@ export function registerCart() {
         dec(key) {
             const idx = this.items.findIndex(i => i._key === key);
             if (idx === -1) return;
-            this.items[idx].quantity--;
-            if (this.items[idx].quantity <= 0) this.items.splice(idx, 1);
+            const item = this.items[idx];
+            const wasBarItem = item.destination === 'bar' && !item.isTapa;
+            item.quantity--;
+            if (item.quantity <= 0) this.items.splice(idx, 1);
+            if (wasBarItem) {
+                const cartBarCount = this.items
+                    .filter(i => i.destination === 'bar' && !i.isTapa)
+                    .reduce((s, i) => s + i.quantity, 0);
+                if (cartBarCount === 0 && this._initBarCount === 0) {
+                    this.items = this.items.filter(i => !i.isTapa);
+                }
+            }
         },
 
         toggleRemove(key, ing) {
@@ -232,6 +295,22 @@ export function registerCart() {
             return this.items.reduce((s, i) => s + i.quantity, 0);
         },
 
+        get barShouldShow() {
+            return this.count > 0 || this._barLeaving;
+        },
+
+        get displayCount() {
+            const c = this.count;
+            if (c > 0) this._snapCount = c;
+            return this._snapCount;
+        },
+
+        get displayTotal() {
+            const t = this.total;
+            if (this.count > 0) this._snapTotal = t;
+            return this._snapTotal;
+        },
+
         get sendLabel() {
             const dests = [...new Set(this.items.map(i => i.destination).filter(Boolean))];
             if (dests.length === 1 && dests[0] === 'bar')     return '🍺 Enviar pedido a barra';
@@ -244,7 +323,7 @@ export function registerCart() {
         },
 
         async send() {
-            if (!this.items.length || this.sending) return;
+            if (!this.items.length || this.sending || this._tapaPending) return;
             this.sending = true;
             this.error   = null;
             try {
@@ -271,6 +350,20 @@ export function registerCart() {
                 });
                 const data = await res.json();
                 if (res.ok && data.success) {
+                    const ordersStore = Alpine.store('orders');
+                    ordersStore.push({
+                        id:        data.order_id,
+                        number:    ordersStore.list.length + 1,
+                        itemCount: this.items.reduce((s, i) => s + i.quantity, 0),
+                        total:     parseFloat(data.total) || 0,
+                        sentAt:    new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+                        items:     this.items.map(i => ({
+                            name:     i.name,
+                            quantity: i.quantity,
+                            price:    i.price,
+                        })),
+                    });
+
                     const bill              = Alpine.store('bill');
                     bill.active             = true;
                     bill.requested          = false;

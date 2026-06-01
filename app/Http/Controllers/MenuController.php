@@ -33,7 +33,7 @@ class MenuController extends Controller
     {
         $table = Table::where('unique_hash', $hash)
             ->where('is_service_point', true)
-            ->with(['user.tapaConfig.kitchenSchedules', 'user.tapaConfig.businessSchedules'])
+            ->with(['user.tapaConfig.kitchenSchedules', 'user.tapaConfig.businessSchedules', 'zone'])
             ->firstOrFail();
         $config = $table->user->tapaConfig;
 
@@ -70,9 +70,9 @@ class MenuController extends Controller
         });
 
         $categories = $allCategories
-            ->filter(fn ($cat) => $kitchenOpen || $cat->destination === 'bar')
-            ->filter(fn ($cat) => ! ($config && $config->tapas_enabled) || $cat->name !== 'Tapas')
             ->filter(fn ($cat) => $cat->products->isNotEmpty())
+            ->when(! $kitchenOpen, fn ($col) => $col->reject(fn ($cat) => $cat->destination === 'kitchen'))
+            ->when($config && $config->tapas_enabled, fn ($col) => $col->reject(fn ($cat) => $cat->name === 'Tapas'))
             ->values();
 
         $allergens = $categories
@@ -153,6 +153,27 @@ class MenuController extends Controller
                 ->toArray()
             : [];
 
+        $allOrdersForAlpine = Order::where('table_id', $table->id)
+            ->whereNotIn('status', ['closed'])
+            ->where('payment_status', 'pending')
+            ->orderBy('created_at')
+            ->with(['items.product:id,name'])
+            ->get()
+            ->values()
+            ->map(fn (Order $order, int $index) => [
+                'id'        => $order->id,
+                'number'    => $index + 1,
+                'itemCount' => (int) $order->items->sum('quantity'),
+                'total'     => (float) $order->total,
+                'sentAt'    => $order->created_at->format('H:i'),
+                'items'     => $order->items->map(fn (OrderItem $item) => [
+                    'name'     => $item->product?->name ?? 'Producto',
+                    'quantity' => (int) $item->quantity,
+                    'price'    => (float) $item->price,
+                ])->values()->toArray(),
+            ])
+            ->toArray();
+
         $theme = $table->user->menu_style ?: 'modern';
 
         return view('menu.show', compact(
@@ -160,7 +181,7 @@ class MenuController extends Controller
             'tapaConfig', 'barItemsCount', 'kitchenOpen', 'nextOpeningTime',
             'tapaVariantsUsed', 'tapaProducts', 'shouldSuggest',
             'hasActiveOrder', 'activeOrderTotal', 'originalOrderTotal', 'billRequested', 'stripePublicKey',
-            'splitPaymentEnabled', 'splitPaymentMaxParts', 'activeOrderItemsForAlpine',
+            'splitPaymentEnabled', 'splitPaymentMaxParts', 'activeOrderItemsForAlpine', 'allOrdersForAlpine',
             'businessOpen', 'orderingAllowed', 'businessNextOpening', 'minutesUntilClose'
         ));
     }

@@ -137,7 +137,7 @@ export function registerBill() {
         mixedTipGrandTotal: 0,
 
         open() {
-            if (this.requested || this.sending) return;
+            if (this.sending) return;
             this.error    = null;
             this.choosing = true;
             this.step     = 'method';

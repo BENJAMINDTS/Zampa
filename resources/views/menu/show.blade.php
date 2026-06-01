@@ -33,6 +33,200 @@
     </script>
 
     <style>
+        /* Oculta elementos Alpine hasta que el runtime inicialice */
+        [x-cloak] { display: none !important; }
+
+        /* ── Zampi Chatbot Animations ────────────────────────────── */
+        @keyframes zampiSlideUp {
+            from { opacity: 0; transform: translateY(12px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes zampiFloat {
+            0%, 100% { transform: translateY(0); }
+            50%      { transform: translateY(-5px); }
+        }
+        @keyframes zampiPulse {
+            0%, 100% { opacity: 1; }
+            50%      { opacity: 0.4; }
+        }
+        @keyframes zampiTyping {
+            0%, 80%, 100% { opacity: 1; }
+            40%           { opacity: 0.2; }
+        }
+
+        .zampi-float    { animation: zampiFloat 3s ease-in-out infinite; }
+        .zampi-pulse    { animation: zampiPulse 2s ease-in-out infinite; }
+        .zampi-msg-appear { animation: zampiSlideUp 0.3s ease; }
+        .zampi-typing-1 { animation: zampiTyping 1.2s ease-in-out 0.0s infinite; }
+        .zampi-typing-2 { animation: zampiTyping 1.2s ease-in-out 0.2s infinite; }
+        .zampi-typing-3 { animation: zampiTyping 1.2s ease-in-out 0.4s infinite; }
+
+        /* Notificaciones del cart bar — animación directa via :class */
+        @keyframes zampiNotifIn {
+            0%   { opacity: 0; transform: translateY(14px) scale(0.70); }
+            65%  { opacity: 1; transform: translateY(-3px)  scale(1.06); }
+            100% { opacity: 1; transform: translateY(0)     scale(1);    }
+        }
+        @keyframes zampiNotifOut {
+            0%   { opacity: 1; transform: translateY(0)    scale(1);   }
+            100% { opacity: 0; transform: translateY(8px)  scale(0.8); }
+        }
+        .zampi-notif-pill     { display:flex; align-items:center; gap:5px; background:#991b1b;
+                                border:1px solid #ef4444; border-radius:9999px;
+                                padding:4px 10px; flex-shrink:0; }
+        .zampi-notif-pill-in  { animation: zampiNotifIn  0.40s cubic-bezier(0.34,1.56,0.64,1) both; }
+        .zampi-notif-pill-out { animation: zampiNotifOut 0.22s ease-in both; }
+        @media (max-width: 640px) {
+            .zampi-cartbar-row { padding-top: 20px !important; padding-bottom: 20px !important; }
+            .zampi-hidden-mobile { display: none !important; }
+            .zampi-notif-bar-active { flex: 1 !important; min-width: 0; overflow: visible; }
+            .zampi-notif-bar .zampi-notif-pill:not(:last-child) { display: none !important; }
+            .zampi-notif-bar-active .zampi-notif-pill { width: 100%; min-width: 0; display: flex; align-items: center; gap: 5px; overflow: hidden; }
+            .zampi-notif-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+            .zampi-notif-suffix { flex-shrink: 0; white-space: nowrap; }
+        }
+
+        .zampi-bubble-user {
+            background: linear-gradient(135deg, #2E50B0, #1A3380);
+            color: #fff;
+            border-radius: 18px 18px 4px 18px;
+            box-shadow: 0 4px 16px rgba(15,31,88,0.55);
+            max-width: 78%;
+            padding: 10px 14px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 14px;
+            line-height: 1.5;
+            word-break: break-word;
+        }
+        .zampi-bubble-bot {
+            background: #0E1A38;
+            border: 1px solid rgba(46,80,176,0.35);
+            color: #C8D8FF;
+            border-radius: 18px 18px 18px 4px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+            max-width: 75%;
+            padding: 10px 14px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 14px;
+            line-height: 1.5;
+            word-break: break-word;
+        }
+        .zampi-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #1A3380, #3070E8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+        .zampi-product-card {
+            background: #0E1A38;
+            border: 1px solid rgba(46,80,176,0.45);
+            border-radius: 16px;
+            padding: 10px;
+            min-width: 140px;
+            max-width: 160px;
+            flex-shrink: 0;
+            box-shadow: 0 4px 20px rgba(15,31,88,0.4);
+            cursor: pointer;
+            transition: transform 200ms ease;
+        }
+        .zampi-card-img {
+            height: 56px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #162648, #0A1430);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 6px;
+            font-size: 28px;
+        }
+        .zampi-add-btn {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #2E50B0, #1A3380);
+            border: none;
+            color: #fff;
+            font-size: 18px;
+            line-height: 1;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 8px rgba(46,80,176,0.6);
+            transition: transform 150ms cubic-bezier(0.34, 1.56, 0.64, 1);
+            flex-shrink: 0;
+        }
+        .zampi-add-btn:hover  { transform: scale(1.1); }
+        .zampi-add-btn:active { transform: scale(0.92); }
+        .zampi-qr-btn {
+            background: rgba(46,80,176,0.22);
+            color: #8FA8E8;
+            border: 1px solid rgba(46,80,176,0.5);
+            border-radius: 9999px;
+            padding: 5px 12px;
+            font-size: 12px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 150ms ease;
+            white-space: nowrap;
+        }
+        .zampi-qr-btn:hover  { background: #1A3380; color: #fff; }
+        .zampi-order-summary {
+            background: rgba(14,26,56,0.9);
+            border: 1px solid rgba(46,80,176,0.45);
+            border-radius: 16px;
+            padding: 12px;
+            margin-top: 8px;
+            backdrop-filter: blur(12px);
+        }
+        .zampi-send-btn {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            background: linear-gradient(135deg, #2E50B0, #1A3380);
+            color: #fff;
+            font-size: 20px;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 14px rgba(46,80,176,0.65);
+            flex-shrink: 0;
+            transition: transform 150ms cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .zampi-send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .zampi-scrollbar::-webkit-scrollbar       { width: 4px; }
+        .zampi-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .zampi-scrollbar::-webkit-scrollbar-thumb { background: rgba(46,80,176,0.5); border-radius: 4px; }
+        .zampi-chat-input::placeholder            { color: rgba(84,120,208,0.7); }
+
+        /* ── Zampi Chat — Layout ────────────────────────────────────── */
+
+        /* El overlay cubre siempre toda la pantalla, sin importar el tamaño */
+        .zampi-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+            background: rgba(1,4,14,0.92);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+        .zampi-panel {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
         /* ── Layout crítico — garantiza que .carta llene el viewport ── */
         html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; }
         .carta { height: 100dvh; height: 100vh; width: 100%; }
@@ -40,42 +234,142 @@
     </style>
 
     @php
+        // Mapeo de nombre de categoría → emoji fallback (coincidencia exacta luego parcial).
+        $getEmoji = static function (string $categoryName): string {
+            $n = mb_strtolower(trim($categoryName));
+
+            $exact = [
+                'hamburguesas' => '🍔', 'hamburguesa' => '🍔', 'burgers' => '🍔', 'burger' => '🍔',
+                'pizzas' => '🍕', 'pizza' => '🍕',
+                'ensaladas' => '🥗', 'ensalada' => '🥗',
+                'postres' => '🍮', 'postre' => '🍮',
+                'tartas' => '🍰', 'tarta' => '🍰', 'pasteles' => '🎂', 'pastel' => '🎂',
+                'helados' => '🍦', 'helado' => '🍦',
+                'sopas' => '🍲', 'sopa' => '🍲',
+                'cremas' => '🥣', 'crema' => '🥣', 'caldos' => '🥣', 'caldo' => '🥣',
+                'entrantes' => '🥙', 'entrante' => '🥙',
+                'aperitivos' => '🫒', 'aperitivo' => '🫒',
+                'tapas' => '🫕', 'tapa' => '🫕',
+                'pinchos' => '🍢', 'pincho' => '🍢',
+                'montaditos' => '🥖', 'montadito' => '🥖',
+                'bocadillos' => '🥖', 'bocadillo' => '🥖',
+                'sandwiches' => '🥪', 'sandwich' => '🥪',
+                'wraps' => '🌯', 'wrap' => '🌯',
+                'carnes' => '🥩', 'carne' => '🥩',
+                'asados' => '🍖', 'asado' => '🍖',
+                'pollos' => '🍗', 'pollo' => '🍗',
+                'pescados' => '🐟', 'pescado' => '🐟',
+                'mariscos' => '🦞', 'marisco' => '🦞',
+                'pastas' => '🍝', 'pasta' => '🍝',
+                'arroces' => '🍚', 'arroz' => '🍚',
+                'paellas' => '🥘', 'paella' => '🥘',
+                'verduras' => '🥦', 'verdura' => '🥦',
+                'vegetarianos' => '🥦', 'vegetariano' => '🥦',
+                'veganos' => '🥦', 'vegano' => '🥦',
+                'bebidas' => '🥤', 'bebida' => '🥤',
+                'refrescos' => '🥤', 'refresco' => '🥤',
+                'cervezas' => '🍺', 'cerveza' => '🍺',
+                'vinos' => '🍷', 'vino' => '🍷',
+                'cócteles' => '🍸', 'cocteles' => '🍸', 'coctel' => '🍸',
+                'copas' => '🥂', 'copa' => '🥂',
+                'zumos' => '🍊', 'zumo' => '🍊',
+                'cafés' => '☕', 'café' => '☕', 'cafes' => '☕', 'cafe' => '☕',
+                'infusiones' => '🍵', 'infusión' => '🍵', 'infusion' => '🍵',
+                'especiales' => '⭐', 'especial' => '⭐',
+                'recomendados' => '⭐', 'sugerencias' => '⭐',
+                'desayunos' => '🥐', 'desayuno' => '🥐',
+                'brunch' => '🥞',
+            ];
+
+            if (isset($exact[$n])) {
+                return $exact[$n];
+            }
+
+            $partial = [
+                'hambur' => '🍔', 'burger' => '🍔',
+                'pizza'  => '🍕',
+                'ensalad' => '🥗',
+                'postre' => '🍮', 'tarta' => '🍰', 'helado' => '🍦', 'pastel' => '🎂',
+                'sopa' => '🍲', 'crema' => '🥣', 'caldo' => '🥣', 'gazpacho' => '🍅',
+                'entrante' => '🥙', 'aperitiv' => '🫒',
+                'tapa' => '🫕', 'pincho' => '🍢',
+                'bocadill' => '🥖', 'montadit' => '🥖',
+                'sandwich' => '🥪', 'wrap' => '🌯',
+                'carne' => '🥩', 'ternera' => '🥩', 'asado' => '🍖', 'cordero' => '🍖',
+                'pollo' => '🍗',
+                'pescad' => '🐟', 'bacalao' => '🐟', 'salmon' => '🐟',
+                'marisco' => '🦞', 'gambas' => '🦐', 'langostino' => '🦐',
+                'pasta' => '🍝',
+                'arroz' => '🍚', 'paella' => '🥘', 'risotto' => '🍚',
+                'verdura' => '🥦', 'vegano' => '🥦', 'vegeta' => '🥦',
+                'bebida' => '🥤', 'refresc' => '🥤',
+                'cervez' => '🍺',
+                'vino' => '🍷',
+                'coctel' => '🍸', 'cóctel' => '🍸',
+                'copa' => '🥂',
+                'zumo' => '🍊',
+                'café' => '☕', 'cafe' => '☕', 'coffee' => '☕',
+                'infusi' => '🍵',
+                'especial' => '⭐', 'recomend' => '⭐', 'sugerid' => '⭐',
+                'desayun' => '🥐', 'brunch' => '🥞',
+            ];
+
+            foreach ($partial as $keyword => $emoji) {
+                if (str_contains($n, $keyword)) {
+                    return $emoji;
+                }
+            }
+
+            return '🍽️';
+        };
+
         // Datos de productos para Alpine. Se calculan aquí para evitar que
-        // @json() reciba una expresión multi-línea con corchetes anidados,
+        // la directiva json() reciba una expresión multi-línea con corchetes anidados,
         // lo que confunde al parser de Blade.
-        $productsForAlpine = $categories->flatMap(function ($category) {
-            return $category->products->map(fn ($p) => [
-                'id'          => $p->id,
-                'name'        => $p->name,
-                'price'       => $p->variants->isNotEmpty() ? (float) $p->variants->min('price') : (float) $p->price,
-                'hasVariants' => $p->variants->isNotEmpty(),
-                'variants'    => $p->variants->map(fn ($v) => [
-                    'id'    => $v->id,
-                    'name'  => $v->name,
-                    'price' => (float) $v->price,
-                ])->values(),
-                'categoryId'  => $category->id,
-                'destination' => $category->destination,
-                'allergenTypes' => $p->ingredients->where('is_allergen', true)
-                    ->flatMap(fn ($i) => $i->allergen_types ?? [])
-                    ->unique()->values()->toArray(),
-                'removable'   => $p->ingredients
-                    ->filter(fn ($i) => $i->pivot->is_removable)
-                    ->map(fn ($i) => ['id' => $i->id, 'name' => $i->name])
-                    ->values(),
-                'extras'      => $p->ingredients
-                    ->filter(fn ($i) => $i->pivot->is_extra)
-                    ->map(fn ($i) => ['id' => $i->id, 'name' => $i->name, 'price' => (float) $i->pivot->extra_price])
-                    ->values(),
-            ]);
+        $alpinePhotoCycle  = 0;
+        $productsForAlpine = $categories->flatMap(function ($category) use (&$alpinePhotoCycle, $getEmoji) {
+            return $category->products->map(function ($p) use ($category, &$alpinePhotoCycle, $getEmoji) {
+                $alpinePhotoCycle++;
+                return [
+                    'id'           => $p->id,
+                    'name'         => $p->name,
+                    'description'  => $p->description,
+                    'imageUrl'     => $p->image ? Storage::url($p->image) : null,
+                    'photoStyle'   => (($alpinePhotoCycle - 1) % 6) + 1,
+                    'categoryName' => $category->name,
+                    'emoji'        => $getEmoji($category->name),
+                    'price'        => $p->variants->isNotEmpty() ? (float) $p->variants->min('price') : (float) $p->price,
+                    'hasVariants'  => $p->variants->isNotEmpty(),
+                    'variants'     => $p->variants->map(fn ($v) => [
+                        'id'    => $v->id,
+                        'name'  => $v->name,
+                        'price' => (float) $v->price,
+                    ])->values(),
+                    'categoryId'   => $category->id,
+                    'destination'  => $category->destination,
+                    'allergenTypes' => $p->ingredients->where('is_allergen', true)
+                        ->flatMap(fn ($i) => $i->allergen_types ?? [])
+                        ->unique()->values()->toArray(),
+                    'removable'    => $p->ingredients
+                        ->filter(fn ($i) => $i->pivot->is_removable)
+                        ->map(fn ($i) => ['id' => $i->id, 'name' => $i->name])
+                        ->values(),
+                    'extras'       => $p->ingredients
+                        ->filter(fn ($i) => $i->pivot->is_extra)
+                        ->map(fn ($i) => ['id' => $i->id, 'name' => $i->name, 'price' => (float) $i->pivot->extra_price])
+                        ->values(),
+                ];
+            });
         })->values();
 
         // El precio de cada tapa se resuelve en backend (getPriceForProduct) para que
         // Alpine no tenga que replicar la lógica de modalidad de precio.
         $tapaProductsForAlpine = $tapaProducts->map(fn ($p) => [
-            'id'    => $p->id,
-            'name'  => $p->name,
-            'price' => $tapaConfig ? (float) $tapaConfig->getPriceForProduct($p) : (float) $p->price,
+            'id'          => $p->id,
+            'name'        => $p->name,
+            'description' => $p->description ?? '',
+            'price'       => $tapaConfig ? (float) $tapaConfig->getPriceForProduct($p) : (float) $p->price,
+            'emoji'       => $getEmoji('tapas'),
         ])->values();
 
         $tapaConfigForAlpine = [
@@ -99,6 +393,7 @@
             'originalOrderTotal'  => (float) $originalOrderTotal,
             'splitPaymentEnabled' => $splitPaymentEnabled,
             'splitPaymentMaxParts'=> $splitPaymentMaxParts,
+            'kitchenOpen'         => $kitchenOpen,
         ];
     @endphp
 
@@ -108,6 +403,7 @@
     <script id="tapa-config" type="application/json">@json($tapaConfigForAlpine)</script>
     <script id="tapa-products" type="application/json">@json($tapaProductsForAlpine)</script>
     <script id="order-items" type="application/json">@json($activeOrderItemsForAlpine)</script>
+    <script id="all-orders" type="application/json">@json($allOrdersForAlpine)</script>
     <script id="menu-context" type="application/json">@json($menuContext)</script>
 
     {{-- Inicializa los badges de alérgenos con los pictogramas oficiales del DS --}}
@@ -148,20 +444,23 @@
 
     {{-- ── Componente Alpine raíz + wrapper DS ───────────────────── --}}
     <div x-data="menuFilters()"
-         class="carta"
+         class="carta carta--loading"
          data-theme="{{ $theme }}"
          x-init="
             if (document.documentElement.getAttribute('data-dark-pending') === '1') {
                 $el.dataset.theme = 'dark';
                 document.documentElement.removeAttribute('data-dark-pending');
             }
+            const updateBp = () => {
+                const w = window.innerWidth;
+                $el.dataset.bp = w < 640 ? 'mobile' : w < 1024 ? 'tablet' : 'desktop';
+            };
+            updateBp();
+            window.addEventListener('resize', updateBp);
             $nextTick(() => {
-                const update = () => {
-                    const w = window.innerWidth;
-                    $el.dataset.bp = w < 640 ? 'mobile' : w < 1024 ? 'tablet' : 'desktop';
-                };
-                update();
-                window.addEventListener('resize', update);
+                $el.classList.add('carta--reveal');
+                void $el.offsetWidth;
+                $el.classList.remove('carta--loading');
             });
          ">
 
@@ -175,7 +474,7 @@
                     <div class="header__bizname">
                         {{ $table->user->business_name ?: $table->user->name }}
                     </div>
-                    <div class="header__table">{{ $table->name }}</div>
+                    <div class="header__table">{{ $table->name }}{{ $table->zone ? ' · ' . $table->zone->name : '' }}</div>
                 </div>
             </div>
             <div class="header__actions">
@@ -414,22 +713,24 @@
 
             {{-- Botón flotante Zampi (se oculta cuando el chat está abierto) --}}
             <button type="button"
+                    class="fab fab--chat"
                     @click="openChat()"
                     aria-label="Abrir asistente Zampi"
                     x-show="!open"
-                    x-transition:enter="transition ease-out duration-200"
+                    x-cloak
+                    x-transition:enter="transition duration-200"
                     x-transition:enter-start="opacity-0"
                     x-transition:enter-end="opacity-100"
-                    x-transition:leave="transition ease-in duration-150"
+                    x-transition:leave="transition duration-150"
                     x-transition:leave-start="opacity-100"
-                    x-transition:leave-end="opacity-0"
-                    class="zampi-fab fixed bottom-20 right-4 z-40 flex items-center gap-2 px-4 py-2.5 rounded-full font-semibold focus:outline-none focus:ring-4">
-                <div class="zampi-float zampi-header-icon">
-                    <svg width="26" height="24" aria-hidden="true"><use href="#zampi-mascot"/></svg>
-                </div>
-                <span class="zampi-fab-label">Zampi</span>
+                    x-transition:leave-end="opacity-0">
+                <span class="fab__ic zampi-float" aria-hidden="true">
+                    <svg width="24" height="22"><use href="#zampi-mascot"/></svg>
+                </span>
+                <span class="fab__label">Zampi</span>
                 <template x-if="cartCount > 0">
-                    <span x-text="cartCount" class="zampi-fab-badge"></span>
+                    <span x-text="cartCount"
+                          style="position:absolute; top:-8px; right:-8px; min-width:20px; height:20px; border-radius:9999px; background:#FBBF24; color:#050B1F; font-size:11px; font-weight:900; display:flex; align-items:center; justify-content:center; padding:0 4px; font-family:'Nunito',sans-serif; box-shadow:0 0 8px rgba(251,191,36,0.6); pointer-events:none;"></span>
                 </template>
             </button>
 
@@ -441,31 +742,35 @@
                  x-transition:leave="transition ease-in duration-200"
                  x-transition:leave-start="opacity-100"
                  x-transition:leave-end="opacity-0"
+                 style="display:none"
                  class="zampi-overlay"
                  @keydown.escape.window="closeChat()"
                  aria-modal="true" role="dialog" aria-label="Asistente virtual Zampi">
 
                 {{-- Panel: full-screen en móvil / modal en tablet / flotante en desktop --}}
-                <div class="zampi-panel zampi-panel-bg zampi-scrollbar">
+                <div class="zampi-panel zampi-scrollbar"
+                     style="background:radial-gradient(ellipse at 50% 20%,#0E1A38 0%,#050B1F 60%,#01040E 100%);">
 
                     {{-- Cabecera --}}
-                    <div class="zampi-header">
-                        <div class="zampi-float zampi-header-icon">
+                    <div style="flex-shrink:0; padding:12px 16px; background:rgba(10,20,48,0.9); backdrop-filter:blur(16px); border-bottom:1px solid rgba(46,80,176,0.4); display:flex; align-items:center; gap:10px;">
+                        <div class="zampi-float" style="flex-shrink:0;">
                             <svg width="38" height="35" aria-hidden="true"><use href="#zampi-mascot"/></svg>
                         </div>
-                        <div class="zampi-header-body">
-                            <h2 class="zampi-header-title">Zampi</h2>
-                            <p class="zampi-header-sub">{{ $table->name }} · {{ $table->user->business_name ?: $table->user->name }}</p>
+                        <div style="flex:1;">
+                            <h2 style="font-family:'Nunito',sans-serif; font-weight:900; font-size:16px; color:#fff; line-height:1.2; margin:0;">Zampi</h2>
+                            <p style="font-size:11px; color:#8FA8E8; letter-spacing:0.03em; margin:0;">{{ $table->name }} · {{ $table->user->business_name ?: $table->user->name }}</p>
                         </div>
-                        <div class="zampi-header-actions">
-                            <div class="zampi-status-indicator">
-                                <div class="zampi-pulse zampi-status-dot"></div>
-                                <span class="zampi-status-text">En línea</span>
+                        <div style="display:flex; align-items:center; gap:12px;">
+                            <div style="display:flex; align-items:center; gap:5px;">
+                                <div class="zampi-pulse" style="width:7px; height:7px; border-radius:50%; background:#22C55E; box-shadow:0 0 6px #22C55E;"></div>
+                                <span style="font-size:11px; color:#22C55E; font-weight:600; font-family:'Space Grotesk',sans-serif;">En línea</span>
                             </div>
                             <button type="button"
                                     @click="closeChat()"
                                     aria-label="Cerrar asistente Zampi"
-                                    class="zampi-close-btn">
+                                    style="padding:6px; border-radius:50%; border:1px solid rgba(46,80,176,0.4); background:transparent; color:#8FA8E8; cursor:pointer; transition:all 150ms ease; display:flex; align-items:center; justify-content:center;"
+                                    onmouseenter="this.style.background='rgba(46,80,176,0.25)'; this.style.color='#fff';"
+                                    onmouseleave="this.style.background='transparent'; this.style.color='#8FA8E8';">
                                 <svg aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
                                 </svg>
@@ -480,102 +785,122 @@
                          aria-label="Conversación con Zampi"
                          @wheel.stop
                          @touchmove.stop
-                         class="zampi-chat-log zampi-scrollbar">
+                         class="zampi-scrollbar"
+                         style="flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:12px;">
 
                         <template x-for="msg in messages" :key="msg._id">
                             <div class="zampi-msg-appear">
 
                                 {{-- Sistema --}}
                                 <template x-if="msg.type === 'system'">
-                                    <div class="zampi-system-row">
-                                        <div class="zampi-system-msg" x-text="msg.text"></div>
+                                    <div style="display:flex; justify-content:center;">
+                                        <div style="background:rgba(46,80,176,0.22); border:1px solid rgba(46,80,176,0.3); color:#8FA8E8; font-size:11px; padding:5px 14px; border-radius:9999px; backdrop-filter:blur(8px); font-family:'Space Grotesk',sans-serif;"
+                                             x-text="msg.text"></div>
                                     </div>
                                 </template>
 
                                 {{-- Bot --}}
                                 <template x-if="msg.type === 'bot'">
-                                    <div class="zampi-bot-row">
-                                        <div class="zampi-avatar">
+                                    <div style="display:flex; gap:8px; align-items:flex-end;">
+                                        <div class="zampi-avatar" style="flex-shrink:0;">
                                             <svg width="24" height="22" aria-hidden="true"><use href="#zampi-mascot"/></svg>
                                         </div>
-                                        <div class="zampi-bot-bubble-wrap">
-                                            <div class="zampi-bubble-bot" x-text="msg.text"></div>
+                                        <div style="max-width:75%; min-width:0;">
+                                            <div style="background:#0E1A38; border:1px solid rgba(46,80,176,0.35); color:#C8D8FF; font-size:14px; line-height:1.6; padding:10px 14px; border-radius:18px 18px 18px 4px; box-shadow:0 2px 12px rgba(0,0,0,0.3); font-family:'Space Grotesk',sans-serif; white-space:pre-line;"
+                                                 x-text="msg.text"></div>
                                             {{-- Tarjetas de producto --}}
                                             <template x-if="msg.cards && msg.cards.length">
-                                                <div class="zampi-cards-row">
+                                                <div style="display:flex; gap:8px; margin-top:8px; overflow-x:auto; padding-bottom:4px;">
                                                     <template x-for="card in msg.cards" :key="card.id">
-                                                        <div class="zampi-product-card">
+                                                        <div style="background:#0E1A38; border:1px solid rgba(46,80,176,0.45); border-radius:16px; padding:10px; min-width:150px; max-width:160px; flex-shrink:0; box-shadow:0 4px 20px rgba(15,31,88,0.4); transition:transform 200ms ease; display:flex; flex-direction:column;"
+                                                             onmouseenter="this.style.transform='translateY(-2px)'"
+                                                             onmouseleave="this.style.transform='translateY(0)'">
                                                             {{-- Foto del plato o icono de categoría --}}
                                                             <template x-if="card.image">
                                                                 <img :src="card.image"
                                                                      :alt="card.name"
-                                                                     class="zampi-card-real-img"
+                                                                     style="width:100%; height:72px; object-fit:cover; border-radius:10px; margin-bottom:8px; flex-shrink:0; display:block;"
                                                                      loading="lazy"/>
                                                             </template>
                                                             <template x-if="!card.image">
-                                                                <div class="zampi-card-img">
+                                                                <div style="height:56px; border-radius:10px; background:linear-gradient(135deg,#162648,#0A1430); display:flex; align-items:center; justify-content:center; margin-bottom:8px; flex-shrink:0;">
                                                                     <template x-if="card.foodIcon">
                                                                         <svg width="34" height="34" viewBox="0 0 24 24"
                                                                              aria-hidden="true"
-                                                                             class="zampi-card-food-icon">
+                                                                             style="color:rgba(139,168,232,0.6); overflow:visible;">
                                                                             <use :href="'#fc-' + card.foodIcon.svgId"/>
                                                                         </svg>
                                                                     </template>
                                                                     <template x-if="!card.foodIcon">
-                                                                        <span x-text="card.emoji" class="zampi-card-emoji"></span>
+                                                                        <span x-text="card.emoji" style="font-size:26px;"></span>
                                                                     </template>
                                                                 </div>
                                                             </template>
                                                             {{-- Nombre --}}
-                                                            <div class="zampi-card-name" x-text="card.name"></div>
+                                                            <div style="font-size:12px; font-weight:700; color:#fff; margin-bottom:3px; font-family:'Space Grotesk',sans-serif; line-height:1.3;"
+                                                                 x-text="card.name"></div>
                                                             {{-- Descripción --}}
                                                             <div x-show="card.description"
-                                                                 class="zampi-card-desc"
+                                                                 style="font-size:10px; color:#8FA8E8; margin-bottom:5px; line-height:1.4; flex-grow:1;"
                                                                  x-text="card.description"></div>
                                                             {{-- Alérgenos UE encima del precio --}}
                                                             <template x-if="card.allergens && card.allergens.length">
-                                                                <div class="zampi-allergens-row">
+                                                                <div style="display:flex; flex-wrap:wrap; gap:3px; margin-bottom:7px;">
                                                                     <template x-for="al in card.allergens" :key="al.name">
-                                                                        <div :title="al.name" class="zampi-allergen-badge">
+                                                                        <div :title="al.name"
+                                                                             style="display:inline-flex; align-items:center; gap:3px; background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.35); border-radius:5px; padding:2px 6px 2px 4px; cursor:default;">
                                                                             {{-- Icono SVG oficial UE, o fallback ⚠ si no hay mapeo --}}
                                                                             <template x-if="al.svgId">
                                                                                 <svg :aria-label="al.label" width="13" height="13"
-                                                                                     class="zampi-allergen-icon">
+                                                                                     style="flex-shrink:0; color:#FCD34D; overflow:visible;">
                                                                                     <use :href="'#al-' + al.svgId"/>
                                                                                 </svg>
                                                                             </template>
                                                                             <template x-if="!al.svgId">
-                                                                                <span class="zampi-allergen-fallback">⚠</span>
+                                                                                <span style="font-size:11px; line-height:1; color:#FCD34D;">⚠</span>
                                                                             </template>
-                                                                            <span x-text="al.label" class="zampi-allergen-label"></span>
+                                                                            <span x-text="al.label"
+                                                                                  style="font-size:8px; color:#FCD34D; font-weight:700; font-family:'Space Grotesk',sans-serif; letter-spacing:0.02em;"></span>
                                                                         </div>
                                                                     </template>
                                                                 </div>
                                                             </template>
                                                             {{-- Precio + controles cantidad --}}
-                                                            <div class="zampi-card-footer">
-                                                                <span class="zampi-card-price"
+                                                            <div style="display:flex; align-items:center; justify-content:space-between; margin-top:auto;">
+                                                                <span style="font-size:13px; font-weight:700; color:#FBBF24; font-family:'Nunito',sans-serif;"
                                                                       x-text="Number(card.price).toFixed(2).replace('.',',') + ' €'"></span>
                                                                 {{-- Sin cantidad: solo botón + --}}
                                                                 <template x-if="cartQty(card.id) === 0">
                                                                     <button type="button"
                                                                             @click.stop="addToCart(card)"
                                                                             :aria-label="'Añadir ' + card.name + ' al pedido'"
-                                                                            class="zampi-card-add-btn">+</button>
+                                                                            style="width:26px; height:26px; border-radius:50%; background:linear-gradient(135deg,#2E50B0,#1A3380); border:2px solid transparent; color:#fff; font-size:17px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 0 8px rgba(46,80,176,0.6); flex-shrink:0; transition:all 150ms ease;"
+                                                                            onmouseenter="this.style.background='#3D6AE0'; this.style.boxShadow='0 0 12px rgba(34,197,94,0.7)'; this.style.borderColor='#22C55E'; this.style.transform='scale(1.15)';"
+                                                                            onmouseleave="this.style.background='linear-gradient(135deg,#2E50B0,#1A3380)'; this.style.boxShadow='0 0 8px rgba(46,80,176,0.6)'; this.style.borderColor='transparent'; this.style.transform='scale(1)';"
+                                                                            onmousedown="this.style.borderColor='#16A34A'; this.style.transform='scale(0.9)';"
+                                                                            onmouseup="this.style.borderColor='#22C55E'; this.style.transform='scale(1.15)';">+</button>
                                                                 </template>
                                                                 {{-- Con cantidad: controles [-] [n] [+] --}}
                                                                 <template x-if="cartQty(card.id) > 0">
-                                                                    <div class="zampi-card-qty-row">
+                                                                    <div style="display:flex; align-items:center; gap:5px;">
                                                                         <button type="button"
                                                                                 @click.stop="decreaseQty(card)"
                                                                                 :aria-label="'Quitar uno de ' + card.name"
-                                                                                class="zampi-card-dec-btn">−</button>
+                                                                                style="width:24px; height:24px; border-radius:50%; background:rgba(46,80,176,0.35); border:2px solid transparent; color:#fff; font-size:16px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all 150ms ease;"
+                                                                                onmouseenter="this.style.background='#2E50B0'; this.style.borderColor='#EF4444'; this.style.boxShadow='0 0 10px rgba(239,68,68,0.6)'; this.style.transform='scale(1.15)';"
+                                                                                onmouseleave="this.style.background='rgba(46,80,176,0.35)'; this.style.borderColor='transparent'; this.style.boxShadow='none'; this.style.transform='scale(1)';"
+                                                                                onmousedown="this.style.borderColor='#B91C1C'; this.style.boxShadow='0 0 14px rgba(185,28,28,0.8)'; this.style.transform='scale(0.9)';"
+                                                                                onmouseup="this.style.borderColor='#EF4444'; this.style.boxShadow='0 0 10px rgba(239,68,68,0.6)'; this.style.transform='scale(1.15)';">−</button>
                                                                         <span x-text="cartQty(card.id)"
-                                                                              class="zampi-card-qty"></span>
+                                                                              style="font-size:13px; font-weight:800; color:#fff; font-family:'Nunito',sans-serif; min-width:14px; text-align:center;"></span>
                                                                         <button type="button"
                                                                                 @click.stop="addToCart(card)"
                                                                                 :aria-label="'Añadir otro de ' + card.name"
-                                                                                class="zampi-card-inc-btn">+</button>
+                                                                                style="width:24px; height:24px; border-radius:50%; background:linear-gradient(135deg,#2E50B0,#1A3380); border:2px solid transparent; color:#fff; font-size:17px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 0 8px rgba(46,80,176,0.6); flex-shrink:0; transition:all 150ms ease;"
+                                                                                onmouseenter="this.style.background='#3D6AE0'; this.style.boxShadow='0 0 12px rgba(34,197,94,0.7)'; this.style.borderColor='#22C55E'; this.style.transform='scale(1.15)';"
+                                                                                onmouseleave="this.style.background='linear-gradient(135deg,#2E50B0,#1A3380)'; this.style.boxShadow='0 0 8px rgba(46,80,176,0.6)'; this.style.borderColor='transparent'; this.style.transform='scale(1)';"
+                                                                                onmousedown="this.style.borderColor='#16A34A'; this.style.transform='scale(0.9)';"
+                                                                                onmouseup="this.style.borderColor='#22C55E'; this.style.transform='scale(1.15)';">+</button>
                                                                     </div>
                                                                 </template>
                                                             </div>
@@ -585,12 +910,11 @@
                                             </template>
                                             {{-- Quick replies --}}
                                             <template x-if="msg.quickReplies && msg.quickReplies.length">
-                                                <div class="zampi-qr-row">
+                                                <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:8px;">
                                                     <template x-for="(qr, qrIdx) in msg.quickReplies" :key="qrIdx">
                                                         <button type="button"
                                                                 @click="handleQuickReply(qr)"
-                                                                :style="getQrStyle(qr)"
-                                                                class="zampi-qr-btn"
+                                                                :style="getQrStyle(qr) + 'display:inline-flex;align-items:center;gap:4px;'"
                                                                 @mouseenter="onQrEnter($el, qr)"
                                                                 @mouseleave="onQrLeave($el, qr)">
                                                                 <template x-if="qr === 'Ver mi pedido'">
@@ -606,40 +930,52 @@
                                             </template>
                                             {{-- Resumen del pedido en vivo (reactivo al store) --}}
                                             <template x-if="msg.cartLive">
-                                                <div class="zampi-order-summary">
-                                                    <div class="zampi-cart-live-title">🛒 Tu pedido</div>
+                                                <div style="background:rgba(14,26,56,0.9); border:1px solid rgba(46,80,176,0.45); border-radius:16px; padding:12px; margin-top:8px; backdrop-filter:blur(12px);">
+                                                    <div style="font-size:13px; font-weight:800; font-family:'Nunito',sans-serif; color:#fff; margin-bottom:8px;">🛒 Tu pedido</div>
                                                     <template x-if="$store.cart.items.length === 0">
-                                                        <p class="zampi-cart-empty">El pedido está vacío.</p>
+                                                        <p style="font-size:12px; color:#8FA8E8; text-align:center; padding:8px 0;">El pedido está vacío.</p>
                                                     </template>
                                                     <template x-for="item in $store.cart.items" :key="item.productId">
-                                                        <div class="zampi-cart-item-row">
-                                                            <span class="zampi-cart-item-name" x-text="item.name"></span>
-                                                            <div class="zampi-cart-controls">
+                                                        <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.06);">
+                                                            <span style="font-size:12px; color:#C8D8FF; flex:1;" x-text="item.name"></span>
+                                                            <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
                                                                 {{-- Controles cantidad --}}
                                                                 <button type="button"
                                                                         @click.stop="decreaseQty(item)"
                                                                         :aria-label="'Quitar uno de ' + item.name"
-                                                                        class="zampi-cart-sm-dec">−</button>
+                                                                        style="width:22px; height:22px; border-radius:50%; background:rgba(46,80,176,0.35); border:2px solid transparent; color:#fff; font-size:15px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 150ms ease;"
+                                                                        onmouseenter="this.style.background='#2E50B0'; this.style.borderColor='#EF4444'; this.style.boxShadow='0 0 10px rgba(239,68,68,0.6)'; this.style.transform='scale(1.15)';"
+                                                                        onmouseleave="this.style.background='rgba(46,80,176,0.35)'; this.style.borderColor='transparent'; this.style.boxShadow='none'; this.style.transform='scale(1)';"
+                                                                        onmousedown="this.style.borderColor='#B91C1C'; this.style.boxShadow='0 0 14px rgba(185,28,28,0.8)'; this.style.transform='scale(0.9)';"
+                                                                        onmouseup="this.style.borderColor='#EF4444'; this.style.boxShadow='0 0 10px rgba(239,68,68,0.6)'; this.style.transform='scale(1.15)';">−</button>
                                                                 <span x-text="item.quantity"
-                                                                      class="zampi-cart-qty"></span>
+                                                                      style="font-size:12px; font-weight:800; color:#fff; min-width:14px; text-align:center; font-family:'Nunito',sans-serif;"></span>
                                                                 <button type="button"
                                                                         @click.stop="addToCart(item)"
                                                                         :aria-label="'Añadir otro de ' + item.name"
-                                                                        class="zampi-cart-sm-inc">+</button>
+                                                                        style="width:22px; height:22px; border-radius:50%; background:linear-gradient(135deg,#2E50B0,#1A3380); border:2px solid transparent; color:#fff; font-size:15px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 150ms ease;"
+                                                                        onmouseenter="this.style.background='#3D6AE0'; this.style.boxShadow='0 0 12px rgba(34,197,94,0.7)'; this.style.borderColor='#22C55E'; this.style.transform='scale(1.15)';"
+                                                                        onmouseleave="this.style.background='linear-gradient(135deg,#2E50B0,#1A3380)'; this.style.boxShadow='none'; this.style.borderColor='transparent'; this.style.transform='scale(1)';"
+                                                                        onmousedown="this.style.borderColor='#16A34A'; this.style.transform='scale(0.9)';"
+                                                                        onmouseup="this.style.borderColor='#22C55E'; this.style.transform='scale(1.15)';">+</button>
                                                                 {{-- Precio y eliminar --}}
-                                                                <span class="zampi-cart-item-price"
+                                                                <span style="font-size:11px; font-weight:600; color:#FBBF24; min-width:48px; text-align:right; font-family:'Nunito',sans-serif;"
                                                                       x-text="Number(item.price * item.quantity).toFixed(2).replace('.',',') + ' €'"></span>
                                                                 <button type="button"
                                                                         @click.stop="removeCartItem(item.productId)"
                                                                         :aria-label="'Eliminar ' + item.name + ' del pedido'"
-                                                                        class="zampi-cart-del">✕</button>
+                                                                        style="width:20px; height:20px; border-radius:50%; background:rgba(220,38,38,0.2); border:1px solid rgba(220,38,38,0.4); color:#F87171; font-size:11px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all 150ms ease;"
+                                                                        onmouseenter="this.style.background='#DC2626'; this.style.borderColor='#EF4444'; this.style.color='#fff'; this.style.transform='scale(1.15)';"
+                                                                        onmouseleave="this.style.background='rgba(220,38,38,0.2)'; this.style.borderColor='rgba(220,38,38,0.4)'; this.style.color='#F87171'; this.style.transform='scale(1)';"
+                                                                        onmousedown="this.style.transform='scale(0.9)';"
+                                                                        onmouseup="this.style.transform='scale(1.15)';">✕</button>
                                                             </div>
                                                         </div>
                                                     </template>
                                                     <template x-if="$store.cart.items.length > 0">
-                                                        <div class="zampi-cart-total-row">
-                                                            <span class="zampi-cart-total-label">Total</span>
-                                                            <span class="zampi-cart-total-amount"
+                                                        <div style="display:flex; justify-content:space-between; margin-top:8px; padding-top:8px; border-top:1px solid rgba(46,80,176,0.4);">
+                                                            <span style="font-size:13px; font-weight:700; color:#fff;">Total</span>
+                                                            <span style="font-size:16px; font-weight:900; color:#FBBF24; font-family:'Nunito',sans-serif;"
                                                                   x-text="Number($store.cart.total).toFixed(2).replace('.',',') + ' €'"></span>
                                                         </div>
                                                     </template>
@@ -651,10 +987,11 @@
 
                                 {{-- Usuario --}}
                                 <template x-if="msg.type === 'user'">
-                                    <div class="zampi-user-row">
-                                        <div class="zampi-user-bubble-wrap">
-                                            <div class="zampi-bubble-user" x-text="msg.text"></div>
-                                            <div class="zampi-user-time"
+                                    <div style="display:flex; justify-content:flex-end;">
+                                        <div style="max-width:78%;">
+                                            <div style="background:linear-gradient(135deg,#2E50B0,#1A3380); color:#fff; font-size:14px; line-height:1.5; padding:10px 14px; border-radius:18px 18px 4px 18px; box-shadow:0 4px 16px rgba(15,31,88,0.55); font-family:'Space Grotesk',sans-serif;"
+                                                 x-text="msg.text"></div>
+                                            <div style="font-size:10px; color:#3A5090; text-align:right; margin-top:3px; padding-right:4px;"
                                                  x-text="formatTime(msg.time) + ' ✓✓'"></div>
                                         </div>
                                     </div>
@@ -665,36 +1002,37 @@
 
                         {{-- Indicador de escritura --}}
                         <template x-if="isTyping">
-                            <div class="zampi-typing-row" aria-label="Zampi está escribiendo">
-                                <div class="zampi-avatar">
+                            <div style="display:flex; gap:8px; align-items:flex-end;" aria-label="Zampi está escribiendo">
+                                <div class="zampi-avatar" style="flex-shrink:0;">
                                     <svg width="24" height="22" aria-hidden="true"><use href="#zampi-mascot"/></svg>
                                 </div>
-                                <div class="zampi-typing-bubble">
-                                    <div class="zampi-typing-dot zampi-typing-1"></div>
-                                    <div class="zampi-typing-dot zampi-typing-2"></div>
-                                    <div class="zampi-typing-dot zampi-typing-3"></div>
+                                <div style="background:#0E1A38; border:1px solid rgba(46,80,176,0.35); border-radius:18px 18px 18px 4px; padding:12px 16px; display:flex; gap:5px; align-items:center;">
+                                    <div class="zampi-typing-1" style="width:7px; height:7px; border-radius:50%; background:#5478D0;"></div>
+                                    <div class="zampi-typing-2" style="width:7px; height:7px; border-radius:50%; background:#5478D0;"></div>
+                                    <div class="zampi-typing-3" style="width:7px; height:7px; border-radius:50%; background:#5478D0;"></div>
                                 </div>
                             </div>
                         </template>
 
                         {{-- Error --}}
                         <template x-if="error">
-                            <div class="zampi-error-row" role="alert">
-                                <div class="zampi-error-msg" x-text="error"></div>
+                            <div style="display:flex; justify-content:center;" role="alert">
+                                <div style="background:rgba(208,14,26,0.15); border:1px solid rgba(208,14,26,0.4); color:#F04040; font-size:12px; padding:5px 14px; border-radius:9999px; font-family:'Space Grotesk',sans-serif;"
+                                     x-text="error"></div>
                             </div>
                         </template>
 
                         {{-- Conversación cerrada --}}
                         <template x-if="closed">
-                            <div class="zampi-closed-row">
-                                <div class="zampi-closed-msg">
+                            <div style="display:flex; justify-content:center;">
+                                <div style="background:rgba(46,80,176,0.15); border:1px solid rgba(46,80,176,0.25); color:#8FA8E8; font-size:11px; padding:5px 14px; border-radius:9999px; font-family:'Space Grotesk',sans-serif;">
                                     Conversación finalizada. Inicia una nueva para seguir pidiendo.
                                 </div>
                             </div>
                         </template>
 
                         {{-- Centinela de scroll -- siempre al final del log --}}
-                        <div x-ref="chatEnd" class="zampi-scroll-end" aria-hidden="true"></div>
+                        <div x-ref="chatEnd" style="height:1px; flex-shrink:0;" aria-hidden="true"></div>
 
                     </div>
 
@@ -706,43 +1044,46 @@
                          x-transition:leave="transition ease-in duration-150"
                          x-transition:leave-start="opacity-100 translate-y-0"
                          x-transition:leave-end="opacity-0 translate-y-2"
-                         class="zampi-cartbar-wrap">
-                        <div class="zampi-cartbar-inner">
+                         style="flex-shrink:0; width:100%;">
+                        <div style="width:100%; box-sizing:border-box; background:linear-gradient(135deg,#0f3d2a,#0a2e1f); border-top:2px solid #22c55e; box-shadow:0 -4px 20px rgba(34,197,94,0.2);">
                         {{-- Fila principal --}}
-                        <div class="zampi-cartbar-row">
+                        <div class="zampi-cartbar-row" style="padding:14px 16px; display:flex; align-items:center; gap:12px; overflow:visible;">
                         {{-- Resumen del carrito --}}
-                        <div class="zampi-cart-left">
-                            <div class="zampi-cart-icon-wrap">
+                        <div class="zampi-cart-left" style="display:flex; align-items:center; gap:10px; flex:1; min-width:0;">
+                            <div style="position:relative; flex-shrink:0;">
                                 <svg aria-hidden="true" width="26" height="26" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
                                 </svg>
-                                <span x-text="cartCount" class="zampi-cart-badge"></span>
+                                <span x-text="cartCount"
+                                      style="position:absolute; top:-6px; right:-6px; min-width:17px; height:17px; border-radius:9999px; background:#EF4444; color:#fff; font-size:10px; font-weight:900; display:flex; align-items:center; justify-content:center; padding:0 3px; font-family:'Nunito',sans-serif;"></span>
                             </div>
                             <span :class="cartNotifs.length > 0 ? 'zampi-hidden-mobile' : ''"
-                                  class="zampi-cart-items-text"
+                                  style="font-size:13px; color:#fff; font-family:'Space Grotesk',sans-serif; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:600;"
                                   x-text="cartCount + (cartCount === 1 ? ' artículo' : ' artículos')"></span>
                             <span :class="cartNotifs.length > 0 ? 'zampi-hidden-mobile' : ''"
-                                  class="zampi-cart-total-text"
+                                  style="font-size:15px; font-weight:900; color:#FBBF24; font-family:'Nunito',sans-serif; flex-shrink:0;"
                                   x-text="Number(cartTotal).toFixed(2).replace('.',',') + ' €'"></span>
                             {{-- Notificaciones de eliminación acumulables (máx 3) --}}
                             <div class="zampi-notif-bar" :class="cartNotifs.length > 0 ? 'zampi-notif-bar-active' : ''"
-                                 role="status" aria-live="polite">
+                                 style="display:flex; gap:5px; flex-shrink:0; flex-wrap:nowrap;" role="status" aria-live="polite">
                                 <template x-for="notif in cartNotifs" :key="notif.id">
                                     <div :class="notif.leaving ? 'zampi-notif-pill zampi-notif-pill-out' : 'zampi-notif-pill zampi-notif-pill-in'">
-                                        <span aria-hidden="true">🗑️</span>
-                                        <span class="zampi-notif-name" x-text="notif.name"></span>
-                                        <span class="zampi-notif-suffix"> eliminado</span>
+                                        <span style="font-size:12px;" aria-hidden="true">🗑️</span>
+                                        <span class="zampi-notif-name" style="font-size:11px; font-weight:600; color:#fff; font-family:'Space Grotesk',sans-serif; white-space:nowrap;" x-text="notif.name"></span>
+                                        <span class="zampi-notif-suffix" style="font-size:11px; font-weight:600; color:#fff; font-family:'Space Grotesk',sans-serif; white-space:nowrap;"> eliminado</span>
                                     </div>
                                 </template>
                             </div>
                         </div>
                         {{-- Botón único: abre el panel de pedido del menú digital --}}
-                        <div class="zampi-cart-actions">
+                        <div style="display:flex; gap:8px; flex-shrink:0;">
                             <button type="button"
                                     @click="$store.cart.open = true"
                                     aria-label="Ver y confirmar pedido"
-                                    class="zampi-cart-order-btn">
-                                <span class="zampi-cart-order-btn-inner">
+                                    style="padding:0; border-radius:9999px; background:#16A34A; border:none; color:#fff; font-size:13px; font-weight:700; font-family:'Space Grotesk',sans-serif; cursor:pointer; white-space:nowrap; transition:background 150ms ease; box-shadow:0 4px 14px rgba(22,163,74,0.45);"
+                                    onmouseenter="this.style.background='#15803D';"
+                                    onmouseleave="this.style.background='#16A34A';">
+                                <span style="display:flex; flex-direction:row; align-items:center; gap:6px; padding:8px 18px; line-height:1;">
                                     <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
                                     <span>Ver pedido</span>
                                 </span>
@@ -753,8 +1094,8 @@
                     </div>
 
                     {{-- Área de input --}}
-                    <div class="zampi-input-area">
-                        <div class="zampi-input-wrapper">
+                    <div style="flex-shrink:0; padding:10px 12px; background:rgba(5,11,31,0.95); backdrop-filter:blur(16px); border-top:1px solid rgba(46,80,176,0.3);">
+                        <div style="display:flex; gap:8px; align-items:center; background:rgba(14,26,56,0.7); border:1px solid rgba(96,152,248,0.3); border-radius:9999px; padding:8px 8px 8px 16px;">
                             <label for="zampi-chat-input" class="sr-only">Escribe tu mensaje a Zampi</label>
                             <input id="zampi-chat-input"
                                    type="text"
@@ -763,12 +1104,15 @@
                                    @keydown.enter="sendMessage()"
                                    :disabled="sending || closed"
                                    placeholder="Escribe tu pedido..."
-                                   class="zampi-chat-input">
+                                   style="flex:1; background:none; border:none; outline:none; font-family:'Space Grotesk',sans-serif; font-size:14px; color:#C8D8FF; min-width:0;">
                             <button type="button"
                                     @click="sendMessage()"
                                     :disabled="!input.trim() || sending || closed"
                                     aria-label="Enviar mensaje a Zampi"
-                                    class="zampi-send-btn">↑</button>
+                                    style="width:38px; height:38px; border-radius:50%; border:none; cursor:pointer; background:linear-gradient(135deg,#2E50B0,#1A3380); color:#fff; font-size:18px; display:flex; align-items:center; justify-content:center; box-shadow:0 0 14px rgba(46,80,176,0.65); flex-shrink:0; transition:transform 150ms cubic-bezier(0.34,1.56,0.64,1);"
+                                    onmousedown="this.style.transform='scale(0.92)'"
+                                    onmouseup="this.style.transform='scale(1)'"
+                                    onmouseleave="this.style.transform='scale(1)'">↑</button>
                         </div>
                     </div>
 
@@ -795,31 +1139,32 @@
         </div>
         @endif
 
-        {{-- ── Indicador de tapas (DS: .tapas-indicator) ────────────────────── --}}
-        @if($tapaConfig && $tapaConfig->tapas_enabled && $barItemsCount > 0)
-        @php
-            $tapasLeft     = max(0, $barItemsCount - $tapaVariantsUsed);
-            $maxTokens     = 8;
-            $shownTokens   = min($barItemsCount, $maxTokens);
-            $overflowTokens = max(0, $barItemsCount - $maxTokens);
-        @endphp
+        {{-- ── Indicador de tapas (DS: .tapas-indicator) — reactivo Alpine ──── --}}
+        @if($tapaConfig && $tapaConfig->tapas_enabled)
         <button type="button"
                 class="tapas-indicator"
+                x-show="$store.cart.tapaConfig.enabled && $store.cart._barItemsCount > 0"
+                x-transition:enter="transition ease-out duration-200"
+                x-transition:enter-start="opacity-0 translate-y-1"
+                x-transition:enter-end="opacity-100 translate-y-0"
+                x-transition:leave="transition ease-in duration-150"
+                x-transition:leave-start="opacity-100"
+                x-transition:leave-end="opacity-0"
+                style="display:none"
                 @click="$store.cart.showTapaModal = true"
-                :title="'Tienes ' + {{ $tapasLeft }} + ' tapa(s) por canjear'"
-                aria-label="{{ $tapasLeft }} {{ $tapasLeft === 1 ? 'tapa' : 'tapas' }} {{ $tapaConfig->tapas_free ? 'de cortesía' : 'incluidas' }} — Pedir">
+                :aria-label="Math.max(0, $store.cart._barItemsCount - $store.cart._variantsUsed) + ' ' + (Math.max(0, $store.cart._barItemsCount - $store.cart._variantsUsed) === 1 ? 'tapa' : 'tapas') + ' ' + ($store.cart.tapaConfig.free ? 'de cortesía' : 'incluidas') + ' — Pedir'">
             <span class="tapas-indicator__glyph" aria-hidden="true">🍻</span>
             <span class="tapas-indicator__copy">
-                <strong>{{ $tapasLeft }}</strong>
-                <span>{{ $tapasLeft === 1 ? 'tapa' : 'tapas' }} {{ $tapaConfig->tapas_free ? 'de cortesía' : 'incluidas' }}</span>
+                <strong x-text="Math.max(0, $store.cart._barItemsCount - $store.cart._variantsUsed)"></strong>
+                <span x-text="(Math.max(0, $store.cart._barItemsCount - $store.cart._variantsUsed) === 1 ? 'tapa' : 'tapas') + ' ' + ($store.cart.tapaConfig.free ? 'de cortesía' : 'incluidas')"></span>
             </span>
             <span class="tapas-indicator__tokens" aria-hidden="true">
-                @for($t = 0; $t < $shownTokens; $t++)
-                    <span class="tk{{ $t < $tapaVariantsUsed ? ' tk--used' : '' }}"></span>
-                @endfor
-                @if($overflowTokens > 0)
-                    <span class="tapas-indicator__tokensMore">+{{ $overflowTokens }}</span>
-                @endif
+                <template x-for="i in Array.from({length: Math.min($store.cart._barItemsCount, 8)}, (_, idx) => idx)" :key="i">
+                    <span :class="'tk' + (i < $store.cart._variantsUsed ? ' tk--used' : '')"></span>
+                </template>
+                <span class="tapas-indicator__tokensMore"
+                      x-show="$store.cart._barItemsCount > 8"
+                      x-text="'+' + ($store.cart._barItemsCount - 8)"></span>
             </span>
             <span class="tapas-indicator__cta">Pedir →</span>
         </button>
@@ -850,7 +1195,7 @@
                         🍺 Barra
                     </button>
                     {{-- Separador visual --}}
-                    <span class="zampi-filter-sep" aria-hidden="true"></span>
+                    <span style="width:1px;background:var(--border-subtle);margin:2px 4px;align-self:stretch;flex-shrink:0" aria-hidden="true"></span>
                     {{-- Categorías --}}
                     <button type="button"
                             class="chip chip--small"
@@ -862,7 +1207,6 @@
                     @foreach($categories as $cat)
                     <button type="button"
                             class="chip chip--small"
-                            x-show="isCategoryVisible({{ $cat->id }})"
                             :class="activeCategory === {{ $cat->id }} ? 'chip--active' : ''"
                             @click="setCategory({{ $cat->id }})"
                             :aria-pressed="(activeCategory === {{ $cat->id }}).toString()">
@@ -892,6 +1236,7 @@
             {{-- DS: .scrim > .drawer.drawer--allergens (sheet móvil) --}}
             <div class="scrim"
                  x-show="allergensOpen"
+                 style="display:none"
                  x-transition:enter="transition duration-200"
                  x-transition:enter-start="opacity-0"
                  x-transition:enter-end="opacity-100"
@@ -916,6 +1261,24 @@
                         </button>
                     </div>
                     <div class="drawer__body">
+                        @php
+                        $allergenShortLabels = [
+                            'gluten'         => 'gluten',
+                            'crustaceos'     => 'crustáceos',
+                            'huevos'         => 'huevos',
+                            'pescado'        => 'pescado',
+                            'cacahuetes'     => 'cacahuetes',
+                            'soja'           => 'soja',
+                            'lacteos'        => 'lácteos',
+                            'frutos-cascara' => 'frutos',
+                            'apio'           => 'apio',
+                            'mostaza'        => 'mostaza',
+                            'sesamo'         => 'sésamo',
+                            'sulfitos'       => 'sulfitos',
+                            'altramuces'     => 'altramuces',
+                            'moluscos'       => 'moluscos',
+                        ];
+                        @endphp
                         <div class="allergens-grid">
                             @foreach(\App\Models\Ingredient::ALLERGEN_TYPES as $slug => $name)
                             <button type="button"
@@ -930,7 +1293,7 @@
                                      role="img"
                                      aria-label="{{ $name }}">
                                 </svg>
-                                <span>{{ $name }}</span>
+                                <span>Sin {{ $allergenShortLabels[$slug] ?? $name }}</span>
                             </button>
                             @endforeach
                         </div>
@@ -996,7 +1359,6 @@
                         </div>
                         @foreach($categories as $cat)
                         <div class="filter-list__item"
-                             x-show="isCategoryVisible({{ $cat->id }})"
                              :class="activeCategory === {{ $cat->id }} ? 'filter-list__item--active' : ''"
                              @click="setCategory({{ $cat->id }})"
                              @keydown.enter="setCategory({{ $cat->id }})"
@@ -1034,7 +1396,7 @@
                                  role="img"
                                  aria-label="{{ $name }}">
                             </svg>
-                            <span style="font-size:13px">{{ $name }}</span>
+                            <span style="font-size:13px">Sin {{ $allergenShortLabels[$slug] ?? $name }}</span>
                         </div>
                         @endforeach
                     </div>
@@ -1097,7 +1459,7 @@
                      x-show="isCategoryVisible({{ $category->id }})"
                      x-transition
                      @if(!$kitchenOpen && $category->destination === 'kitchen')
-                     class="opacity-[0.45] pointer-events-none"
+                     style="opacity:0.45;pointer-events:none"
                      @endif>
 
                     <div class="category__head">
@@ -1122,8 +1484,14 @@
                                 ->unique()->values();
                         @endphp
                         <div class="pcard"
+                             role="button"
+                             tabindex="0"
                              x-show="isProductVisible({{ $product->id }})"
-                             x-transition>
+                             x-transition
+                             @click="openProduct(products.find(p => p.id === {{ $product->id }}))"
+                             @keydown.enter.prevent="openProduct(products.find(p => p.id === {{ $product->id }}))"
+                             @keydown.space.prevent="openProduct(products.find(p => p.id === {{ $product->id }}))"
+                             aria-label="Ver detalle de {{ $product->name }}">
 
                             {{-- Foto --}}
                             @if($product->image)
@@ -1131,10 +1499,10 @@
                                 <img src="{{ Storage::url($product->image) }}"
                                      alt="Foto de {{ $product->name }}"
                                      loading="lazy" decoding="async"
-                                     class="w-full h-full object-cover">
+                                     style="width:100%;height:100%;object-fit:cover">
                             </div>
                             @else
-                            <div class="pcard__photo pcard__photo--food-{{ $photoStyle }}" aria-hidden="true"></div>
+                            <div class="pcard__photo pcard__photo--food-{{ $photoStyle }}" aria-hidden="true">{{ $getEmoji($category->name) }}</div>
                             @endif
 
                             {{-- Body --}}
@@ -1201,15 +1569,21 @@
                                     <span class="pcard__price">{{ number_format((float)$product->price, 2, ',', '.') }}&nbsp;€</span>
 
                                     @if($orderingAllowed)
-                                    {{-- btn-add cuando qty = 0 --}}
+                                    {{-- Tapa de cortesía: bloqueado --}}
+                                    <span x-show="$store.cart.items.some(i => i.productId === {{ $product->id }} && !i.variantId && i.isTapa)"
+                                          style="font-family:var(--font-body);font-size:11px;font-weight:700;color:var(--color-amber-800);background:linear-gradient(135deg,#F5DC92,#ECC25A);padding:3px 8px;border-radius:9999px;"
+                                          @click.stop>
+                                        🫕 Cortesía
+                                    </span>
+                                    {{-- btn-add cuando qty = 0 y no es tapa --}}
                                     <button type="button"
                                             class="btn-add"
                                             x-show="!$store.cart.items.some(i => i.productId === {{ $product->id }} && !i.variantId)"
                                             @click.stop="$store.cart.add(products.find(p => p.id === {{ $product->id }}))"
                                             aria-label="Añadir {{ $product->name }}">+</button>
-                                    {{-- qty control cuando qty > 0 --}}
+                                    {{-- qty control cuando qty > 0 y NO es tapa --}}
                                     <div class="qty"
-                                         x-show="$store.cart.items.some(i => i.productId === {{ $product->id }} && !i.variantId)"
+                                         x-show="$store.cart.items.some(i => i.productId === {{ $product->id }} && !i.variantId && !i.isTapa)"
                                          @click.stop>
                                         <button class="qty-minus"
                                                 @click.stop="$store.cart.dec('{{ $product->id }}:none')"
@@ -1246,12 +1620,11 @@
         {{-- ══════════════════════════════════════════════════════════════════════
              CART BAR — .cart-bar position:absolute dentro de .carta
              ══════════════════════════════════════════════════════════════════════ --}}
+        <template x-if="$store.cart.barShouldShow">
         <button type="button"
-                class="cart-bar"
-                x-show="$store.cart.count > 0 && !$store.chat.open"
-                x-transition
+                :class="$store.cart._barLeaving ? 'cart-bar cart-bar--leaving' : 'cart-bar'"
                 @click="$store.cart.open = true"
-                :aria-label="'Ver pedido — ' + $store.cart.count + ($store.cart.count === 1 ? ' artículo' : ' artículos') + ', total ' + Number($store.cart.total).toFixed(2).replace('.',',') + ' €'">
+                :aria-label="'Ver pedido — ' + $store.cart.displayCount + ($store.cart.displayCount === 1 ? ' artículo' : ' artículos') + ', total ' + Number($store.cart.displayTotal).toFixed(2).replace('.',',') + ' €'">
             <div class="cart-bar__left">
                 <span class="cart-bar__icon">
                     <svg aria-hidden="true" width="18" height="18" fill="none"
@@ -1259,22 +1632,24 @@
                         <path stroke-linecap="round" stroke-linejoin="round"
                               d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
                     </svg>
-                    <span class="cart-bar__count" x-text="$store.cart.count" aria-hidden="true"></span>
+                    <span class="cart-bar__count" x-text="$store.cart.displayCount" aria-hidden="true"></span>
                 </span>
                 <div style="display:flex;flex-direction:column;gap:2px;align-items:flex-start">
-                    <span x-text="$store.cart.count + ($store.cart.count === 1 ? ' artículo' : ' artículos')"></span>
+                    <span x-text="$store.cart.displayCount + ($store.cart.displayCount === 1 ? ' artículo' : ' artículos')"></span>
                     <span class="cart-bar__total"
-                          x-text="Number($store.cart.total).toFixed(2).replace('.',',') + ' €'"></span>
+                          x-text="Number($store.cart.displayTotal).toFixed(2).replace('.',',') + ' €'"></span>
                 </div>
             </div>
             <span class="cart-bar__cta">Ver pedido</span>
         </button>
+        </template>
 
         {{-- ══════════════════════════════════════════════════════════════════════
              FAB CLUSTER — DS: .fab-cluster (Mis pedidos + Cuenta + Mi ticket)
              ══════════════════════════════════════════════════════════════════════ --}}
         <div class="fab-cluster"
-             x-show="$store.bill.active && !$store.chat.open"
+             x-show="($store.orders.count > 0 || $store.bill.active) && !$store.chat.open"
+             style="display:none"
              x-transition:enter="transition duration-200"
              x-transition:enter-start="opacity-0"
              x-transition:enter-end="opacity-100"
@@ -1282,30 +1657,29 @@
              x-transition:leave-start="opacity-100"
              x-transition:leave-end="opacity-0">
 
-            {{-- fab--orders: Mis pedidos (visible cuando hay pedido activo no pagado) --}}
+            {{-- fab--orders: Mis pedidos (visible cuando hay pedidos activos) --}}
             <button type="button"
                     class="fab fab--orders"
-                    x-show="$store.bill.active && !$store.bill.paymentDone"
-                    @click="$store.bill.open()"
-                    :aria-label="'Mi pedido activo — ver cuenta'">
+                    x-show="$store.orders.count > 0 && !$store.bill.paymentDone"
+                    @click="$store.orders.openList()"
+                    :aria-label="'Mis pedidos — ' + $store.orders.count + ' enviado' + ($store.orders.count !== 1 ? 's' : '')">
                 <span class="fab--orders__ic" aria-hidden="true">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
                          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M5 3h14v18l-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5L5 21V3z"/>
                         <path d="M8 8h8M8 12h8M8 16h5" stroke-width="2.4"/>
                     </svg>
-                    <span class="fab--orders__badge" aria-hidden="true">1</span>
+                    <span class="fab--orders__badge" x-text="$store.orders.count" aria-hidden="true"></span>
                 </span>
-                <span class="fab--orders__label">Mi pedido</span>
+                <span class="fab--orders__label">Mis pedidos</span>
             </button>
 
             {{-- fab--bill: Cuenta --}}
             <button type="button"
-                    :class="'fab fab--bill' + ($store.bill.active && !$store.bill.paymentDone ? ' fab--in-cluster' : '')"
-                    x-show="!$store.bill.paymentDone"
+                    :class="'fab fab--bill' + ($store.orders.count > 0 && !$store.bill.paymentDone ? ' fab--in-cluster' : '')"
+                    x-show="$store.orders.count > 0 && !$store.bill.paymentDone"
                     @click="$store.bill.open()"
-                    :disabled="$store.bill.requested && !$store.bill.paymentDone ? undefined : undefined"
-                    :aria-label="$store.bill.requested ? 'Cuenta solicitada' : 'Solicitar la cuenta'">
+                    aria-label="Solicitar la cuenta">
                 <span class="fab__ic" aria-hidden="true">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
                          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1341,15 +1715,18 @@
              ══════════════════════════════════════════════════════════════════════ --}}
         <div class="scrim"
              x-show="$store.cart.open"
+             style="display:none"
              x-transition:enter="transition duration-200"
              x-transition:enter-start="opacity-0"
              x-transition:enter-end="opacity-100"
-             x-transition:leave="transition duration-200"
+             x-transition:leave="transition duration-260"
              x-transition:leave-start="opacity-100"
              x-transition:leave-end="opacity-0"
-             @click.self="$store.cart.open = false"
+             @click.self="$store.cart.close()"
              role="dialog" aria-modal="true" aria-label="Tu pedido">
-            <div class="drawer drawer--cart" @click.stop>
+            <div class="drawer drawer--cart"
+                 :class="{ 'is-closing': $store.cart.closing }"
+                 @click.stop>
                 <div class="drawer__grabber" aria-hidden="true"></div>
                 {{-- Cart head --}}
                 <div class="cart-head">
@@ -1359,7 +1736,7 @@
                             <h2 class="cart-head__title">Tu&nbsp;pedido</h2>
                         </div>
                         <button type="button" class="icon-btn cart-head__close"
-                                @click="$store.cart.open = false" aria-label="Cerrar">
+                                @click="$store.cart.close()" aria-label="Cerrar">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
                             </svg>
@@ -1380,6 +1757,9 @@
                     <template x-if="$store.cart.items.length === 0">
                         <div class="cart-empty">
                             <div class="cart-empty__art" aria-hidden="true">
+                                <span class="cart-empty__plate"></span>
+                                <span class="cart-empty__fork"></span>
+                                <span class="cart-empty__knife"></span>
                                 <span class="cart-empty__emoji">🍽️</span>
                             </div>
                             <div class="cart-empty__h">Tu pedido está vacío</div>
@@ -1417,17 +1797,26 @@
                                                 </template>
                                             </div>
                                             <div class="citem__side">
-                                                <div class="qty">
-                                                    <button class="qty-minus"
-                                                            @click="$store.cart.dec(item._key)"
-                                                            aria-label="Quitar uno">−</button>
-                                                    <span class="qty-n" x-text="item.quantity"></span>
-                                                    <button class="qty-plus"
-                                                            @click="$store.cart.inc(item._key)"
-                                                            aria-label="Añadir uno">+</button>
-                                                </div>
+                                                {{-- Tapa de cortesía: cantidad fija, sin controles --}}
+                                                <template x-if="item.isTapa">
+                                                    <span style="font-family:var(--font-body);font-size:11px;font-weight:700;color:var(--color-amber-800);background:linear-gradient(135deg,#F5DC92,#ECC25A);padding:3px 8px;border-radius:9999px;white-space:nowrap;">
+                                                        🫕 Cortesía
+                                                    </span>
+                                                </template>
+                                                {{-- Ítem normal: qty control --}}
+                                                <template x-if="!item.isTapa">
+                                                    <div class="qty">
+                                                        <button class="qty-minus"
+                                                                @click="$store.cart.dec(item._key)"
+                                                                aria-label="Quitar uno">−</button>
+                                                        <span class="qty-n" x-text="item.quantity"></span>
+                                                        <button class="qty-plus"
+                                                                @click="$store.cart.inc(item._key)"
+                                                                aria-label="Añadir uno">+</button>
+                                                    </div>
+                                                </template>
                                                 <span class="citem__price"
-                                                      x-text="Number(item.price * item.quantity).toFixed(2).replace('.',',') + ' €'"></span>
+                                                      x-text="Number($store.cart.lineTotal(item)).toFixed(2).replace('.',',') + ' €'"></span>
                                             </div>
                                         </div>
                                         {{-- Quitar ingredientes --}}
@@ -1480,10 +1869,21 @@
                             <span class="cart-foot__totalVal"
                                   x-text="Number($store.cart.total).toFixed(2).replace('.',',') + ' €'"></span>
                         </div>
+                        <template x-if="$store.cart._tapaPending">
+                            <button type="button"
+                                    class="cart-foot__tapaPending"
+                                    @click="$store.cart.showTapaModal = true"
+                                    aria-live="polite">
+                                <span aria-hidden="true">🫕</span>
+                                <span>Tienes <strong x-text="Math.max(0, $store.cart._barItemsCount - $store.cart._variantsUsed)"></strong> tapa<template x-if="Math.max(0, $store.cart._barItemsCount - $store.cart._variantsUsed) !== 1"><span>s</span></template> disponible<template x-if="Math.max(0, $store.cart._barItemsCount - $store.cart._variantsUsed) !== 1"><span>s</span></template> — Elegir →</span>
+                            </button>
+                        </template>
                         <button type="button"
                                 class="cart-foot__cta"
+                                :class="{ 'cart-foot__cta--sending': $store.cart.sending }"
                                 @click="$store.cart.send()"
-                                :disabled="$store.cart.sending || $store.cart.sent">
+                                :disabled="$store.cart.sending || $store.cart._tapaPending"
+                                :title="$store.cart._tapaPending ? 'Elige tus tapas antes de enviar' : ''">
                             <span class="cart-foot__ctaIc" aria-hidden="true">
                                 <template x-if="$store.cart.sent">✓</template>
                                 <template x-if="$store.cart.sending && !$store.cart.sent">
@@ -1526,6 +1926,7 @@
         {{-- ── Scrim único — visible mientras step !== '' ─────────────────────── --}}
         <div class="scrim"
              x-show="$store.bill.step !== ''"
+             style="display:none"
              x-transition:enter="transition duration-200"
              x-transition:enter-start="opacity-0"
              x-transition:enter-end="opacity-100"
@@ -2056,7 +2457,7 @@
                                     <template x-for="i in Array.from({length: parts}, (_, k) => k)" :key="i">
                                         <g :class="'slice' + (i === mySlice ? ' slice--mine' : '')"
                                            @click="mySlice = i"
-                                           class="cursor-pointer">
+                                           style="cursor:pointer">
                                             <path :d="arc(i)"
                                                   :fill="i === mySlice ? 'var(--brand-primary)' : 'var(--bg-chip)'"
                                                   stroke="var(--bg-base)" stroke-width="2"
@@ -2646,9 +3047,139 @@
         </div>{{-- /scrim --}}
 
 
-                {{-- ══════════════════════════════════════════════════════════════════════
-             TAPA MODAL — DS: .modal > .modal__panel
-             ══════════════════════════════════════════════════════════════════════ --}}
+                {{-- ======================================================================
+             ORDERS PANEL — Mis pedidos (lista + detalle)
+             ====================================================================== --}}
+        <div class="scrim"
+             x-show="$store.orders.open"
+             style="display:none"
+             x-transition:enter="transition duration-200"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             @click.self="$store.orders.close()"
+             role="dialog" aria-modal="true" aria-label="Mis pedidos">
+
+            <div class="drawer drawer--orders" @click.stop>
+                <div class="drawer__grabber" aria-hidden="true"></div>
+
+                {{-- Header — cambia entre vista lista y detalle --}}
+                <div class="drawer__head">
+                    <div class="drawer__heading">
+                        <div class="drawer__title"
+                             x-text="$store.orders.selectedId === null ? 'Mis pedidos' : 'Pedido #' + $store.orders.selected?.number">
+                        </div>
+                        <div class="drawer__subtitle"
+                             x-text="$store.orders.selectedId === null
+                                 ? ($store.orders.count + ' pedido' + ($store.orders.count !== 1 ? 's' : '') + ' enviado' + ($store.orders.count !== 1 ? 's' : ''))
+                                 : (($store.orders.selected?.itemCount ?? 0) + ' artículo' + (($store.orders.selected?.itemCount ?? 0) !== 1 ? 's' : '') + ' · ' + $store.orders.fmt($store.orders.selected?.total ?? 0))">
+                        </div>
+                    </div>
+                    <button type="button" class="icon-btn" @click="$store.orders.close()" aria-label="Cerrar">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+
+                {{-- Body lista --}}
+                <template x-if="$store.orders.selectedId === null">
+                    <div class="drawer__body">
+                        <template x-for="order in $store.orders.list" :key="order.id">
+                            <button type="button" class="order-card" @click="$store.orders.openDetail(order.id)">
+                                <span class="order-badge" x-text="'#' + order.number"></span>
+                                <div class="order-card__info">
+                                    <div class="order-card__name" x-text="'Pedido #' + order.number"></div>
+                                    <div class="order-card__meta"
+                                         x-text="order.itemCount + ' artículo' + (order.itemCount !== 1 ? 's' : '') + ' · ' + order.sentAt">
+                                    </div>
+                                </div>
+                                <span class="order-card__price" x-text="$store.orders.fmt(order.total)"></span>
+                                <svg class="order-card__chevron" width="14" height="14" viewBox="0 0 24 24"
+                                     fill="none" stroke="currentColor" stroke-width="2.5"
+                                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M9 18l6-6-6-6"/>
+                                </svg>
+                            </button>
+                        </template>
+                    </div>
+                </template>
+
+                {{-- Body detalle --}}
+                <template x-if="$store.orders.selectedId !== null">
+                    <div class="drawer__body">
+                        <button type="button" class="orders-back" @click="$store.orders.backToList()">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M15 18l-6-6 6-6"/>
+                            </svg>
+                            Volver a mis pedidos
+                        </button>
+
+                        <div class="order-detail-card">
+                            <div class="order-detail-card__head">
+                                <span class="order-badge order-badge--active"
+                                      x-text="'#' + $store.orders.selected?.number"></span>
+                                <div class="order-card__info">
+                                    <div class="order-card__name"
+                                         x-text="'Pedido #' + $store.orders.selected?.number"></div>
+                                    <div class="order-card__meta"
+                                         x-text="($store.orders.selected?.itemCount ?? 0) + ' artículo' + (($store.orders.selected?.itemCount ?? 0) !== 1 ? 's' : '') + ' · Enviado a las ' + $store.orders.selected?.sentAt">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="order-detail-card__divider"></div>
+                            <template x-for="item in ($store.orders.selected?.items ?? [])" :key="item.name + item.price">
+                                <div class="order-item">
+                                    <span class="order-item__qty" x-text="item.quantity + '×'"></span>
+                                    <span class="order-item__name" x-text="item.name"></span>
+                                    <span class="order-item__price"
+                                          x-text="$store.orders.fmt(item.price * item.quantity)"></span>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+
+                {{-- Footer lista --}}
+                <template x-if="$store.orders.selectedId === null">
+                    <div class="drawer__foot">
+                        <div class="orders-total">
+                            <span class="orders-total__label">TOTAL CUENTA</span>
+                            <span class="orders-total__val"
+                                  x-text="$store.orders.fmt($store.orders.grandTotal)"></span>
+                        </div>
+                        <button type="button" class="btn-primary"
+                                @click="$store.orders.close(); $store.bill.open()">
+                            <svg aria-hidden="true" width="14" height="14" fill="none" stroke="currentColor"
+                                 stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                      d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"/>
+                            </svg>
+                            Solicitar cuenta
+                        </button>
+                    </div>
+                </template>
+
+                {{-- Footer detalle --}}
+                <template x-if="$store.orders.selectedId !== null">
+                    <div class="drawer__foot">
+                        <div class="orders-total">
+                            <span class="orders-total__label">SUBTOTAL DEL PEDIDO</span>
+                            <span class="orders-total__val"
+                                  x-text="$store.orders.fmt($store.orders.selected?.total ?? 0)"></span>
+                        </div>
+                    </div>
+                </template>
+
+            </div>
+        </div>
+
+                {{-- ======================================================================
+             TAPA MODAL — DS: TapasModalRich v2
+             ====================================================================== --}}
         <div class="modal"
              x-show="$store.cart.showTapaModal"
              x-transition:enter="transition duration-200"
@@ -2657,46 +3188,290 @@
              x-transition:leave="transition duration-200"
              x-transition:leave-start="opacity-100"
              x-transition:leave-end="opacity-0"
+             style="display:none"
              @click.self="$store.cart.closeTapaModal()"
              role="dialog" aria-modal="true" aria-label="Tapas disponibles">
-            <div class="modal__panel" @click.stop>
-                <div class="modal__head">
-                    <div>
-                        <div class="modal__title">¿Te llevas una tapa?</div>
-                        <div class="modal__sub">
-                            @if($tapaConfig && $tapaConfig->tapas_free)
-                            La primera tapa es invitación de la casa 🍻
-                            @else
-                            Con cada bebida puedes añadir una tapa
-                            @endif
-                        </div>
-                    </div>
-                    <button type="button" class="icon-btn" @click="$store.cart.closeTapaModal()" aria-label="Cerrar">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+
+            <div class="modal__panel tapas-modal"
+                 x-data="{
+                     selectedTapaId: null,
+                     showChefExtra: false,
+                     get left()         { return Math.max(0, $store.cart._barItemsCount - $store.cart._variantsUsed); },
+                     get limitReached() { return $store.cart._variantsUsed >= $store.cart.tapaConfig.maxVariants && $store.cart.tapaConfig.maxVariants > 0; },
+                     get tokensShown()  { return Math.min(Math.max($store.cart._barItemsCount, 1), 12); },
+                     get tokensOver()   { return Math.max(0, $store.cart._barItemsCount - 12); },
+                 }"
+                 x-effect="if (!$store.cart.showTapaModal) { selectedTapaId = null; showChefExtra = false; }"
+                 @click.stop>
+
+                {{-- Header --}}
+                <header class="tapas-head tapas-head--v2">
+                    <button type="button" class="tapas-close"
+                            @click="$store.cart.closeTapaModal()" aria-label="Cerrar">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2.5"
+                             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M6 18L18 6M6 6l12 12"/>
                         </svg>
                     </button>
-                </div>
-                <div style="display:flex;flex-direction:column;gap:8px">
-                    <template x-for="tapa in $store.cart.tapaProducts" :key="tapa.id">
-                        <div class="tapa"
-                             @click="$store.cart.addTapa(tapa)">
-                            <div class="tapa__photo" aria-hidden="true">🍽️</div>
-                            <div class="tapa__main">
-                                <div class="tapa__name" x-text="tapa.name"></div>
-                                <div class="tapa__price"
-                                     :class="tapa.price === 0 ? 'tapa__price--free' : ''"
-                                     x-text="tapa.price === 0 ? 'Gratis' : '+ ' + Number(tapa.price).toFixed(2).replace('.',',') + ' €'"></div>
-                            </div>
+                    <div class="tapas-head__pre">
+                        <span class="tapas-head__ornament" aria-hidden="true">— ❦ —</span>
+                        <span class="tapas-head__kicker">LA CASA · TAPAS</span>
+                    </div>
+                    <h2 class="tapas-head__big"
+                        x-text="limitReached ? 'Has llegado al límite' : (left > 0 ? 'Lleva una tapa' : 'Sin tapas disponibles')">
+                    </h2>
+                    <p class="tapas-head__lead">
+                        <template x-if="limitReached">
+                            <span x-text="'Has elegido ' + $store.cart.tapaConfig.maxVariants + ' tapas distintas — máximo por pedido.'"></span>
+                        </template>
+                        <template x-if="!limitReached && left > 0">
+                            <span>Tienes <strong x-text="left"></strong>&nbsp;<span x-text="left === 1 ? 'tapa de cortesía' : 'tapas de cortesía'"></span> por canjear.</span>
+                        </template>
+                        <template x-if="!limitReached && left === 0">
+                            <span>Pide una bebida de barra y desbloquearás una tapa.</span>
+                        </template>
+                    </p>
+                    <div class="tapas-coins" aria-hidden="true">
+                        <template x-for="i in Array.from({length: tokensShown}, (_, idx) => idx)" :key="i">
+                            <span :class="'tapa-coin' + (i < $store.cart._variantsUsed ? ' tapa-coin--used' : '')">
+                                <span class="tapa-coin__face">🥟</span>
+                            </span>
+                        </template>
+                        <span class="tapa-coin tapa-coin--more"
+                              x-show="tokensOver > 0"
+                              x-text="'+' + tokensOver"></span>
+                    </div>
+                    <div class="tapas-rule">
+                        <span class="tapas-rule__line"></span>
+                        <span class="tapas-rule__text">1 tapa por bebida de barra</span>
+                        <span class="tapas-rule__line"></span>
+                    </div>
+                    <template x-if="!limitReached && $store.cart._variantsUsed > 0 && $store.cart.tapaConfig.maxVariants > 0">
+                        <div class="tapas-variants tapas-variants--v2">
+                            <span>Variantes usadas</span>
+                            <span class="tapas-variants__pips">
+                                <template x-for="i in Array.from({length: $store.cart.tapaConfig.maxVariants}, (_, idx) => idx)" :key="i">
+                                    <span :class="'pip' + (i < $store.cart._variantsUsed ? ' pip--on' : '')"></span>
+                                </template>
+                            </span>
+                            <span class="tapas-variants__num"
+                                  x-text="$store.cart._variantsUsed + '/' + $store.cart.tapaConfig.maxVariants"></span>
                         </div>
                     </template>
+                </header>
+
+                {{-- Body --}}
+                <div class="tapas-body">
+                    <div class="tapas-listLabel">Elige tu tapa</div>
+                    <div class="tapas-list tapas-list--v2"
+                         :data-disabled="(limitReached || left === 0).toString()">
+                        <template x-for="(tapa, idx) in $store.cart.tapaProducts" :key="tapa.id">
+                            <button type="button"
+                                    :class="'tapa-card tapa-card--v2' + (selectedTapaId === tapa.id ? ' tapa-card--selected' : '')"
+                                    :disabled="limitReached || left === 0"
+                                    :style="'--i:' + idx"
+                                    @click="selectedTapaId = selectedTapaId === tapa.id ? null : tapa.id"
+                                    :aria-pressed="(selectedTapaId === tapa.id).toString()">
+                                <div class="tapa-card__plate" aria-hidden="true">
+                                    <span class="tapa-card__plateInner" x-text="tapa.emoji || '🫕'"></span>
+                                </div>
+                                <div class="tapa-card__main">
+                                    <div class="tapa-card__name" x-text="tapa.name"></div>
+                                    <div class="tapa-card__hint" x-text="tapa.description || 'Sugerencia de la casa'"></div>
+                                </div>
+                                <div class="tapa-card__meta">
+                                    <span :class="'tapa-card__pill ' + (tapa.price === 0 ? 'tapa-card__pill--free' : 'tapa-card__pill--paid')"
+                                          x-text="tapa.price === 0 ? 'Cortesía' : '+ ' + Number(tapa.price).toFixed(2).replace('.',',') + ' €'"></span>
+                                    <span :class="'tapa-card__radio' + (selectedTapaId === tapa.id ? ' is-on' : '')"
+                                          aria-hidden="true"
+                                          x-text="selectedTapaId === tapa.id ? '&#10003;' : ''"></span>
+                                </div>
+                            </button>
+                        </template>
+                    </div>
                 </div>
-                <div class="flex gap-2 mt-1">
-                    <button type="button" class="btn-secondary flex-1" @click="$store.cart.closeTapaModal()">Ahora no</button>
-                </div>
+
+                {{-- Footer --}}
+                <footer class="tapas-foot tapas-foot--v2">
+                    <button type="button" class="tapas-foot__secondary"
+                            @click="$store.cart.closeTapaModal()">
+                        Ahora no
+                    </button>
+                    <button type="button" class="tapas-foot__primary"
+                            :disabled="!selectedTapaId || limitReached || left === 0"
+                            @click="$store.cart.addTapa($store.cart.tapaProducts.find(t => t.id === selectedTapaId)); selectedTapaId = null">
+                        <span x-text="limitReached ? 'Límite alcanzado' : (selectedTapaId ? 'Añadir tapa' : 'Elige una tapa')"></span>
+                        <span class="tapas-foot__arrow" x-show="selectedTapaId && !limitReached" aria-hidden="true">→</span>
+                    </button>
+                </footer>
             </div>
         </div>
+        {{-- ══════════════════════════════════════════════════════════════════════
+             PRODUCT DETAIL MODAL — DS: .scrim.scrim--center > .pdetail
+             ══════════════════════════════════════════════════════════════════════ --}}
+        <div class="scrim scrim--center"
+             x-show="selectedProduct !== null"
+             :class="{ 'is-closing': pdetailClosing }"
+             @click="closeProduct()"
+             @keydown.escape.window="closeProduct()"
+             style="display:none"
+             role="dialog"
+             aria-modal="true"
+             :aria-label="selectedProduct ? 'Detalle de ' + selectedProduct.name : ''">
+
+            <div class="pdetail"
+                 :class="{ 'is-closing': pdetailClosing }"
+                 @click.stop>
+
+                {{-- Botón cerrar --}}
+                <button class="pdetail__close" @click="closeProduct()" aria-label="Cerrar">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2.5"
+                         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+
+                <div class="pdetail__layout">
+
+                    {{-- Foto / Hero --}}
+                    <div class="pdetail__photo"
+                         :class="selectedProduct?.imageUrl ? '' : 'pdetail__photo--food-' + (selectedProduct?.photoStyle || 1)">
+                        <template x-if="selectedProduct?.imageUrl">
+                            <img :src="selectedProduct.imageUrl"
+                                 :alt="'Foto de ' + selectedProduct.name"
+                                 style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0">
+                        </template>
+                        <template x-if="!selectedProduct?.imageUrl">
+                            <div class="pdetail__photo-emoji" aria-hidden="true"
+                                 x-text="selectedProduct?.emoji || '🍽️'"></div>
+                        </template>
+                        <div class="pdetail__photo-fade" aria-hidden="true"></div>
+                        <div class="pdetail__chip-row">
+                            <span class="pdetail__catchip" x-text="selectedProduct?.categoryName || ''"></span>
+                            <template x-if="selectedProduct?.destination === 'kitchen' && !kitchenOpen">
+                                <span class="pdetail__catchip pdetail__catchip--warn">Cocina cerrada</span>
+                            </template>
+                        </div>
+                        <div class="pdetail__grabber" aria-hidden="true"></div>
+                    </div>
+
+                    {{-- Contenido --}}
+                    <div class="pdetail__content">
+                        <div class="pdetail__scroll">
+
+                            <h2 class="pdetail__name" x-text="selectedProduct?.name"></h2>
+                            <div class="pdetail__price"
+                                 x-text="Number(selectedProduct?.price || 0).toFixed(2).replace('.', ',') + ' €'"></div>
+                            <p class="pdetail__desc"
+                               x-text="selectedProduct?.description"
+                               x-show="selectedProduct?.description"></p>
+
+                            {{-- Alérgenos --}}
+                            <section class="pdetail__section"
+                                     x-show="(selectedProduct?.allergenTypes || []).length > 0">
+                                <div class="pdetail__label">Contiene</div>
+                                <div class="pdetail__allergens">
+                                    <template x-for="al in (selectedProduct?.allergenTypes || [])" :key="al">
+                                        <span class="pdetail__allergen">
+                                            <svg class="allergen-img"
+                                                 :data-al="al"
+                                                 viewBox="0 0 100 100"
+                                                 width="22" height="22"
+                                                 role="img"
+                                                 :aria-label="'Contiene ' + (window.ZAMPA_ALLERGEN_LABELS?.[al] || al)">
+                                            </svg>
+                                            <span x-text="window.ZAMPA_ALLERGEN_LABELS?.[al] || al"></span>
+                                        </span>
+                                    </template>
+                                </div>
+                            </section>
+
+                            {{-- Quitar ingredientes --}}
+                            <section class="pdetail__section"
+                                     x-show="(selectedProduct?.removable || []).length > 0">
+                                <div class="pdetail__label">Personaliza · quita lo que no quieras</div>
+                                <div class="pdetail__chips">
+                                    <template x-for="ing in (selectedProduct?.removable || [])" :key="ing.id">
+                                        <button type="button"
+                                                :class="pdetailRemovedIds.includes(ing.id)
+                                                    ? 'pdetail__chip pdetail__chip--off'
+                                                    : 'pdetail__chip'"
+                                                @click="pdetailRemovedIds.includes(ing.id)
+                                                    ? pdetailRemovedIds.splice(pdetailRemovedIds.indexOf(ing.id), 1)
+                                                    : pdetailRemovedIds.push(ing.id)">
+                                            <span class="pdetail__chip-x" aria-hidden="true"
+                                                  x-text="pdetailRemovedIds.includes(ing.id) ? '✕' : '−'"></span>
+                                            <span x-text="ing.name"></span>
+                                        </button>
+                                    </template>
+                                </div>
+                            </section>
+
+                            {{-- Extras --}}
+                            <section class="pdetail__section"
+                                     x-show="(selectedProduct?.extras || []).length > 0">
+                                <div class="pdetail__label">Extras</div>
+                                <div class="pdetail__extras">
+                                    <template x-for="ex in (selectedProduct?.extras || [])" :key="ex.id">
+                                        <button type="button"
+                                                :class="pdetailExtraIds.includes(ex.id)
+                                                    ? 'pdetail__extra pdetail__extra--on'
+                                                    : 'pdetail__extra'"
+                                                @click="pdetailExtraIds.includes(ex.id)
+                                                    ? pdetailExtraIds.splice(pdetailExtraIds.indexOf(ex.id), 1)
+                                                    : pdetailExtraIds.push(ex.id)">
+                                            <span class="pdetail__extra-name" x-text="ex.name"></span>
+                                            <span class="pdetail__extra-price"
+                                                  x-text="ex.price > 0
+                                                      ? '+ ' + Number(ex.price).toFixed(2).replace('.',',') + ' €'
+                                                      : 'gratis'"></span>
+                                            <span class="pdetail__check"
+                                                  :class="pdetailExtraIds.includes(ex.id) ? 'pdetail__check--on' : ''"
+                                                  aria-hidden="true"
+                                                  x-text="pdetailExtraIds.includes(ex.id) ? '✓' : ''"></span>
+                                        </button>
+                                    </template>
+                                </div>
+                            </section>
+
+                        </div>{{-- /pdetail__scroll --}}
+
+                        {{-- Footer: cantidad + CTA --}}
+                        @if($orderingAllowed)
+                        <div class="pdetail__foot">
+                            <div class="pdetail__qty">
+                                <button type="button"
+                                        class="pdetail__qtybtn pdetail__qtybtn--minus"
+                                        @click="pdetailQty = Math.max(1, pdetailQty - 1)"
+                                        aria-label="Quitar uno">−</button>
+                                <span class="pdetail__qtyn" x-text="pdetailQty"></span>
+                                <button type="button"
+                                        class="pdetail__qtybtn pdetail__qtybtn--plus"
+                                        @click="pdetailQty++"
+                                        aria-label="Añadir uno">+</button>
+                            </div>
+                            <button type="button"
+                                    class="pdetail__cta"
+                                    @click="pdetailAddToCart()"
+                                    :disabled="selectedProduct?.destination === 'kitchen' && !kitchenOpen">
+                                <span class="pdetail__cta-lab"
+                                      x-text="$store.cart.items.some(i => i.productId === selectedProduct?.id && !i.variantId)
+                                          ? 'Actualizar carrito' : 'Añadir al carrito'"></span>
+                                <span class="pdetail__cta-price"
+                                      x-text="Number(((selectedProduct?.price || 0) + (selectedProduct?.extras || []).filter(e => pdetailExtraIds.includes(e.id)).reduce((s, e) => s + e.price, 0)) * pdetailQty).toFixed(2).replace('.',',') + ' €'"></span>
+                            </button>
+                        </div>
+                        @endif
+
+                    </div>{{-- /pdetail__content --}}
+                </div>{{-- /pdetail__layout --}}
+            </div>{{-- /pdetail --}}
+        </div>{{-- /scrim.scrim--center --}}
 
     </div>{{-- /carta (Alpine) --}}
 </body>
 </html>
+
+

@@ -77,4 +77,14 @@ describe('shouldShowTapaModal', () => {
     it('returns false when no tapa products available', () => {
         expect(shouldShowTapaModal(baseCfg, 1, 0, [])).toBe(false);
     });
+
+    it('returns false when all available tapa variants are already chosen', () => {
+        const twoProducts = [{ id: 1 }, { id: 2 }];
+        expect(shouldShowTapaModal({ ...baseCfg, maxVariants: 5 }, 3, 2, twoProducts)).toBe(false);
+    });
+
+    it('returns true when maxVariants not reached and untried products exist', () => {
+        const twoProducts = [{ id: 1 }, { id: 2 }];
+        expect(shouldShowTapaModal({ ...baseCfg, maxVariants: 5 }, 3, 1, twoProducts)).toBe(true);
+    });
 });
