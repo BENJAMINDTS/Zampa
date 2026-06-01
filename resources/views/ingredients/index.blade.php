@@ -119,13 +119,13 @@
           </div>
 
           {{-- Botones --}}
-          <div class="mt-auto flex gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+          <div class="mt-auto grid grid-cols-2 gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
             <a href="{{ route('ingredients.edit', $ingredient) }}"
                aria-label="Editar ingrediente {{ $ingredient->name }}"
-               class="flex-1 inline-flex items-center justify-center gap-1.5 text-sm font-semibold
-                      bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200
-                      border border-gray-300 dark:border-gray-500
-                      hover:bg-gray-50 dark:hover:bg-gray-600 shadow-sm hover:shadow
+               class="flex items-center justify-center gap-1.5 text-sm font-semibold
+                      bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400
+                      border border-indigo-200 dark:border-indigo-700
+                      hover:bg-indigo-100 dark:hover:bg-indigo-900/50 shadow-sm
                       py-2 px-3 min-h-[44px] rounded-lg
                       focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 transition-all">
               <svg class="h-3.5 w-3.5" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -135,15 +135,15 @@
             </a>
             <form action="{{ route('ingredients.destroy', $ingredient) }}" method="POST"
                   onsubmit="return confirm('¿Eliminar el ingrediente «{{ addslashes($ingredient->name) }}»?');"
-                  class="flex flex-1">
+                  class="flex">
               @csrf
               @method('DELETE')
               <button type="submit"
                       aria-label="Eliminar ingrediente {{ $ingredient->name }}"
-                      class="flex-1 inline-flex items-center justify-center gap-1.5 text-sm font-semibold
-                             bg-white dark:bg-gray-700 text-red-600 dark:text-red-400
+                      class="w-full flex items-center justify-center gap-1.5 text-sm font-semibold
+                             bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400
                              border border-red-200 dark:border-red-700
-                             hover:bg-red-50 dark:hover:bg-red-900/20 shadow-sm hover:shadow
+                             hover:bg-red-100 dark:hover:bg-red-900/20 shadow-sm
                              py-2 px-3 min-h-[44px] rounded-lg
                              focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1 transition-all">
                 <svg class="h-3.5 w-3.5" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
