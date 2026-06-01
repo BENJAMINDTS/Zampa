@@ -151,6 +151,27 @@ class MenuController extends Controller
                 ->toArray()
             : [];
 
+        $allOrdersForAlpine = Order::where('table_id', $table->id)
+            ->whereNotIn('status', ['closed'])
+            ->where('payment_status', 'pending')
+            ->orderBy('created_at')
+            ->with(['items.product:id,name'])
+            ->get()
+            ->values()
+            ->map(fn (Order $order, int $index) => [
+                'id'        => $order->id,
+                'number'    => $index + 1,
+                'itemCount' => (int) $order->items->sum('quantity'),
+                'total'     => (float) $order->total,
+                'sentAt'    => $order->created_at->format('H:i'),
+                'items'     => $order->items->map(fn (OrderItem $item) => [
+                    'name'     => $item->product?->name ?? 'Producto',
+                    'quantity' => (int) $item->quantity,
+                    'price'    => (float) $item->price,
+                ])->values()->toArray(),
+            ])
+            ->toArray();
+
         $theme = $table->user->menu_style ?: 'modern';
 
         return view('menu.show', compact(
@@ -158,7 +179,7 @@ class MenuController extends Controller
             'tapaConfig', 'barItemsCount', 'kitchenOpen', 'nextOpeningTime',
             'tapaVariantsUsed', 'tapaProducts', 'shouldSuggest',
             'hasActiveOrder', 'activeOrderTotal', 'originalOrderTotal', 'billRequested', 'stripePublicKey',
-            'splitPaymentEnabled', 'splitPaymentMaxParts', 'activeOrderItemsForAlpine',
+            'splitPaymentEnabled', 'splitPaymentMaxParts', 'activeOrderItemsForAlpine', 'allOrdersForAlpine',
             'businessOpen', 'orderingAllowed', 'businessNextOpening', 'minutesUntilClose'
         ));
     }
