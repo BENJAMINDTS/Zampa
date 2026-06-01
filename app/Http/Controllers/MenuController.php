@@ -109,8 +109,8 @@ class MenuController extends Controller
                 $tapaVariantsUsed = OrderItem::whereHas('order', fn ($q) =>
                     $q->where('table_id', $table->id)
                       ->where('status', '!=', 'closed')
-                )->whereHas('product', fn ($q) =>
-                    $q->where('category_id', $tapaCategory->id)
+                )->whereHas('product.categories', fn ($q) =>
+                    $q->where('categories.id', $tapaCategory->id)
                 )->distinct('product_id')->count('product_id');
 
                 $tapaProducts = $tapaCategory->products()
