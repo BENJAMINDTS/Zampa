@@ -1263,6 +1263,24 @@
                         </button>
                     </div>
                     <div class="drawer__body">
+                        @php
+                        $allergenShortLabels = [
+                            'gluten'         => 'gluten',
+                            'crustaceos'     => 'crustáceos',
+                            'huevos'         => 'huevos',
+                            'pescado'        => 'pescado',
+                            'cacahuetes'     => 'cacahuetes',
+                            'soja'           => 'soja',
+                            'lacteos'        => 'lácteos',
+                            'frutos-cascara' => 'frutos',
+                            'apio'           => 'apio',
+                            'mostaza'        => 'mostaza',
+                            'sesamo'         => 'sésamo',
+                            'sulfitos'       => 'sulfitos',
+                            'altramuces'     => 'altramuces',
+                            'moluscos'       => 'moluscos',
+                        ];
+                        @endphp
                         <div class="allergens-grid">
                             @foreach(\App\Models\Ingredient::ALLERGEN_TYPES as $slug => $name)
                             <button type="button"
@@ -1277,7 +1295,7 @@
                                      role="img"
                                      aria-label="{{ $name }}">
                                 </svg>
-                                <span>{{ $name }}</span>
+                                <span>Sin {{ $allergenShortLabels[$slug] ?? $name }}</span>
                             </button>
                             @endforeach
                         </div>
@@ -1380,7 +1398,7 @@
                                  role="img"
                                  aria-label="{{ $name }}">
                             </svg>
-                            <span style="font-size:13px">{{ $name }}</span>
+                            <span style="font-size:13px">Sin {{ $allergenShortLabels[$slug] ?? $name }}</span>
                         </div>
                         @endforeach
                     </div>
