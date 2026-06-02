@@ -7,8 +7,8 @@
 
             {{-- Filtros de período --}}
             <nav aria-label="Filtro de período"
-                 class="flex gap-1 bg-gray-100 dark:bg-gray-700 rounded-xl p-1 self-start sm:self-auto">
-                @foreach(['today' => 'Hoy', 'week' => 'Esta semana', 'month' => 'Este mes'] as $value => $label)
+                 class="flex flex-wrap gap-1 bg-gray-100 dark:bg-gray-700 rounded-xl p-1 self-start sm:self-auto">
+                @foreach(['today' => 'Hoy', 'week' => 'Esta semana', 'month' => 'Este mes', 'year' => 'Este año'] as $value => $label)
                     <a href="{{ route('manager.income', ['period' => $value]) }}"
                        aria-current="{{ $period === $value ? 'page' : 'false' }}"
                        class="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors
@@ -19,9 +19,53 @@
                         {{ $label }}
                     </a>
                 @endforeach
+                <a href="{{ route('manager.income', ['period' => 'custom']) }}"
+                   aria-current="{{ $period === 'custom' ? 'page' : 'false' }}"
+                   class="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors
+                          focus:outline-none focus:ring-2 focus:ring-indigo-500
+                          {{ $period === 'custom'
+                              ? 'bg-white dark:bg-gray-800 text-indigo-600 dark:text-indigo-400 shadow-sm'
+                              : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white' }}">
+                    Personalizado
+                </a>
             </nav>
         </div>
     </x-slot>
+
+    {{-- Rango personalizado — fuera del topbar para no romper su altura fija --}}
+    @if($period === 'custom')
+        <div class="border-b border-gray-200 dark:border-gray-800
+                    bg-white dark:bg-gray-900 px-4 sm:px-6 py-3">
+            <form method="GET" action="{{ route('manager.income') }}"
+                  class="flex flex-wrap gap-3 items-end"
+                  aria-label="Seleccionar rango de fechas">
+                <input type="hidden" name="period" value="custom">
+                <div class="flex flex-col gap-1">
+                    <label for="income-from" class="text-xs font-medium text-gray-600 dark:text-gray-400">Desde</label>
+                    <input id="income-from" type="date" name="from"
+                           value="{{ $from ?? now()->startOfMonth()->format('Y-m-d') }}"
+                           class="rounded-lg border border-gray-300 dark:border-gray-600
+                                  bg-white dark:bg-gray-700 text-gray-900 dark:text-white
+                                  px-3 py-1.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                           aria-required="true">
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label for="income-to" class="text-xs font-medium text-gray-600 dark:text-gray-400">Hasta</label>
+                    <input id="income-to" type="date" name="to"
+                           value="{{ $to ?? now()->endOfMonth()->format('Y-m-d') }}"
+                           class="rounded-lg border border-gray-300 dark:border-gray-600
+                                  bg-white dark:bg-gray-700 text-gray-900 dark:text-white
+                                  px-3 py-1.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                           aria-required="true">
+                </div>
+                <button type="submit"
+                        class="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium
+                               rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    Aplicar
+                </button>
+            </form>
+        </div>
+    @endif
 
     <main id="main-content" class="py-6">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
@@ -40,9 +84,12 @@
 
                     {{-- Efectivo --}}
                     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm
-                                border border-gray-200 dark:border-gray-700 p-5">
-                        <div class="flex items-center gap-2 mb-3">
-                            <span class="text-xl" aria-hidden="true">💵</span>
+                                border border-gray-200 dark:border-gray-700 p-5
+                                hover:shadow-md transition-shadow duration-200">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center shrink-0">
+                                <svg class="w-5 h-5 text-emerald-600 dark:text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                            </div>
                             <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Efectivo</span>
                         </div>
                         <p class="text-2xl font-bold text-gray-900 dark:text-white">
@@ -56,9 +103,12 @@
 
                     {{-- Tarjeta --}}
                     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm
-                                border border-gray-200 dark:border-gray-700 p-5">
-                        <div class="flex items-center gap-2 mb-3">
-                            <span class="text-xl" aria-hidden="true">💳</span>
+                                border border-gray-200 dark:border-gray-700 p-5
+                                hover:shadow-md transition-shadow duration-200">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-9 h-9 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center shrink-0">
+                                <svg class="w-5 h-5 text-indigo-600 dark:text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+                            </div>
                             <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Tarjeta</span>
                         </div>
                         <p class="text-2xl font-bold text-gray-900 dark:text-white">
@@ -72,9 +122,12 @@
 
                     {{-- Cobro partido --}}
                     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm
-                                border border-gray-200 dark:border-gray-700 p-5">
-                        <div class="flex items-center gap-2 mb-3">
-                            <span class="text-xl" aria-hidden="true">🔀</span>
+                                border border-gray-200 dark:border-gray-700 p-5
+                                hover:shadow-md transition-shadow duration-200">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-9 h-9 rounded-xl bg-violet-50 dark:bg-violet-900/30 flex items-center justify-center shrink-0">
+                                <svg class="w-5 h-5 text-violet-600 dark:text-violet-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5"/></svg>
+                            </div>
                             <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Cobro partido</span>
                         </div>
                         <p class="text-2xl font-bold text-gray-900 dark:text-white">
@@ -86,16 +139,20 @@
                         </p>
                         @if($summary->split_count > 0)
                             <p class="mt-2 text-xs text-gray-400 dark:text-gray-500">
-                                💵 {{ number_format($summary->split_cash_revenue, 2, ',', '.') }}&nbsp;€
-                                · 💳 {{ number_format($summary->split_card_revenue, 2, ',', '.') }}&nbsp;€
+                                <span class="text-emerald-600 dark:text-emerald-400 font-medium">{{ number_format($summary->split_cash_revenue, 2, ',', '.') }}&nbsp;€</span>
+                                <span class="mx-1 opacity-40">/</span>
+                                <span class="text-indigo-600 dark:text-indigo-400 font-medium">{{ number_format($summary->split_card_revenue, 2, ',', '.') }}&nbsp;€</span>
                             </p>
                         @endif
                     </div>
 
                     {{-- Total cobrado --}}
-                    <div class="bg-indigo-600 dark:bg-indigo-700 rounded-2xl shadow-sm p-5">
-                        <div class="flex items-center gap-2 mb-3">
-                            <span class="text-xl" aria-hidden="true">💰</span>
+                    <div class="bg-indigo-600 dark:bg-indigo-700 rounded-2xl shadow-sm p-5
+                                hover:bg-indigo-700 dark:hover:bg-indigo-600 transition-colors duration-200">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
+                                <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z"/></svg>
+                            </div>
                             <span class="text-sm font-medium text-indigo-200">Total cobrado</span>
                         </div>
                         <p class="text-2xl font-bold text-white">
@@ -114,14 +171,15 @@
 
                     {{-- Propina en efectivo --}}
                     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm
-                                border border-gray-200 dark:border-gray-700 p-5">
-                        <div class="flex items-center gap-2 mb-3">
-                            <span class="text-xl" aria-hidden="true">🎁</span>
+                                border border-gray-200 dark:border-gray-700 p-5
+                                hover:shadow-md transition-shadow duration-200">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-9 h-9 rounded-xl bg-green-50 dark:bg-green-900/30 flex items-center justify-center shrink-0">
+                                <svg class="w-5 h-5 text-green-600 dark:text-green-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+                            </div>
                             <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Propina</span>
                             <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium
-                                         bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300">
-                                <span aria-hidden="true">💵</span> Efectivo
-                            </span>
+                                         bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300">Efectivo</span>
                         </div>
                         <p class="text-2xl font-bold text-green-700 dark:text-green-400">
                             {{ number_format($summary->cash_tip_revenue + $summary->split_cash_tip_revenue, 2, ',', '.') }}&nbsp;€
@@ -131,14 +189,15 @@
 
                     {{-- Propina en tarjeta --}}
                     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm
-                                border border-gray-200 dark:border-gray-700 p-5">
-                        <div class="flex items-center gap-2 mb-3">
-                            <span class="text-xl" aria-hidden="true">🎁</span>
+                                border border-gray-200 dark:border-gray-700 p-5
+                                hover:shadow-md transition-shadow duration-200">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-9 h-9 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center shrink-0">
+                                <svg class="w-5 h-5 text-indigo-600 dark:text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+                            </div>
                             <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Propina</span>
                             <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium
-                                         bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300">
-                                <span aria-hidden="true">💳</span> Tarjeta
-                            </span>
+                                         bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300">Tarjeta</span>
                         </div>
                         <p class="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
                             {{ number_format($summary->card_tip_revenue + $summary->split_card_tip_revenue, 2, ',', '.') }}&nbsp;€
@@ -224,25 +283,19 @@
                                             </td>
                                             <td class="px-5 py-4 whitespace-nowrap">
                                                 @if($order->payment_method === 'card')
-                                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full
-                                                                 text-xs font-medium
-                                                                 bg-indigo-100 dark:bg-indigo-900/40
-                                                                 text-indigo-700 dark:text-indigo-300">
-                                                        <span aria-hidden="true">💳</span> Tarjeta
+                                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300">
+                                                        <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+                                                        Tarjeta
                                                     </span>
                                                 @elseif($order->payment_method === 'split')
-                                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full
-                                                                 text-xs font-medium
-                                                                 bg-purple-100 dark:bg-purple-900/40
-                                                                 text-purple-700 dark:text-purple-300">
-                                                        <span aria-hidden="true">🔀</span> Partido
+                                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300">
+                                                        <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5"/></svg>
+                                                        Partido
                                                     </span>
                                                 @else
-                                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full
-                                                                 text-xs font-medium
-                                                                 bg-green-100 dark:bg-green-900/40
-                                                                 text-green-700 dark:text-green-300">
-                                                        <span aria-hidden="true">💵</span> Efectivo
+                                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300">
+                                                        <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                                                        Efectivo
                                                     </span>
                                                 @endif
                                             </td>
