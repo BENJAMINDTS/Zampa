@@ -1706,7 +1706,7 @@
                                     </svg>
                                 </template>
                                 <template x-if="!$store.cart.sending && !$store.cart.sent && !$store.cart._isBarOnly">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <svg width="16" height="16" viewBox="-1 1 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <path d="M6 9a4 4 0 0 1 4-4 4 4 0 0 1 4 0 4 4 0 0 1 4 4 3 3 0 0 1-2 2.83V19a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2v-7.17A3 3 0 0 1 6 9z"/>
                                         <path d="M8 19h8"/>
                                     </svg>
