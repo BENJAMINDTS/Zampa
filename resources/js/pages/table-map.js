@@ -445,7 +445,10 @@ export function registerTableMap() {
                     this._prefetchQrSvgs();
                 });
                 this.pollStatuses();
-                setInterval(() => this.pollStatuses(), 25000);
+                setInterval(() => this.pollStatuses(), 5000);
+                document.addEventListener('visibilitychange', () => {
+                    if (document.visibilityState === 'visible') this.pollStatuses();
+                });
                 if (!window._zampaResizeListener) {
                     window._zampaResizeListener = () => { if (!this.editMode) this._applyOverviewZoom(); };
                     window.addEventListener('resize', window._zampaResizeListener);
