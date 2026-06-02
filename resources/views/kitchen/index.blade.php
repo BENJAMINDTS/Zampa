@@ -43,9 +43,14 @@
         <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
 
           {{-- Cabecera de la comanda --}}
-          <div class="flex items-center justify-between px-4 py-3 bg-indigo-600 text-white">
-            <span class="font-bold text-base" x-text="order.table_name"></span>
-            <span class="text-xs bg-white/20 rounded px-2 py-1" x-text="order.created_at"></span>
+          <div class="flex items-center justify-between px-4 py-3 bg-red-600 dark:bg-red-700 text-white">
+            <div class="flex items-center gap-2">
+                <svg class="w-4 h-4 text-red-200 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                </svg>
+                <span class="font-bold text-base" x-text="order.table_name"></span>
+            </div>
+            <span class="text-xs bg-white/20 rounded-md px-2 py-1 tabular-nums" x-text="order.created_at"></span>
           </div>
 
           {{-- Ítems pendientes --}}
@@ -72,16 +77,25 @@
 
                     {{-- Modificaciones del cliente --}}
                     <template x-if="item.modifications && item.modifications.length > 0">
-                      <ul class="mt-1 space-y-0.5" aria-label="Modificaciones del cliente">
+                      <ul class="mt-1.5 space-y-1" aria-label="Modificaciones del cliente">
                         <template x-for="mod in item.modifications" :key="mod.ingredient">
-                          <li class="flex items-center gap-1 text-xs">
+                          <li class="flex items-center gap-1.5 text-xs">
                             <span
                               :class="mod.action === 'remove'
-                                ? 'bg-red-100 text-red-700'
-                                : 'bg-green-100 text-green-700'"
-                              class="inline-block px-1.5 py-0.5 rounded font-medium"
-                              x-text="mod.action === 'remove' ? 'Sin' : 'Extra'"
-                            ></span>
+                                ? 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800'
+                                : 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800'"
+                              class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md font-semibold leading-none"
+                            >
+                              <svg class="w-2.5 h-2.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true">
+                                <template x-if="mod.action === 'remove'">
+                                  <path d="M18 6L6 18M6 6l12 12"/>
+                                </template>
+                                <template x-if="mod.action !== 'remove'">
+                                  <path d="M12 5v14M5 12h14"/>
+                                </template>
+                              </svg>
+                              <span x-text="mod.action === 'remove' ? 'Sin' : 'Extra'"></span>
+                            </span>
                             <span class="text-gray-600 dark:text-gray-400" x-text="mod.ingredient"></span>
                           </li>
                         </template>
@@ -94,11 +108,18 @@
                   <button
                     @click="markReady(item, order)"
                     :disabled="item.marking"
-                    class="shrink-0 bg-green-500 hover:bg-green-600 disabled:opacity-50 text-white text-xs font-semibold px-3 py-1.5 rounded focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-2 transition"
+                    class="shrink-0 inline-flex items-center gap-1.5 bg-green-500 hover:bg-green-600 disabled:opacity-50 text-white text-xs font-semibold px-3 py-1.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-2 transition-colors cursor-pointer"
                     :aria-label="'Marcar como listo: ' + item.product_name"
                   >
-                    <span x-show="!item.marking">Listo ✓</span>
-                    <span x-show="item.marking">...</span>
+                    <template x-if="!item.marking">
+                      <span class="inline-flex items-center gap-1">
+                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>
+                        Listo
+                      </span>
+                    </template>
+                    <template x-if="item.marking">
+                      <svg class="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
+                    </template>
                   </button>
 
                 </div>
@@ -109,18 +130,28 @@
           {{-- Footer: pedido completo --}}
           <div
             x-show="order.all_ready"
-            class="px-4 py-3 bg-green-50 border-t border-green-200 flex items-center justify-between gap-3"
+            class="px-4 py-3 bg-green-50 dark:bg-green-900/20 border-t border-green-200 dark:border-green-800 flex items-center justify-between gap-3"
             role="status"
           >
-            <span class="text-green-700 text-xs font-semibold">¡Pedido completo! Listo para servir.</span>
+            <div class="flex items-center gap-2">
+              <svg class="w-4 h-4 text-green-600 dark:text-green-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>
+              <span class="text-green-700 dark:text-green-300 text-xs font-semibold">Pedido completo</span>
+            </div>
             <button
               @click="markServed(order)"
               :disabled="order.serving"
-              class="text-xs font-semibold px-3 py-1 rounded bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1"
+              class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1 transition-colors cursor-pointer"
               aria-label="Marcar pedido como servido"
             >
-              <span x-show="!order.serving">Servido ✓</span>
-              <span x-show="order.serving">...</span>
+              <template x-if="!order.serving">
+                <span class="inline-flex items-center gap-1">
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>
+                  Servido
+                </span>
+              </template>
+              <template x-if="order.serving">
+                <svg class="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
+              </template>
             </button>
           </div>
 
