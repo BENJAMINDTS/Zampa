@@ -3022,12 +3022,12 @@
         <div class="scrim scrim--center order-confirmed"
              x-show="$store.orders.confirmedOrder !== null"
              style="display:none"
-             x-transition:enter="transition duration-200"
-             x-transition:enter-start="opacity-0"
-             x-transition:enter-end="opacity-100"
-             x-transition:leave="transition duration-200"
-             x-transition:leave-start="opacity-100"
-             x-transition:leave-end="opacity-0"
+             x-transition:enter="x-modal-in"
+             x-transition:enter-start="x-modal-from"
+             x-transition:enter-end="x-modal-vis"
+             x-transition:leave="x-modal-in"
+             x-transition:leave-start="x-modal-vis"
+             x-transition:leave-end="x-modal-from"
              @click.self="$store.orders.dismissConfirmed()"
              role="dialog" aria-modal="true" aria-label="Pedido enviado">
 
