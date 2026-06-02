@@ -112,7 +112,7 @@ class ChatController extends Controller
             ->with(['products' => function ($q) {
                 $q->where('is_active', true)
                   ->orderBy('name')
-                  ->with('ingredients');
+                  ->with(['ingredients', 'variants']);
             }])
             ->get()
             ->filter(fn ($c) => $c->products->isNotEmpty())
@@ -124,7 +124,14 @@ class ChatController extends Controller
                     'id'          => $p->id,
                     'name'        => $p->name,
                     'description' => $p->description ?? '',
-                    'price'       => (float) $p->price,
+                    'price'       => $p->variants->isNotEmpty()
+                                        ? (float) $p->variants->min('price')
+                                        : (float) $p->price,
+                    'variants'    => $p->variants->map(fn ($v) => [
+                        'id'    => $v->id,
+                        'name'  => $v->name,
+                        'price' => (float) $v->price,
+                    ])->values(),
                     'ingredients' => $p->ingredients->map(fn ($i) => [
                         'id'          => $i->id,
                         'name'        => $i->name,

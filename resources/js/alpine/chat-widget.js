@@ -154,8 +154,9 @@ export function registerChatWidget() {
         isTyping:       false,
         closed:         false,
         error:          null,
-        menuData:       null,
-        msgSeq:         0,
+        menuData:           null,
+        pendingVariantProd: null,
+        msgSeq:             0,
         _now:           Date.now(),
         _ticker:        null,
         cartNotifs:     [],
@@ -263,13 +264,45 @@ export function registerChatWidget() {
         handleQuickReply(label) {
             if (this.isTyping || this.sending) return;
             this.pushMsg({ type: 'user', text: label, time: Date.now() });
+
+            // Variant selection for pending product
+            if (this.pendingVariantProd) {
+                const pending = this.pendingVariantProd;
+                const variant = pending.variants.find(v => {
+                    const expected = v.name + ' (' + Number(v.price).toFixed(2).replace('.', ',') + ' €)';
+                    return label === expected || label === v.name;
+                });
+                if (variant) {
+                    this.pendingVariantProd = null;
+                    const qty = pending.qty || 1;
+                    const existing = Alpine.store('cart').items.find(i => i.productId === pending.id && i.variantId === variant.id);
+                    if (existing) {
+                        existing.quantity += qty;
+                    } else {
+                        for (let _i = 0; _i < qty; _i++) {
+                            Alpine.store('cart').addWithVariant(pending.id, variant.id, variant.name, variant.price, {
+                                name: pending.name,
+                                destination: pending.destination,
+                            });
+                        }
+                    }
+                    const cats = this.menuData?.categories ?? [];
+                    this.botDelay(
+                        '✅ ' + (qty > 1 ? qty + '× ' : '') + pending.name + ' (' + variant.name + ') añadido al pedido. ¿Algo más?',
+                        { quickReplies: [...cats.map(c => this.getCategoryEmoji(c.name) + ' ' + c.name), 'Ver mi pedido', 'Confirmar pedido'] }
+                    );
+                    return;
+                }
+                // label didn't match any variant — clear pending and fall through
+                this.pendingVariantProd = null;
+            }
+
             const cats    = this.menuData?.categories ?? [];
             const matched = cats.find(c => label === this.getCategoryEmoji(c.name) + ' ' + c.name || c.name === label);
             if (matched) {
                 this.showCategoryCards(matched);
-            } else if (label === 'Ver mi pedido') {
-                this.showCartSummary();
-            } else if (label === 'Confirmar pedido') {
+            } else if (label === 'Ver mi pedido' || label === 'Confirmar pedido') {
+                this.closeChat();
                 Alpine.store('cart').open = true;
             } else if (label === 'Seguir eligiendo') {
                 const qrs = cats.map(c => this.getCategoryEmoji(c.name) + ' ' + c.name);
@@ -286,10 +319,11 @@ export function registerChatWidget() {
         showCategoryCards(category) {
             const emoji = this.getCategoryEmoji(category.name);
             const cards = category.products.map(p => ({
-                id:    p.id,
-                name:  p.name,
-                desc:  p.description || '',
-                price: p.price,
+                id:       p.id,
+                name:     p.name,
+                desc:     p.description || '',
+                price:    p.price,
+                variants: p.variants || [],
                 emoji,
             }));
             this.botDelay(
@@ -307,6 +341,15 @@ export function registerChatWidget() {
             let destination = 'kitchen';
             const cat = (this.menuData?.categories ?? []).find(c => c.products.some(p => p.id === id));
             if (cat) destination = cat.destination;
+
+            const variants = card.variants || [];
+            if (variants.length > 0) {
+                this.pendingVariantProd = { id, name: card.name, destination, variants };
+                const qrs = variants.map(v => v.name + ' (' + Number(v.price).toFixed(2).replace('.', ',') + ' €)');
+                this.botDelay('¿Cómo lo quieres? Elige una opción:', { quickReplies: qrs });
+                return;
+            }
+
             Alpine.store('cart').add({ id, name: card.name, price: card.price, destination, removable: [], extras: [] });
         },
 
@@ -480,6 +523,7 @@ export function registerChatWidget() {
             if (!intentPatterns.some(p => p.test(lower)) && !quantityOnlyIntent) return false;
             const allProducts = this.menuData.categories.flatMap(c =>
                 c.products.map(p => ({ id: p.id, name: p.name, price: p.price,
+                    variants: p.variants || [],
                     destination: c.destination, emoji: this.getCategoryEmoji(c.name) }))
             );
             const found = allProducts.find(p => {
@@ -498,6 +542,13 @@ export function registerChatWidget() {
                     if (new RegExp(`\\b${word}\\b`).test(lower)) { qty = num; break; }
                 }
             }
+            const cats = this.menuData.categories;
+            if (found.variants.length > 0) {
+                this.pendingVariantProd = { id: found.id, name: found.name, destination: found.destination || 'kitchen', variants: found.variants, qty };
+                const qrs = found.variants.map(v => v.name + ' (' + Number(v.price).toFixed(2).replace('.', ',') + ' €)');
+                this.pushMsg({ type: 'bot', text: '¿Cómo lo quieres?', quickReplies: qrs });
+                return true;
+            }
             const existingStore = Alpine.store('cart').items.find(i => i.productId === found.id);
             if (existingStore) {
                 existingStore.quantity += qty;
@@ -506,7 +557,6 @@ export function registerChatWidget() {
                     Alpine.store('cart').add({ id: found.id, name: found.name, price: found.price, destination: found.destination || 'kitchen', removable: [], extras: [] });
                 }
             }
-            const cats = this.menuData.categories;
             this.pushMsg({
                 type: 'bot',
                 text: '✅ ' + (qty > 1 ? qty + '× ' : '') + found.name + ' añadido al pedido. ¿Algo más?',
