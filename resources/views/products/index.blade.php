@@ -1,3 +1,8 @@
+@php
+  $filtersActive = request()->hasAny(['search', 'category', 'allergen']);
+  $pageOffset    = $products->firstItem() ? $products->firstItem() - 1 : 0;
+@endphp
+
 <x-app-layout>
   <div class="max-w-6xl mx-auto px-4 sm:px-6 py-6 mt-4 sm:mt-10">
 
@@ -83,6 +88,29 @@
       @endif
     </form>
 
+    {{-- Banner reordenación --}}
+    @if($filtersActive)
+    <div class="rounded-md bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 p-3 mb-4 flex items-center gap-2.5">
+      <svg class="h-4 w-4 text-amber-500 shrink-0" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 110 20A10 10 0 0112 2z"/>
+      </svg>
+      <p class="text-xs text-amber-800 dark:text-amber-300">Desactiva los filtros para reordenar la carta con drag & drop.</p>
+    </div>
+    @else
+    <div id="reorder-feedback" class="hidden rounded-md bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700 p-3 mb-4 flex items-center gap-2.5" aria-live="polite">
+      <svg class="h-4 w-4 text-emerald-500 shrink-0" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+      </svg>
+      <p class="text-xs text-emerald-800 dark:text-emerald-300">Orden guardado en la carta.</p>
+    </div>
+    <div id="reorder-error" class="hidden rounded-md bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 p-3 mb-4 flex items-center gap-2.5" aria-live="assertive">
+      <svg class="h-4 w-4 text-red-500 shrink-0" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+      </svg>
+      <p class="text-xs text-red-800 dark:text-red-300">Error al guardar el orden. Inténtalo de nuevo.</p>
+    </div>
+    @endif
+
     {{-- Flash de éxito --}}
     @if(session('success'))
     <div role="alert" aria-live="polite"
@@ -100,6 +128,13 @@
         <caption class="sr-only">Listado de productos de mi carta digital</caption>
         <thead class="bg-gray-50 dark:bg-gray-700">
           <tr>
+            {{-- Drag handle --}}
+            <th scope="col" class="w-10 px-3 py-3 @if($filtersActive) opacity-30 @endif" aria-label="Reordenar">
+              <svg class="h-4 w-4 text-gray-400 mx-auto" aria-hidden="true" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
+              </svg>
+            </th>
+
             {{-- Imagen --}}
             <th scope="col" class="hidden sm:table-cell px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               <span class="inline-flex items-center gap-1.5">
@@ -147,9 +182,32 @@
           </tr>
         </thead>
 
-        <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+        <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700"
+               @if(!$filtersActive) data-reorder-url="{{ route('products.reorder') }}" data-offset="{{ $pageOffset }}" @endif>
           @forelse($products as $product)
-          <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+          <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" data-product-id="{{ $product->id }}">
+
+            {{-- Drag handle --}}
+            <td class="w-10 px-3 py-4 text-center">
+              @if(!$filtersActive)
+              <span class="drag-handle inline-flex items-center justify-center w-7 h-7 rounded cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                    aria-label="Arrastrar para reordenar {{ $product->name }}" role="button" tabindex="0">
+                <svg class="h-4 w-4" aria-hidden="true" fill="currentColor" viewBox="0 0 24 24">
+                  <circle cx="9" cy="5" r="1.5"/><circle cx="15" cy="5" r="1.5"/>
+                  <circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/>
+                  <circle cx="9" cy="19" r="1.5"/><circle cx="15" cy="19" r="1.5"/>
+                </svg>
+              </span>
+              @else
+              <span class="inline-flex items-center justify-center w-7 h-7 text-gray-300 dark:text-gray-600 cursor-not-allowed" aria-hidden="true">
+                <svg class="h-4 w-4" aria-hidden="true" fill="currentColor" viewBox="0 0 24 24">
+                  <circle cx="9" cy="5" r="1.5"/><circle cx="15" cy="5" r="1.5"/>
+                  <circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/>
+                  <circle cx="9" cy="19" r="1.5"/><circle cx="15" cy="19" r="1.5"/>
+                </svg>
+              </span>
+              @endif
+            </td>
 
             {{-- Imagen / Placeholder --}}
             <td class="hidden sm:table-cell px-4 sm:px-6 py-4 whitespace-nowrap">
@@ -290,7 +348,7 @@
           @empty
           {{-- Estado vacío --}}
           <tr>
-            <td colspan="5" class="px-6 py-16 text-center">
+            <td colspan="6" class="px-6 py-16 text-center">
               <div class="flex flex-col items-center gap-3">
                 <div class="h-16 w-16 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
                   <svg class="h-8 w-8 text-gray-300 dark:text-gray-600" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -323,4 +381,14 @@
     @endif
 
   </div>
+
+@if(!$filtersActive)
+<style>
+  .sortable-ghost { opacity: 0.4; background: #eef2ff; }
+  .dark .sortable-ghost { background: #1e1b4b; }
+  .sortable-drag { box-shadow: 0 8px 24px rgba(0,0,0,.15); background: white; }
+  .dark .sortable-drag { background: #1f2937; }
+</style>
+@endif
+
 </x-app-layout>
