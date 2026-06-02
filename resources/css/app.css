@@ -2,6 +2,8 @@
 @import './components/table-map.css';
 @import './components/landing.css';
 
+[x-cloak] { display: none !important; }
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

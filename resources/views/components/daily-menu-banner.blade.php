@@ -5,7 +5,6 @@
 @props(['hash'])
 
 @once
-<style>[x-cloak]{display:none!important}</style>
 <script>
 window.dailyMenuBanner = function (hash) {
     const SECTION_LABELS = {
