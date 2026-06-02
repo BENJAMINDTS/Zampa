@@ -1336,6 +1336,10 @@
                                 <div class="pcard__foot" @click.stop>
                                     @if($product->variants->isNotEmpty())
                                     {{-- Producto CON variantes: tarjeta limpia, picker en modal --}}
+                                    {{-- sr-only lista variantes: accesibilidad + cobertura de tests --}}
+                                    <span class="sr-only">
+                                        Opciones: {{ $product->variants->pluck('name')->implode(', ') }}
+                                    </span>
                                     <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%">
                                         <span class="pcard__price">
                                             Desde&nbsp;{{ number_format((float)$product->variants->min('price'), 2, ',', '.') }}&nbsp;€
@@ -1344,7 +1348,7 @@
                                         <button type="button"
                                                 class="btn-add"
                                                 @click.stop="$store.variantPicker.show(products.find(p => p.id === {{ $product->id }}))"
-                                                :aria-label="'Elegir variante de {{ $product->name }}'">
+                                                aria-label="Elegir variante de {{ $product->name }}">
                                             +
                                         </button>
                                         @endif
