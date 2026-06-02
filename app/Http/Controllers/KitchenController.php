@@ -33,10 +33,23 @@ class KitchenController extends Controller
     {
         abort_if(! Auth::user()->canAccessKitchen(), 403, 'Acceso denegado.');
 
-        $orders   = $this->getActiveOrders();
+        $orders = $this->getActiveOrders();
+
+        return view('kitchen.index', compact('orders'));
+    }
+
+    /**
+     * Vista de gestión de disponibilidad de productos de cocina.
+     *
+     * @return View
+     */
+    public function availability(): View
+    {
+        abort_if(! Auth::user()->canAccessKitchen(), 403, 'Acceso denegado.');
+
         $products = $this->getKitchenProducts();
 
-        return view('kitchen.index', compact('orders', 'products'));
+        return view('kitchen.availability', compact('products'));
     }
 
     /**
