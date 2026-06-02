@@ -587,6 +587,7 @@
   box-shadow: var(--ctp-shadow-base);
   animation: tapa-attention 5s var(--ease-smooth) 0.8s infinite;
   transition: filter var(--duration-fast);
+  position: relative; overflow: hidden;
 }
 .cart-foot__tapaPending:hover { filter: brightness(1.07); }
 .cart-foot__tapaPending:active { transform: translateY(0); }
@@ -654,12 +655,12 @@
   font-family: var(--font-display); font-weight: 900; font-size: 15px;
 }
 .cart-foot__tapaPending__arrow {
-  flex-shrink: 0;
-  font-family: var(--font-display); font-weight: 900; font-size: 18px;
-  opacity: 0.85;
+  position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
+  font-family: var(--font-display); font-weight: 900; font-size: 22px;
+  line-height: 1;
   transition: transform 200ms var(--ease-smooth);
 }
-.cart-foot__tapaPending:hover .cart-foot__tapaPending__arrow { transform: translateX(3px); }
+.cart-foot__tapaPending:hover .cart-foot__tapaPending__arrow { transform: translateY(-50%) translateX(3px); }
 
 /* Rebote + ring pulse usando CSS vars — se adapta a cada tema */
 @keyframes tapa-attention {
