@@ -1873,17 +1873,24 @@
                             <button type="button"
                                     class="cart-foot__tapaPending"
                                     @click="$store.cart.showTapaModal = true"
-                                    aria-live="polite">
-                                <span aria-hidden="true">🫕</span>
-                                <span>Tienes <strong x-text="Math.max(0, $store.cart._barItemsCount - $store.cart._variantsUsed)"></strong> tapa<template x-if="Math.max(0, $store.cart._barItemsCount - $store.cart._variantsUsed) !== 1"><span>s</span></template> disponible<template x-if="Math.max(0, $store.cart._barItemsCount - $store.cart._variantsUsed) !== 1"><span>s</span></template> — Elegir →</span>
+                                    aria-live="polite"
+                                    :aria-label="'Tienes ' + Math.max(0, $store.cart._barItemsCount - $store.cart._variantsUsed) + ' tapa' + (Math.max(0, $store.cart._barItemsCount - $store.cart._variantsUsed) !== 1 ? 's' : '') + ' disponibles — Elegir'">
+                                <span class="cart-foot__tapaPending__ic" aria-hidden="true">🫕</span>
+                                <span class="cart-foot__tapaPending__txt">
+                                    Tienes <strong x-text="Math.max(0, $store.cart._barItemsCount - $store.cart._variantsUsed)"></strong>
+                                    tapa<template x-if="Math.max(0, $store.cart._barItemsCount - $store.cart._variantsUsed) !== 1"><span>s</span></template>
+                                    disponible<template x-if="Math.max(0, $store.cart._barItemsCount - $store.cart._variantsUsed) !== 1"><span>s</span></template>
+                                    — Elegir
+                                </span>
+                                <span class="cart-foot__tapaPending__arrow" aria-hidden="true">→</span>
                             </button>
                         </template>
                         <button type="button"
                                 class="cart-foot__cta"
                                 :class="{ 'cart-foot__cta--sending': $store.cart.sending }"
                                 @click="$store.cart.send()"
-                                :disabled="$store.cart.sending || $store.cart._tapaPending"
-                                :title="$store.cart._tapaPending ? 'Elige tus tapas antes de enviar' : ''">
+                                :disabled="$store.cart.sending || $store.cart._tapaSendBlocked"
+                                :title="$store.cart._tapaSendBlocked ? 'Elige tus tapas antes de enviar' : ''">
                             <span class="cart-foot__ctaIc" aria-hidden="true">
                                 <template x-if="$store.cart.sent">✓</template>
                                 <template x-if="$store.cart.sending && !$store.cart.sent">
