@@ -38,12 +38,12 @@ export function calculateCartTotal(items) {
  * @param {Array}  tapaProducts   - Available tapa products.
  * @returns {boolean}
  */
-export function shouldShowTapaModal(cfg, barItemsCount, variantsUsed, tapaProducts) {
-    if (!cfg.enabled)                                           return false;
-    if (!cfg.kitchenOpen)                                       return false;
-    if (barItemsCount <= 0)                                     return false;
-    if (tapaProducts.length === 0)                              return false;
-    if (cfg.maxVariants > 0 && variantsUsed >= cfg.maxVariants) return false;
+export function shouldShowTapaModal(cfg, barItemsCount, tapasTotal, tapaProducts) {
+    if (!cfg.enabled)              return false;
+    if (!cfg.kitchenOpen)          return false;
+    if (barItemsCount <= 0)        return false;
+    if (tapaProducts.length === 0) return false;
+    if (tapasTotal >= barItemsCount) return false;
     return true;
 }
 
@@ -117,6 +117,7 @@ export function registerCart() {
         /** Server-side base counts (submitted orders before this session). */
         _initBarCount:     tapaConfig.barItemsCount ?? 0,
         _initVariantsUsed: tapaConfig.variantsUsed  ?? 0,
+        _initTapasTotal:   tapaConfig.tapasTotal    ?? 0,
 
         /** Reactive: bar items in current cart + server-side base. */
         get _barItemsCount() {
@@ -126,10 +127,16 @@ export function registerCart() {
             return this._initBarCount + cart;
         },
 
-        /** Reactive: distinct tapa product IDs in cart + server-side base. */
+        /** Reactive: distinct tapa product IDs in cart + server-side base (for variant-limit UI). */
         get _variantsUsed() {
             const ids = new Set(this.items.filter(i => i.isTapa).map(i => i.productId));
             return this._initVariantsUsed + ids.size;
+        },
+
+        /** Reactive: total tapa quantity in cart + server-side base (for entitlement counting). */
+        get _tapasTotal() {
+            const cartTotal = this.items.filter(i => i.isTapa).reduce((s, i) => s + i.quantity, 0);
+            return this._initTapasTotal + cartTotal;
         },
 
         /** Reactive: true when tapas are available but not yet chosen in the current cart. */
@@ -137,7 +144,7 @@ export function registerCart() {
             return shouldShowTapaModal(
                 this.tapaConfig,
                 this._barItemsCount,
-                this._variantsUsed,
+                this._tapasTotal,
                 this.tapaProducts,
             );
         },
@@ -153,10 +160,10 @@ export function registerCart() {
             const newBarItems = this.items
                 .filter(i => i.destination === 'bar' && !i.isTapa)
                 .reduce((s, i) => s + i.quantity, 0);
-            const newTapaVariants = new Set(
-                this.items.filter(i => i.isTapa).map(i => i.productId)
-            ).size;
-            return newBarItems > newTapaVariants;
+            const newTapasTotal = this.items
+                .filter(i => i.isTapa)
+                .reduce((s, i) => s + i.quantity, 0);
+            return newBarItems > newTapasTotal;
         },
 
         close() {
@@ -222,7 +229,7 @@ export function registerCart() {
             this.showTapaModal = shouldShowTapaModal(
                 this.tapaConfig,
                 this._barItemsCount,
-                this._variantsUsed,
+                this._tapasTotal,
                 this.tapaProducts,
             );
         },
@@ -235,8 +242,12 @@ export function registerCart() {
             const key      = tapaProduct.id + ':none';
             const existing = this.items.find(i => i._key === key);
             if (existing) {
-                // already in cart — just mark as tapa if not already
-                existing.isTapa = true;
+                if (!existing.isTapa) {
+                    existing.isTapa = true;
+                } else {
+                    existing.quantity++;
+                }
+                return;
             } else {
                 this.items.push({
                     _key:        key,
@@ -339,7 +350,7 @@ export function registerCart() {
         },
 
         async send() {
-            if (!this.items.length || this.sending || this._tapaSendBlocked) return;
+            if (!this.items.length || this.sending) return;
             this.sending = true;
             this.error   = null;
             try {
