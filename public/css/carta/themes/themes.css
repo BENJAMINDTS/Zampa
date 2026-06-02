@@ -525,9 +525,26 @@
   transition: transform 140ms var(--ease-bounce), filter var(--duration-fast);
   position: relative; overflow: hidden;
 }
+.cart-foot__cta::after {
+  content: '';
+  position: absolute; inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.34) 0%, rgba(255,255,255,0.10) 60%, transparent 100%);
+  transform: scale(0);
+  opacity: 0;
+  animation: cta-radiance 3.5s var(--ease-smooth) 1s infinite;
+  pointer-events: none;
+}
+@keyframes cta-radiance {
+  0%   { transform: scale(0);    opacity: 0;    }
+  30%  { transform: scale(1);    opacity: 1;    }
+  70%  { transform: scale(1);    opacity: 0.6;  }
+  100% { transform: scale(1.4);  opacity: 0;    }
+}
 .cart-foot__cta:hover { filter: brightness(1.06); transform: translateY(-1px); }
 .cart-foot__cta:active { transform: translateY(0); }
 .cart-foot__cta:disabled { opacity: 0.6; cursor: wait; transform: none; }
+.cart-foot__cta:disabled::after { animation: none; }
 .cart-foot__ctaIc {
   width: 30px; height: 30px; border-radius: 9999px;
   background: rgba(255,255,255,0.18);
