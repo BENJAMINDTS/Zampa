@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Carta — {{ $table->user->name }}</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="shortcut icon" href="/favicon.svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     @if($theme === 'classic')
     <link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Spectral:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
@@ -32,206 +34,8 @@
         })();
     </script>
 
-    <style>
-        /* Oculta elementos Alpine hasta que el runtime inicialice */
-        [x-cloak] { display: none !important; }
-
-        /* ── Zampi Chatbot Animations ────────────────────────────── */
-        @keyframes zampiSlideUp {
-            from { opacity: 0; transform: translateY(12px); }
-            to   { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes zampiFloat {
-            0%, 100% { transform: translateY(0); }
-            50%      { transform: translateY(-5px); }
-        }
-        @keyframes zampiPulse {
-            0%, 100% { opacity: 1; }
-            50%      { opacity: 0.4; }
-        }
-        @keyframes zampiTyping {
-            0%, 80%, 100% { opacity: 1; }
-            40%           { opacity: 0.2; }
-        }
-
-        .zampi-float    { animation: zampiFloat 3s ease-in-out infinite; }
-        .zampi-pulse    { animation: zampiPulse 2s ease-in-out infinite; }
-        .zampi-msg-appear { animation: zampiSlideUp 0.3s ease; }
-        .zampi-typing-1 { animation: zampiTyping 1.2s ease-in-out 0.0s infinite; }
-        .zampi-typing-2 { animation: zampiTyping 1.2s ease-in-out 0.2s infinite; }
-        .zampi-typing-3 { animation: zampiTyping 1.2s ease-in-out 0.4s infinite; }
-
-        /* Notificaciones del cart bar — animación directa via :class */
-        @keyframes zampiNotifIn {
-            0%   { opacity: 0; transform: translateY(14px) scale(0.70); }
-            65%  { opacity: 1; transform: translateY(-3px)  scale(1.06); }
-            100% { opacity: 1; transform: translateY(0)     scale(1);    }
-        }
-        @keyframes zampiNotifOut {
-            0%   { opacity: 1; transform: translateY(0)    scale(1);   }
-            100% { opacity: 0; transform: translateY(8px)  scale(0.8); }
-        }
-        .zampi-notif-pill     { display:flex; align-items:center; gap:5px; background:#991b1b;
-                                border:1px solid #ef4444; border-radius:9999px;
-                                padding:4px 10px; flex-shrink:0; }
-        .zampi-notif-pill-in  { animation: zampiNotifIn  0.40s cubic-bezier(0.34,1.56,0.64,1) both; }
-        .zampi-notif-pill-out { animation: zampiNotifOut 0.22s ease-in both; }
-        @media (max-width: 640px) {
-            .zampi-cartbar-row { padding-top: 20px !important; padding-bottom: 20px !important; }
-            .zampi-hidden-mobile { display: none !important; }
-            .zampi-notif-bar-active { flex: 1 !important; min-width: 0; overflow: visible; }
-            .zampi-notif-bar .zampi-notif-pill:not(:last-child) { display: none !important; }
-            .zampi-notif-bar-active .zampi-notif-pill { width: 100%; min-width: 0; display: flex; align-items: center; gap: 5px; overflow: hidden; }
-            .zampi-notif-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-            .zampi-notif-suffix { flex-shrink: 0; white-space: nowrap; }
-        }
-
-        .zampi-bubble-user {
-            background: linear-gradient(135deg, #2E50B0, #1A3380);
-            color: #fff;
-            border-radius: 18px 18px 4px 18px;
-            box-shadow: 0 4px 16px rgba(15,31,88,0.55);
-            max-width: 78%;
-            padding: 10px 14px;
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 14px;
-            line-height: 1.5;
-            word-break: break-word;
-        }
-        .zampi-bubble-bot {
-            background: #0E1A38;
-            border: 1px solid rgba(46,80,176,0.35);
-            color: #C8D8FF;
-            border-radius: 18px 18px 18px 4px;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.3);
-            max-width: 75%;
-            padding: 10px 14px;
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 14px;
-            line-height: 1.5;
-            word-break: break-word;
-        }
-        .zampi-avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #1A3380, #3070E8);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            overflow: hidden;
-        }
-        .zampi-product-card {
-            background: #0E1A38;
-            border: 1px solid rgba(46,80,176,0.45);
-            border-radius: 16px;
-            padding: 10px;
-            min-width: 140px;
-            max-width: 160px;
-            flex-shrink: 0;
-            box-shadow: 0 4px 20px rgba(15,31,88,0.4);
-            cursor: pointer;
-            transition: transform 200ms ease;
-        }
-        .zampi-card-img {
-            height: 56px;
-            border-radius: 10px;
-            background: linear-gradient(135deg, #162648, #0A1430);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 6px;
-            font-size: 28px;
-        }
-        .zampi-add-btn {
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #2E50B0, #1A3380);
-            border: none;
-            color: #fff;
-            font-size: 18px;
-            line-height: 1;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 0 8px rgba(46,80,176,0.6);
-            transition: transform 150ms cubic-bezier(0.34, 1.56, 0.64, 1);
-            flex-shrink: 0;
-        }
-        .zampi-add-btn:hover  { transform: scale(1.1); }
-        .zampi-add-btn:active { transform: scale(0.92); }
-        .zampi-qr-btn {
-            background: rgba(46,80,176,0.22);
-            color: #8FA8E8;
-            border: 1px solid rgba(46,80,176,0.5);
-            border-radius: 9999px;
-            padding: 5px 12px;
-            font-size: 12px;
-            font-family: 'Space Grotesk', sans-serif;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 150ms ease;
-            white-space: nowrap;
-        }
-        .zampi-qr-btn:hover  { background: #1A3380; color: #fff; }
-        .zampi-order-summary {
-            background: rgba(14,26,56,0.9);
-            border: 1px solid rgba(46,80,176,0.45);
-            border-radius: 16px;
-            padding: 12px;
-            margin-top: 8px;
-            backdrop-filter: blur(12px);
-        }
-        .zampi-send-btn {
-            width: 38px;
-            height: 38px;
-            border-radius: 50%;
-            border: none;
-            cursor: pointer;
-            background: linear-gradient(135deg, #2E50B0, #1A3380);
-            color: #fff;
-            font-size: 20px;
-            line-height: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 0 14px rgba(46,80,176,0.65);
-            flex-shrink: 0;
-            transition: transform 150ms cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-        .zampi-send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-        .zampi-scrollbar::-webkit-scrollbar       { width: 4px; }
-        .zampi-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .zampi-scrollbar::-webkit-scrollbar-thumb { background: rgba(46,80,176,0.5); border-radius: 4px; }
-        .zampi-chat-input::placeholder            { color: rgba(84,120,208,0.7); }
-
-        /* ── Zampi Chat — Layout ────────────────────────────────────── */
-
-        /* El overlay cubre siempre toda la pantalla, sin importar el tamaño */
-        .zampi-overlay {
-            position: fixed;
-            inset: 0;
-            z-index: 50;
-            background: rgba(1,4,14,0.92);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-        }
-        .zampi-panel {
-            position: absolute;
-            inset: 0;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        /* ── Layout crítico — garantiza que .carta llene el viewport ── */
-        html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; }
-        .carta { height: 100dvh; height: 100vh; width: 100%; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-    </style>
+    {{-- CSS extracted: animations → resources/css/components/zampi/animations.css
+         Layout/spin → public/css/carta/layout/layout.css --}}
 
     @php
         // Mapeo de nombre de categoría → emoji fallback (coincidencia exacta luego parcial).
@@ -1217,53 +1021,45 @@
                     </button>
                     @endforeach
                 </div>
-                {{-- Botón alérgenos fijo a la derecha (siempre visible) --}}
-                <button type="button"
-                        class="filter-bar__pinned"
-                        :class="activeAllergens.length > 0 ? 'filter-bar__pinned--on' : ''"
-                        @click="allergensOpen = true"
-                        aria-label="Filtrar por alérgenos">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                         stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
-                         stroke-linejoin="round" aria-hidden="true">
-                        <path d="M3 6h18M6 12h12M10 18h4"/>
-                    </svg>
-                    <span>Alérgenos</span>
-                    <span class="filter-bar__count"
-                          x-show="activeAllergens.length > 0"
-                          x-text="activeAllergens.length"
-                          aria-hidden="true"></span>
-                </button>
-            </nav>
+                {{-- Desplegable de alérgenos --}}
+                <div class="allergen-dropdown" @click.away="allergensOpen = false">
+                    <button type="button"
+                            class="filter-bar__pinned"
+                            :class="activeAllergens.length > 0 ? 'filter-bar__pinned--on' : (allergensOpen ? 'filter-bar__pinned--open' : '')"
+                            @click="allergensOpen = !allergensOpen"
+                            :aria-expanded="allergensOpen.toString()"
+                            aria-controls="allergen-panel"
+                            aria-label="Filtrar por alérgenos">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
+                             stroke-linejoin="round" aria-hidden="true">
+                            <path d="M3 6h18M6 12h12M10 18h4"/>
+                        </svg>
+                        <span>Alérgenos</span>
+                        <span class="filter-bar__count"
+                              x-show="activeAllergens.length > 0"
+                              x-text="activeAllergens.length"
+                              aria-hidden="true"></span>
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                             stroke-linejoin="round" aria-hidden="true"
+                             :style="allergensOpen ? 'transform:rotate(180deg);transition:transform 200ms' : 'transform:rotate(0deg);transition:transform 200ms'">
+                            <path d="M6 9l6 6 6-6"/>
+                        </svg>
+                    </button>
 
-            {{-- DS: .scrim > .drawer.drawer--allergens (sheet móvil) --}}
-            <div class="scrim"
-                 x-show="allergensOpen"
-                 style="display:none"
-                 x-transition:enter="transition duration-200"
-                 x-transition:enter-start="opacity-0"
-                 x-transition:enter-end="opacity-100"
-                 x-transition:leave="transition duration-200"
-                 x-transition:leave-start="opacity-100"
-                 x-transition:leave-end="opacity-0"
-                 @click.self="allergensOpen = false"
-                 role="dialog" aria-modal="true" aria-label="Filtrar por alérgenos">
-                <div class="drawer drawer--allergens" @click.stop>
-                    <div class="drawer__grabber" aria-hidden="true"></div>
-                    <div class="drawer__head">
-                        <div>
-                            <div class="drawer__title">Filtrar por alérgenos</div>
-                            <div style="font-family:var(--font-body);font-size:12px;color:var(--fg-muted);margin-top:2px">
-                                Ocultamos los platos que los contengan.
-                            </div>
-                        </div>
-                        <button type="button" class="icon-btn" @click="allergensOpen = false" aria-label="Cerrar">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
-                            </svg>
-                        </button>
-                    </div>
-                    <div class="drawer__body">
+                    <div id="allergen-panel"
+                         class="allergen-dropdown__panel"
+                         x-show="allergensOpen"
+                         style="display:none"
+                         x-transition:enter="transition duration-150 ease-out"
+                         x-transition:enter-start="opacity-0"
+                         x-transition:enter-end="opacity-100"
+                         x-transition:leave="transition duration-100 ease-in"
+                         x-transition:leave-start="opacity-100"
+                         x-transition:leave-end="opacity-0"
+                         role="region"
+                         aria-label="Filtrar por alérgenos">
                         @php
                         $allergenShortLabels = [
                             'gluten'         => 'gluten',
@@ -1282,6 +1078,16 @@
                             'moluscos'       => 'moluscos',
                         ];
                         @endphp
+                        <div class="allergen-dropdown__head">
+                            <span class="allergen-dropdown__title">Alérgenos</span>
+                            <button type="button"
+                                    class="allergen-dropdown__clear"
+                                    x-show="activeAllergens.length > 0"
+                                    @click="clearAll(); allergensOpen = false"
+                                    style="display:none">
+                                Limpiar
+                            </button>
+                        </div>
                         <div class="allergens-grid">
                             @foreach(\App\Models\Ingredient::ALLERGEN_TYPES as $slug => $name)
                             <button type="button"
@@ -1301,13 +1107,8 @@
                             @endforeach
                         </div>
                     </div>
-                    <div class="drawer__foot">
-                        <button type="button" class="btn-primary" @click="allergensOpen = false">
-                            Ver resultados
-                        </button>
-                    </div>
                 </div>
-            </div>
+            </nav>
         </div>{{-- /allergensOpen x-data --}}
         @endif
 
@@ -1501,8 +1302,7 @@
                             <div class="pcard__photo">
                                 <img src="{{ Storage::url($product->image) }}"
                                      alt="Foto de {{ $product->name }}"
-                                     loading="lazy" decoding="async"
-                                     style="width:100%;height:100%;object-fit:cover">
+                                     loading="lazy" decoding="async">
                             </div>
                             @else
                             <div class="pcard__photo pcard__photo--food-{{ $photoStyle }}" aria-hidden="true">{{ $getEmoji($category->name) }}</div>
@@ -1535,38 +1335,20 @@
                                 {{-- Footer: precio + controles --}}
                                 <div class="pcard__foot" @click.stop>
                                     @if($product->variants->isNotEmpty())
-                                    {{-- Producto CON variantes --}}
-                                    <div x-data="{
-                                             selectedVId: {{ $product->variants->first()->id }},
-                                             variants: {{ $product->variants->map(fn($v) => ['id' => $v->id, 'name' => $v->name, 'price' => (float)$v->price])->values()->toJson() }},
-                                             get sv() { return this.variants.find(v => v.id === this.selectedVId) || this.variants[0]; }
-                                         }"
-                                         style="width:100%;display:flex;flex-direction:column;gap:6px">
-                                        {{-- Selector de variante --}}
-                                        <div style="display:flex;flex-wrap:wrap;gap:4px">
-                                            @foreach($product->variants as $variant)
-                                            <button type="button"
-                                                    @click.stop="selectedVId = {{ $variant->id }}"
-                                                    :class="selectedVId === {{ $variant->id }} ? 'chip chip--small chip--active' : 'chip chip--small'"
-                                                    style="font-size:10px;padding:3px 8px"
-                                                    :aria-pressed="(selectedVId === {{ $variant->id }}).toString()">
-                                                {{ $variant->name }}
-                                                <span style="opacity:0.75">{{ number_format($variant->price, 2, ',', '.') }}&nbsp;€</span>
-                                            </button>
-                                            @endforeach
-                                        </div>
-                                        {{-- Precio + añadir variante --}}
-                                        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-                                            <span class="pcard__price" x-text="Number(sv.price).toFixed(2).replace('.',',') + ' €'"></span>
-                                            @if($orderingAllowed)
-                                            <button type="button"
-                                                    class="btn-add"
-                                                    @click.stop="$store.cart.addWithVariant({{ $product->id }}, selectedVId, sv.name, sv.price, products.find(p => p.id === {{ $product->id }}))"
-                                                    :aria-label="'Añadir ' + sv.name + ' de {{ $product->name }}'">+</button>
-                                            @endif
-                                        </div>
+                                    {{-- Producto CON variantes: tarjeta limpia, picker en modal --}}
+                                    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%">
+                                        <span class="pcard__price">
+                                            Desde&nbsp;{{ number_format((float)$product->variants->min('price'), 2, ',', '.') }}&nbsp;€
+                                        </span>
+                                        @if($orderingAllowed)
+                                        <button type="button"
+                                                class="btn-add"
+                                                @click.stop="$store.variantPicker.show(products.find(p => p.id === {{ $product->id }}))"
+                                                :aria-label="'Elegir variante de {{ $product->name }}'">
+                                            +
+                                        </button>
+                                        @endif
                                     </div>
-
                                     @else
                                     {{-- Producto SIN variantes --}}
                                     <span class="pcard__price">{{ number_format((float)$product->price, 2, ',', '.') }}&nbsp;€</span>
@@ -1776,7 +1558,14 @@
                                 <template x-for="item in $store.cart.items" :key="item._key">
                                     <div class="citem">
                                         <div class="citem__top">
-                                            <div class="citem__photo" aria-hidden="true">🍽️</div>
+                                            <template x-if="item.image">
+                                                <div class="citem__photo">
+                                                    <img :src="item.image" :alt="item.name" loading="lazy">
+                                                </div>
+                                            </template>
+                                            <template x-if="!item.image">
+                                                <div class="citem__photo" aria-hidden="true">🍽️</div>
+                                            </template>
                                             <div class="citem__main">
                                                 <div class="citem__name" x-text="item.name"></div>
                                                 <div class="citem__unit">
@@ -1849,15 +1638,8 @@
                                           x-text="$store.cart.count + ($store.cart.count === 1 ? ' artículo' : ' artículos')"></span>
                                 </div>
                                 <div class="cart-sum__rows">
-                                    <div class="cart-sum__row">
-                                        <span>Subtotal (sin IVA)</span>
-                                        <span class="num"
-                                              x-text="Number($store.cart.total / 1.1).toFixed(2).replace('.',',') + ' €'"></span>
-                                    </div>
                                     <div class="cart-sum__row cart-sum__row--muted">
-                                        <span>IVA 10% incluido</span>
-                                        <span class="num"
-                                              x-text="Number($store.cart.total - $store.cart.total / 1.1).toFixed(2).replace('.',',') + ' €'"></span>
+                                        <span>IVA incluido</span>
                                     </div>
                                 </div>
                             </div>
@@ -3557,8 +3339,71 @@
             </div>{{-- /pdetail --}}
         </div>{{-- /scrim.scrim--center --}}
 
+        {{-- VARIANT PICKER MODAL -- inside .carta, themed via CSS variables --}}
+        <div class="modal"
+             x-show="$store.variantPicker.open"
+             style="display:none"
+             x-transition:enter="transition duration-200"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             @click.self="$store.variantPicker.close()"
+             @keydown.escape.window="$store.variantPicker.open && $store.variantPicker.close()"
+             role="dialog" aria-modal="true"
+             :aria-label="'Elegir variante de ' + $store.variantPicker.productName">
+
+            <div class="modal__panel" @click.stop>
+
+                <div class="drawer__grabber"></div>
+
+                <div class="modal__head">
+                    <div>
+                        <div class="modal__title" x-text="$store.variantPicker.productName"></div>
+                        <div class="modal__sub">Elige una opción para añadir al pedido</div>
+                    </div>
+                    <button type="button" class="icon-btn"
+                            @click="$store.variantPicker.close()"
+                            aria-label="Cerrar">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2.5"
+                             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="variant-picker__list">
+                    <template x-for="v in $store.variantPicker.variants" :key="v.id">
+                        <button type="button"
+                                @click="$store.variantPicker.selectedVId = v.id"
+                                :class="$store.variantPicker.selectedVId === v.id
+                                    ? 'variant-option variant-option--selected'
+                                    : 'variant-option'">
+                            <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">
+                                <div class="variant-option__radio">
+                                    <div class="variant-option__dot"
+                                         x-show="$store.variantPicker.selectedVId === v.id"></div>
+                                </div>
+                                <span class="variant-option__name" x-text="v.name"></span>
+                            </div>
+                            <span class="variant-option__price"
+                                  x-text="Number(v.price).toFixed(2).replace('.',',') + ' €'"></span>
+                        </button>
+                    </template>
+                </div>
+
+                <button type="button"
+                        class="btn-primary"
+                        @click="$store.variantPicker.confirm()"
+                        :disabled="!$store.variantPicker.sv"
+                        :aria-label="'Añadir ' + ($store.variantPicker.sv?.name ?? '') + ' al pedido'">
+                    Añadir al pedido
+                </button>
+            </div>
+        </div>
+
     </div>{{-- /carta (Alpine) --}}
 </body>
 </html>
-
-
