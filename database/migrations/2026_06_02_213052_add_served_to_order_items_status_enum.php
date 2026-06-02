@@ -17,6 +17,12 @@ return new class extends Migration
 {
     public function up(): void
     {
+        // SQLite (used in tests) has no ENUM type and accepts any string value,
+        // so 'served' already works there without schema changes.
+        if (DB::getDriverName() !== 'mysql') {
+            return;
+        }
+
         DB::statement("ALTER TABLE order_items MODIFY COLUMN status ENUM('queued','ready','served') NOT NULL DEFAULT 'queued'");
 
         // Clean up orders stuck in 'ready' because markItemServed could never
@@ -37,6 +43,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (DB::getDriverName() !== 'mysql') {
+            return;
+        }
+
         DB::statement("ALTER TABLE order_items MODIFY COLUMN status ENUM('queued','ready') NOT NULL DEFAULT 'queued'");
     }
 };
