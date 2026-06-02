@@ -50,6 +50,11 @@ class Product extends Model
         });
     }
 
+    protected $casts = [
+        'is_active'    => 'boolean',
+        'is_available' => 'boolean',
+    ];
+
     protected $fillable = [
         'user_id',
         'category_id',
