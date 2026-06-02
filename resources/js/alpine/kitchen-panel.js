@@ -174,13 +174,16 @@ export function productAvailability({ available, toggleUrl }) {
 
         /**
          * Sends a PATCH to the toggle endpoint and updates local state.
+         * Guard against double-clicks and absorb any network/parse errors so
+         * Alpine's reactivity system is never left in a broken state.
          *
          * @returns {Promise<void>}
          */
         async toggle() {
+            if (this.loading) return;
             this.loading = true;
             try {
-                const res  = await fetch(toggleUrl, {
+                const res = await fetch(toggleUrl, {
                     method:  'PATCH',
                     headers: {
                         'X-CSRF-TOKEN':     document.querySelector('meta[name="csrf-token"]').content,
@@ -188,8 +191,11 @@ export function productAvailability({ available, toggleUrl }) {
                         'Accept':           'application/json',
                     },
                 });
+                if (!res.ok) return;
                 const data = await res.json();
                 this.available = data.is_available;
+            } catch {
+                // silent — leave state as-is on network/parse error
             } finally {
                 this.loading = false;
             }
