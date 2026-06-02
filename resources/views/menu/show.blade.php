@@ -949,12 +949,12 @@
         <button type="button"
                 class="tapas-indicator"
                 x-show="$store.cart.tapaConfig.enabled && $store.cart._barItemsCount > 0 && $store.cart._tapasTotal < $store.cart._barItemsCount"
-                x-transition:enter="transition ease-out duration-200"
-                x-transition:enter-start="opacity-0 translate-y-1"
-                x-transition:enter-end="opacity-100 translate-y-0"
-                x-transition:leave="transition ease-in duration-150"
-                x-transition:leave-start="opacity-100"
-                x-transition:leave-end="opacity-0"
+                x-transition:enter="x-slide-in"
+                x-transition:enter-start="x-slide-up"
+                x-transition:enter-end="x-slide-vis"
+                x-transition:leave="x-slide-in"
+                x-transition:leave-start="x-slide-vis"
+                x-transition:leave-end="x-slide-up"
                 style="display:none"
                 @click="$store.cart.showTapaModal = true"
                 :aria-label="Math.max(0, $store.cart._barItemsCount - $store.cart._tapasTotal) + ' ' + (Math.max(0, $store.cart._barItemsCount - $store.cart._tapasTotal) === 1 ? 'tapa' : 'tapas') + ' ' + ($store.cart.tapaConfig.free ? 'de cortesía' : 'incluidas') + ' — Pedir'">
@@ -1593,11 +1593,23 @@
                                                 </template>
                                             </div>
                                             <div class="citem__side">
-                                                {{-- Tapa de cortesía: cantidad fija, sin controles --}}
+                                                {{-- Tapa de cortesía: badge + cantidad si qty > 1 --}}
                                                 <template x-if="item.isTapa">
-                                                    <span style="font-family:var(--font-body);font-size:11px;font-weight:700;color:var(--color-amber-800);background:linear-gradient(135deg,#F5DC92,#ECC25A);padding:3px 8px;border-radius:9999px;white-space:nowrap;">
-                                                        🫕 Cortesía
-                                                    </span>
+                                                    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+                                                        <span style="font-family:var(--font-body);font-size:11px;font-weight:700;color:var(--color-amber-800);background:linear-gradient(135deg,#F5DC92,#ECC25A);padding:3px 8px;border-radius:9999px;white-space:nowrap;">
+                                                            🫕 Cortesía
+                                                        </span>
+                                                        <div class="qty">
+                                                            <button class="qty-minus"
+                                                                    @click="$store.cart.dec(item._key)"
+                                                                    aria-label="Quitar una tapa">−</button>
+                                                            <span class="qty-n" x-text="item.quantity"></span>
+                                                            <button class="qty-plus"
+                                                                    @click="$store.cart.addTapa($store.cart.tapaProducts.find(t => t.id === item.productId))"
+                                                                    :disabled="$store.cart._tapasTotal >= $store.cart._barItemsCount"
+                                                                    aria-label="Añadir una tapa más">+</button>
+                                                        </div>
+                                                    </div>
                                                 </template>
                                                 {{-- Ítem normal: qty control --}}
                                                 <template x-if="!item.isTapa">
@@ -1658,22 +1670,28 @@
                             <span class="cart-foot__totalVal"
                                   x-text="Number($store.cart.total).toFixed(2).replace('.',',') + ' €'"></span>
                         </div>
-                        <template x-if="$store.cart._tapaPending">
-                            <button type="button"
-                                    class="cart-foot__tapaPending"
-                                    @click="$store.cart.showTapaModal = true"
-                                    aria-live="polite"
-                                    :aria-label="'Tienes ' + Math.max(0, $store.cart._barItemsCount - $store.cart._tapasTotal) + ' tapa' + (Math.max(0, $store.cart._barItemsCount - $store.cart._tapasTotal) !== 1 ? 's' : '') + ' disponibles — Elegir'">
-                                <span class="cart-foot__tapaPending__ic" aria-hidden="true">🫕</span>
-                                <span class="cart-foot__tapaPending__txt">
-                                    Tienes <strong x-text="Math.max(0, $store.cart._barItemsCount - $store.cart._tapasTotal)"></strong>
-                                    tapa<template x-if="Math.max(0, $store.cart._barItemsCount - $store.cart._tapasTotal) !== 1"><span>s</span></template>
-                                    disponible<template x-if="Math.max(0, $store.cart._barItemsCount - $store.cart._tapasTotal) !== 1"><span>s</span></template>
-                                    — Elegir
-                                </span>
-                                <span class="cart-foot__tapaPending__arrow" aria-hidden="true">→</span>
-                            </button>
-                        </template>
+                        <button type="button"
+                                class="cart-foot__tapaPending"
+                                x-show="$store.cart._tapaPending"
+                                x-transition:enter="x-slide-in"
+                                x-transition:enter-start="x-slide-up"
+                                x-transition:enter-end="x-slide-vis"
+                                x-transition:leave="x-slide-in"
+                                x-transition:leave-start="x-slide-vis"
+                                x-transition:leave-end="x-slide-up"
+                                style="display:none"
+                                @click="$store.cart.showTapaModal = true"
+                                aria-live="polite"
+                                :aria-label="'Tienes ' + Math.max(0, $store.cart._barItemsCount - $store.cart._tapasTotal) + ' tapa' + (Math.max(0, $store.cart._barItemsCount - $store.cart._tapasTotal) !== 1 ? 's' : '') + ' disponibles — Elegir'">
+                            <span class="cart-foot__tapaPending__ic" aria-hidden="true">🫕</span>
+                            <span class="cart-foot__tapaPending__txt">
+                                Tienes <strong x-text="Math.max(0, $store.cart._barItemsCount - $store.cart._tapasTotal)"></strong>
+                                <span x-text="Math.max(0, $store.cart._barItemsCount - $store.cart._tapasTotal) !== 1 ? 'tapas' : 'tapa'"></span>
+                                <span x-text="Math.max(0, $store.cart._barItemsCount - $store.cart._tapasTotal) !== 1 ? 'disponibles' : 'disponible'"></span>
+                                — Elegir
+                            </span>
+                            <span class="cart-foot__tapaPending__arrow" aria-hidden="true">→</span>
+                        </button>
                         <button type="button"
                                 class="cart-foot__cta"
                                 :class="{ 'cart-foot__cta--sending': $store.cart.sending }"

@@ -872,6 +872,11 @@
   max-width: calc(100% - 32px);
 }
 
+/* ── Alpine x-transition helpers (usan variables del DS, sin Tailwind) ── */
+.x-slide-in  { transition: opacity 220ms var(--ease-out), transform 220ms var(--ease-out); }
+.x-slide-up  { opacity: 0; transform: translateY(-8px) scale(0.97); }
+.x-slide-vis { opacity: 1; transform: translateY(0)    scale(1);    }
+
 
 /* ============================================================
    Tapas modal â€” REDISEÃ‘O "tasca artesanal"
