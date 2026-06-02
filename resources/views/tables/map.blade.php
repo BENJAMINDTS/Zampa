@@ -6,6 +6,68 @@
 --}}
 
 <x-app-layout>
+
+{{-- ══════════════════════════════════════════════════════
+     OVERLAY — Girar dispositivo (portrait mobile/tablet)
+══════════════════════════════════════════════════════ --}}
+<style>
+    @keyframes zampa-rotate-phone {
+        0%   { transform: rotate(0deg); }
+        35%  { transform: rotate(90deg); }
+        65%  { transform: rotate(90deg); }
+        100% { transform: rotate(0deg); }
+    }
+    #rotate-device-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        background-color: rgba(17, 24, 39, 0.97);
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1.5rem;
+        padding: 2rem;
+        text-align: center;
+    }
+    @media screen and (orientation: portrait) and (max-width: 1023px) {
+        #rotate-device-overlay { display: flex; }
+    }
+    #rotate-device-overlay .zampa-phone-icon {
+        animation: zampa-rotate-phone 2.5s ease-in-out infinite;
+    }
+</style>
+
+<div id="rotate-device-overlay"
+     role="alertdialog"
+     aria-modal="true"
+     aria-label="Gira tu dispositivo para usar el mapa de mesas">
+    <div class="zampa-phone-icon" aria-hidden="true">
+        <svg xmlns="http://www.w3.org/2000/svg" width="72" height="72"
+             fill="none" stroke="#818cf8" stroke-width="1.5"
+             stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+            <rect x="5" y="2" width="14" height="20" rx="2"/>
+            <circle cx="12" cy="17" r="1" fill="#818cf8" stroke="none"/>
+        </svg>
+    </div>
+    <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36"
+         fill="none" stroke="#6366f1" stroke-width="2.5"
+         stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"
+         aria-hidden="true">
+        <path d="M21 2v6h-6"/>
+        <path d="M3 12a9 9 0 0 1 15-6.7L21 8"/>
+    </svg>
+    <div>
+        <p style="font-size:1.25rem; font-weight:700; color:white; margin:0 0 0.5rem;">
+            Gira tu dispositivo
+        </p>
+        <p style="font-size:0.875rem; color:#9ca3af; margin:0; max-width:22rem; line-height:1.5;">
+            El mapa de mesas funciona mejor en horizontal.<br>
+            Por favor gira tu dispositivo.
+        </p>
+    </div>
+</div>
+
 <div
     class="flex flex-col h-screen bg-gray-100 dark:bg-gray-900"
     x-data="tableMap()"
@@ -86,7 +148,7 @@
 
                 {{-- Botones S / M / L / XL — ocultos en vista general (tamaño automático) --}}
                 <div x-show="!(floorsEnabled && currentView === 'general')"
-                     class="flex rounded-lg overflow-hidden border border-gray-200 dark:border-gray-600"
+                     class="hidden sm:flex rounded-lg overflow-hidden border border-gray-200 dark:border-gray-600"
                      role="group"
                      aria-label="Tamaño del lienzo del plano">
                     <button type="button"
@@ -201,7 +263,7 @@
                               class="inline-block w-4 h-4 mt-0.5 bg-white rounded-full shadow transition-transform">
                         </span>
                     </button>
-                    Plantas
+                    <span class="hidden sm:inline">Plantas</span>
                 </label>
             </template>
 
@@ -335,13 +397,46 @@
     {{-- ══════════════════════════════════════════════════════
          BODY — Paleta + Canvas
     ══════════════════════════════════════════════════════ --}}
-    <div class="flex flex-1 overflow-hidden">
+    <div class="relative flex flex-1 overflow-hidden" x-data="{ paletteOpen: window.innerWidth >= 768 }">
 
         {{-- ── PALETA LATERAL — solo visible para admin ─────── --}}
-        <aside x-show="!readonly && editMode"
-               class="flex-shrink-0 w-44 bg-white dark:bg-gray-800
+        {{-- Backdrop móvil — cierra la paleta al tocar fuera --}}
+        <div x-show="!readonly && editMode && paletteOpen"
+             @click="paletteOpen = false"
+             class="sm:hidden absolute inset-0 z-20 bg-black/40"
+             x-transition:enter="transition-opacity duration-200"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition-opacity duration-150"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             aria-hidden="true">
+        </div>
+
+        <aside x-show="!readonly && editMode && paletteOpen"
+               x-transition:enter="transition ease-out duration-200"
+               x-transition:enter-start="-translate-x-full opacity-0"
+               x-transition:enter-end="translate-x-0 opacity-100"
+               x-transition:leave="transition ease-in duration-150"
+               x-transition:leave-start="translate-x-0 opacity-100"
+               x-transition:leave-end="-translate-x-full opacity-0"
+               class="absolute sm:static top-0 left-0 h-full sm:h-auto
+                      flex-shrink-0 w-44 bg-white dark:bg-gray-800
                       border-r border-gray-200 dark:border-gray-700
-                      flex flex-col p-3 gap-4 overflow-y-auto">
+                      flex flex-col p-3 gap-4 overflow-y-auto
+                      z-30 sm:z-auto shadow-xl sm:shadow-none">
+
+            {{-- Botón cerrar paleta — solo mobile --}}
+            <button type="button"
+                    @click="paletteOpen = false"
+                    class="sm:hidden self-end p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200
+                           hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors
+                           focus:outline-none focus:ring-2 focus:ring-indigo-400 -mt-1 -mr-1"
+                    aria-label="Cerrar paleta de elementos">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
 
             <p class="text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500">
                 Arrastrar al plano
@@ -549,6 +644,22 @@
         <main id="main-content"
               class="flex-1 p-4 relative"
               :class="(editMode && currentView !== 'general') ? 'overflow-auto' : 'overflow-hidden flex items-center justify-center'">
+
+            {{-- Toggle paleta — solo mobile, solo en modo edición --}}
+            <button type="button"
+                    x-show="!readonly && editMode && !paletteOpen"
+                    @click="paletteOpen = true"
+                    class="sm:hidden absolute top-3 left-3 z-10
+                           inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium
+                           bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700
+                           text-gray-600 dark:text-gray-300 shadow-md
+                           focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-colors"
+                    aria-label="Abrir paleta de elementos">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"/>
+                </svg>
+                Formas
+            </button>
 
             {{-- Mensaje inferior modo vista — fuera del canvas para no escalar con él --}}
             <div x-show="!readonly && !editMode"
