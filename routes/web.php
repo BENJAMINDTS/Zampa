@@ -145,6 +145,7 @@ Route::middleware(['auth', 'business.active'])->group(function () {
         Route::get('/cocina/pendientes', [KitchenController::class, 'pendingOrders'])->name('kitchen.pending');
         Route::post('/cocina/items/{item}/listo', [KitchenController::class, 'markItemReady'])->name('kitchen.item.ready');
         Route::post('/cocina/orders/{order}/servido', [KitchenController::class, 'markOrderServed'])->name('kitchen.order.served');
+        Route::patch('/cocina/productos/{product}/disponibilidad', [KitchenController::class, 'toggleAvailability'])->name('kitchen.product.availability');
     });
 
     // Panel de barra y notificaciones al camarero — requiere canAccessBar() (rol nativo 'waiter' o admin con is_waiter=true)
@@ -156,6 +157,7 @@ Route::middleware(['auth', 'business.active'])->group(function () {
         Route::get('/bar/pendientes', [BarPanelController::class, 'pendingItems'])->name('bar.pending');
         Route::patch('/bar/items/{item}', [BarPanelController::class, 'updateItem'])->name('bar.items.update');
         Route::patch('/bar/items/{item}/served', [BarPanelController::class, 'markItemServed'])->name('bar.items.served');
+        Route::patch('/bar/productos/{product}/disponibilidad', [BarPanelController::class, 'toggleAvailability'])->name('bar.product.availability');
 
         Route::get('/notifications/ready', [NotificationController::class, 'ready'])
              ->name('notifications.ready');
