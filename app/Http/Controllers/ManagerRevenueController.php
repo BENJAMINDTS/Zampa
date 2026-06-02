@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -23,11 +24,25 @@ class ManagerRevenueController extends Controller
     public function index(Request $request): View
     {
         $period = $request->query('period', 'month');
+        $from   = $request->query('from');
+        $to     = $request->query('to');
+
+        if ($period === 'custom' && ($from !== null || $to !== null)) {
+            $request->validate([
+                'from' => ['required', 'date'],
+                'to'   => ['required', 'date', 'after_or_equal:from'],
+            ]);
+        }
 
         [$start, $end] = match ($period) {
-            'today' => [now()->startOfDay(),  now()->endOfDay()],
-            'week'  => [now()->startOfWeek(), now()->endOfWeek()],
-            default => [now()->startOfMonth(), now()->endOfMonth()],
+            'today'  => [now()->startOfDay(),   now()->endOfDay()],
+            'week'   => [now()->startOfWeek(),  now()->endOfWeek()],
+            'year'   => [now()->startOfYear(),  now()->endOfYear()],
+            'custom' => [
+                Carbon::parse($from ?? now()->startOfMonth())->startOfDay(),
+                Carbon::parse($to   ?? now()->endOfMonth())->endOfDay(),
+            ],
+            default  => [now()->startOfMonth(), now()->endOfMonth()],
         };
 
         $ownerUserId = Auth::user()->ownerUserId();
@@ -95,6 +110,6 @@ class ManagerRevenueController extends Controller
             ->paginate(15)
             ->withQueryString();
 
-        return view('manager.income', compact('period', 'summary', 'orders'));
+        return view('manager.income', compact('period', 'from', 'to', 'summary', 'orders'));
     }
 }
