@@ -73,6 +73,7 @@ class BarPanelController extends Controller
 
         $ownerId = Auth::user()->ownerUserId();
         $count = Order::whereHas('table', fn($q) => $q->where('user_id', $ownerId))
+            ->where('status', '!=', 'closed')
             ->where(fn($q) => $q
                 ->where(fn($inner) => $inner
                     ->whereIn('status', ['pending', 'cooking'])

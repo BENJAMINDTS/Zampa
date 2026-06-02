@@ -201,6 +201,13 @@
                         ></span>
                     </span>
                     @endif
+
+                    {{-- Mapa de mesas (solo lectura) — camarero --}}
+                    @if(Auth::user()->role === 'waiter')
+                    <x-nav-link :href="route('tables.map')" :active="request()->routeIs('tables.map')">
+                        {{ __('Mapa') }}
+                    </x-nav-link>
+                    @endif
                 </div>
 
                 <!-- Dark mode toggle (desktop) -->
@@ -346,6 +353,13 @@
                         ></span>
                     </x-responsive-nav-link>
                 </span>
+                @endif
+
+                {{-- Mapa de mesas (solo lectura) — camarero --}}
+                @if(Auth::user()->role === 'waiter')
+                <x-responsive-nav-link :href="route('tables.map')" :active="request()->routeIs('tables.map')">
+                    {{ __('Mapa de mesas') }}
+                </x-responsive-nav-link>
                 @endif
 
                 {{-- Panel de Barra: admin y waiter --}}
