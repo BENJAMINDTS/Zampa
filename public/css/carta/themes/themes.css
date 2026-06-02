@@ -761,7 +761,7 @@
   flex-shrink: 0;
 }
 .chip-quitar--on::before {
-  content: "âœ•";
+  content: "\2715";
   background: #FFFFFF;
   color: var(--color-amber-800);
 }
