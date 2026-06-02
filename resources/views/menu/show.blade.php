@@ -381,6 +381,7 @@
             'maxVariants'   => $tapaConfig?->max_tapa_variants ?? 0,
             'shouldSuggest' => $shouldSuggest,
             'variantsUsed'  => $tapaVariantsUsed,
+            'tapasTotal'    => (int) ($tapasQuantityUsed ?? 0),
             'barItemsCount' => (int) $barItemsCount,
             'kitchenOpen'   => $kitchenOpen,
         ];
@@ -1143,7 +1144,7 @@
         @if($tapaConfig && $tapaConfig->tapas_enabled)
         <button type="button"
                 class="tapas-indicator"
-                x-show="$store.cart.tapaConfig.enabled && $store.cart._barItemsCount > 0"
+                x-show="$store.cart.tapaConfig.enabled && $store.cart._barItemsCount > 0 && $store.cart._tapasTotal < $store.cart._barItemsCount"
                 x-transition:enter="transition ease-out duration-200"
                 x-transition:enter-start="opacity-0 translate-y-1"
                 x-transition:enter-end="opacity-100 translate-y-0"
@@ -1152,21 +1153,23 @@
                 x-transition:leave-end="opacity-0"
                 style="display:none"
                 @click="$store.cart.showTapaModal = true"
-                :aria-label="Math.max(0, $store.cart._barItemsCount - $store.cart._variantsUsed) + ' ' + (Math.max(0, $store.cart._barItemsCount - $store.cart._variantsUsed) === 1 ? 'tapa' : 'tapas') + ' ' + ($store.cart.tapaConfig.free ? 'de cortesía' : 'incluidas') + ' — Pedir'">
-            <span class="tapas-indicator__glyph" aria-hidden="true">🍻</span>
-            <span class="tapas-indicator__copy">
-                <strong x-text="Math.max(0, $store.cart._barItemsCount - $store.cart._variantsUsed)"></strong>
-                <span x-text="(Math.max(0, $store.cart._barItemsCount - $store.cart._variantsUsed) === 1 ? 'tapa' : 'tapas') + ' ' + ($store.cart.tapaConfig.free ? 'de cortesía' : 'incluidas')"></span>
+                :aria-label="Math.max(0, $store.cart._barItemsCount - $store.cart._tapasTotal) + ' ' + (Math.max(0, $store.cart._barItemsCount - $store.cart._tapasTotal) === 1 ? 'tapa' : 'tapas') + ' ' + ($store.cart.tapaConfig.free ? 'de cortesía' : 'incluidas') + ' — Pedir'">
+            <span class="tapas-indicator__glyph" aria-hidden="true">🫕</span>
+            <span class="tapas-indicator__body">
+                <span class="tapas-indicator__copy">
+                    <strong x-text="Math.max(0, $store.cart._barItemsCount - $store.cart._tapasTotal)"></strong>
+                    <span x-text="(Math.max(0, $store.cart._barItemsCount - $store.cart._tapasTotal) === 1 ? 'tapa' : 'tapas') + ' ' + ($store.cart.tapaConfig.free ? 'de cortesía' : 'incluidas')"></span>
+                </span>
+                <span class="tapas-indicator__tokens" aria-hidden="true">
+                    <template x-for="i in Array.from({length: Math.min($store.cart._barItemsCount, 8)}, (_, idx) => idx)" :key="i">
+                        <span :class="'tk' + (i < $store.cart._tapasTotal ? ' tk--used' : '')"></span>
+                    </template>
+                    <span class="tapas-indicator__tokensMore"
+                          x-show="$store.cart._barItemsCount > 8"
+                          x-text="'+' + ($store.cart._barItemsCount - 8)"></span>
+                </span>
             </span>
-            <span class="tapas-indicator__tokens" aria-hidden="true">
-                <template x-for="i in Array.from({length: Math.min($store.cart._barItemsCount, 8)}, (_, idx) => idx)" :key="i">
-                    <span :class="'tk' + (i < $store.cart._variantsUsed ? ' tk--used' : '')"></span>
-                </template>
-                <span class="tapas-indicator__tokensMore"
-                      x-show="$store.cart._barItemsCount > 8"
-                      x-text="'+' + ($store.cart._barItemsCount - 8)"></span>
-            </span>
-            <span class="tapas-indicator__cta">Pedir →</span>
+            <span class="tapas-indicator__cta" aria-hidden="true">Elegir →</span>
         </button>
         @endif
 
@@ -1874,12 +1877,12 @@
                                     class="cart-foot__tapaPending"
                                     @click="$store.cart.showTapaModal = true"
                                     aria-live="polite"
-                                    :aria-label="'Tienes ' + Math.max(0, $store.cart._barItemsCount - $store.cart._variantsUsed) + ' tapa' + (Math.max(0, $store.cart._barItemsCount - $store.cart._variantsUsed) !== 1 ? 's' : '') + ' disponibles — Elegir'">
+                                    :aria-label="'Tienes ' + Math.max(0, $store.cart._barItemsCount - $store.cart._tapasTotal) + ' tapa' + (Math.max(0, $store.cart._barItemsCount - $store.cart._tapasTotal) !== 1 ? 's' : '') + ' disponibles — Elegir'">
                                 <span class="cart-foot__tapaPending__ic" aria-hidden="true">🫕</span>
                                 <span class="cart-foot__tapaPending__txt">
-                                    Tienes <strong x-text="Math.max(0, $store.cart._barItemsCount - $store.cart._variantsUsed)"></strong>
-                                    tapa<template x-if="Math.max(0, $store.cart._barItemsCount - $store.cart._variantsUsed) !== 1"><span>s</span></template>
-                                    disponible<template x-if="Math.max(0, $store.cart._barItemsCount - $store.cart._variantsUsed) !== 1"><span>s</span></template>
+                                    Tienes <strong x-text="Math.max(0, $store.cart._barItemsCount - $store.cart._tapasTotal)"></strong>
+                                    tapa<template x-if="Math.max(0, $store.cart._barItemsCount - $store.cart._tapasTotal) !== 1"><span>s</span></template>
+                                    disponible<template x-if="Math.max(0, $store.cart._barItemsCount - $store.cart._tapasTotal) !== 1"><span>s</span></template>
                                     — Elegir
                                 </span>
                                 <span class="cart-foot__tapaPending__arrow" aria-hidden="true">→</span>
@@ -1889,8 +1892,7 @@
                                 class="cart-foot__cta"
                                 :class="{ 'cart-foot__cta--sending': $store.cart.sending }"
                                 @click="$store.cart.send()"
-                                :disabled="$store.cart.sending || $store.cart._tapaSendBlocked"
-                                :title="$store.cart._tapaSendBlocked ? 'Elige tus tapas antes de enviar' : ''">
+                                :disabled="$store.cart.sending">
                             <span class="cart-foot__ctaIc" aria-hidden="true">
                                 <template x-if="$store.cart.sent">✓</template>
                                 <template x-if="$store.cart.sending && !$store.cart.sent">
@@ -3281,7 +3283,7 @@
                  x-data="{
                      selectedTapaId: null,
                      showChefExtra: false,
-                     get left()         { return Math.max(0, $store.cart._barItemsCount - $store.cart._variantsUsed); },
+                     get left()         { return Math.max(0, $store.cart._barItemsCount - $store.cart._tapasTotal); },
                      get limitReached() { return $store.cart._variantsUsed >= $store.cart.tapaConfig.maxVariants && $store.cart.tapaConfig.maxVariants > 0; },
                      get tokensShown()  { return Math.min(Math.max($store.cart._barItemsCount, 1), 12); },
                      get tokensOver()   { return Math.max(0, $store.cart._barItemsCount - 12); },
@@ -3319,7 +3321,7 @@
                     </p>
                     <div class="tapas-coins" aria-hidden="true">
                         <template x-for="i in Array.from({length: tokensShown}, (_, idx) => idx)" :key="i">
-                            <span :class="'tapa-coin' + (i < $store.cart._variantsUsed ? ' tapa-coin--used' : '')">
+                            <span :class="'tapa-coin' + (i < $store.cart._tapasTotal ? ' tapa-coin--used' : '')">
                                 <span class="tapa-coin__face">🥟</span>
                             </span>
                         </template>
@@ -3350,11 +3352,11 @@
                 <div class="tapas-body">
                     <div class="tapas-listLabel">Elige tu tapa</div>
                     <div class="tapas-list tapas-list--v2"
-                         :data-disabled="(limitReached || left === 0).toString()">
+                         :data-disabled="(left === 0).toString()">
                         <template x-for="(tapa, idx) in $store.cart.tapaProducts" :key="tapa.id">
                             <button type="button"
                                     :class="'tapa-card tapa-card--v2' + (selectedTapaId === tapa.id ? ' tapa-card--selected' : '')"
-                                    :disabled="limitReached || left === 0"
+                                    :disabled="left === 0"
                                     :style="'--i:' + idx"
                                     @click="selectedTapaId = selectedTapaId === tapa.id ? null : tapa.id"
                                     :aria-pressed="(selectedTapaId === tapa.id).toString()">
@@ -3384,9 +3386,9 @@
                         Ahora no
                     </button>
                     <button type="button" class="tapas-foot__primary"
-                            :disabled="!selectedTapaId || limitReached || left === 0"
+                            :disabled="!selectedTapaId || left === 0"
                             @click="$store.cart.addTapa($store.cart.tapaProducts.find(t => t.id === selectedTapaId)); selectedTapaId = null">
-                        <span x-text="limitReached ? 'Límite alcanzado' : (selectedTapaId ? 'Añadir tapa' : 'Elige una tapa')"></span>
+                        <span x-text="selectedTapaId ? 'Añadir tapa' : 'Elige una tapa'"></span>
                         <span class="tapas-foot__arrow" x-show="selectedTapaId && !limitReached" aria-hidden="true">→</span>
                     </button>
                 </footer>
