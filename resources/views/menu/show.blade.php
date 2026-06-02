@@ -1599,18 +1599,16 @@
                                                         <span style="font-family:var(--font-body);font-size:11px;font-weight:700;color:var(--color-amber-800);background:linear-gradient(135deg,#F5DC92,#ECC25A);padding:3px 8px;border-radius:9999px;white-space:nowrap;">
                                                             🫕 Cortesía
                                                         </span>
-                                                        <template x-if="item.quantity > 1">
-                                                            <div class="qty">
-                                                                <button class="qty-minus"
-                                                                        @click="$store.cart.dec(item._key)"
-                                                                        aria-label="Quitar una tapa">−</button>
-                                                                <span class="qty-n" x-text="item.quantity"></span>
-                                                                <button class="qty-plus"
-                                                                        @click="$store.cart.addTapa($store.cart.tapaProducts.find(t => t.id === item.productId))"
-                                                                        :disabled="$store.cart._tapasTotal >= $store.cart._barItemsCount"
-                                                                        aria-label="Añadir una tapa más">+</button>
-                                                            </div>
-                                                        </template>
+                                                        <div class="qty">
+                                                            <button class="qty-minus"
+                                                                    @click="$store.cart.dec(item._key)"
+                                                                    aria-label="Quitar una tapa">−</button>
+                                                            <span class="qty-n" x-text="item.quantity"></span>
+                                                            <button class="qty-plus"
+                                                                    @click="$store.cart.addTapa($store.cart.tapaProducts.find(t => t.id === item.productId))"
+                                                                    :disabled="$store.cart._tapasTotal >= $store.cart._barItemsCount"
+                                                                    aria-label="Añadir una tapa más">+</button>
+                                                        </div>
                                                     </div>
                                                 </template>
                                                 {{-- Ítem normal: qty control --}}
