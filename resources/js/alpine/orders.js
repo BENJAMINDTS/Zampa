@@ -27,6 +27,9 @@ export function registerOrders() {
         /** @type {Array<Object>} All orders for this table session. */
         list,
 
+        /** @type {Object|null} Order to show in the confirmed popup, null = hidden. */
+        confirmedOrder: null,
+
         /** @returns {Object|null} The currently selected order, or null. */
         get selected() {
             return this.list.find(o => o.id === this.selectedId) ?? null;
@@ -65,12 +68,24 @@ export function registerOrders() {
         },
 
         /**
-         * Appends a newly submitted order to the list.
+         * Appends a newly submitted order to the list and shows the
+         * order-confirmed popup automatically.
          *
          * @param {Object} order - { id, number, itemCount, total, sentAt, items[] }
          */
         push(order) {
             this.list.push(order);
+            this.confirmedOrder = order;
+        },
+
+        /** Shows the confirmed popup for a given order. */
+        showConfirmed(order) {
+            this.confirmedOrder = order;
+        },
+
+        /** Dismisses the order-confirmed popup. */
+        dismissConfirmed() {
+            this.confirmedOrder = null;
         },
 
         /**
