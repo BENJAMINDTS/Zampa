@@ -1,3 +1,33 @@
+/* ── Rotate-device overlay (portrait mobile) ── */
+@keyframes zampa-rotate-phone {
+    0%   { transform: rotate(0deg); }
+    35%  { transform: rotate(90deg); }
+    65%  { transform: rotate(90deg); }
+    100% { transform: rotate(0deg); }
+}
+
+#rotate-device-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background-color: rgba(17, 24, 39, 0.97);
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
+    padding: 2rem;
+    text-align: center;
+}
+
+@media screen and (orientation: portrait) and (max-width: 1023px) {
+    #rotate-device-overlay { display: flex; }
+}
+
+#rotate-device-overlay .zampa-phone-icon {
+    animation: zampa-rotate-phone 2.5s ease-in-out infinite;
+}
+
 /* ── Table map — selected pulse animation ── */
 @keyframes zampa-selected-pulse {
     0%   { box-shadow: 0 0 0 0 rgba(99,102,241,.55); }
