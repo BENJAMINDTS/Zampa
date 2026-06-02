@@ -17,11 +17,24 @@
           </div>
         @endif
 
+        {{-- Aviso de límite de personal --}}
+        @php $staffAtLimit = $staffLimit !== null && $staffCurrent >= $staffLimit; @endphp
+        <x-plan-limit-alert :current="$staffCurrent" :limit="$staffLimit" label="miembros de personal"
+                            class="mb-4" />
+
         <div class="flex justify-end mb-4">
-          <a href="{{ route('staff.create') }}"
-             class="bg-orange-500 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 text-white font-bold py-2 px-4 rounded">
-            + Añadir persona
-          </a>
+          @if($staffAtLimit)
+            <span class="inline-flex items-center gap-2 bg-gray-200 dark:bg-gray-700
+                         text-gray-400 dark:text-gray-500 font-bold py-2 px-4 rounded cursor-not-allowed"
+                  title="Has alcanzado el límite de personal de tu plan">
+              + Añadir persona
+            </span>
+          @else
+            <a href="{{ route('staff.create') }}"
+               class="bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 text-white font-bold py-2 px-4 rounded">
+              + Añadir persona
+            </a>
+          @endif
         </div>
 
         <div class="overflow-x-auto">

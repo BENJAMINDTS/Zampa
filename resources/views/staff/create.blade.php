@@ -11,6 +11,19 @@
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
 
+        {{-- Error de límite devuelto por el backend --}}
+        @if(session('error'))
+          <div role="alert" class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800
+                                   text-red-800 dark:text-red-300 px-4 py-3 rounded-xl mb-6 text-sm">
+            {{ session('error') }}
+          </div>
+        @endif
+
+        {{-- Aviso proactivo de límite (antes de intentar enviar el formulario) --}}
+        @php $staffAtLimit = $staffLimit !== null && $staffCurrent >= $staffLimit; @endphp
+        <x-plan-limit-alert :current="$staffCurrent" :limit="$staffLimit" label="miembros de personal"
+                            class="mb-6" />
+
         <form method="POST" action="{{ route('staff.store') }}">
           @csrf
 
@@ -80,7 +93,11 @@
 
           <div class="flex items-center gap-4">
             <button type="submit"
-                    class="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2">
+                    @if($staffAtLimit) disabled aria-disabled="true" @endif
+                    class="px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-offset-2
+                           {{ $staffAtLimit
+                               ? 'bg-gray-300 dark:bg-gray-600 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                               : 'bg-indigo-600 hover:bg-indigo-700 text-white focus:ring-indigo-500' }}">
               Dar de alta
             </button>
             <a href="{{ route('staff.index') }}"
