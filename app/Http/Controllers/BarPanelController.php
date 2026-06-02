@@ -59,9 +59,7 @@ class BarPanelController extends Controller
                             ->whereHas('items', fn ($q) => $q->where('destination', 'bar')->where('status', 'queued'))
                             ->get();
 
-        $barProducts = $this->getBarProducts($ownerId);
-
-        return view('bar.index', compact('tables', 'zones', 'floorWidth', 'floorHeight', 'readyOrders', 'orders', 'barProducts'));
+        return view('bar.index', compact('tables', 'zones', 'floorWidth', 'floorHeight', 'readyOrders', 'orders'));
     }
 
     /**
@@ -270,6 +268,21 @@ class BarPanelController extends Controller
             'order_status' => $order->fresh()->status,
             'all_ready'    => $allReady,
         ]);
+    }
+
+    /**
+     * Vista de gestión de disponibilidad de productos de barra.
+     *
+     * @return View
+     */
+    public function barAvailability(): View
+    {
+        abort_if(! Auth::user()->canAccessBar(), 403, 'Acceso denegado.');
+
+        $ownerId     = Auth::user()->ownerUserId();
+        $barProducts = $this->getBarProducts($ownerId);
+
+        return view('bar.availability', compact('barProducts'));
     }
 
     /**
