@@ -11,11 +11,15 @@ return new class extends Migration
 {
     public function up(): void
     {
-        DB::statement("ALTER TABLE `tables` MODIFY `shape` ENUM('square','round','rectangle','bar','stool','chair','fireplace','pillar','column') NOT NULL DEFAULT 'square'");
+        if (Schema::getConnection()->getDriverName() !== 'sqlite') {
+            DB::statement("ALTER TABLE `tables` MODIFY `shape` ENUM('square','round','rectangle','bar','stool','chair','fireplace','pillar','column') NOT NULL DEFAULT 'square'");
+        }
     }
 
     public function down(): void
     {
-        DB::statement("ALTER TABLE `tables` MODIFY `shape` ENUM('square','round','rectangle','bar','stool') NOT NULL DEFAULT 'square'");
+        if (Schema::getConnection()->getDriverName() !== 'sqlite') {
+            DB::statement("ALTER TABLE `tables` MODIFY `shape` ENUM('square','round','rectangle','bar','stool') NOT NULL DEFAULT 'square'");
+        }
     }
 };
