@@ -44,6 +44,8 @@ class ProductController extends Controller
       ->when($request->filled('search'), fn ($q) => $q->where('name', 'like', '%' . $request->search . '%'))
       ->when($request->filled('category'), fn ($q) => $q->whereHas('categories', fn ($q2) => $q2->where('categories.id', $request->category)))
       ->when($request->filled('allergen'), fn ($q) => $q->whereHas('ingredients', fn ($q2) => $q2->whereJsonContains('allergen_types', $request->allergen)))
+      ->orderBy('sort_order')
+      ->orderBy('id')
       ->paginate(15)
       ->withQueryString();
 
@@ -88,6 +90,8 @@ class ProductController extends Controller
     ]);
 
     $validatedData['user_id'] = Auth::user()->ownerUserId();
+
+    $validatedData['sort_order'] = Product::where('user_id', $validatedData['user_id'])->max('sort_order') + 1;
 
     if ($hasVariants) {
       $validatedData['price'] = null;
@@ -270,6 +274,36 @@ class ProductController extends Controller
                                  ->get();
 
         return view('products.ingredients', compact('product', 'ingredients'));
+    }
+
+    /**
+     * Persiste el orden manual de productos arrastrado por el usuario.
+     * Recibe un array de IDs en el nuevo orden; asigna sort_order = offset + posición.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function reorder(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $validated = $request->validate([
+            'ids'    => 'required|array|min:1',
+            'ids.*'  => 'required|integer',
+            'offset' => 'required|integer|min:0',
+        ]);
+
+        $ownerId = Auth::user()->ownerUserId();
+
+        DB::transaction(function () use ($validated, $ownerId) {
+            foreach ($validated['ids'] as $index => $id) {
+                Product::where('id', $id)
+                    ->where('user_id', $ownerId)
+                    ->update(['sort_order' => $validated['offset'] + $index]);
+            }
+        });
+
+        Cache::forget("menu:{$ownerId}");
+
+        return response()->json(['success' => true]);
     }
 
     /**

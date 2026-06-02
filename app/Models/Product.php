@@ -56,7 +56,8 @@ class Product extends Model
         'description',
         'price',
         'is_active',
-        'image'
+        'image',
+        'sort_order',
     ];
 
     /**

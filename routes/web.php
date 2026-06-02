@@ -49,6 +49,7 @@ Route::middleware(['auth', 'business.active'])->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::resource('categories', CategoryController::class);
     Route::resource('ingredients', IngredientController::class);
+    Route::post('/productos/reorder', [ProductController::class, 'reorder'])->name('products.reorder');
     Route::resource('products', ProductController::class);
     Route::get('/productos/{product}/ingredientes', [ProductController::class, 'editIngredients'])
          ->name('products.ingredients.edit');
