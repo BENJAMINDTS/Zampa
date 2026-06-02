@@ -1163,47 +1163,78 @@
 .carta[data-chat="open"] .fab-cluster { display: none; }
 
 .fab--orders {
+  background: linear-gradient(135deg, #3B5BDB, #1E3A8A);
+  color: #FFFFFF;
+  border: 1px solid rgba(255,255,255,0.18);
+  padding: 0 16px 0 6px;
+  box-shadow: 0 10px 24px rgba(30,58,138,0.45);
   position: static;
   width: auto; height: 44px;
-  padding: 0 14px 0 6px;
   border-radius: 9999px;
   display: inline-flex; align-items: center; gap: 8px;
-  background: var(--bg-base);
-  color: var(--fg-primary);
-  border: 1px solid var(--border-subtle);
-  box-shadow: var(--shadow-fab);
   font-family: var(--font-body); font-size: 13.5px; font-weight: 700;
   letter-spacing: 0.005em;
   cursor: pointer;
   animation: orders-in 360ms var(--ease-smooth);
 }
 .fab--orders:hover {
-  background: var(--bg-surface);
-  border-color: var(--border-strong);
+  background: linear-gradient(135deg, #4C6BE5, #2945A0);
+  filter: brightness(1.05);
 }
-/* Dark: --bg-chip is semi-transparent blue, which made the pill see-through.
-   Force a solid night-blue surface for the hover state. */
+[data-theme="dark"] .fab--orders {
+  background: linear-gradient(135deg, #4C6BE5, #2945A0);
+  border-color: rgba(255,255,255,0.22);
+  box-shadow: 0 10px 24px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.12);
+}
 [data-theme="dark"] .fab--orders:hover {
-  background: var(--color-night-700);
-  border-color: rgba(46, 80, 176, 0.55);
+  background: linear-gradient(135deg, #5B79EC, #3B5BDB);
+  border-color: rgba(255,255,255,0.32);
 }
 @keyframes orders-in {
   from { transform: translateX(-6px) scale(0.96); opacity: 0; }
   to   { transform: translateX(0) scale(1); opacity: 1; }
 }
-.fab--orders__count {
+
+/* Círculo blanco que envuelve el icono y sirve de base al badge */
+.fab--orders__ic {
+  position: relative;
   flex-shrink: 0;
-  min-width: 32px; height: 32px;
-  padding: 0 8px;
+  width: 34px; height: 34px;
   border-radius: 9999px;
-  background: var(--brand-primary); color: var(--fg-on-accent);
-  font-family: var(--font-display); font-weight: 900; font-size: 14px;
-  font-variant-numeric: tabular-nums;
+  background: #FFFFFF;
+  color: #1E3A8A;
   display: inline-flex; align-items: center; justify-content: center;
-  line-height: 1;
+  box-shadow: inset 0 0 0 1px rgba(30,58,138,0.18);
 }
-[data-theme="dark"] .fab--orders__count { background: var(--color-green-500); color: #0A1430; }
-.fab--orders__label { white-space: nowrap; }
+[data-theme="dark"] .fab--orders__ic { color: #0B1C46; background: #F4F6FF; }
+
+/* Badge rojo de notificación — esquina superior derecha del icono */
+.fab--orders__badge {
+  position: absolute;
+  top: -4px; right: -6px;
+  min-width: 18px; height: 18px;
+  padding: 0 5px;
+  border-radius: 9999px;
+  background: linear-gradient(180deg, #F87171, #DC2626);
+  color: #FFFFFF;
+  border: 2px solid #FFFFFF;
+  box-shadow: 0 2px 6px rgba(220,38,38,0.45);
+  font-family: var(--font-display); font-weight: 900; font-size: 11px;
+  font-variant-numeric: tabular-nums; line-height: 1;
+  display: inline-flex; align-items: center; justify-content: center;
+  animation: order-badge-pulse 2.4s ease-in-out infinite;
+}
+[data-theme="dark"] .fab--orders__badge { border-color: #1E3A8A; }
+@keyframes order-badge-pulse {
+  0%, 100% { box-shadow: 0 2px 6px rgba(220,38,38,0.45), 0 0 0 0 rgba(220,38,38,0.55); }
+  50%      { box-shadow: 0 2px 6px rgba(220,38,38,0.45), 0 0 0 6px rgba(220,38,38,0); }
+}
+
+.fab--orders__label {
+  font-family: var(--font-body); font-weight: 700; font-size: 13.5px;
+  letter-spacing: 0.01em; color: #FFFFFF;
+  white-space: nowrap;
+}
 
 /* â”€â”€ "Mi ticket" pill â€” green, sits to the right of "Cuenta" â”€â”€ */
 .fab__ic { display: inline-flex; align-items: center; }
