@@ -71,7 +71,8 @@ class Product extends Model
      * Intercepta category_id para redirigirlo al pivot en lugar de la columna.
      * Mantiene compatibilidad con código legado que pase category_id por fill().
      *
-     * @param int|null $value
+     * @param  int|null  $value
+     * @return void
      */
     public function setCategoryIdAttribute(?int $value): void
     {
@@ -101,6 +102,8 @@ class Product extends Model
      * Relación Muchos a Muchos con Ingredientes.
      * Permite saber qué ingredientes lleva por defecto y cuánto cuesta añadirlos como extra.
      * Accede a la tabla pivote 'ingredient_product'.
+     *
+     * @return BelongsToMany
      */
     public function ingredients(): BelongsToMany
     {
