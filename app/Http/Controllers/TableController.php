@@ -53,7 +53,7 @@ class TableController extends Controller
         $ownerId = Auth::user()->ownerUserId();
         $tables  = Table::where('user_id', $ownerId)
                        ->servicePoints()
-                       ->whereNotIn('shape', ['bar', 'stool'])
+                       ->whereNotIn('shape', ['bar', 'stool', 'chair', 'fireplace', 'pillar', 'column'])
                        ->with('activeOrder')
                        ->orderBy('name')
                        ->get()
@@ -63,7 +63,7 @@ class TableController extends Controller
         $elements    = Table::where('user_id', $ownerId)
                            ->where(function ($q) {
                                $q->where('is_service_point', false)
-                                 ->orWhereIn('shape', ['bar', 'stool']);
+                                 ->orWhereIn('shape', ['bar', 'stool', 'chair', 'fireplace', 'pillar', 'column']);
                            })
                            ->orderBy('name')
                            ->get();
@@ -238,22 +238,33 @@ class TableController extends Controller
     {
         $data = $request->validate([
             'name'             => 'nullable|string|max:50',
-            'shape'            => 'required|in:square,round,rectangle,bar,stool',
+            'shape'            => 'required|in:square,round,rectangle,bar,stool,chair,fireplace,pillar,column',
             'position_x'       => 'required|integer|min:0',
             'position_y'       => 'required|integer|min:0',
-            'width'            => 'required|integer|min:40|max:800',
-            'height'           => 'required|integer|min:40|max:400',
+            'width'            => 'required|integer|min:20|max:800',
+            'height'           => 'required|integer|min:20|max:800',
+            'rotation'         => 'sometimes|numeric|min:0|max:360',
             'is_service_point' => 'sometimes|boolean',
             'floor'            => 'sometimes|integer|min:1|max:5',
             'zone_id'          => ['sometimes', 'nullable', Rule::exists('zones', 'id')->where('user_id', Auth::id())],
         ]);
 
-        $isServicePoint = in_array($data['shape'], ['bar', 'stool'])
+        $specialShapes = ['bar', 'stool', 'chair', 'fireplace', 'pillar', 'column'];
+        $isServicePoint = in_array($data['shape'], $specialShapes)
             ? false
             : ($data['is_service_point'] ?? true);
 
-        if (in_array($data['shape'], ['bar', 'stool'])) {
-            $data['name'] = $data['shape'] === 'bar' ? 'Barra' : 'Taburete';
+        $specialNames = [
+            'bar'       => 'Barra',
+            'stool'     => 'Taburete',
+            'chair'     => 'Silla',
+            'fireplace' => 'Chimenea',
+            'pillar'    => 'Pilar',
+            'column'    => 'Columna',
+        ];
+
+        if (in_array($data['shape'], $specialShapes)) {
+            $data['name'] = $data['name'] ?? $specialNames[$data['shape']];
         } elseif (empty($data['name'])) {
             $usedNumbers = Table::where('user_id', Auth::id())
                 ->servicePoints()
@@ -409,7 +420,7 @@ class TableController extends Controller
         abort_if($table->user_id !== Auth::user()->ownerUserId(), 403, 'Acceso denegado.');
 
         $data = $request->validate([
-            'shape' => 'required|in:square,round,rectangle,bar,stool',
+            'shape' => 'required|in:square,round,rectangle,bar,stool,chair,fireplace,pillar,column',
         ]);
 
         $table->update($data);
