@@ -9,34 +9,8 @@
 
 {{-- ══════════════════════════════════════════════════════
      OVERLAY — Girar dispositivo (portrait mobile/tablet)
+     CSS → resources/css/components/table-map.css
 ══════════════════════════════════════════════════════ --}}
-<style>
-    @keyframes zampa-rotate-phone {
-        0%   { transform: rotate(0deg); }
-        35%  { transform: rotate(90deg); }
-        65%  { transform: rotate(90deg); }
-        100% { transform: rotate(0deg); }
-    }
-    #rotate-device-overlay {
-        display: none;
-        position: fixed;
-        inset: 0;
-        z-index: 9999;
-        background-color: rgba(17, 24, 39, 0.97);
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 1.5rem;
-        padding: 2rem;
-        text-align: center;
-    }
-    @media screen and (orientation: portrait) and (max-width: 1023px) {
-        #rotate-device-overlay { display: flex; }
-    }
-    #rotate-device-overlay .zampa-phone-icon {
-        animation: zampa-rotate-phone 2.5s ease-in-out infinite;
-    }
-</style>
 
 <div id="rotate-device-overlay"
      role="alertdialog"
@@ -371,9 +345,9 @@
               class="w-px h-4 bg-gray-300 dark:bg-gray-600 mx-0.5"
               aria-hidden="true"></span>
 
-        {{-- Añadir planta — solo en modo edición --}}
+        {{-- Añadir planta — solo en modo edición y cuando el plan lo permite --}}
         <button type="button"
-                x-show="editMode && floorCount < 5"
+                x-show="editMode && floorCount < 5 && floorCount < {{ $maxFloors ?? 999 }}"
                 @click="addFloor()"
                 aria-label="Añadir planta"
                 class="px-2 py-1 rounded text-xs font-semibold
@@ -381,6 +355,21 @@
                        transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-green-400">
             + P
         </button>
+
+        {{-- Aviso límite de plantas del plan (plan saturado pero no llegó a 5) --}}
+        <span x-show="editMode && floorCount >= {{ $maxFloors ?? 999 }} && floorCount < 5"
+              x-cloak
+              class="inline-flex items-center gap-1 text-xs font-medium
+                     text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20
+                     border border-red-200 dark:border-red-700 rounded px-2 py-1">
+            <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                 stroke-linejoin="round" aria-hidden="true">
+                <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            Límite del plan
+        </span>
 
         {{-- Eliminar planta — solo en modo edición --}}
         <button type="button"
@@ -441,6 +430,46 @@
             <p class="text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500">
                 Arrastrar al plano
             </p>
+
+            {{-- Aviso límite de mesas alcanzado --}}
+            <div x-show="tables.length >= {{ $maxTables }}"
+                 x-cloak
+                 role="alert"
+                 class="w-full flex items-start gap-2 p-3 rounded-xl
+                        bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+                <svg class="w-4 h-4 shrink-0 mt-0.5 text-red-500 dark:text-red-400"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                    <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+                <div class="text-xs text-red-700 dark:text-red-300">
+                    <p class="font-semibold">Límite de mesas alcanzado</p>
+                    <p class="mt-0.5 opacity-80">{{ $maxTables }} mesas en tu plan.</p>
+                </div>
+            </div>
+
+            {{-- Aviso previo al límite de mesas (≥80 %) --}}
+            <div x-show="tables.length / {{ $maxTables }} >= 0.8 && tables.length < {{ $maxTables }}"
+                 x-cloak
+                 role="status"
+                 class="w-full flex items-start gap-2 p-3 rounded-xl
+                        bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+                <svg class="w-4 h-4 shrink-0 mt-0.5 text-amber-500 dark:text-amber-400"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                    <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+                <div class="text-xs text-amber-700 dark:text-amber-300">
+                    <p class="font-semibold">Próximo al límite</p>
+                    <p class="mt-0.5 opacity-80">
+                        <span x-text="tables.length"></span> de {{ $maxTables }} mesas usadas.
+                    </p>
+                </div>
+            </div>
 
             {{-- Cuadrada --}}
             <div class="palette-item group flex flex-col items-center gap-2 select-none transition-opacity"
