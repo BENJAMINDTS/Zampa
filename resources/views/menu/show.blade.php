@@ -1697,13 +1697,27 @@
                                 @click="$store.cart.send()"
                                 :disabled="$store.cart.sending">
                             <span class="cart-foot__ctaIc" aria-hidden="true">
-                                <template x-if="$store.cart.sent">✓</template>
+                                <template x-if="$store.cart.sent">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                </template>
                                 <template x-if="$store.cart.sending && !$store.cart.sent">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="animation:spin 1s linear infinite">
                                         <circle cx="12" cy="12" r="10" stroke-dasharray="31.4" stroke-dashoffset="10"/>
                                     </svg>
                                 </template>
-                                <template x-if="!$store.cart.sending && !$store.cart.sent">👨‍🍳</template>
+                                <template x-if="!$store.cart.sending && !$store.cart.sent && !$store.cart._isBarOnly">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M6 9a4 4 0 0 1 4-4 4 4 0 0 1 4 0 4 4 0 0 1 4 4 3 3 0 0 1-2 2.83V19a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2v-7.17A3 3 0 0 1 6 9z"/>
+                                        <path d="M8 19h8"/>
+                                    </svg>
+                                </template>
+                                <template x-if="!$store.cart.sending && !$store.cart.sent && $store.cart._isBarOnly">
+                                    <svg width="16" height="16" viewBox="1 3 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M7 8h10v12a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V8z"/>
+                                        <path d="M17 11h2a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-2"/>
+                                        <path d="M10 12v6M14 12v6"/>
+                                    </svg>
+                                </template>
                             </span>
                             <span class="cart-foot__ctaLab"
                                   x-text="$store.cart.sending ? 'Enviando a cocina…' : ($store.cart.sent ? 'Pedido enviado' : $store.cart.sendLabel)"></span>
