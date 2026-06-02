@@ -158,65 +158,119 @@
 .biz-closed__btn:hover { background: var(--color-amber-400); }
 .biz-closed__btn:active { transform: scale(0.97); }
 
-/* ---- 2) Tapas indicator pill ---- */
+/* ---- 2) Tapas indicator ---- */
+/* Custom props permiten que @keyframes adapte sombra a cada tema */
 .tapas-indicator {
-  display: inline-flex; align-items: center; gap: 12px;
-  align-self: flex-start;
-  margin: 10px 16px 12px;
-  padding: 6px 14px 6px 6px;
-  background: linear-gradient(135deg, var(--color-amber-100), color-mix(in oklab, var(--color-amber-200) 70%, var(--color-amber-100)));
-  border: 1px solid color-mix(in oklab, var(--color-amber-400) 35%, var(--border-subtle));
-  border-radius: 9999px;
+  --ti-bg:           linear-gradient(135deg, #F59E0B, #C05B05);
+  --ti-border:       rgba(255,255,255,0.22);
+  --ti-shadow-base:  0 8px 22px rgba(180,83,9,0.42), 0 0 0 0 rgba(245,158,11,0.5);
+  --ti-shadow-peak:  0 18px 34px rgba(180,83,9,0.55), 0 0 0 9px rgba(245,158,11,0.22);
+  --ti-shadow-ring:  0 8px 22px rgba(180,83,9,0.42), 0 0 0 16px rgba(245,158,11,0);
+  --ti-glyph-bg:     rgba(255,255,255,0.22);
+  --ti-token-color:  #FFFFFF;
+  --ti-token-border: rgba(255,255,255,0.35);
+  --ti-text:         #FFFFFF;
+  --ti-text-muted:   rgba(255,255,255,0.88);
+  --ti-pill-bg:      rgba(255,255,255,0.22);
+  --ti-pill-border:  rgba(255,255,255,0.32);
+
+  display: flex; align-items: center; gap: 12px;
+  margin: 8px 12px 12px;
+  padding: 10px 16px 10px 10px;
+  background: var(--ti-bg);
+  border: 1.5px solid var(--ti-border);
+  border-radius: 18px;
   font-family: var(--font-body);
-  color: var(--color-amber-800);
+  color: var(--ti-text);
   cursor: pointer;
-  flex-shrink: 0;
-  width: auto; max-width: 100%;
-  transition: transform 120ms var(--ease-bounce), box-shadow var(--duration-fast);
-  box-shadow: 0 2px 8px rgba(245,158,11,0.12);
+  width: auto;
+  box-shadow: var(--ti-shadow-base);
+  animation: tapas-indicator-attention 5s var(--ease-smooth) 1.2s infinite;
+  transition: filter var(--duration-fast), transform 140ms var(--ease-bounce);
 }
+.tapas-indicator:hover {
+  filter: brightness(1.08);
+}
+.tapas-indicator:active { transform: translateY(0); }
+
+/* Dark mode — fondo más brillante para contrastar con bg oscuro */
 [data-theme="dark"] .tapas-indicator {
-  background: linear-gradient(135deg, rgba(251,191,36,0.12), rgba(251,191,36,0.04));
-  border-color: rgba(251,191,36,0.35);
-  color: var(--color-amber-300);
+  --ti-bg:           linear-gradient(135deg, #FBBF24, #D97706);
+  --ti-border:       rgba(255,255,255,0.18);
+  --ti-shadow-base:  0 8px 28px rgba(0,0,0,0.65), 0 0 0 0 rgba(251,191,36,0.55);
+  --ti-shadow-peak:  0 20px 40px rgba(0,0,0,0.75), 0 0 0 10px rgba(251,191,36,0.28);
+  --ti-shadow-ring:  0 8px 28px rgba(0,0,0,0.65), 0 0 0 18px rgba(251,191,36,0);
+  --ti-glyph-bg:     rgba(0,0,0,0.18);
+  --ti-token-color:  #1A0D00;
+  --ti-token-border: rgba(0,0,0,0.3);
+  --ti-text:         #1A0D00;
+  --ti-text-muted:   rgba(0,0,0,0.72);
+  --ti-pill-bg:      rgba(0,0,0,0.18);
+  --ti-pill-border:  rgba(0,0,0,0.22);
 }
-.tapas-indicator:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(245,158,11,0.20); }
+
+@keyframes tapas-indicator-attention {
+  0%, 62%, 100% {
+    transform: translateY(0) scale(1);
+    box-shadow: var(--ti-shadow-base);
+  }
+  70% {
+    transform: translateY(-8px) scale(1.03);
+    box-shadow: var(--ti-shadow-peak);
+  }
+  78% {
+    transform: translateY(0) scale(1);
+    box-shadow: var(--ti-shadow-ring);
+  }
+  85% { transform: translateY(-3px) scale(1.015); }
+  92% { transform: translateY(0) scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tapas-indicator { animation: none; }
+}
+
 .tapas-indicator__glyph {
-  width: 32px; height: 32px; border-radius: 50%;
-  background: var(--color-amber-300); color: #5A2F00;
+  flex-shrink: 0;
+  width: 38px; height: 38px; border-radius: 50%;
+  background: var(--ti-glyph-bg);
   display: inline-flex; align-items: center; justify-content: center;
-  font-size: 16px; flex-shrink: 0;
+  font-size: 20px;
 }
-.tapas-indicator__copy { display: inline-flex; align-items: baseline; gap: 6px; line-height: 1; min-width: 0; }
+.tapas-indicator__body { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0; }
+.tapas-indicator__copy { display: inline-flex; align-items: baseline; gap: 5px; line-height: 1; }
 .tapas-indicator__copy strong {
-  font-family: var(--font-display); font-weight: 900; font-size: 18px;
-  color: var(--color-amber-800); letter-spacing: -0.02em;
+  font-family: var(--font-display); font-weight: 900; font-size: 22px;
+  color: var(--ti-text); letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums; line-height: 1;
 }
 .tapas-indicator__copy span {
-  font-size: 12.5px; font-weight: 600; line-height: 1;
-  color: color-mix(in oklab, var(--color-amber-800) 80%, var(--fg-secondary));
+  font-size: 13px; font-weight: 700;
+  color: var(--ti-text-muted); line-height: 1;
 }
-[data-theme="dark"] .tapas-indicator__copy strong { color: var(--color-amber-300); }
-[data-theme="dark"] .tapas-indicator__copy span { color: color-mix(in oklab, var(--color-amber-300) 80%, var(--fg-secondary)); }
-.tapas-indicator__tokens { display: inline-flex; gap: 3px; padding: 0 4px; align-items: center; flex-shrink: 0; }
+.tapas-indicator__tokens { display: inline-flex; gap: 4px; align-items: center; }
 .tapas-indicator__tokens .tk {
-  width: 7px; height: 7px; border-radius: 50%;
-  background: var(--color-amber-300);
-  box-shadow: 0 0 0 1px rgba(0,0,0,0.05) inset;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--ti-token-color);
 }
 .tapas-indicator__tokens .tk--used {
   background: transparent;
-  border: 1px dashed color-mix(in oklab, var(--color-amber-400) 60%, transparent);
-  box-shadow: none;
+  border: 1.5px dashed var(--ti-token-border);
+}
+.tapas-indicator__tokensMore {
+  font-family: var(--font-display); font-weight: 900; font-size: 11px;
+  color: var(--ti-text-muted);
 }
 .tapas-indicator__cta {
-  font-family: var(--font-body); font-size: 11.5px; font-weight: 700;
-  padding: 4px 10px; border-radius: 9999px;
-  background: var(--color-amber-300); color: #5A2F00;
-  white-space: nowrap;
+  flex-shrink: 0;
+  font-family: var(--font-body); font-size: 12px; font-weight: 800;
+  padding: 6px 12px; border-radius: 9999px;
+  background: var(--ti-pill-bg);
+  color: var(--ti-text);
+  border: 1px solid var(--ti-pill-border);
+  white-space: nowrap; letter-spacing: 0.01em;
+  transition: background-color var(--duration-fast);
 }
-[data-theme="dark"] .tapas-indicator__cta { background: var(--color-amber-300); color: #2A1B05; }
+.tapas-indicator:hover .tapas-indicator__cta { filter: brightness(1.12); }
 
 /* ---- 2b) Tapas modal v2 ---- */
 .modal__panel--tapas {
