@@ -39,13 +39,11 @@ export function calculateCartTotal(items) {
  * @returns {boolean}
  */
 export function shouldShowTapaModal(cfg, barItemsCount, variantsUsed, tapaProducts) {
-    if (!cfg.enabled)                        return false;
-    if (!cfg.kitchenOpen)                    return false;
-    if (barItemsCount <= 0)                  return false;
-    if (variantsUsed >= barItemsCount)       return false;
-    if (variantsUsed >= cfg.maxVariants)     return false;
-    if (tapaProducts.length === 0)           return false;
-    if (variantsUsed >= tapaProducts.length) return false;
+    if (!cfg.enabled)                                           return false;
+    if (!cfg.kitchenOpen)                                       return false;
+    if (barItemsCount <= 0)                                     return false;
+    if (tapaProducts.length === 0)                              return false;
+    if (cfg.maxVariants > 0 && variantsUsed >= cfg.maxVariants) return false;
     return true;
 }
 
@@ -142,6 +140,23 @@ export function registerCart() {
                 this._variantsUsed,
                 this.tapaProducts,
             );
+        },
+
+        /**
+         * Reactive: true only when there are tapas pending AND the user still
+         * has unclaimed tapas from the current cart (new bar items not yet covered).
+         * Used to block the send button — avoids blocking when all tapas were
+         * already claimed in previously submitted orders.
+         */
+        get _tapaSendBlocked() {
+            if (!this._tapaPending) return false;
+            const newBarItems = this.items
+                .filter(i => i.destination === 'bar' && !i.isTapa)
+                .reduce((s, i) => s + i.quantity, 0);
+            const newTapaVariants = new Set(
+                this.items.filter(i => i.isTapa).map(i => i.productId)
+            ).size;
+            return newBarItems > newTapaVariants;
         },
 
         close() {
@@ -324,7 +339,7 @@ export function registerCart() {
         },
 
         async send() {
-            if (!this.items.length || this.sending || this._tapaPending) return;
+            if (!this.items.length || this.sending || this._tapaSendBlocked) return;
             this.sending = true;
             this.error   = null;
             try {
