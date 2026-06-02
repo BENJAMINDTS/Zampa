@@ -141,21 +141,25 @@ Route::middleware(['auth', 'business.active'])->group(function () {
     // Panel de cocina — requiere canAccessKitchen() (rol nativo 'kitchen' o admin con is_kitchen=true)
     Route::middleware('can.kitchen')->group(function () {
         Route::get('/cocina', [KitchenController::class, 'index'])->name('kitchen.index');
+        Route::get('/cocina/disponibilidad', [KitchenController::class, 'availability'])->name('kitchen.availability');
         Route::get('/cocina/badge', [KitchenController::class, 'badgeCount'])->name('kitchen.badge');
         Route::get('/cocina/pendientes', [KitchenController::class, 'pendingOrders'])->name('kitchen.pending');
         Route::post('/cocina/items/{item}/listo', [KitchenController::class, 'markItemReady'])->name('kitchen.item.ready');
         Route::post('/cocina/orders/{order}/servido', [KitchenController::class, 'markOrderServed'])->name('kitchen.order.served');
+        Route::patch('/cocina/productos/{product}/disponibilidad', [KitchenController::class, 'toggleAvailability'])->name('kitchen.product.availability');
     });
 
     // Panel de barra y notificaciones al camarero — requiere canAccessBar() (rol nativo 'waiter' o admin con is_waiter=true)
     Route::middleware('can.bar')->group(function () {
         Route::get('/bar', [BarPanelController::class, 'index'])->name('bar.index');
+        Route::get('/bar/disponibilidad', [BarPanelController::class, 'barAvailability'])->name('bar.availability');
         Route::get('/bar/badge', [BarPanelController::class, 'badgeCount'])->name('bar.badge');
         Route::get('/bar/status', [BarPanelController::class, 'tableStatus'])->name('bar.table.status');
         Route::get('/bar/tables/{table}', [BarPanelController::class, 'tableDetail'])->name('bar.table.detail');
         Route::get('/bar/pendientes', [BarPanelController::class, 'pendingItems'])->name('bar.pending');
         Route::patch('/bar/items/{item}', [BarPanelController::class, 'updateItem'])->name('bar.items.update');
         Route::patch('/bar/items/{item}/served', [BarPanelController::class, 'markItemServed'])->name('bar.items.served');
+        Route::patch('/bar/productos/{product}/disponibilidad', [BarPanelController::class, 'toggleAvailability'])->name('bar.product.availability');
 
         Route::get('/notifications/ready', [NotificationController::class, 'ready'])
              ->name('notifications.ready');

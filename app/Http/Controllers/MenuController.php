@@ -50,6 +50,7 @@ class MenuController extends Controller
                 ->with([
                     'products' => function ($query) {
                         $query->where('is_active', true)
+                              ->where('is_available', true)
                               ->with([
                                   'ingredients' => function ($q) {
                                       $q->withPivot(['is_removable', 'is_extra', 'extra_price'])
@@ -124,6 +125,7 @@ class MenuController extends Controller
 
                 $tapaProducts = $tapaCategory->products()
                                              ->where('is_active', true)
+                                             ->where('is_available', true)
                                              ->orderBy('name')
                                              ->get(['id', 'name', 'price', 'description']);
             }

@@ -4,10 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\Product;
 use App\Models\Table;
 use App\Models\Zone;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
 
 /**
@@ -269,12 +271,72 @@ class BarPanelController extends Controller
     }
 
     /**
+     * Vista de gestión de disponibilidad de productos de barra.
+     *
+     * @return View
+     */
+    public function barAvailability(): View
+    {
+        abort_if(! Auth::user()->canAccessBar(), 403, 'Acceso denegado.');
+
+        $ownerId     = Auth::user()->ownerUserId();
+        $barProducts = $this->getBarProducts($ownerId);
+
+        return view('bar.availability', compact('barProducts'));
+    }
+
+    /**
+     * Activa o desactiva temporalmente un producto de barra durante el servicio.
+     * Solo permite gestionar productos cuya categoría tenga destination=bar.
+     *
+     * @param  Product  $product
+     * @return JsonResponse
+     */
+    public function toggleAvailability(Product $product): JsonResponse
+    {
+        abort_if(! Auth::user()->canAccessBar(), 403, 'Acceso denegado.');
+
+        $ownerId = Auth::user()->ownerUserId();
+        abort_if($product->user_id !== $ownerId, 403, 'Acceso denegado.');
+
+        $isBarProduct = $product->categories()
+            ->where('destination', 'bar')
+            ->exists();
+        abort_if(! $isBarProduct, 403, 'Este producto no pertenece a la barra.');
+
+        $product->update(['is_available' => ! $product->is_available]);
+
+        Cache::forget("menu:{$ownerId}");
+
+        return response()->json([
+            'product_id'   => $product->id,
+            'is_available' => $product->is_available,
+        ]);
+    }
+
+    /**
      * @deprecated Usar tableStatus() en su lugar. Se mantiene por compatibilidad.
      * @return JsonResponse
      */
     public function pendingItems(): JsonResponse
     {
         return $this->tableStatus();
+    }
+
+    /**
+     * Devuelve los productos activos de barra del restaurante para gestionar disponibilidad.
+     *
+     * @param  int  $ownerId
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    private function getBarProducts(int $ownerId): \Illuminate\Database\Eloquent\Collection
+    {
+        return Product::where('user_id', $ownerId)
+            ->where('is_active', true)
+            ->whereHas('categories', fn ($q) => $q->where('destination', 'bar'))
+            ->with('categories:id,name')
+            ->orderBy('name')
+            ->get(['id', 'name', 'is_available']);
     }
 
     /**

@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Category;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\Product;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
 
 /**
@@ -33,6 +36,20 @@ class KitchenController extends Controller
         $orders = $this->getActiveOrders();
 
         return view('kitchen.index', compact('orders'));
+    }
+
+    /**
+     * Vista de gestión de disponibilidad de productos de cocina.
+     *
+     * @return View
+     */
+    public function availability(): View
+    {
+        abort_if(! Auth::user()->canAccessKitchen(), 403, 'Acceso denegado.');
+
+        $products = $this->getKitchenProducts();
+
+        return view('kitchen.availability', compact('products'));
     }
 
     /**
@@ -150,6 +167,35 @@ class KitchenController extends Controller
     }
 
     /**
+     * Activa o desactiva temporalmente un producto de cocina durante el servicio.
+     * Solo permite gestionar productos cuya categoría tenga destination=kitchen.
+     *
+     * @param  Product  $product
+     * @return JsonResponse
+     */
+    public function toggleAvailability(Product $product): JsonResponse
+    {
+        abort_if(! Auth::user()->canAccessKitchen(), 403, 'Acceso denegado.');
+
+        $ownerId = Auth::user()->ownerUserId();
+        abort_if($product->user_id !== $ownerId, 403, 'Acceso denegado.');
+
+        $isKitchenProduct = $product->categories()
+            ->where('destination', 'kitchen')
+            ->exists();
+        abort_if(! $isKitchenProduct, 403, 'Este producto no pertenece a cocina.');
+
+        $product->update(['is_available' => ! $product->is_available]);
+
+        Cache::forget("menu:{$ownerId}");
+
+        return response()->json([
+            'product_id'   => $product->id,
+            'is_available' => $product->is_available,
+        ]);
+    }
+
+    /**
      * Consulta los pedidos activos (cooking o pending) con ítems en cola
      * pertenecientes al restaurante autenticado.
      *
@@ -169,5 +215,22 @@ class KitchenController extends Controller
         ->whereIn('status', ['pending', 'cooking'])
         ->orderBy('created_at')
         ->get();
+    }
+
+    /**
+     * Devuelve los productos activos de cocina del restaurante para gestionar disponibilidad.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    private function getKitchenProducts(): \Illuminate\Database\Eloquent\Collection
+    {
+        $ownerId = Auth::user()->ownerUserId();
+
+        return Product::where('user_id', $ownerId)
+            ->where('is_active', true)
+            ->whereHas('categories', fn ($q) => $q->where('destination', 'kitchen'))
+            ->with('categories:id,name')
+            ->orderBy('name')
+            ->get(['id', 'name', 'is_available']);
     }
 }

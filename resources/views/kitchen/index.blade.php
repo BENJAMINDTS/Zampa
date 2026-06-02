@@ -153,7 +153,10 @@
     ])->values();
   @endphp
   <script id="kitchen-init" type="application/json">@json($ordersForJs)</script>
-  <script id="kitchen-urls" type="application/json">@json(['pending' => route('kitchen.pending')])</script>
+  <script id="kitchen-urls" type="application/json">@json([
+    'pending'              => route('kitchen.pending'),
+    'toggleAvailability'   => url('/cocina/productos/__ID__/disponibilidad'),
+  ])</script>
   @endpush
 
 </x-app-layout>
