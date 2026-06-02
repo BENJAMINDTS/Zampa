@@ -39,11 +39,12 @@ export function calculateCartTotal(items) {
  * @returns {boolean}
  */
 export function shouldShowTapaModal(cfg, barItemsCount, variantsUsed, tapaProducts) {
-    if (!cfg.enabled)                       return false;
-    if (!cfg.kitchenOpen)                   return false;
-    if (barItemsCount <= 0)                 return false;
-    if (variantsUsed >= cfg.maxVariants)    return false;
-    if (tapaProducts.length === 0)          return false;
+    if (!cfg.enabled)                        return false;
+    if (!cfg.kitchenOpen)                    return false;
+    if (barItemsCount <= 0)                  return false;
+    if (variantsUsed >= barItemsCount)       return false;
+    if (variantsUsed >= cfg.maxVariants)     return false;
+    if (tapaProducts.length === 0)           return false;
     if (variantsUsed >= tapaProducts.length) return false;
     return true;
 }
