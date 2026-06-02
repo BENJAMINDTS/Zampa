@@ -158,11 +158,52 @@ export function kitchenPanel(initialOrders, urls) {
 }
 
 /**
- * Registers the `kitchenPanel` Alpine.data component.
+ * Alpine component for toggling a product's temporary availability.
+ * Used in both kitchen and bar panels to retire products during service.
+ *
+ * @param {{ available: boolean, toggleUrl: string }} params
+ * @returns {Object} Alpine component definition.
+ */
+export function productAvailability({ available, toggleUrl }) {
+    return {
+        /** @type {boolean} Whether the product is currently available on the menu. */
+        available,
+
+        /** @type {boolean} Whether a toggle request is in flight. */
+        loading: false,
+
+        /**
+         * Sends a PATCH to the toggle endpoint and updates local state.
+         *
+         * @returns {Promise<void>}
+         */
+        async toggle() {
+            this.loading = true;
+            try {
+                const res  = await fetch(toggleUrl, {
+                    method:  'PATCH',
+                    headers: {
+                        'X-CSRF-TOKEN':     document.querySelector('meta[name="csrf-token"]').content,
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept':           'application/json',
+                    },
+                });
+                const data = await res.json();
+                this.available = data.is_available;
+            } finally {
+                this.loading = false;
+            }
+        },
+    };
+}
+
+/**
+ * Registers the `kitchenPanel` and `productAvailability` Alpine.data components.
  * Reads initial state from injected JSON script tags.
  *
  * @returns {void}
  */
 export function registerKitchenPanel() {
-    Alpine.data('kitchenPanel', () => kitchenPanel(readKitchenInit(), readKitchenUrls()));
+    Alpine.data('kitchenPanel',        () => kitchenPanel(readKitchenInit(), readKitchenUrls()));
+    Alpine.data('productAvailability', (params) => productAvailability(params));
 }
