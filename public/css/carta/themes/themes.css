@@ -584,8 +584,6 @@
 }
 .cart-foot__tapaPending:hover {
   filter: brightness(1.07);
-  transform: translateY(-1px);
-  animation-play-state: paused;
 }
 .cart-foot__tapaPending:active { transform: translateY(0); }
 [data-theme="dark"] .cart-foot__tapaPending {
