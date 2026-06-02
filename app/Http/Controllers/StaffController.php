@@ -27,9 +27,12 @@ class StaffController extends Controller
      */
     public function index(): View
     {
-        $staff = Auth::user()->staff()->paginate(15);
+        $owner        = Auth::user();
+        $staff        = $owner->staff()->paginate(15);
+        $staffCurrent = $owner->staff()->count();
+        $staffLimit   = $owner->plan?->max_staff;
 
-        return view('staff.index', compact('staff'));
+        return view('staff.index', compact('staff', 'staffCurrent', 'staffLimit'));
     }
 
     /**
@@ -39,7 +42,11 @@ class StaffController extends Controller
      */
     public function create(): View
     {
-        return view('staff.create');
+        $owner        = Auth::user();
+        $staffCurrent = $owner->staff()->count();
+        $staffLimit   = $owner->plan?->max_staff;
+
+        return view('staff.create', compact('staffCurrent', 'staffLimit'));
     }
 
     /**
