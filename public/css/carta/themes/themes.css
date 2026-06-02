@@ -567,35 +567,85 @@
 }
 
 
-/* Aviso de tapas pendientes — mismo patrón que fab-attention (lift + ring pulse)
-   en ámbar cálido para distinguirse del verde del CTA y del rojo de la cuenta. */
+/* Aviso de tapas pendientes — mismo patrón que fab-attention (lift + ring pulse).
+   CSS vars permiten adaptar colores a cada tema sin duplicar la animación. */
 .cart-foot__tapaPending {
+  --ctp-bg:           linear-gradient(135deg, #F59E0B, #B45309);
+  --ctp-color:        #FFFFFF;
+  --ctp-shadow-base:  0 8px 20px rgba(180,83,9,0.38), 0 0 0 0 rgba(245,158,11,0.5);
+  --ctp-shadow-peak:  0 14px 28px rgba(180,83,9,0.48), 0 0 0 7px rgba(245,158,11,0.18);
+  --ctp-shadow-ring:  0 8px 20px rgba(180,83,9,0.38), 0 0 0 13px rgba(245,158,11,0);
+  --ctp-ic-bg:        rgba(255,255,255,0.22);
+
   display: flex; align-items: center; justify-content: center; gap: 10px;
   padding: 11px 16px;
   border-radius: 14px; border: none;
-  background: linear-gradient(135deg, #F59E0B, #B45309);
-  color: #FFFFFF;
+  background: var(--ctp-bg);
+  color: var(--ctp-color);
   font-family: var(--font-body); font-weight: 700; font-size: 13.5px;
-  text-align: center;
-  cursor: pointer;
-  box-shadow: 0 8px 20px rgba(180,83,9,0.38), 0 0 0 0 rgba(245,158,11,0.5);
+  text-align: center; cursor: pointer;
+  box-shadow: var(--ctp-shadow-base);
   animation: tapa-attention 5s var(--ease-smooth) 0.8s infinite;
-  transition: filter var(--duration-fast), transform 140ms var(--ease-bounce);
+  transition: filter var(--duration-fast);
 }
-.cart-foot__tapaPending:hover {
-  filter: brightness(1.07);
-}
+.cart-foot__tapaPending:hover { filter: brightness(1.07); }
 .cart-foot__tapaPending:active { transform: translateY(0); }
+
+/* ── Tema modern dark ── */
 [data-theme="dark"] .cart-foot__tapaPending {
-  background: linear-gradient(135deg, #FBBF24, #D97706);
-  box-shadow: 0 8px 20px rgba(0,0,0,0.45), 0 0 0 0 rgba(251,191,36,0.45);
+  --ctp-bg:          linear-gradient(135deg, #FBBF24, #D97706);
+  --ctp-color:       #1A0D00;
+  --ctp-ic-bg:       rgba(0,0,0,0.18);
+  --ctp-shadow-base: 0 8px 20px rgba(0,0,0,0.45), 0 0 0 0 rgba(251,191,36,0.45);
+  --ctp-shadow-peak: 0 14px 28px rgba(0,0,0,0.55), 0 0 0 7px rgba(251,191,36,0.22);
+  --ctp-shadow-ring: 0 8px 20px rgba(0,0,0,0.45), 0 0 0 13px rgba(251,191,36,0);
 }
 
-/* Icono emoji en círculo blanco translúcido — igual que fab--orders__ic */
+/* ── Tema classic light ── */
+[data-theme="classic"] .cart-foot__tapaPending {
+  --ctp-bg:          linear-gradient(135deg, #7C5326, #4E3018);
+  --ctp-color:       #FFFDF6;
+  --ctp-ic-bg:       rgba(255,253,246,0.2);
+  --ctp-shadow-base: 0 8px 20px rgba(46,32,19,0.45), 0 0 0 0 rgba(124,83,38,0.5);
+  --ctp-shadow-peak: 0 14px 28px rgba(46,32,19,0.55), 0 0 0 7px rgba(124,83,38,0.2);
+  --ctp-shadow-ring: 0 8px 20px rgba(46,32,19,0.45), 0 0 0 13px rgba(124,83,38,0);
+}
+
+/* ── Tema classic dark ── */
+[data-theme="classic"] .carta[data-theme="dark"] .cart-foot__tapaPending {
+  --ctp-bg:          linear-gradient(135deg, #C79A4A, #9A7028);
+  --ctp-color:       #1A130D;
+  --ctp-ic-bg:       rgba(26,19,13,0.2);
+  --ctp-shadow-base: 0 8px 20px rgba(0,0,0,0.55), 0 0 0 0 rgba(199,154,74,0.5);
+  --ctp-shadow-peak: 0 14px 28px rgba(0,0,0,0.65), 0 0 0 7px rgba(199,154,74,0.22);
+  --ctp-shadow-ring: 0 8px 20px rgba(0,0,0,0.55), 0 0 0 13px rgba(199,154,74,0);
+}
+
+/* ── Tema minimal light ── */
+[data-theme="minimal"] .cart-foot__tapaPending {
+  --ctp-bg:          linear-gradient(135deg, #18181B, #09090B);
+  --ctp-color:       #FFFFFF;
+  --ctp-ic-bg:       rgba(255,255,255,0.12);
+  --ctp-shadow-base: 0 8px 20px rgba(9,9,11,0.5), 0 0 0 0 rgba(24,24,27,0.55);
+  --ctp-shadow-peak: 0 14px 28px rgba(9,9,11,0.65), 0 0 0 7px rgba(24,24,27,0.2);
+  --ctp-shadow-ring: 0 8px 20px rgba(9,9,11,0.5), 0 0 0 13px rgba(24,24,27,0);
+}
+
+/* ── Tema minimal dark ── */
+[data-theme="minimal"] .carta[data-theme="dark"] .cart-foot__tapaPending {
+  --ctp-bg:          linear-gradient(135deg, #FAFAFA, #D4D4D8);
+  --ctp-color:       #09090B;
+  --ctp-ic-bg:       rgba(9,9,11,0.12);
+  --ctp-shadow-base: 0 8px 20px rgba(0,0,0,0.65), 0 0 0 0 rgba(250,250,250,0.3);
+  --ctp-shadow-peak: 0 14px 28px rgba(0,0,0,0.75), 0 0 0 7px rgba(250,250,250,0.12);
+  --ctp-shadow-ring: 0 8px 20px rgba(0,0,0,0.65), 0 0 0 13px rgba(250,250,250,0);
+}
+
+/* Icono emoji en círculo translúcido */
 .cart-foot__tapaPending__ic {
   flex-shrink: 0;
   width: 32px; height: 32px; border-radius: 9999px;
-  background: rgba(255,255,255,0.22);
+  background: var(--ctp-ic-bg);
   display: inline-flex; align-items: center; justify-content: center;
   font-size: 16px; line-height: 1;
 }
@@ -611,19 +661,19 @@
 }
 .cart-foot__tapaPending:hover .cart-foot__tapaPending__arrow { transform: translateX(3px); }
 
-/* Rebote + ring pulse — mismo patrón que fab-attention de la DS */
+/* Rebote + ring pulse usando CSS vars — se adapta a cada tema */
 @keyframes tapa-attention {
   0%, 65%, 100% {
     transform: translateY(0) scale(1);
-    box-shadow: 0 8px 20px rgba(180,83,9,0.38), 0 0 0 0 rgba(245,158,11,0.5);
+    box-shadow: var(--ctp-shadow-base);
   }
   73% {
     transform: translateY(-7px) scale(1.03);
-    box-shadow: 0 14px 28px rgba(180,83,9,0.48), 0 0 0 7px rgba(245,158,11,0.18);
+    box-shadow: var(--ctp-shadow-peak);
   }
   81% {
     transform: translateY(0) scale(1);
-    box-shadow: 0 8px 20px rgba(180,83,9,0.38), 0 0 0 13px rgba(245,158,11,0);
+    box-shadow: var(--ctp-shadow-ring);
   }
   88% { transform: translateY(-3px) scale(1.015); }
   95% { transform: translateY(0) scale(1); }
