@@ -90,17 +90,20 @@
             @endif
 
             {{-- Datos de inicialización para ticketConfigData() (resources/js/alpine/ticket-config.js) --}}
-            <script id="ticket-config-init" type="application/json">@json([
-                'template'       => old('template', $ticketConfig->template),
-                'savedTemplate'  => $ticketConfig->template,
-                'taxId'          => old('tax_id', $ticketConfig->tax_id),
-                'savedTaxId'     => $ticketConfig->tax_id,
-                'footerText'     => old('footer_text', $ticketConfig->footer_text ?? ''),
-                'savedFooterText'=> $ticketConfig->footer_text ?? '',
-                'footerCount'    => mb_strlen(old('footer_text', $ticketConfig->footer_text ?? '')),
-                'logoUrl'        => $ticketConfig->hasLogo() ? $ticketConfig->getLogoUrl() : '',
-                'businessName'   => Auth::user()->business_name ?? Auth::user()->name,
-            ])</script>
+            @php
+                $ticketConfigInit = [
+                    'template'        => old('template', $ticketConfig->template),
+                    'savedTemplate'   => $ticketConfig->template,
+                    'taxId'           => old('tax_id', $ticketConfig->tax_id),
+                    'savedTaxId'      => $ticketConfig->tax_id,
+                    'footerText'      => old('footer_text', $ticketConfig->footer_text ?? ''),
+                    'savedFooterText' => $ticketConfig->footer_text ?? '',
+                    'footerCount'     => mb_strlen(old('footer_text', $ticketConfig->footer_text ?? '')),
+                    'logoUrl'         => $ticketConfig->hasLogo() ? $ticketConfig->getLogoUrl() : '',
+                    'businessName'    => Auth::user()->business_name ?? Auth::user()->name,
+                ];
+            @endphp
+            <script id="ticket-config-init" type="application/json">@json($ticketConfigInit)</script>
 
             {{-- ─── FORMULARIO con Alpine.js reactivo ─── --}}
             <div x-data="ticketConfigData()">
