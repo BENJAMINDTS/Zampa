@@ -3048,7 +3048,7 @@
 
 
                 {{-- ======================================================================
-             ORDERS PANEL — Mis pedidos (lista + detalle)
+             ORDERS PANEL — DS: OrdersWindow (lista + detalle)
              ====================================================================== --}}
         <div class="scrim"
              x-show="$store.orders.open"
@@ -3067,14 +3067,14 @@
 
                 {{-- Header — cambia entre vista lista y detalle --}}
                 <div class="drawer__head">
-                    <div class="drawer__heading">
+                    <div>
                         <div class="drawer__title"
                              x-text="$store.orders.selectedId === null ? 'Mis pedidos' : 'Pedido #' + $store.orders.selected?.number">
                         </div>
-                        <div class="drawer__subtitle"
+                        <div style="font-family:var(--font-body);font-size:12px;color:var(--fg-muted);margin-top:2px"
                              x-text="$store.orders.selectedId === null
-                                 ? ($store.orders.count + ' pedido' + ($store.orders.count !== 1 ? 's' : '') + ' enviado' + ($store.orders.count !== 1 ? 's' : ''))
-                                 : (($store.orders.selected?.itemCount ?? 0) + ' artículo' + (($store.orders.selected?.itemCount ?? 0) !== 1 ? 's' : '') + ' · ' + $store.orders.fmt($store.orders.selected?.total ?? 0))">
+                                 ? ($store.orders.count + ' ' + ($store.orders.count === 1 ? 'pedido enviado' : 'pedidos enviados'))
+                                 : (($store.orders.selected?.itemCount ?? 0) + ' ' + (($store.orders.selected?.itemCount ?? 0) === 1 ? 'artículo' : 'artículos') + ' · ' + $store.orders.fmt($store.orders.selected?.total ?? 0))">
                         </div>
                     </div>
                     <button type="button" class="icon-btn" @click="$store.orders.close()" aria-label="Cerrar">
@@ -3084,96 +3084,174 @@
                     </button>
                 </div>
 
-                {{-- Body lista --}}
+                {{-- Body — lista --}}
                 <template x-if="$store.orders.selectedId === null">
-                    <div class="drawer__body">
-                        <template x-for="order in $store.orders.list" :key="order.id">
-                            <button type="button" class="order-card" @click="$store.orders.openDetail(order.id)">
-                                <span class="order-badge" x-text="'#' + order.number"></span>
-                                <div class="order-card__info">
-                                    <div class="order-card__name" x-text="'Pedido #' + order.number"></div>
-                                    <div class="order-card__meta"
-                                         x-text="order.itemCount + ' artículo' + (order.itemCount !== 1 ? 's' : '') + ' · ' + order.sentAt">
+                    <div class="orders-body">
+                        <div class="orders-list">
+                            <template x-for="order in $store.orders.list" :key="order.id">
+                                <button type="button" class="order-row" @click="$store.orders.openDetail(order.id)">
+                                    <div class="order-row__num" x-text="'#' + order.number" aria-hidden="true"></div>
+                                    <div class="order-row__main">
+                                        <div class="order-row__title" x-text="'Pedido #' + order.number"></div>
+                                        <div class="order-row__meta">
+                                            <span x-text="order.itemCount + ' ' + (order.itemCount === 1 ? 'artículo' : 'artículos')"></span>
+                                            <template x-if="order.sentAt">
+                                                <span class="order-row__dot" aria-hidden="true">·</span>
+                                            </template>
+                                            <template x-if="order.sentAt">
+                                                <span x-text="order.sentAt"></span>
+                                            </template>
+                                        </div>
                                     </div>
-                                </div>
-                                <span class="order-card__price" x-text="$store.orders.fmt(order.total)"></span>
-                                <svg class="order-card__chevron" width="14" height="14" viewBox="0 0 24 24"
-                                     fill="none" stroke="currentColor" stroke-width="2.5"
-                                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                    <path d="M9 18l6-6-6-6"/>
-                                </svg>
-                            </button>
-                        </template>
-                    </div>
-                </template>
-
-                {{-- Body detalle --}}
-                <template x-if="$store.orders.selectedId !== null">
-                    <div class="drawer__body">
-                        <button type="button" class="orders-back" @click="$store.orders.backToList()">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                 stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <path d="M15 18l-6-6 6-6"/>
-                            </svg>
-                            Volver a mis pedidos
-                        </button>
-
-                        <div class="order-detail-card">
-                            <div class="order-detail-card__head">
-                                <span class="order-badge order-badge--active"
-                                      x-text="'#' + $store.orders.selected?.number"></span>
-                                <div class="order-card__info">
-                                    <div class="order-card__name"
-                                         x-text="'Pedido #' + $store.orders.selected?.number"></div>
-                                    <div class="order-card__meta"
-                                         x-text="($store.orders.selected?.itemCount ?? 0) + ' artículo' + (($store.orders.selected?.itemCount ?? 0) !== 1 ? 's' : '') + ' · Enviado a las ' + $store.orders.selected?.sentAt">
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="order-detail-card__divider"></div>
-                            <template x-for="item in ($store.orders.selected?.items ?? [])" :key="item.name + item.price">
-                                <div class="order-item">
-                                    <span class="order-item__qty" x-text="item.quantity + '×'"></span>
-                                    <span class="order-item__name" x-text="item.name"></span>
-                                    <span class="order-item__price"
-                                          x-text="$store.orders.fmt(item.price * item.quantity)"></span>
-                                </div>
+                                    <div class="order-row__price" x-text="$store.orders.fmt(order.total)"></div>
+                                    <span class="order-row__chev" aria-hidden="true">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                             stroke="currentColor" stroke-width="2.5"
+                                             stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M9 18l6-6-6-6"/>
+                                        </svg>
+                                    </span>
+                                </button>
                             </template>
                         </div>
                     </div>
                 </template>
 
-                {{-- Footer lista --}}
+                {{-- Body — detalle --}}
+                <template x-if="$store.orders.selectedId !== null">
+                    <div class="orders-body">
+                        <div class="orders-detail">
+                            <button type="button" class="orders-back" @click="$store.orders.backToList()"
+                                    aria-label="Volver a la lista">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                     stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+                                     style="transform:rotate(180deg)" aria-hidden="true">
+                                    <path d="M9 18l6-6-6-6"/>
+                                </svg>
+                                <span>Volver a mis pedidos</span>
+                            </button>
+
+                            <div class="orders-detail__head">
+                                <div class="orders-detail__num"
+                                     x-text="'#' + $store.orders.selected?.number" aria-hidden="true"></div>
+                                <div>
+                                    <div class="orders-detail__title"
+                                         x-text="'Pedido #' + $store.orders.selected?.number"></div>
+                                    <div class="orders-detail__meta"
+                                         x-text="($store.orders.selected?.itemCount ?? 0) + ' ' + (($store.orders.selected?.itemCount ?? 0) === 1 ? 'artículo' : 'artículos') + ($store.orders.selected?.sentAt ? ' · Enviado a las ' + $store.orders.selected.sentAt : '')">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="orders-detail__items">
+                                <template x-for="item in ($store.orders.selected?.items ?? [])"
+                                          :key="item.name + item.price">
+                                    <div class="orders-line">
+                                        <div class="orders-line__qty" x-text="item.quantity + '×'"></div>
+                                        <div class="orders-line__body">
+                                            <div class="orders-line__name" x-text="item.name"></div>
+                                        </div>
+                                        <div class="orders-line__price"
+                                             x-text="$store.orders.fmt(item.price * item.quantity)"></div>
+                                    </div>
+                                </template>
+                            </div>
+
+                            <div class="orders-detail__sub">
+                                <span class="lab">Subtotal del pedido</span>
+                                <span class="val"
+                                      x-text="$store.orders.fmt($store.orders.selected?.total ?? 0)"></span>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+
+                {{-- Footer — solo en vista lista --}}
                 <template x-if="$store.orders.selectedId === null">
-                    <div class="drawer__foot">
-                        <div class="orders-total">
-                            <span class="orders-total__label">TOTAL CUENTA</span>
-                            <span class="orders-total__val"
-                                  x-text="$store.orders.fmt($store.orders.grandTotal)"></span>
+                    <div class="orders-foot">
+                        <div class="orders-foot__total">
+                            <span class="lab">Total cuenta</span>
+                            <span class="val" x-text="$store.orders.fmt($store.orders.grandTotal)"></span>
                         </div>
                         <button type="button" class="btn-primary"
                                 @click="$store.orders.close(); $store.bill.open()">
                             <svg aria-hidden="true" width="14" height="14" fill="none" stroke="currentColor"
-                                 stroke-width="2" viewBox="0 0 24 24">
+                                 stroke-width="2" viewBox="0 0 24 24" style="margin-right:6px;vertical-align:-3px">
                                 <path stroke-linecap="round" stroke-linejoin="round"
-                                      d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"/>
+                                      d="M4 2v20l3-2 3 2 3-2 3 2 3-2V2H4z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M8 7h8M8 11h8M8 15h6"/>
                             </svg>
                             Solicitar cuenta
                         </button>
                     </div>
                 </template>
 
-                {{-- Footer detalle --}}
-                <template x-if="$store.orders.selectedId !== null">
-                    <div class="drawer__foot">
-                        <div class="orders-total">
-                            <span class="orders-total__label">SUBTOTAL DEL PEDIDO</span>
-                            <span class="orders-total__val"
-                                  x-text="$store.orders.fmt($store.orders.selected?.total ?? 0)"></span>
-                        </div>
-                    </div>
-                </template>
+            </div>
+        </div>
 
+        {{-- ======================================================================
+             ORDER CONFIRMED POPUP — DS: OrderConfirmedPopup
+             Aparece automáticamente al enviar un pedido a cocina/barra.
+             ====================================================================== --}}
+        <div class="scrim scrim--center order-confirmed"
+             x-show="$store.orders.confirmedOrder !== null"
+             style="display:none"
+             x-transition:enter="transition duration-200"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             @click.self="$store.orders.dismissConfirmed()"
+             role="dialog" aria-modal="true" aria-label="Pedido enviado">
+
+            <div class="order-confirmed__panel" @click.stop>
+                <button type="button" class="icon-btn order-confirmed__x"
+                        @click="$store.orders.dismissConfirmed()" aria-label="Cerrar">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+
+                <div class="order-confirmed__badge" aria-hidden="true">
+                    <svg viewBox="0 0 32 32" width="34" height="34" fill="none">
+                        <path d="M7 16.5l6 6 12-13" stroke="currentColor" stroke-width="3"
+                              stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+
+                <div class="order-confirmed__num"
+                     x-text="'Pedido #' + $store.orders.confirmedOrder?.number"></div>
+                <div class="order-confirmed__title">Pedido enviado</div>
+                <div class="order-confirmed__sub">Lo llevamos en unos minutos 🍽</div>
+
+                <div class="order-confirmed__items">
+                    <template x-for="item in ($store.orders.confirmedOrder?.items.slice(0, 5) ?? [])"
+                              :key="item.name + item.price">
+                        <div class="order-confirmed__row">
+                            <span class="qty" x-text="item.quantity + '×'"></span>
+                            <span class="name" x-text="item.name"></span>
+                            <span class="price"
+                                  x-text="$store.orders.fmt(item.price * item.quantity)"></span>
+                        </div>
+                    </template>
+                    <template x-if="($store.orders.confirmedOrder?.items.length ?? 0) > 5">
+                        <div class="order-confirmed__more"
+                             x-text="'+ ' + ($store.orders.confirmedOrder.items.length - 5) + ' más…'"></div>
+                    </template>
+                </div>
+
+                <div class="order-confirmed__sub-total">
+                    <span class="lab">Subtotal</span>
+                    <span class="val"
+                          x-text="$store.orders.fmt($store.orders.confirmedOrder?.total ?? 0)"></span>
+                </div>
+
+                <button type="button" class="btn-primary"
+                        @click="$store.orders.dismissConfirmed()">
+                    Entendido
+                </button>
             </div>
         </div>
 
