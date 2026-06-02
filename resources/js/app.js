@@ -6,7 +6,7 @@ import { registerLayoutBadges }  from './alpine/layout-badges.js';
 import { registerKitchenPanel }  from './alpine/kitchen-panel.js';
 import { registerBarComponents } from './alpine/bar-panel.js';
 import { registerBusinessConfig } from './alpine/business-config.js';
-import { registerCart }          from './alpine/cart.js';
+import { registerCart, registerVariantPicker } from './alpine/cart.js';
 import { registerMenuFilters }   from './alpine/menu-filters.js';
 import { registerBill }          from './alpine/bill.js';
 import { registerOrders }        from './alpine/orders.js';
@@ -22,6 +22,7 @@ document.addEventListener('alpine:init', () => {
     registerBarComponents();
     registerBusinessConfig();
     registerCart();
+    registerVariantPicker();
     registerMenuFilters();
     registerBill();
     registerOrders();

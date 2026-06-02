@@ -84,6 +84,43 @@ export function readTapaProducts() {
  *
  * @returns {void}
  */
+export function registerVariantPicker() {
+    Alpine.store('variantPicker', {
+        open:        false,
+        productId:   null,
+        productName: '',
+        imageUrl:    null,
+        destination: 'kitchen',
+        variants:    [],
+        selectedVId: null,
+        get sv() {
+            return this.variants.find(v => v.id === this.selectedVId) ?? this.variants[0] ?? null;
+        },
+        show(product) {
+            this.productId   = product.id;
+            this.productName = product.name;
+            this.imageUrl    = product.imageUrl ?? null;
+            this.destination = product.destination ?? 'kitchen';
+            this.variants    = product.variants ?? [];
+            this.selectedVId = this.variants[0]?.id ?? null;
+            this.open        = true;
+            document.body.style.overflow = 'hidden';
+        },
+        close() {
+            this.open = false;
+            document.body.style.overflow = '';
+        },
+        confirm() {
+            if (!this.sv) return;
+            Alpine.store('cart').addWithVariant(
+                this.productId, this.sv.id, this.sv.name, this.sv.price,
+                { name: this.productName, destination: this.destination, imageUrl: this.imageUrl }
+            );
+            this.close();
+        },
+    });
+}
+
 export function registerCart() {
     const ctx          = readMenuContext();
     const tapaConfig   = readTapaConfig();
@@ -187,6 +224,7 @@ export function registerCart() {
                     variantName: null,
                     name:        product.name,
                     price:       product.price,
+                    image:       product.imageUrl ?? null,
                     quantity:    1,
                     destination: product.destination ?? null,
                     mods:        [],
@@ -213,6 +251,7 @@ export function registerCart() {
                     variantName: variantName,
                     name:        (productData?.name ?? '') + ' — ' + variantName,
                     price:       variantPrice,
+                    image:       productData?.imageUrl ?? null,
                     quantity:    1,
                     destination: productData?.destination ?? null,
                     mods:        [],
