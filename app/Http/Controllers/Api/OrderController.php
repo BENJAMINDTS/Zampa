@@ -81,6 +81,13 @@ class OrderController extends Controller
             $variantId = $itemData['variant_id'] ?? null;
             $variant   = null;
 
+            if (! $product->is_active || ! $product->is_available) {
+                return response()->json([
+                    'success' => false,
+                    'message' => '"' . $product->name . '" ya no está disponible. Retíralo del carrito e inténtalo de nuevo.',
+                ], 422);
+            }
+
             if ($variantId !== null) {
                 $variant = ProductVariant::findOrFail($variantId);
                 if ($variant->product_id !== $product->id) {
