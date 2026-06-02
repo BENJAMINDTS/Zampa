@@ -62,6 +62,7 @@ class MenuController extends Controller
                                   },
                                   'variants',
                               ])
+                              ->orderBy('sort_order')
                               ->orderBy('name');
                     },
                 ])
