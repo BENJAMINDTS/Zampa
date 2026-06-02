@@ -3,6 +3,8 @@
     $cartaActive   = request()->routeIs('categories.*', 'ingredients.*', 'products.*', 'daily-menus.*');
     $localActive   = request()->routeIs('tables.*', 'zones.*', 'staff.*');
     $negocioActive = request()->routeIs('tapas.*', 'negocio.*', 'manager.*', 'ticket-config.*', 'negocio.menu-style.*');
+    $cocinaActive  = request()->routeIs('kitchen.*');
+    $barraActive   = request()->routeIs('bar.*');
 @endphp
 
 <aside
@@ -220,48 +222,168 @@
 
         {{-- Cocina --}}
         @if(Auth::user()->canAccessKitchen())
+          @if(Auth::user()->role === 'admin')
+            {{-- Admin: grupo desplegable con sub-items --}}
+            <div x-data="{
+                cocinaOpen: JSON.parse(localStorage.getItem('nav_cocina') ?? 'true'),
+                toggle() { this.cocinaOpen = !this.cocinaOpen; localStorage.setItem('nav_cocina', JSON.stringify(this.cocinaOpen)); }
+            }">
+                <button @click="toggle()"
+                        :aria-expanded="cocinaOpen.toString()"
+                        aria-controls="nav-cocina"
+                        class="w-full flex items-center justify-between gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
+                               {{ $cocinaActive
+                                  ? 'text-red-700 dark:text-red-300'
+                                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100' }}">
+                    <span class="flex items-center gap-3">
+                        <svg class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
+                        </svg>
+                        Cocina
+                    </span>
+                    <svg :class="cocinaOpen ? 'rotate-90' : ''"
+                         class="h-4 w-4 transition-transform flex-shrink-0"
+                         fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </button>
+                <div id="nav-cocina" x-show="cocinaOpen" x-cloak class="mt-0.5 ml-7 pl-3 border-l border-gray-200 dark:border-gray-700 space-y-0.5">
+                    <span x-data="kitchenBadge('{{ route('kitchen.badge') }}')" x-init="init()">
+                        <a href="{{ route('kitchen.index') }}"
+                           aria-current="{{ request()->routeIs('kitchen.index') ? 'page' : 'false' }}"
+                           class="flex items-center justify-between px-3 py-1.5 rounded-md text-sm transition-colors
+                                  {{ request()->routeIs('kitchen.index')
+                                     ? 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 font-medium'
+                                     : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200' }}">
+                            Comandas
+                            <span x-show="count > 0" x-cloak x-text="count"
+                                  class="inline-flex items-center justify-center min-w-[1.25rem] h-4 px-1 text-xs font-bold text-white bg-red-500 rounded-full"
+                                  :aria-label="count + ' pedidos nuevos'"></span>
+                        </a>
+                    </span>
+                    <a href="{{ route('kitchen.availability') }}"
+                       aria-current="{{ request()->routeIs('kitchen.availability') ? 'page' : 'false' }}"
+                       class="flex items-center px-3 py-1.5 rounded-md text-sm transition-colors
+                              {{ request()->routeIs('kitchen.availability')
+                                 ? 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 font-medium'
+                                 : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200' }}">
+                        Disponibilidad
+                    </a>
+                </div>
+            </div>
+          @else
+            {{-- Staff de cocina: dos links planos --}}
             <span x-data="kitchenBadge('{{ route('kitchen.badge') }}')" x-init="init()" class="block">
                 <a href="{{ route('kitchen.index') }}"
-                   aria-current="{{ request()->routeIs('kitchen.*') ? 'page' : 'false' }}"
+                   aria-current="{{ request()->routeIs('kitchen.index') ? 'page' : 'false' }}"
                    class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
-                          {{ request()->routeIs('kitchen.*')
+                          {{ request()->routeIs('kitchen.index')
                              ? 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300'
                              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800' }}">
                     <svg class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
                     </svg>
                     Cocina
-                    <span x-show="count > 0"
-                          x-cloak
-                          x-text="count"
+                    <span x-show="count > 0" x-cloak x-text="count"
                           class="ml-auto inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 text-xs font-bold text-white bg-red-500 rounded-full"
-                          :aria-label="count + ' pedidos nuevos sin atender'">
-                    </span>
+                          :aria-label="count + ' pedidos nuevos sin atender'"></span>
                 </a>
             </span>
+            <a href="{{ route('kitchen.availability') }}"
+               aria-current="{{ request()->routeIs('kitchen.availability') ? 'page' : 'false' }}"
+               class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
+                      {{ request()->routeIs('kitchen.availability')
+                         ? 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300'
+                         : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800' }}">
+                <svg class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/>
+                </svg>
+                Disponibilidad
+            </a>
+          @endif
         @endif
 
         {{-- Barra --}}
         @if(Auth::user()->canAccessBar())
+          @if(Auth::user()->role === 'admin')
+            {{-- Admin: grupo desplegable con sub-items --}}
+            <div x-data="{
+                barraOpen: JSON.parse(localStorage.getItem('nav_barra') ?? 'true'),
+                toggle() { this.barraOpen = !this.barraOpen; localStorage.setItem('nav_barra', JSON.stringify(this.barraOpen)); }
+            }">
+                <button @click="toggle()"
+                        :aria-expanded="barraOpen.toString()"
+                        aria-controls="nav-barra"
+                        class="w-full flex items-center justify-between gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
+                               {{ $barraActive
+                                  ? 'text-amber-700 dark:text-amber-300'
+                                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100' }}">
+                    <span class="flex items-center gap-3">
+                        <svg class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                        </svg>
+                        Barra
+                    </span>
+                    <svg :class="barraOpen ? 'rotate-90' : ''"
+                         class="h-4 w-4 transition-transform flex-shrink-0"
+                         fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </button>
+                <div id="nav-barra" x-show="barraOpen" x-cloak class="mt-0.5 ml-7 pl-3 border-l border-gray-200 dark:border-gray-700 space-y-0.5">
+                    <span x-data="barBadge('{{ route('bar.badge') }}')" x-init="init()">
+                        <a href="{{ route('bar.index') }}"
+                           aria-current="{{ request()->routeIs('bar.index') ? 'page' : 'false' }}"
+                           class="flex items-center justify-between px-3 py-1.5 rounded-md text-sm transition-colors
+                                  {{ request()->routeIs('bar.index')
+                                     ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 font-medium'
+                                     : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200' }}">
+                            Pedidos
+                            <span x-show="count > 0" x-cloak x-text="count"
+                                  class="inline-flex items-center justify-center min-w-[1.25rem] h-4 px-1 text-xs font-bold text-white bg-amber-500 rounded-full"
+                                  :aria-label="count + ' bebidas pendientes'"></span>
+                        </a>
+                    </span>
+                    <a href="{{ route('bar.availability') }}"
+                       aria-current="{{ request()->routeIs('bar.availability') ? 'page' : 'false' }}"
+                       class="flex items-center px-3 py-1.5 rounded-md text-sm transition-colors
+                              {{ request()->routeIs('bar.availability')
+                                 ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 font-medium'
+                                 : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200' }}">
+                        Disponibilidad
+                    </a>
+                </div>
+            </div>
+          @else
+            {{-- Staff de barra: dos links planos --}}
             <span x-data="barBadge('{{ route('bar.badge') }}')" x-init="init()" class="block">
                 <a href="{{ route('bar.index') }}"
-                   aria-current="{{ request()->routeIs('bar.*') ? 'page' : 'false' }}"
+                   aria-current="{{ request()->routeIs('bar.index') ? 'page' : 'false' }}"
                    class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
-                          {{ request()->routeIs('bar.*')
+                          {{ request()->routeIs('bar.index')
                              ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300'
                              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800' }}">
                     <svg class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
                     </svg>
                     Barra
-                    <span x-show="count > 0"
-                          x-cloak
-                          x-text="count"
+                    <span x-show="count > 0" x-cloak x-text="count"
                           class="ml-auto inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 text-xs font-bold text-white bg-amber-500 rounded-full"
-                          :aria-label="count + ' bebidas pendientes en barra'">
-                    </span>
+                          :aria-label="count + ' bebidas pendientes en barra'"></span>
                 </a>
             </span>
+            <a href="{{ route('bar.availability') }}"
+               aria-current="{{ request()->routeIs('bar.availability') ? 'page' : 'false' }}"
+               class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
+                      {{ request()->routeIs('bar.availability')
+                         ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300'
+                         : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800' }}">
+                <svg class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/>
+                </svg>
+                Disponibilidad
+            </a>
+          @endif
         @endif
 
         @if(Auth::user()->canAccessKitchen() || Auth::user()->canAccessBar())
