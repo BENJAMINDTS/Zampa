@@ -426,6 +426,7 @@ export function registerTableMap() {
             rotTooltip:            { show: false, x: 0, y: 0, deg: 0 },
             undoStack:             [],
             redoStack:             [],
+            clipboard:             null,
             isPanning:             false,
             focusedVertexIdx:      null,
             contextMenu:           { show: false, x: 0, y: 0, type: null, item: null },
@@ -445,6 +446,25 @@ export function registerTableMap() {
                 });
                 this.pollStatuses();
                 setInterval(() => this.pollStatuses(), 25000);
+                if (!window._zampaResizeListener) {
+                    window._zampaResizeListener = () => { if (!this.editMode) this._applyOverviewZoom(); };
+                    window.addEventListener('resize', window._zampaResizeListener);
+                }
+                if (!window._zampaKbListener) {
+                    window._zampaKbListener = (e) => {
+                        if (this._isTyping()) return;
+                        if (e.ctrlKey && (e.key === 'c' || e.key === 'C')) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            this.copySelected();
+                        } else if (e.ctrlKey && (e.key === 'v' || e.key === 'V')) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            this.pasteSelected();
+                        }
+                    };
+                    document.addEventListener('keydown', window._zampaKbListener, true);
+                }
             },
 
             _prefetchQrSvgs() {
@@ -629,7 +649,7 @@ export function registerTableMap() {
 
             hasCollision(item) {
                 if (this.floorsEnabled && this.currentView === 'general') return false;
-                const isSpecial = ['bar', 'stool'].includes(item.shape);
+                const isSpecial = ['bar', 'stool', 'chair', 'fireplace', 'pillar', 'column'].includes(item.shape);
                 const selfId    = item.id ?? null;
                 const itemFloor = this.floorsEnabled ? (item.floor ?? this.currentFloor) : null;
                 const sameFloor = (other) => !this.floorsEnabled || (other.floor ?? 1) === (itemFloor ?? 1);
@@ -756,7 +776,7 @@ export function registerTableMap() {
                 interact('.table-item').unset();
                 interact('.table-item')
                     .draggable({
-                        ignoreFrom:  '.rotation-handle, .resize-handle',
+                        ignoreFrom:  '.rotation-handle, .resize-handle, .bar-vertex-handle',
                         inertia:    false,
                         autoScroll: true,
                         listeners: {
@@ -768,8 +788,9 @@ export function registerTableMap() {
                                 const id   = parseInt(el.dataset.tableId);
                                 const item = this.tables.find(t => t.id === id) ?? this.elements.find(e => e.id === id);
                                 this.closeEditPanels();
-                                this.draggingId      = id;
-                                el._startedColliding = item ? this.hasCollision(item) : false;
+                                this.draggingId    = id;
+                                el._dragStartX     = item?.position_x;
+                                el._dragStartY     = item?.position_y;
                             },
                             move: (event) => {
                                 const el   = event.target;
@@ -782,44 +803,31 @@ export function registerTableMap() {
                                     : { minX: 0, maxX: this.floorWidth - 100, minY: 0, maxY: this.floorHeight - 100 };
                                 const propX = Math.max(minX, Math.min(maxX, Math.round(curX + event.dx / this.canvasZoom)));
                                 const propY = Math.max(minY, Math.min(maxY, Math.round(curY + event.dy / this.canvasZoom)));
-                                if (!item) {
-                                    el.style.left = `${propX}px`;
-                                    el.style.top  = `${propY}px`;
-                                    return;
-                                }
-                                if (el._startedColliding) {
-                                    item.position_x = propX;
-                                    item.position_y = propY;
-                                    el.style.left   = `${propX}px`;
-                                    el.style.top    = `${propY}px`;
-                                    if (!this.hasCollision(item)) el._startedColliding = false;
-                                    return;
-                                }
-                                const testXY = { ...item, position_x: propX, position_y: propY };
-                                const testX  = { ...item, position_x: propX, position_y: item.position_y };
-                                const testY  = { ...item, position_x: item.position_x, position_y: propY };
-                                let newX = item.position_x;
-                                let newY = item.position_y;
-                                if (!this.hasCollision(testXY)) {
-                                    newX = propX; newY = propY;
-                                } else if (!this.hasCollision(testX)) {
-                                    newX = propX;
-                                } else if (!this.hasCollision(testY)) {
-                                    newY = propY;
-                                }
-                                item.position_x = newX;
-                                item.position_y = newY;
-                                el.style.left   = `${newX}px`;
-                                el.style.top    = `${newY}px`;
+                                if (item) { item.position_x = propX; item.position_y = propY; }
+                                el.style.left = `${propX}px`;
+                                el.style.top  = `${propY}px`;
                             },
                             end: (event) => {
-                                const el = event.target;
-                                const id = parseInt(el.dataset.tableId);
-                                const x  = Math.round(parseFloat(el.style.left) || 0);
-                                const y  = Math.round(parseFloat(el.style.top)  || 0);
-                                const w  = Math.round(parseFloat(el.style.width)  || 100);
-                                const h  = Math.round(parseFloat(el.style.height) || 100);
+                                const el   = event.target;
+                                const id   = parseInt(el.dataset.tableId);
+                                const x    = Math.round(parseFloat(el.style.left) || 0);
+                                const y    = Math.round(parseFloat(el.style.top)  || 0);
+                                const w    = Math.round(parseFloat(el.style.width)  || 100);
+                                const h    = Math.round(parseFloat(el.style.height) || 100);
+                                const item = this.tables.find(t => t.id === id) ?? this.elements.find(e => e.id === id);
                                 this.draggingId = null;
+                                if (item && this.hasCollision(item)) {
+                                    const origX = el._dragStartX ?? x;
+                                    const origY = el._dragStartY ?? y;
+                                    item.position_x = origX;
+                                    item.position_y = origY;
+                                    el.style.left   = `${origX}px`;
+                                    el.style.top    = `${origY}px`;
+                                    this.undoStack.pop();
+                                    this.showToast('No se puede superponer con otra mesa.', true);
+                                    this.persistPosition(id, origX, origY, w, h);
+                                    return;
+                                }
                                 this.persistPosition(id, x, y, w, h);
                             },
                         },
@@ -940,35 +948,25 @@ export function registerTableMap() {
                 this.closeEditPanels();
                 this.draggingId            = element.id;
                 document.body.style.cursor = 'grabbing';
-                let startedColliding = this.hasCollision(element);
                 const onMove = (e) => {
                     const { minX, maxX, minY, maxY } = this.canvasBounds(element);
-                    const propX = Math.max(minX, Math.min(maxX, Math.round(startPx + (e.clientX - startMX) / this.canvasZoom)));
-                    const propY = Math.max(minY, Math.min(maxY, Math.round(startPy + (e.clientY - startMY) / this.canvasZoom)));
-                    if (startedColliding) {
-                        element.position_x = propX;
-                        element.position_y = propY;
-                        if (!this.hasCollision(element)) startedColliding = false;
-                        return;
-                    }
-                    const testXY = { ...element, position_x: propX, position_y: propY };
-                    const testX  = { ...element, position_x: propX, position_y: element.position_y };
-                    const testY  = { ...element, position_x: element.position_x, position_y: propY };
-                    if (!this.hasCollision(testXY)) {
-                        element.position_x = propX;
-                        element.position_y = propY;
-                    } else if (!this.hasCollision(testX)) {
-                        element.position_x = propX;
-                    } else if (!this.hasCollision(testY)) {
-                        element.position_y = propY;
-                    }
+                    element.position_x = Math.max(minX, Math.min(maxX, Math.round(startPx + (e.clientX - startMX) / this.canvasZoom)));
+                    element.position_y = Math.max(minY, Math.min(maxY, Math.round(startPy + (e.clientY - startMY) / this.canvasZoom)));
                 };
                 const onUp = async () => {
                     document.removeEventListener('mousemove', onMove);
                     document.removeEventListener('mouseup',   onUp);
                     this.draggingId            = null;
                     document.body.style.cursor = '';
-                    await this.persistPosition(element.id, element.position_x, element.position_y, element.width, element.height);
+                    if (this.hasCollision(element)) {
+                        element.position_x = startPx;
+                        element.position_y = startPy;
+                        this.undoStack.pop();
+                        this.showToast('No se puede superponer con otro elemento.', true);
+                        await this.persistPosition(element.id, startPx, startPy, element.width, element.height);
+                    } else {
+                        await this.persistPosition(element.id, element.position_x, element.position_y, element.width, element.height);
+                    }
                 };
                 document.addEventListener('mousemove', onMove);
                 document.addEventListener('mouseup',   onUp);
@@ -1050,9 +1048,12 @@ export function registerTableMap() {
                             ghost.style.width        = `${dW}px`;
                             ghost.style.height       = `${dH}px`;
                             ghost.style.borderRadius = shape === 'stool' ? '9999px' : '8px';
-                            ghost.style.borderColor  = '#d97706';
-                            ghost.style.background   = 'rgba(251,191,36,0.3)';
-                            ghost.querySelector('span').textContent = shape === 'bar' ? 'Nueva barra' : 'Nuevo taburete';
+                            const isGray = shape === 'pillar' || shape === 'column';
+                            const isRed  = shape === 'fireplace';
+                            ghost.style.borderColor  = shape === 'bar' ? '#d97706' : isRed ? '#b91c1c' : isGray ? '#6b7280' : '#4ade80';
+                            ghost.style.background   = shape === 'bar' ? 'rgba(251,191,36,0.3)' : isRed ? 'rgba(185,28,28,0.15)' : isGray ? 'rgba(107,114,128,0.2)' : 'rgba(74,222,128,0.2)';
+                            const nameMap = { bar: 'Nueva barra', chair: 'Nueva silla', fireplace: 'Nueva chimenea', pillar: 'Nuevo pilar', column: 'Nueva columna' };
+                            ghost.querySelector('span').textContent = nameMap[shape] ?? 'Nuevo elemento';
                             ghost.classList.remove('hidden');
                             ghost.classList.add('flex');
                             this.isDraggingFromPalette = true;
@@ -1086,7 +1087,8 @@ export function registerTableMap() {
                                 this.showToast('No se puede colocar aquí: colisiona con otra mesa o elemento.', true);
                                 return;
                             }
-                            const name = dropShape === 'bar' ? 'Barra' : 'Taburete';
+                            const dropNames = { bar: 'Barra', chair: 'Silla', stool: 'Taburete', fireplace: 'Chimenea', pillar: 'Pilar', column: 'Columna' };
+                            const name = dropNames[dropShape] ?? 'Elemento';
                             await this.createSpecialElement(name, dropShape, dropX, dropY, dropW, dropH);
                         },
                     },
@@ -1143,12 +1145,12 @@ export function registerTableMap() {
                 });
             },
 
-            async createTable(name, shape, x, y, w, h) {
+            async createTable(name, shape, x, y, w, h, rotation = 0) {
                 try {
                     const res = await fetch(this._urls.store, {
                         method:  'POST',
                         headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 'Accept': 'application/json' },
-                        body: JSON.stringify({ name: name || null, shape, position_x: x, position_y: y, width: w, height: h, is_service_point: true, floor: this.floorsEnabled ? this.currentFloor : 1 }),
+                        body: JSON.stringify({ name: name || null, shape, position_x: x, position_y: y, width: w, height: h, rotation, is_service_point: true, floor: this.floorsEnabled ? this.currentFloor : 1 }),
                     });
                     const json = await res.json();
                     if (!res.ok || !json.success) { this.showToast(json.message ?? 'Error al crear la mesa.', true); return; }
@@ -1160,12 +1162,12 @@ export function registerTableMap() {
                 }
             },
 
-            async createSpecialElement(name, shape, x, y, w, h) {
+            async createSpecialElement(name, shape, x, y, w, h, rotation = 0) {
                 try {
                     const res = await fetch(this._urls.store, {
                         method:  'POST',
                         headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 'Accept': 'application/json' },
-                        body: JSON.stringify({ name, shape, position_x: x, position_y: y, width: w, height: h, is_service_point: false, floor: this.floorsEnabled ? this.currentFloor : 1 }),
+                        body: JSON.stringify({ name, shape, position_x: x, position_y: y, width: w, height: h, rotation, is_service_point: false, floor: this.floorsEnabled ? this.currentFloor : 1 }),
                     });
                     const json = await res.json();
                     if (!res.ok || !json.success) { this.showToast(json.message ?? 'Error al crear el elemento.', true); return; }
@@ -1487,32 +1489,37 @@ export function registerTableMap() {
                 this.resizingId            = table.id;
                 document.body.style.cursor = 'se-resize';
                 const onMove = (e) => {
-                    const dx     = (e.clientX - startMX) / this.canvasZoom;
-                    const dy     = (e.clientY - startMY) / this.canvasZoom;
+                    const dx      = (e.clientX - startMX) / this.canvasZoom;
+                    const dy      = (e.clientY - startMY) / this.canvasZoom;
                     const localDX =  dx * cosθ + dy * sinθ;
                     const localDY = -dx * sinθ + dy * cosθ;
-                    const newW = Math.min(800, Math.max(40, startW + localDX));
-                    const newH = Math.min(800, Math.max(40, startH + localDY));
+                    const newW = Math.min(800, Math.max(20, startW + localDX));
+                    const newH = Math.min(800, Math.max(20, startH + localDY));
                     const dW   = newW - startW;
                     const dH   = newH - startH;
                     const rawX = Math.round(startPx + dW / 2 * (cosθ - 1) - dH / 2 * sinθ);
                     const rawY = Math.round(startPy + dW / 2 * sinθ + dH / 2 * (cosθ - 1));
-                    const newX = Math.max(0, Math.min(this.floorWidth  - Math.round(newW), rawX));
-                    const newY = Math.max(0, Math.min(this.floorHeight - Math.round(newH), rawY));
-                    const testItem = { ...table, width: Math.round(newW), height: Math.round(newH), position_x: newX, position_y: newY };
-                    if (!this.hasCollision(testItem)) {
-                        table.width      = Math.round(newW);
-                        table.height     = Math.round(newH);
-                        table.position_x = newX;
-                        table.position_y = newY;
-                    }
+                    table.width      = Math.round(newW);
+                    table.height     = Math.round(newH);
+                    table.position_x = Math.max(0, Math.min(this.floorWidth  - Math.round(newW), rawX));
+                    table.position_y = Math.max(0, Math.min(this.floorHeight - Math.round(newH), rawY));
                 };
                 const onUp = async () => {
                     document.removeEventListener('mousemove', onMove);
                     document.removeEventListener('mouseup',   onUp);
                     this.resizingId            = null;
                     document.body.style.cursor = '';
-                    await this.persistPosition(table.id, table.position_x, table.position_y, table.width, table.height);
+                    if (this.hasCollision(table)) {
+                        table.width      = startW;
+                        table.height     = startH;
+                        table.position_x = startPx;
+                        table.position_y = startPy;
+                        this.undoStack.pop();
+                        this.showToast('No se puede superponer con otra mesa.', true);
+                        await this.persistPosition(table.id, startPx, startPy, startW, startH);
+                    } else {
+                        await this.persistPosition(table.id, table.position_x, table.position_y, table.width, table.height);
+                    }
                 };
                 document.addEventListener('mousemove', onMove);
                 document.addEventListener('mouseup',   onUp);
@@ -1604,14 +1611,8 @@ export function registerTableMap() {
                     const dy       = e.clientY - centerY;
                     let   angle    = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
                     angle = ((angle % 360) + 360) % 360;
-                    const proposed = Math.round(angle);
-                    const testItem = { ...table, rotation: proposed };
-                    if (!this.hasCollision(testItem)) {
-                        table.rotation    = proposed;
-                        lastValidRotation = proposed;
-                    } else {
-                        table.rotation = lastValidRotation;
-                    }
+                    table.rotation    = Math.round(angle);
+                    lastValidRotation = table.rotation;
                     this.rotTooltip.x   = e.clientX;
                     this.rotTooltip.y   = e.clientY;
                     this.rotTooltip.deg = table.rotation;
@@ -1796,12 +1797,13 @@ export function registerTableMap() {
             },
 
             _applyOverviewZoom() {
-                const headerH = document.querySelector('header')?.offsetHeight ?? 65;
-                const availW  = window.innerWidth  - 48;
-                const availH  = window.innerHeight - headerH - 48;
-                const scaleX  = availW  / this.floorWidth;
-                const scaleY  = availH  / this.floorHeight;
-                this.canvasZoom = Math.max(0.5, Math.min(1, Math.min(scaleX, scaleY)));
+                const headerH  = document.querySelector('header')?.offsetHeight ?? 65;
+                const floorNavH = document.querySelector('nav[aria-label="Selector de planta"]')?.offsetHeight ?? 0;
+                const availW   = window.innerWidth  - 32;
+                const availH   = window.innerHeight - headerH - floorNavH - 32;
+                const scaleX   = availW  / this.floorWidth;
+                const scaleY   = availH  / this.floorHeight;
+                this.canvasZoom = Math.min(1, Math.min(scaleX, scaleY));
                 const main = this.$refs.canvas?.parentElement;
                 if (main) { main.scrollTop = 0; main.scrollLeft = 0; }
             },
@@ -2035,6 +2037,40 @@ export function registerTableMap() {
                     await this.persistZoneVertices(item.id, item.vertices);
                 } else {
                     await this.persistBarVertices(item.id, item.vertices);
+                }
+            },
+
+            copySelected() {
+                if (this.readonly || !this.selectedId) return;
+                const item = this.tables.find(t => t.id === this.selectedId)
+                          ?? this.elements.find(e => e.id === this.selectedId);
+                if (!item) return;
+                const specialShapes = ['bar', 'stool', 'chair', 'fireplace', 'pillar', 'column'];
+                this.clipboard = {
+                    shape: item.shape,
+                    width: item.width,
+                    height: item.height,
+                    rotation: item.rotation ?? 0,
+                    is_service_point: !specialShapes.includes(item.shape),
+                };
+                this.showToast('Copiado. Ctrl+V para pegar.');
+            },
+
+            async pasteSelected() {
+                if (!this.clipboard || this.readonly || !this.editMode) return;
+                const src  = this.tables.find(t => t.id === this.selectedId) ?? this.elements.find(e => e.id === this.selectedId);
+                const offX = src ? Math.min(src.position_x + 30, this.floorWidth  - this.clipboard.width)  : 100;
+                const offY = src ? Math.min(src.position_y + 30, this.floorHeight - this.clipboard.height) : 100;
+                if (this.clipboard.is_service_point) {
+                    if (this.tables.length >= this._init.maxTables) {
+                        this.showToast(`Límite de ${this._init.maxTables} mesas alcanzado.`, true);
+                        return;
+                    }
+                    await this.createTable(null, this.clipboard.shape, offX, offY, this.clipboard.width, this.clipboard.height, this.clipboard.rotation);
+                } else {
+                    const pasteNames = { bar: 'Barra', chair: 'Silla', stool: 'Taburete', fireplace: 'Chimenea', pillar: 'Pilar', column: 'Columna' };
+                    const name = pasteNames[this.clipboard.shape] ?? 'Elemento';
+                    await this.createSpecialElement(name, this.clipboard.shape, offX, offY, this.clipboard.width, this.clipboard.height, this.clipboard.rotation);
                 }
             },
 

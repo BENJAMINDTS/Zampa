@@ -421,15 +421,86 @@
             <div class="special-item group flex flex-col items-center gap-2 select-none cursor-grab active:cursor-grabbing transition-opacity"
                  data-shape="stool" data-width="50" data-height="50"
                  title="Arrastrar al plano (no genera QR)">
-                <div class="w-10 h-10 rounded-full border-2 border-dashed border-amber-600
-                            bg-amber-50 dark:bg-amber-900/30
-                            group-hover:border-amber-700 group-hover:bg-amber-100 transition-colors
+                <div class="w-10 h-10 rounded-full border-2 border-dashed border-green-500
+                            bg-green-50 dark:bg-green-900/30
+                            group-hover:border-green-600 group-hover:bg-green-100 transition-colors
                             flex items-center justify-center">
-                    <svg aria-hidden="true" class="w-5 h-5 text-amber-600" fill="currentColor" viewBox="0 0 24 24">
+                    <svg aria-hidden="true" class="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 24 24">
                         <circle cx="12" cy="12" r="6"/>
                     </svg>
                 </div>
                 <span class="text-xs font-medium text-gray-600 dark:text-gray-300">Taburete</span>
+            </div>
+
+            {{-- Silla --}}
+            <div class="special-item group flex flex-col items-center gap-2 select-none cursor-grab active:cursor-grabbing transition-opacity"
+                 data-shape="chair" data-width="50" data-height="60"
+                 title="Arrastrar al plano (no genera QR)">
+                <div class="w-10 h-12 rounded border-2 border-dashed border-green-500
+                            bg-green-50 dark:bg-green-900/30
+                            group-hover:border-green-600 group-hover:bg-green-100 transition-colors
+                            flex items-center justify-center relative">
+                    <svg aria-hidden="true" class="w-6 h-8 text-green-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 32">
+                        <rect x="3" y="0" width="18" height="8" rx="2"/>
+                        <rect x="3" y="10" width="18" height="14" rx="2"/>
+                        <line x1="5" y1="24" x2="5" y2="32"/>
+                        <line x1="19" y1="24" x2="19" y2="32"/>
+                    </svg>
+                </div>
+                <span class="text-xs font-medium text-gray-600 dark:text-gray-300">Silla</span>
+            </div>
+
+            {{-- Chimenea --}}
+            <div class="special-item group flex flex-col items-center gap-2 select-none cursor-grab active:cursor-grabbing transition-opacity"
+                 data-shape="fireplace" data-width="80" data-height="80"
+                 title="Arrastrar al plano (no genera QR)">
+                <div class="w-12 h-12 rounded border-2 border-dashed border-red-700
+                            bg-red-50 dark:bg-red-900/30
+                            group-hover:border-red-800 group-hover:bg-red-100 transition-colors
+                            flex items-center justify-center">
+                    <svg aria-hidden="true" class="w-7 h-7 text-red-700" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                        <rect x="3" y="10" width="18" height="11" rx="1"/>
+                        <path d="M7 10V7a5 5 0 0110 0v3"/>
+                        <line x1="9" y1="21" x2="9" y2="17"/>
+                        <line x1="15" y1="21" x2="15" y2="17"/>
+                        <path d="M12 3 C10 5 13 7 11 9" stroke-linecap="round"/>
+                    </svg>
+                </div>
+                <span class="text-xs font-medium text-gray-600 dark:text-gray-300">Chimenea</span>
+            </div>
+
+            {{-- Pilar --}}
+            <div class="special-item group flex flex-col items-center gap-2 select-none cursor-grab active:cursor-grabbing transition-opacity"
+                 data-shape="pillar" data-width="40" data-height="40"
+                 title="Arrastrar al plano (no genera QR)">
+                <div class="w-10 h-10 rounded-full border-2 border-dashed border-gray-500
+                            bg-gray-100 dark:bg-gray-700/40
+                            group-hover:border-gray-600 group-hover:bg-gray-200 dark:group-hover:bg-gray-700 transition-colors
+                            flex items-center justify-center">
+                    <svg aria-hidden="true" class="w-5 h-5 text-gray-600 dark:text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                        <ellipse cx="12" cy="4" rx="6" ry="2"/>
+                        <rect x="9" y="4" width="6" height="16"/>
+                        <ellipse cx="12" cy="20" rx="6" ry="2"/>
+                    </svg>
+                </div>
+                <span class="text-xs font-medium text-gray-600 dark:text-gray-300">Pilar</span>
+            </div>
+
+            {{-- Columna --}}
+            <div class="special-item group flex flex-col items-center gap-2 select-none cursor-grab active:cursor-grabbing transition-opacity"
+                 data-shape="column" data-width="35" data-height="35"
+                 title="Arrastrar al plano (no genera QR)">
+                <div class="w-9 h-9 rounded border-2 border-dashed border-gray-500
+                            bg-gray-100 dark:bg-gray-700/40
+                            group-hover:border-gray-600 group-hover:bg-gray-200 dark:group-hover:bg-gray-700 transition-colors
+                            flex items-center justify-center">
+                    <svg aria-hidden="true" class="w-4 h-4 text-gray-600 dark:text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                        <rect x="4" y="2" width="16" height="3" rx="1"/>
+                        <rect x="8" y="5" width="8" height="14"/>
+                        <rect x="4" y="19" width="16" height="3" rx="1"/>
+                    </svg>
+                </div>
+                <span class="text-xs font-medium text-gray-600 dark:text-gray-300">Columna</span>
             </div>
 
             <hr class="border-gray-200 dark:border-gray-700">
@@ -755,24 +826,23 @@
                         @keydown.stop="if ($event.key === 'ContextMenu' || ($event.shiftKey && $event.key === 'F10')) openContextMenu($event, bar, 'bar')"
                         :aria-label="`Barra: ${bar.name}`"
                     >
-                        <div class="w-full h-full relative flex items-center justify-center
-                                    rounded-lg
-                                    bg-amber-100 dark:bg-amber-900
-                                    border-2 border-amber-400 dark:border-amber-600
-                                    shadow-md cursor-grab active:cursor-grabbing
-                                    transition-shadow hover:shadow-lg"
-                             :class="{'zampa-selected': isActive(bar.id)}">
+                        <div class="w-full h-full relative flex items-center justify-center cursor-grab active:cursor-grabbing transition-shadow"
+                             :class="{
+                                 'rounded-lg bg-amber-100 dark:bg-amber-900 border-2 border-amber-400 dark:border-amber-600 shadow-md hover:shadow-lg': !(bar.vertices && bar.vertices.length >= 3),
+                                 'zampa-selected': isActive(bar.id)
+                             }">
 
-                            {{-- Polígono SVG de la barra --}}
+                            {{-- Polígono SVG de la barra — en modo polígono reemplaza al rect --}}
                             <svg x-show="bar.vertices && bar.vertices.length >= 3"
-                                 class="absolute inset-0 pointer-events-none overflow-visible"
+                                 class="absolute inset-0 overflow-visible pointer-events-none"
                                  :width="bar.width"
                                  :height="bar.height"
                                  aria-hidden="true">
                                 <polygon :points="vertexPoints(bar)"
-                                         fill="rgba(251,191,36,0.2)"
-                                         stroke="#f59e0b"
-                                         stroke-width="2"
+                                         fill="rgba(251,191,36,0.45)"
+                                         :stroke="isActive(bar.id) ? '#6366f1' : '#d97706'"
+                                         :stroke-width="isActive(bar.id) ? '3' : '2'"
+                                         :stroke-dasharray="isActive(bar.id) ? '8 4' : 'none'"
                                          fill-rule="evenodd"/>
                             </svg>
 
@@ -781,17 +851,19 @@
                                 <div class="absolute inset-0 pointer-events-none">
                                     <template x-for="(v, idx) in bar.vertices" :key="idx">
                                         <div class="absolute" :style="`left:${v.x - 6}px; top:${v.y - 6}px;`">
-                                            <div class="w-3 h-3 rounded-full border-2 border-amber-500 bg-white pointer-events-auto cursor-move z-10 shadow focus:outline-none focus:ring-2 focus:ring-amber-400"
+                                            <div class="bar-vertex-handle w-3 h-3 rounded-full border-2 border-amber-500 bg-white pointer-events-auto cursor-move z-10 shadow focus:outline-none focus:ring-2 focus:ring-amber-400"
                                                  tabindex="0"
                                                  @focus="focusedVertexIdx = idx"
                                                  @blur="if (focusedVertexIdx === idx) focusedVertexIdx = null"
+                                                 @pointerdown.stop
                                                  @mousedown.stop.prevent="startBarVertexDrag($event, bar, idx)"
                                                  :aria-label="`Vértice ${idx + 1} de la barra`">
                                             </div>
                                             <div x-show="bar.vertices.length > 3"
-                                                 class="absolute -top-2 -right-2 z-[11] w-3.5 h-3.5 rounded-full bg-red-500 text-white flex items-center justify-center leading-none pointer-events-auto cursor-pointer shadow text-[9px] font-bold select-none focus:outline-none focus:ring-2 focus:ring-red-400"
+                                                 class="bar-vertex-handle absolute -top-2 -right-2 z-[11] w-3.5 h-3.5 rounded-full bg-red-500 text-white flex items-center justify-center leading-none pointer-events-auto cursor-pointer shadow text-[9px] font-bold select-none focus:outline-none focus:ring-2 focus:ring-red-400"
                                                  role="button"
                                                  tabindex="0"
+                                                 @pointerdown.stop
                                                  @click.stop.prevent="removeBarVertex(bar, idx)"
                                                  @keydown.enter.space.stop.prevent="removeBarVertex(bar, idx)"
                                                  :aria-label="`Eliminar vértice ${idx + 1} de la barra`">×</div>
@@ -799,10 +871,11 @@
                                     </template>
                                     {{-- Botones "+" en el punto medio de cada arista para añadir vértices --}}
                                     <template x-for="(v, idx) in bar.vertices" :key="`e${idx}`">
-                                        <div class="absolute w-4 h-4 rounded-full bg-white border border-amber-500 pointer-events-auto cursor-pointer z-9 shadow flex items-center justify-center text-xs font-bold leading-none select-none text-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                                        <div class="bar-vertex-handle absolute w-4 h-4 rounded-full bg-white border border-amber-500 pointer-events-auto cursor-pointer z-9 shadow flex items-center justify-center text-xs font-bold leading-none select-none text-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-400"
                                              :style="`left:${((v.x + bar.vertices[(idx+1)%bar.vertices.length].x)/2)-8}px; top:${((v.y + bar.vertices[(idx+1)%bar.vertices.length].y)/2)-8}px;`"
                                              role="button"
                                              tabindex="0"
+                                             @pointerdown.stop
                                              @click.stop.prevent="addBarVertex(bar, idx)"
                                              @keydown.enter.space.stop.prevent="addBarVertex(bar, idx)"
                                              :aria-label="`Añadir vértice en arista ${idx + 1}`">+</div>
@@ -906,19 +979,19 @@
                     >
                         <div class="w-full h-full relative flex items-center justify-center
                                     rounded-full
-                                    bg-amber-100 dark:bg-amber-900
-                                    border-2 border-amber-400 dark:border-amber-600
+                                    bg-green-50 dark:bg-green-900/30
+                                    border-2 border-green-400 dark:border-green-500
                                     shadow-md cursor-grab active:cursor-grabbing
                                     transition-shadow hover:shadow-lg"
                              :class="{'zampa-selected': isActive(stool.id)}"
                              @mousedown.prevent="startElementDrag($event, stool)">
 
-                            <span class="text-xs font-semibold text-amber-800 dark:text-amber-300
+                            <span class="text-xs font-semibold text-green-700 dark:text-green-300
                                          text-center px-1 leading-tight pointer-events-none"
                                   x-text="stool.name">
                             </span>
 
-                            <span class="absolute top-1 left-1 text-xs text-amber-600 dark:text-amber-400 pointer-events-none leading-none" aria-hidden="true">●</span>
+                            <span class="absolute top-1 left-1 text-xs text-green-500 dark:text-green-400 pointer-events-none leading-none" aria-hidden="true">●</span>
 
                             {{-- Botón eliminar --}}
                             <button type="button"
@@ -951,15 +1024,15 @@
                              :aria-label="`Rotar ${stool.name} (arrastra para girar)`">
                             <div class="w-6 h-6 rounded-full
                                         bg-white dark:bg-gray-800
-                                        border-2 border-amber-400 shadow-md
-                                        flex items-center justify-center text-amber-500
+                                        border-2 border-green-400 shadow-md
+                                        flex items-center justify-center text-green-500
                                         transition-all duration-150
-                                        hover:bg-amber-500 hover:border-amber-600 hover:text-white hover:scale-110">
+                                        hover:bg-green-500 hover:border-green-600 hover:text-white hover:scale-110">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" aria-hidden="true">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/>
                                 </svg>
                             </div>
-                            <div class="w-px h-3 bg-amber-400"></div>
+                            <div class="w-px h-3 bg-green-400"></div>
                         </div>
 
                         {{-- Handle de redimensionado --}}
@@ -969,9 +1042,226 @@
                              @mousedown.stop.prevent="startResize($event, stool)"
                              role="button"
                              :aria-label="`Redimensionar ${stool.name}`">
-                            <svg aria-hidden="true" viewBox="0 0 10 10" fill="none" class="w-full h-full text-amber-400">
+                            <svg aria-hidden="true" viewBox="0 0 10 10" fill="none" class="w-full h-full text-green-400">
                                 <path d="M9 1L1 9M9 5L5 9M9 9H9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
                             </svg>
+                        </div>
+                    </div>
+                </template>
+
+                {{-- Sillas: drag Alpine-nativo --}}
+                <template x-for="chair in visibleElements().filter(e => e.shape === 'chair')" :key="'c'+chair.id">
+                    <div
+                        :data-table-id="chair.id"
+                        class="element-item absolute group select-none touch-none"
+                        tabindex="0"
+                        @focus="selectedId = chair.id; editingTableId=null; editingTable=null; editingZoneId=null; editingZone=null;"
+                        @keydown.enter.space.prevent.stop="selectedId = chair.id; editingTableId=null; editingTable=null; editingZoneId=null; editingZone=null;"
+                        :style="`left:${chair.position_x}px; top:${chair.position_y}px;
+                                 width:${chair.width}px; height:${chair.height}px;
+                                 transform:rotate(${chair.rotation ?? 0}deg);
+                                 transform-origin:center;
+                                 z-index:${hoveredId === chair.id || selectedId === chair.id || rotatingId === chair.id ? 30 : 10};`"
+                        @mouseenter="hoveredId = chair.id"
+                        @mouseleave="hoveredId = null"
+                        @click.stop="selectedId = chair.id; editingTableId = null; editingTable = null; editingZoneId = null; editingZone = null;"
+                        @contextmenu.prevent.stop="openContextMenu($event, chair, 'stool')"
+                        @keydown.stop="if ($event.key === 'ContextMenu' || ($event.shiftKey && $event.key === 'F10')) openContextMenu($event, chair, 'stool')"
+                        :aria-label="`Silla: ${chair.name}`"
+                    >
+                        <div class="w-full h-full relative flex flex-col items-center justify-center
+                                    rounded
+                                    bg-green-50 dark:bg-green-900/30
+                                    border-2 border-green-400 dark:border-green-500
+                                    shadow-md cursor-grab active:cursor-grabbing
+                                    transition-shadow hover:shadow-lg"
+                             :class="{'zampa-selected': isActive(chair.id)}"
+                             @mousedown.prevent="startElementDrag($event, chair)">
+
+                            {{-- Respaldo visual --}}
+                            <div class="w-4/5 h-1/3 rounded-t bg-green-200 dark:bg-green-700 border border-green-400 dark:border-green-500 pointer-events-none"></div>
+
+                            <span class="text-[9px] font-semibold text-green-700 dark:text-green-300
+                                         text-center leading-tight pointer-events-none mt-0.5"
+                                  x-text="chair.name">
+                            </span>
+
+                            {{-- Botón eliminar --}}
+                            <button type="button"
+                                    x-show="!(isRotating && rotatingId === chair.id)"
+                                    @mousedown.stop
+                                    @click.stop="deleteElement(chair)"
+                                    class="absolute -top-2.5 -right-2.5
+                                           w-6 h-6 rounded-full bg-red-500 text-white
+                                           flex items-center justify-center transition-opacity
+                                           hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-400
+                                           shadow-md"
+                                    :class="selectedId === chair.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'"
+                                    :tabindex="selectedId === chair.id || hoveredId === chair.id ? 0 : -1"
+                                    :aria-label="`Eliminar ${chair.name}`">
+                                <svg aria-hidden="true" class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                                </svg>
+                            </button>
+                        </div>
+
+                        {{-- Handle de rotación --}}
+                        <div class="rotation-handle absolute -top-9 left-1/2 -translate-x-1/2
+                                    flex flex-col items-center gap-0
+                                    transition-opacity z-10"
+                             :class="selectedId === chair.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'"
+                             @mousedown.stop.prevent="startRotation($event, chair)"
+                             role="button"
+                             tabindex="0"
+                             style="cursor: url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2720%27 height=%2720%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27M21 2v6h-6%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M3 12a9 9 0 0 1 15-6.7L21 8%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M3 22v-6h6%27 stroke=%27%23ffffff%27 stroke-width=%275%27/%3E%3Cpath d=%27M21 12a9 9 0 0 1-15 6.7L3 16%27 stroke=%27%23111827%27 stroke-width=%272.5%27/%3E%3C/svg%3E') 10 10, grab;"
+                             :aria-label="`Rotar ${chair.name} (arrastra para girar)`">
+                            <div class="w-6 h-6 rounded-full
+                                        bg-white dark:bg-gray-800
+                                        border-2 border-green-400 shadow-md
+                                        flex items-center justify-center text-green-500
+                                        transition-all duration-150
+                                        hover:bg-green-500 hover:border-green-600 hover:text-white hover:scale-110">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/>
+                                </svg>
+                            </div>
+                            <div class="w-px h-3 bg-green-400"></div>
+                        </div>
+
+                        {{-- Handle de redimensionado --}}
+                        <div class="resize-handle absolute bottom-0 right-0
+                                    w-4 h-4 cursor-se-resize opacity-0 group-hover:opacity-100
+                                    transition-opacity"
+                             @mousedown.stop.prevent="startResize($event, chair)"
+                             role="button"
+                             :aria-label="`Redimensionar ${chair.name}`">
+                            <svg aria-hidden="true" viewBox="0 0 10 10" fill="none" class="w-full h-full text-green-400">
+                                <path d="M9 1L1 9M9 5L5 9M9 9H9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                    </div>
+                </template>
+
+                {{-- Chimeneas --}}
+                <template x-for="fp in visibleElements().filter(e => e.shape === 'fireplace')" :key="'fp'+fp.id">
+                    <div :data-table-id="fp.id"
+                         class="element-item absolute group select-none touch-none"
+                         tabindex="0"
+                         @focus="selectedId = fp.id; editingTableId=null; editingTable=null; editingZoneId=null; editingZone=null;"
+                         @keydown.enter.space.prevent.stop="selectedId = fp.id;"
+                         :style="`left:${fp.position_x}px; top:${fp.position_y}px; width:${fp.width}px; height:${fp.height}px; transform:rotate(${fp.rotation ?? 0}deg); transform-origin:center; z-index:${hoveredId === fp.id || selectedId === fp.id ? 30 : 10};`"
+                         @mouseenter="hoveredId = fp.id" @mouseleave="hoveredId = null"
+                         @click.stop="selectedId = fp.id; editingTableId=null; editingTable=null; editingZoneId=null; editingZone=null;"
+                         @contextmenu.prevent.stop="openContextMenu($event, fp, 'stool')"
+                         :aria-label="`Chimenea: ${fp.name}`">
+                        <div class="w-full h-full relative flex items-center justify-center rounded bg-red-100 dark:bg-red-900/40 border-2 border-red-700 dark:border-red-600 shadow-md cursor-grab active:cursor-grabbing transition-shadow hover:shadow-lg"
+                             :class="{'zampa-selected': isActive(fp.id)}"
+                             @mousedown.prevent="startElementDrag($event, fp)">
+                            <span class="text-lg pointer-events-none" aria-hidden="true">🔥</span>
+                            <span class="absolute bottom-0.5 left-0 right-0 text-[9px] font-semibold text-red-800 dark:text-red-300 text-center pointer-events-none" x-text="fp.name"></span>
+                            <button type="button" @mousedown.stop @click.stop="deleteElement(fp)"
+                                    class="absolute -top-2.5 -right-2.5 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center transition-opacity hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-400 shadow-md"
+                                    :class="selectedId === fp.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'"
+                                    :tabindex="selectedId === fp.id || hoveredId === fp.id ? 0 : -1"
+                                    :aria-label="`Eliminar ${fp.name}`">
+                                <svg aria-hidden="true" class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                        </div>
+                        <div class="rotation-handle absolute -top-9 left-1/2 -translate-x-1/2 flex flex-col items-center gap-0 transition-opacity z-10"
+                             :class="selectedId === fp.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'"
+                             @mousedown.stop.prevent="startRotation($event, fp)" role="button" tabindex="0"
+                             style="cursor:grab;" :aria-label="`Rotar ${fp.name}`">
+                            <div class="w-6 h-6 rounded-full bg-white dark:bg-gray-800 border-2 border-red-500 shadow-md flex items-center justify-center text-red-500 transition-all hover:bg-red-500 hover:text-white hover:scale-110">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg>
+                            </div>
+                            <div class="w-px h-3 bg-red-500"></div>
+                        </div>
+                        <div class="resize-handle absolute bottom-0 right-0 w-4 h-4 cursor-se-resize opacity-0 group-hover:opacity-100 transition-opacity"
+                             @mousedown.stop.prevent="startResize($event, fp)" role="button" :aria-label="`Redimensionar ${fp.name}`">
+                            <svg aria-hidden="true" viewBox="0 0 10 10" fill="none" class="w-full h-full text-red-500"><path d="M9 1L1 9M9 5L5 9M9 9H9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                        </div>
+                    </div>
+                </template>
+
+                {{-- Pilares --}}
+                <template x-for="pl in visibleElements().filter(e => e.shape === 'pillar')" :key="'pl'+pl.id">
+                    <div :data-table-id="pl.id"
+                         class="element-item absolute group select-none touch-none"
+                         tabindex="0"
+                         @focus="selectedId = pl.id; editingTableId=null; editingTable=null; editingZoneId=null; editingZone=null;"
+                         @keydown.enter.space.prevent.stop="selectedId = pl.id;"
+                         :style="`left:${pl.position_x}px; top:${pl.position_y}px; width:${pl.width}px; height:${pl.height}px; transform:rotate(${pl.rotation ?? 0}deg); transform-origin:center; z-index:${hoveredId === pl.id || selectedId === pl.id ? 30 : 10};`"
+                         @mouseenter="hoveredId = pl.id" @mouseleave="hoveredId = null"
+                         @click.stop="selectedId = pl.id; editingTableId=null; editingTable=null; editingZoneId=null; editingZone=null;"
+                         @contextmenu.prevent.stop="openContextMenu($event, pl, 'stool')"
+                         :aria-label="`Pilar: ${pl.name}`">
+                        <div class="w-full h-full relative flex items-center justify-center rounded-full bg-gray-200 dark:bg-gray-600 border-2 border-gray-500 dark:border-gray-400 shadow-md cursor-grab active:cursor-grabbing transition-shadow hover:shadow-lg"
+                             :class="{'zampa-selected': isActive(pl.id)}"
+                             @mousedown.prevent="startElementDrag($event, pl)">
+                            <span class="text-[9px] font-bold text-gray-600 dark:text-gray-300 pointer-events-none" x-text="pl.name"></span>
+                            <button type="button" @mousedown.stop @click.stop="deleteElement(pl)"
+                                    class="absolute -top-2.5 -right-2.5 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center transition-opacity hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-400 shadow-md"
+                                    :class="selectedId === pl.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'"
+                                    :tabindex="selectedId === pl.id || hoveredId === pl.id ? 0 : -1"
+                                    :aria-label="`Eliminar ${pl.name}`">
+                                <svg aria-hidden="true" class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                        </div>
+                        <div class="rotation-handle absolute -top-9 left-1/2 -translate-x-1/2 flex flex-col items-center gap-0 transition-opacity z-10"
+                             :class="selectedId === pl.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'"
+                             @mousedown.stop.prevent="startRotation($event, pl)" role="button" tabindex="0" style="cursor:grab"
+                             :aria-label="`Rotar ${pl.name}`">
+                            <div class="w-6 h-6 rounded-full bg-white dark:bg-gray-800 border-2 border-gray-500 shadow-md flex items-center justify-center text-gray-500 transition-all hover:bg-gray-500 hover:text-white hover:scale-110">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg>
+                            </div>
+                            <div class="w-px h-3 bg-gray-500"></div>
+                        </div>
+                        <div class="resize-handle absolute bottom-0 right-0 w-4 h-4 cursor-se-resize opacity-0 group-hover:opacity-100 transition-opacity"
+                             @mousedown.stop.prevent="startResize($event, pl)" role="button" :aria-label="`Redimensionar ${pl.name}`">
+                            <svg aria-hidden="true" viewBox="0 0 10 10" fill="none" class="w-full h-full text-gray-400"><path d="M9 1L1 9M9 5L5 9M9 9H9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                        </div>
+                    </div>
+                </template>
+
+                {{-- Columnas --}}
+                <template x-for="col in visibleElements().filter(e => e.shape === 'column')" :key="'col'+col.id">
+                    <div :data-table-id="col.id"
+                         class="element-item absolute group select-none touch-none"
+                         tabindex="0"
+                         @focus="selectedId = col.id; editingTableId=null; editingTable=null; editingZoneId=null; editingZone=null;"
+                         @keydown.enter.space.prevent.stop="selectedId = col.id;"
+                         :style="`left:${col.position_x}px; top:${col.position_y}px; width:${col.width}px; height:${col.height}px; transform:rotate(${col.rotation ?? 0}deg); transform-origin:center; z-index:${hoveredId === col.id || selectedId === col.id ? 30 : 10};`"
+                         @mouseenter="hoveredId = col.id" @mouseleave="hoveredId = null"
+                         @click.stop="selectedId = col.id; editingTableId=null; editingTable=null; editingZoneId=null; editingZone=null;"
+                         @contextmenu.prevent.stop="openContextMenu($event, col, 'stool')"
+                         :aria-label="`Columna: ${col.name}`">
+                        <div class="w-full h-full relative flex items-center justify-center rounded-sm bg-gray-300 dark:bg-gray-500 border-2 border-gray-600 dark:border-gray-300 shadow-md cursor-grab active:cursor-grabbing transition-shadow hover:shadow-lg"
+                             :class="{'zampa-selected': isActive(col.id)}"
+                             @mousedown.prevent="startElementDrag($event, col)">
+                            {{-- Capitel y basa decorativos --}}
+                            <div class="absolute top-0 left-0 right-0 h-1.5 bg-gray-500 dark:bg-gray-300 rounded-t-sm pointer-events-none"></div>
+                            <div class="absolute bottom-0 left-0 right-0 h-1.5 bg-gray-500 dark:bg-gray-300 rounded-b-sm pointer-events-none"></div>
+                            <span class="text-[9px] font-bold text-gray-700 dark:text-gray-200 pointer-events-none" x-text="col.name"></span>
+                            <button type="button" @mousedown.stop @click.stop="deleteElement(col)"
+                                    class="absolute -top-2.5 -right-2.5 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center transition-opacity hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-400 shadow-md"
+                                    :class="selectedId === col.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'"
+                                    :tabindex="selectedId === col.id || hoveredId === col.id ? 0 : -1"
+                                    :aria-label="`Eliminar ${col.name}`">
+                                <svg aria-hidden="true" class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                        </div>
+                        <div class="rotation-handle absolute -top-9 left-1/2 -translate-x-1/2 flex flex-col items-center gap-0 transition-opacity z-10"
+                             :class="selectedId === col.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'"
+                             @mousedown.stop.prevent="startRotation($event, col)" role="button" tabindex="0" style="cursor:grab"
+                             :aria-label="`Rotar ${col.name}`">
+                            <div class="w-6 h-6 rounded-full bg-white dark:bg-gray-800 border-2 border-gray-500 shadow-md flex items-center justify-center text-gray-500 transition-all hover:bg-gray-500 hover:text-white hover:scale-110">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg>
+                            </div>
+                            <div class="w-px h-3 bg-gray-500"></div>
+                        </div>
+                        <div class="resize-handle absolute bottom-0 right-0 w-4 h-4 cursor-se-resize opacity-0 group-hover:opacity-100 transition-opacity"
+                             @mousedown.stop.prevent="startResize($event, col)" role="button" :aria-label="`Redimensionar ${col.name}`">
+                            <svg aria-hidden="true" viewBox="0 0 10 10" fill="none" class="w-full h-full text-gray-400"><path d="M9 1L1 9M9 5L5 9M9 9H9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
                         </div>
                     </div>
                 </template>
@@ -1008,11 +1298,11 @@
                                 'rounded-xl':      table.shape === 'square',
                                 'rounded-lg':      table.shape === 'rectangle',
                                 'zampa-selected':  isActive(table.id),
-                                'bg-indigo-100 dark:bg-indigo-900 border-indigo-300 dark:border-indigo-600':
+                                'bg-green-50 dark:bg-green-900/30 border-green-400 dark:border-green-500':
                                     !table.orderStatus || table.orderStatus === 'free',
                                 'bg-amber-100 dark:bg-amber-900/60 border-amber-400 dark:border-amber-500':
                                     table.orderStatus === 'occupied',
-                                'bg-green-100 dark:bg-green-900/60 border-green-500 dark:border-green-400 animate-pulse':
+                                'bg-emerald-200 dark:bg-emerald-800/60 border-emerald-500 dark:border-emerald-400 animate-pulse':
                                     table.orderStatus === 'ready',
                                 'bg-blue-100 dark:bg-blue-900/60 border-blue-400 dark:border-blue-500':
                                     table.orderStatus === 'payment_pending',
@@ -1022,10 +1312,10 @@
                             {{-- Nombre --}}
                             <span class="text-xs font-semibold text-center px-1 leading-tight pointer-events-none"
                                   :class="{
-                                      'text-indigo-700 dark:text-indigo-300': !table.orderStatus || table.orderStatus === 'free',
-                                      'text-amber-800 dark:text-amber-200':  table.orderStatus === 'occupied',
-                                      'text-green-800 dark:text-green-200':  table.orderStatus === 'ready',
-                                      'text-blue-800  dark:text-blue-200':   table.orderStatus === 'payment_pending',
+                                      'text-green-700 dark:text-green-300':   !table.orderStatus || table.orderStatus === 'free',
+                                      'text-amber-800 dark:text-amber-200':   table.orderStatus === 'occupied',
+                                      'text-emerald-800 dark:text-emerald-200': table.orderStatus === 'ready',
+                                      'text-blue-800  dark:text-blue-200':    table.orderStatus === 'payment_pending',
                                   }"
                                   x-text="table.name">
                             </span>
@@ -2292,6 +2582,14 @@
                 <section>
                     <h3 class="text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-3">General</h3>
                     <dl class="space-y-2.5">
+                        <div class="flex items-center justify-between gap-4">
+                            <dt class="text-sm text-gray-700 dark:text-gray-300">Copiar elemento seleccionado</dt>
+                            <dd class="flex items-center gap-1 shrink-0"><kbd>Ctrl</kbd><span class="text-gray-400 text-[11px] font-medium select-none mx-px">+</span><kbd>C</kbd></dd>
+                        </div>
+                        <div class="flex items-center justify-between gap-4">
+                            <dt class="text-sm text-gray-700 dark:text-gray-300">Pegar copia</dt>
+                            <dd class="flex items-center gap-1 shrink-0"><kbd>Ctrl</kbd><span class="text-gray-400 text-[11px] font-medium select-none mx-px">+</span><kbd>V</kbd></dd>
+                        </div>
                         <div class="flex items-center justify-between gap-4">
                             <dt class="text-sm text-gray-700 dark:text-gray-300">Eliminar elemento seleccionado</dt>
                             <dd class="flex items-center gap-1 shrink-0"><kbd>Delete</kbd><span class="text-gray-400 dark:text-gray-400 text-[11px] font-medium select-none mx-0.5"> / </span><kbd>Backspace</kbd></dd>
