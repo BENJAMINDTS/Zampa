@@ -70,6 +70,7 @@ class TableController extends Controller
         $zones       = Zone::where('user_id', $ownerId)->orderBy('name')->get();
         $owner         = Auth::user()->isAdmin() ? Auth::user() : Auth::user()->admin;
         $maxTables     = $owner?->plan?->max_tables;
+        $maxFloors     = $owner?->plan?->max_floors;
         $floorWidth    = $owner?->floor_width    ?? 1200;
         $floorHeight   = $owner?->floor_height   ?? 800;
         $floorCount    = $owner?->floor_count    ?? 1;
@@ -86,7 +87,7 @@ class TableController extends Controller
         }
 
         return view('tables.map', compact(
-            'tables', 'elements', 'zones', 'maxTables',
+            'tables', 'elements', 'zones', 'maxTables', 'maxFloors',
             'floorWidth', 'floorHeight', 'floorCount', 'floorsEnabled',
             'floorCanvasSizes', 'readonly'
         ));
