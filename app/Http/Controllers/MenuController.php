@@ -88,11 +88,12 @@ class MenuController extends Controller
             ->sortBy('name')
             ->values();
 
-        $tapaConfig        = null;
-        $barItemsCount     = 0;
-        $tapaVariantsUsed  = 0;
-        $tapaProducts      = collect();
-        $shouldSuggest     = false;
+        $tapaConfig          = null;
+        $barItemsCount       = 0;
+        $tapaVariantsUsed    = 0;
+        $tapasQuantityUsed   = 0;
+        $tapaProducts        = collect();
+        $shouldSuggest       = false;
 
         if ($config && $config->tapas_enabled) {
             $tapaConfig    = $config;
@@ -112,6 +113,13 @@ class MenuController extends Controller
                 )->whereHas('product.categories', fn ($q) =>
                     $q->where('categories.id', $tapaCategory->id)
                 )->distinct('product_id')->count('product_id');
+
+                $tapasQuantityUsed = OrderItem::whereHas('order', fn ($q) =>
+                    $q->where('table_id', $table->id)
+                      ->where('status', '!=', 'closed')
+                )->whereHas('product.categories', fn ($q) =>
+                    $q->where('categories.id', $tapaCategory->id)
+                )->sum('quantity');
 
                 $tapaProducts = $tapaCategory->products()
                                              ->where('is_active', true)
@@ -179,7 +187,7 @@ class MenuController extends Controller
         return view('menu.show', compact(
             'theme', 'table', 'categories', 'allergens',
             'tapaConfig', 'barItemsCount', 'kitchenOpen', 'nextOpeningTime',
-            'tapaVariantsUsed', 'tapaProducts', 'shouldSuggest',
+            'tapaVariantsUsed', 'tapasQuantityUsed', 'tapaProducts', 'shouldSuggest',
             'hasActiveOrder', 'activeOrderTotal', 'originalOrderTotal', 'billRequested', 'stripePublicKey',
             'splitPaymentEnabled', 'splitPaymentMaxParts', 'activeOrderItemsForAlpine', 'allOrdersForAlpine',
             'businessOpen', 'orderingAllowed', 'businessNextOpening', 'minutesUntilClose'
