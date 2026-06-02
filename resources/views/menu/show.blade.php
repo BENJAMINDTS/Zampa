@@ -1607,6 +1607,7 @@
                                                                 <span class="qty-n" x-text="item.quantity"></span>
                                                                 <button class="qty-plus"
                                                                         @click="$store.cart.addTapa($store.cart.tapaProducts.find(t => t.id === item.productId))"
+                                                                        :disabled="$store.cart._tapasTotal >= $store.cart._barItemsCount"
                                                                         aria-label="Añadir una tapa más">+</button>
                                                             </div>
                                                         </template>
