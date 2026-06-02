@@ -1682,13 +1682,12 @@
                                 style="display:none"
                                 @click="$store.cart.showTapaModal = true"
                                 aria-live="polite"
-                                :aria-label="'Tienes ' + Math.max(0, $store.cart._barItemsCount - $store.cart._tapasTotal) + ' tapa' + (Math.max(0, $store.cart._barItemsCount - $store.cart._tapasTotal) !== 1 ? 's' : '') + ' disponibles — Elegir'">
+                                :aria-label="'Tienes ' + Math.max(0, $store.cart._barItemsCount - $store.cart._tapasTotal) + ' tapa' + (Math.max(0, $store.cart._barItemsCount - $store.cart._tapasTotal) !== 1 ? 's' : '') + ' disponibles'">
                             <span class="cart-foot__tapaPending__ic" aria-hidden="true">🫕</span>
                             <span class="cart-foot__tapaPending__txt">
                                 Tienes <strong x-text="Math.max(0, $store.cart._barItemsCount - $store.cart._tapasTotal)"></strong>
                                 <span x-text="Math.max(0, $store.cart._barItemsCount - $store.cart._tapasTotal) !== 1 ? 'tapas' : 'tapa'"></span>
                                 <span x-text="Math.max(0, $store.cart._barItemsCount - $store.cart._tapasTotal) !== 1 ? 'disponibles' : 'disponible'"></span>
-                                — Elegir
                             </span>
                             <span class="cart-foot__tapaPending__arrow" aria-hidden="true">→</span>
                         </button>
