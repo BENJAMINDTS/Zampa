@@ -17,9 +17,10 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @author SebastianBCF
  * @author BenjaminDTS
  *
- * @property string  $image       Ruta relativa de la imagen almacenada en storage/app/public/products
- * @property float|null $price   Precio base del producto (null si tiene variantes)
- * @property boolean $is_active  Si está disponible para pedir
+ * @property string  $image        Ruta relativa de la imagen almacenada en storage/app/public/products
+ * @property float|null $price    Precio base del producto (null si tiene variantes)
+ * @property boolean $is_active   Activo de forma permanente (lo gestiona el gerente)
+ * @property boolean $is_available Disponible en el turno actual (lo gestiona cocina/barra)
  */
 class Product extends Model
 {
@@ -56,6 +57,7 @@ class Product extends Model
         'description',
         'price',
         'is_active',
+        'is_available',
         'image',
         'sort_order',
     ];
