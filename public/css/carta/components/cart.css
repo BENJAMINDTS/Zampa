@@ -121,7 +121,8 @@
 .citem__top {
   display: flex; align-items: center; gap: 12px;
 }
-.citem__photo { width: 44px; height: 44px; border-radius: 8px; background: var(--bg-elevated); display: inline-flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+.citem__photo { width: 44px; height: 44px; border-radius: 8px; background: var(--bg-elevated); display: inline-flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; overflow: hidden; }
+.citem__photo img { width: 44px; height: 44px; object-fit: cover; display: block; border-radius: 8px; }
 .citem__main { flex: 1; min-width: 0; }
 .citem__name { font-family: var(--font-body); font-size: 14px; font-weight: 700; color: var(--fg-primary); line-height: 1.3; }
 .citem__unit { font-family: var(--font-body); font-size: 12px; color: var(--fg-muted); margin-top: 2px; font-variant-numeric: tabular-nums; }
