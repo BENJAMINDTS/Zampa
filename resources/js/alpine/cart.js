@@ -378,10 +378,15 @@ export function registerCart() {
         },
 
         get sendLabel() {
-            const dests = [...new Set(this.items.map(i => i.destination).filter(Boolean))];
-            if (dests.length === 1 && dests[0] === 'bar')     return '🍺 Enviar pedido a barra';
-            if (dests.length === 1 && dests[0] === 'kitchen') return '🍽️ Enviar pedido a cocina';
-            return '🛎️ Enviar pedido';
+            const dests = [...new Set(this.items.filter(i => !i.isTapa).map(i => i.destination).filter(Boolean))];
+            if (dests.length === 1 && dests[0] === 'bar')     return 'Enviar pedido a barra';
+            if (dests.length === 1 && dests[0] === 'kitchen') return 'Enviar pedido a cocina';
+            return 'Enviar pedido';
+        },
+
+        get _isBarOnly() {
+            const dests = [...new Set(this.items.filter(i => !i.isTapa).map(i => i.destination).filter(Boolean))];
+            return dests.length === 1 && dests[0] === 'bar';
         },
 
         fmt(n) {

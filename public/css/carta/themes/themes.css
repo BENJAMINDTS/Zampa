@@ -525,9 +525,26 @@
   transition: transform 140ms var(--ease-bounce), filter var(--duration-fast);
   position: relative; overflow: hidden;
 }
+.cart-foot__cta::after {
+  content: '';
+  position: absolute; inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.34) 0%, rgba(255,255,255,0.10) 60%, transparent 100%);
+  transform: scale(0);
+  opacity: 0;
+  animation: cta-radiance 3.5s var(--ease-smooth) 1s infinite;
+  pointer-events: none;
+}
+@keyframes cta-radiance {
+  0%   { transform: scale(0);    opacity: 0;    }
+  30%  { transform: scale(1);    opacity: 1;    }
+  70%  { transform: scale(1);    opacity: 0.6;  }
+  100% { transform: scale(1.4);  opacity: 0;    }
+}
 .cart-foot__cta:hover { filter: brightness(1.06); transform: translateY(-1px); }
 .cart-foot__cta:active { transform: translateY(0); }
 .cart-foot__cta:disabled { opacity: 0.6; cursor: wait; transform: none; }
+.cart-foot__cta:disabled::after { animation: none; }
 .cart-foot__ctaIc {
   width: 30px; height: 30px; border-radius: 9999px;
   background: rgba(255,255,255,0.18);
@@ -587,6 +604,7 @@
   box-shadow: var(--ctp-shadow-base);
   animation: tapa-attention 5s var(--ease-smooth) 0.8s infinite;
   transition: filter var(--duration-fast);
+  position: relative; overflow: hidden;
 }
 .cart-foot__tapaPending:hover { filter: brightness(1.07); }
 .cart-foot__tapaPending:active { transform: translateY(0); }
@@ -654,12 +672,12 @@
   font-family: var(--font-display); font-weight: 900; font-size: 15px;
 }
 .cart-foot__tapaPending__arrow {
-  flex-shrink: 0;
-  font-family: var(--font-display); font-weight: 900; font-size: 18px;
-  opacity: 0.85;
+  position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
+  font-family: var(--font-display); font-weight: 900; font-size: 22px;
+  line-height: 1;
   transition: transform 200ms var(--ease-smooth);
 }
-.cart-foot__tapaPending:hover .cart-foot__tapaPending__arrow { transform: translateX(3px); }
+.cart-foot__tapaPending:hover .cart-foot__tapaPending__arrow { transform: translateY(-50%) translateX(3px); }
 
 /* Rebote + ring pulse usando CSS vars — se adapta a cada tema */
 @keyframes tapa-attention {
@@ -743,7 +761,7 @@
   flex-shrink: 0;
 }
 .chip-quitar--on::before {
-  content: "âœ•";
+  content: "\2715";
   background: #FFFFFF;
   color: var(--color-amber-800);
 }
@@ -872,10 +890,13 @@
   max-width: calc(100% - 32px);
 }
 
-/* ── Alpine x-transition helpers (usan variables del DS, sin Tailwind) ── */
+/* ── Alpine x-transition helpers (variables del DS, sin Tailwind) ── */
 .x-slide-in  { transition: opacity 220ms var(--ease-out), transform 220ms var(--ease-out); }
 .x-slide-up  { opacity: 0; transform: translateY(-8px) scale(0.97); }
-.x-slide-vis { opacity: 1; transform: translateY(0)    scale(1);    }
+.x-slide-vis { opacity: 1; transform: translateY(0) scale(1); }
+.x-modal-in   { transition: opacity 220ms var(--ease-out), transform 220ms var(--ease-smooth); }
+.x-modal-from { opacity: 0; transform: scale(0.93) translateY(8px); }
+.x-modal-vis  { opacity: 1; transform: scale(1) translateY(0); }
 
 
 /* ============================================================
