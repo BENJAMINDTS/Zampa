@@ -890,10 +890,13 @@
   max-width: calc(100% - 32px);
 }
 
-/* ── Alpine x-transition helpers (usan variables del DS, sin Tailwind) ── */
+/* ── Alpine x-transition helpers (variables del DS, sin Tailwind) ── */
 .x-slide-in  { transition: opacity 220ms var(--ease-out), transform 220ms var(--ease-out); }
 .x-slide-up  { opacity: 0; transform: translateY(-8px) scale(0.97); }
-.x-slide-vis { opacity: 1; transform: translateY(0)    scale(1);    }
+.x-slide-vis { opacity: 1; transform: translateY(0) scale(1); }
+.x-modal-in   { transition: opacity 220ms var(--ease-out), transform 220ms var(--ease-smooth); }
+.x-modal-from { opacity: 0; transform: scale(0.93) translateY(8px); }
+.x-modal-vis  { opacity: 1; transform: scale(1) translateY(0); }
 
 
 /* ============================================================
