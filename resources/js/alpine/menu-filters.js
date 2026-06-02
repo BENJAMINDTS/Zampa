@@ -173,7 +173,16 @@ export function registerMenuFilters() {
                 const targetQty  = this.pdetailQty;
 
                 if (targetQty > currentQty) {
-                    for (let i = 0; i < targetQty - currentQty; i++) cart.add(product);
+                    if (!cartItem) {
+                        // Primer añadido: usa add() para inicializar el item en el store
+                        cart.add(product);
+                        const added = cart.items.find(i => i._key === key);
+                        if (added && targetQty > 1) added.quantity = targetQty;
+                    } else {
+                        // Item ya existe: actualiza quantity directamente y notifica tapas
+                        cartItem.quantity = targetQty;
+                        if (product.destination === 'bar') cart._checkTapaSuggestion();
+                    }
                 } else if (targetQty < currentQty) {
                     for (let i = 0; i < currentQty - targetQty; i++) cart.dec(key);
                 }
