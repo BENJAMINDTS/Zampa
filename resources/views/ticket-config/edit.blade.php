@@ -89,6 +89,19 @@
             </div>
             @endif
 
+            {{-- Datos de inicialización para ticketConfigData() (resources/js/alpine/ticket-config.js) --}}
+            <script id="ticket-config-init" type="application/json">@json([
+                'template'       => old('template', $ticketConfig->template),
+                'savedTemplate'  => $ticketConfig->template,
+                'taxId'          => old('tax_id', $ticketConfig->tax_id),
+                'savedTaxId'     => $ticketConfig->tax_id,
+                'footerText'     => old('footer_text', $ticketConfig->footer_text ?? ''),
+                'savedFooterText'=> $ticketConfig->footer_text ?? '',
+                'footerCount'    => mb_strlen(old('footer_text', $ticketConfig->footer_text ?? '')),
+                'logoUrl'        => $ticketConfig->hasLogo() ? $ticketConfig->getLogoUrl() : '',
+                'businessName'   => Auth::user()->business_name ?? Auth::user()->name,
+            ])</script>
+
             {{-- ─── FORMULARIO con Alpine.js reactivo ─── --}}
             <div x-data="ticketConfigData()">
                 <form method="POST" action="{{ route('ticket-config.update') }}"
@@ -664,31 +677,5 @@
         </div>
     </div>
 
-    @push('scripts')
-    <script>
-    function ticketConfigData() {
-        return {
-            template:        @js(old('template', $ticketConfig->template)),
-            savedTemplate:   @js($ticketConfig->template),
-            templateLabels:  { classic: 'Clásica', modern: 'Moderna', minimal: 'Minimalista' },
-            taxId:           @js(old('tax_id', $ticketConfig->tax_id)),
-            savedTaxId:      @js($ticketConfig->tax_id),
-            footerText:      @js(old('footer_text', $ticketConfig->footer_text ?? '')),
-            savedFooterText: @js($ticketConfig->footer_text ?? ''),
-            footerCount:     {{ mb_strlen(old('footer_text', $ticketConfig->footer_text ?? '')) }},
-            logoUrl:         @js($ticketConfig->hasLogo() ? $ticketConfig->getLogoUrl() : ''),
-            logoChanged:     false,
-            businessName:    @js(Auth::user()->business_name ?? Auth::user()->name),
-            handleLogo(e) {
-                const file = e.target.files[0];
-                if (!file) return;
-                this.logoChanged = true;
-                const reader = new FileReader();
-                reader.onload = ev => { this.logoUrl = ev.target.result; };
-                reader.readAsDataURL(file);
-            }
-        };
-    }
-    </script>
-    @endpush
+    {{-- ticketConfigData() → resources/js/alpine/ticket-config.js --}}
 </x-app-layout>
