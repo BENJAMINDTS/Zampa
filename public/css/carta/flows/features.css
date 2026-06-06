@@ -793,7 +793,14 @@
 .split-equit__pie .slice:focus-visible { outline: none; }
 .split-equit__pie .slice:focus-visible path { stroke: var(--color-green-500) !important; }
 .split-equit__pie .slice--mine path {
-  filter: drop-shadow(0 3px 10px rgba(22,163,74,0.50));
+  filter: drop-shadow(0 4px 14px rgba(22,163,74,0.55));
+}
+[data-theme="dark"] .split-equit__pie .slice--mine path {
+  filter: drop-shadow(0 4px 16px rgba(34,197,94,0.60));
+}
+[data-theme="dark"] .split-equit__pie path[fill*="bg-chip"] {
+  /* En dark mode los slices inactivos son más visibles */
+  opacity: 0.7;
 }
 
 /* Mobile: donut algo más pequeño */

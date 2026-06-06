@@ -2290,7 +2290,7 @@
                                  }
                              },
                              arc(i) {
-                                 const R_OUT = 48, R_IN = 28, CX = 60, CY = 60;
+                                 const R_OUT = 46, R_IN = 32, CX = 65, CY = 65;
                                  const a0 = (i / this.parts) * Math.PI * 2 - Math.PI / 2;
                                  const a1 = ((i + 1) / this.parts) * Math.PI * 2 - Math.PI / 2;
                                  const lg = (a1 - a0) > Math.PI ? 1 : 0;
@@ -2300,9 +2300,10 @@
                                  const x1i = CX + R_IN *Math.cos(a0), y1i = CY + R_IN *Math.sin(a0);
                                  return `M ${x0o} ${y0o} A ${R_OUT} ${R_OUT} 0 ${lg} 1 ${x1o} ${y1o} L ${x0i} ${y0i} A ${R_IN} ${R_IN} 0 ${lg} 0 ${x1i} ${y1i} Z`;
                              },
-                             labelPos(i) {
+                             labelPos(i, isMine) {
                                  const mid = ((i + 0.5) / this.parts) * Math.PI * 2 - Math.PI / 2;
-                                 return { x: 60 + 38 * Math.cos(mid), y: 60 + 38 * Math.sin(mid) };
+                                 const r = isMine ? 39 : 55;
+                                 return { x: 65 + r * Math.cos(mid), y: 65 + r * Math.sin(mid) };
                              },
                          }">
                         <div class="split-equit">
@@ -2322,7 +2323,8 @@
 
                             {{-- Donut --}}
                             <div class="split-equit__pie">
-                                <svg viewBox="0 0 120 120" width="200" height="200"
+                                {{-- viewBox 130x130 da margen para las etiquetas exteriores --}}
+                                <svg viewBox="0 0 130 130" width="210" height="210"
                                      :aria-label="`Reparto en ${parts} partes iguales`">
                                     <template x-for="i in Array.from({length: parts}, (_, k) => k)" :key="i">
                                         <g @click="mySlice = i"
@@ -2332,26 +2334,27 @@
                                            :aria-label="`Porción ${i + 1}${i === mySlice ? ' — la tuya' : ''}`"
                                            style="cursor:pointer"
                                            :class="i === mySlice ? 'slice slice--mine' : 'slice'">
+                                            {{-- Slice path — gap blanco entre slices con stroke --}}
                                             <path :d="arc(i)"
                                                   :fill="i === mySlice ? 'var(--color-green-600)' : 'var(--bg-chip)'"
-                                                  stroke="var(--bg-surface)" stroke-width="3"
-                                                  stroke-linejoin="round"/>
-                                            <text :x="labelPos(i).x" :y="labelPos(i).y"
+                                                  stroke="#ffffff" stroke-width="2.5"/>
+                                            {{-- Label: dentro del anillo si es mío, fuera si no --}}
+                                            <text :x="labelPos(i, i === mySlice).x"
+                                                  :y="labelPos(i, i === mySlice).y"
                                                   text-anchor="middle" dominant-baseline="middle"
-                                                  :font-size="i === mySlice ? '9' : '10'"
-                                                  font-weight="800"
+                                                  font-size="9" font-weight="800"
                                                   :fill="i === mySlice ? '#ffffff' : 'var(--fg-secondary)'"
                                                   x-text="i === mySlice ? 'TÚ' : (i + 1)">
                                             </text>
                                         </g>
                                     </template>
-                                    {{-- Centro blanco con texto --}}
-                                    <circle cx="60" cy="60" r="26" fill="var(--bg-surface)"/>
-                                    <text x="60" y="54" text-anchor="middle"
-                                          font-size="5.5" font-weight="700" letter-spacing="0.12em"
+                                    {{-- Centro: cubre hasta R_IN para ocultar el interior del anillo --}}
+                                    <circle cx="65" cy="65" r="32" fill="var(--bg-surface)"/>
+                                    <text x="65" y="59" text-anchor="middle"
+                                          font-size="5.5" font-weight="700" letter-spacing="0.14em"
                                           fill="var(--fg-muted)">TU PARTE</text>
-                                    <text x="60" y="68" text-anchor="middle"
-                                          font-size="12" font-weight="900" letter-spacing="-0.02em"
+                                    <text x="65" y="73" text-anchor="middle"
+                                          font-size="12.5" font-weight="900" letter-spacing="-0.02em"
                                           fill="var(--fg-primary)"
                                           x-text="fmt(slice)">
                                     </text>
