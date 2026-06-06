@@ -2342,6 +2342,7 @@
                                      if (this.mySlice >= this.parts) this.mySlice = this.parts - 1;
                                  }
                              },
+                             _pollTimer: null,
                              dotClass(i) {
                                  if (i < this.paidCount) return 'dot dot--paid';
                                  if (i === this.mySlice) return 'dot dot--mine';
@@ -2350,7 +2351,29 @@
                              buildSvg() {
                                  return window._donutSvg(this.parts, this.mySlice, this.paidCount, this.slice);
                              },
-                         }">
+                             async pollEqStatus() {
+                                 try {
+                                     const res  = await fetch('/api/v1/payment/' + $store.bill.tableHash + '/split/eq-status', { headers: { 'Accept': 'application/json' } });
+                                     const data = await res.json();
+                                     if (res.ok && data.success) {
+                                         this.paidCount = data.paid_parts || 0;
+                                         if (data.parts_total > 0 && data.parts_total !== this.parts) {
+                                             this.parts = data.parts_total;
+                                             $store.bill.splitPeople = data.parts_total;
+                                         }
+                                     }
+                                 } catch (_) {}
+                             },
+                             startPoll() {
+                                 this.pollEqStatus();
+                                 this._pollTimer = setInterval(() => this.pollEqStatus(), 5000);
+                             },
+                             stopPoll() {
+                                 if (this._pollTimer) { clearInterval(this._pollTimer); this._pollTimer = null; }
+                             },
+                         }"
+                         x-init="$watch('$store.bill.step', s => { if (s === 'splitEq') startPoll(); else stopPoll(); }); if ($store.bill.step === 'splitEq') startPoll();"
+                         @vue:unmounted.window="stopPoll()"
                         <div class="split-equit">
 
                             {{-- Cabecera --}}

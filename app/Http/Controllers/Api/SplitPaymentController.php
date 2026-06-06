@@ -291,6 +291,44 @@ class SplitPaymentController extends Controller
     }
 
     /**
+     * Devuelve cuántas partes equitativas han sido pagadas en el pedido activo.
+     * Usado por el frontend para actualizar el donut y los dots en tiempo real.
+     *
+     * @param  string  $hash
+     * @return JsonResponse
+     */
+    public function eqStatus(string $hash): JsonResponse
+    {
+        $table = Table::with('user')->where('unique_hash', $hash)->firstOrFail();
+
+        if ($guard = $this->guardSplitEnabled($table)) {
+            return $guard;
+        }
+
+        $order = $this->activeOrder($table->id);
+
+        if (! $order) {
+            return response()->json(['success' => false, 'paid_parts' => 0, 'parts_total' => 0]);
+        }
+
+        $paid = OrderItemPayment::where('order_id', $order->id)
+            ->where('mode', 'equitative')
+            ->where('status', 'paid')
+            ->count();
+
+        $total = OrderItemPayment::where('order_id', $order->id)
+            ->where('mode', 'equitative')
+            ->whereIn('status', ['pending', 'paid'])
+            ->max('parts_total') ?? 0;
+
+        return response()->json([
+            'success'     => true,
+            'paid_parts'  => $paid,
+            'parts_total' => (int) $total,
+        ]);
+    }
+
+    /**
      * Devuelve 403 si el cobro partido no está activado para este restaurante.
      *
      * @param  Table  $table
