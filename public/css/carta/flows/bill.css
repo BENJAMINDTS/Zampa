@@ -1817,8 +1817,8 @@
   font-variant-numeric: tabular-nums;
 }
 .breakdown__cell--card .v { color: var(--color-blue-400); }
-[data-theme="dark"] .breakdown__cell--card .v { color: var(--color-blue-200); }
-[data-theme="dark"] .breakdown__cell--card .dot { background: var(--color-blue-200); }
+[data-theme="dark"] .breakdown__cell--card .v { color: var(--color-blue-300); }
+[data-theme="dark"] .breakdown__cell--card .dot { background: var(--color-blue-300); }
 
 /* Validation alert */
 .mixed-alert {
@@ -1880,7 +1880,7 @@
   color: var(--fg-primary);
 }
 .recap__row--card .v { color: var(--color-blue-400); }
-[data-theme="dark"] .recap__row--card .v { color: var(--color-blue-200); }
+[data-theme="dark"] .recap__row--card .v { color: var(--color-blue-300); }
 .recap__row--cash .v { color: var(--color-green-700); }
 
 /* Section label */
