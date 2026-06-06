@@ -636,84 +636,131 @@
 
 .split-items__list {
   display: flex; flex-direction: column; gap: 8px;
-  max-height: 260px; overflow-y: auto; padding: 2px;
+  max-height: 280px; overflow-y: auto; padding: 2px;
 }
+
+/* Item card */
 .split-line {
   display: flex; align-items: center; gap: 12px;
-  padding: 10px 12px;
+  padding: 11px 14px;
   background: var(--bg-surface); border: 1px solid var(--border-subtle);
-  border-radius: 12px;
+  border-radius: 14px;
+  transition: border-color 140ms ease, background 140ms ease;
 }
+.split-line--mine {
+  border-color: var(--color-green-500);
+  background: var(--color-green-50);
+}
+.split-line--claimed { opacity: 0.6; }
+[data-theme="dark"] .split-line--mine {
+  border-color: var(--color-green-600);
+  background: rgba(34,197,94,0.08);
+}
+
 .split-line__photo {
-  width: 44px; height: 44px; border-radius: 10px;
+  width: 42px; height: 42px; border-radius: 10px;
   background: var(--bg-chip);
   display: inline-flex; align-items: center; justify-content: center;
-  font-size: 22px; flex-shrink: 0;
+  font-size: 20px; flex-shrink: 0;
 }
 .split-line__main { flex: 1; min-width: 0; }
 .split-line__name {
   font-family: var(--font-body); font-weight: 700; font-size: 14px;
   color: var(--fg-primary); line-height: 1.2;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.split-line__price {
+.split-line__total {
   font-family: var(--font-display); font-weight: 800; font-size: 13px;
-  color: var(--price-gold); margin-top: 3px;
+  color: var(--price-gold); margin-top: 2px;
   font-variant-numeric: tabular-nums;
 }
-.split-line__price span {
-  font-family: var(--font-body); font-weight: 500; color: var(--fg-muted);
-  font-size: 11px; margin-left: 2px;
-}
-.split-line__slots { display: inline-flex; gap: 6px; flex-shrink: 0; }
+
+/* Slot button — one per item */
 .slot {
-  width: 32px; height: 32px; border-radius: 50%;
-  background: var(--bg-base);
+  flex-shrink: 0;
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--bg-chip);
   border: 2px dashed var(--border-strong);
   display: inline-flex; align-items: center; justify-content: center;
-  font-family: var(--font-display); font-weight: 900; font-size: 12px;
   color: var(--fg-muted); cursor: pointer;
-  transition: transform 160ms var(--ease-bounce), background-color var(--duration-fast), border-color var(--duration-fast);
+  transition: transform 160ms var(--ease-bounce),
+              background 140ms ease,
+              border-color 140ms ease,
+              color 140ms ease;
 }
-.slot:hover:not(:disabled) { border-color: var(--brand-primary); color: var(--brand-primary); }
-.slot--you, .slot--other {
-  background: var(--c, var(--brand-primary));
+.slot:hover:not(:disabled) {
+  border-color: var(--color-green-600);
   border-style: solid;
-  border-color: rgba(0,0,0,0.10);
-  color: #fff;
+  color: var(--color-green-600);
+  transform: scale(1.08);
 }
-[data-theme="dark"] .slot--you, [data-theme="dark"] .slot--other { border-color: rgba(255,255,255,0.10); }
-.slot--you { outline: 2px solid var(--color-green-500); outline-offset: 1px; }
-.slot--other { cursor: not-allowed; }
-.slot--just { animation: slotPop 480ms var(--ease-bounce); }
+.slot:focus-visible { outline: 3px solid rgba(34,197,94,0.45); outline-offset: 2px; }
+
+/* Claimed by me → green solid */
+.slot--you {
+  background: var(--color-green-600);
+  border: 2px solid var(--color-green-700);
+  color: #FFFFFF;
+}
+.slot--you:hover:not(:disabled) {
+  background: var(--color-green-700);
+  border-color: var(--color-green-700);
+  color: #FFFFFF;
+  transform: scale(1.08);
+}
+
+/* Claimed by other → muted gray/locked */
+.slot--other {
+  background: var(--bg-chip);
+  border: 2px solid var(--border-subtle);
+  border-style: solid;
+  color: var(--fg-muted);
+  cursor: not-allowed;
+}
+[data-theme="dark"] .slot--other { border-color: rgba(255,255,255,0.12); }
+
 @keyframes slotPop {
   0%   { transform: scale(0.5); box-shadow: 0 0 0 0 rgba(34,197,94,0.6); }
   60%  { transform: scale(1.18); box-shadow: 0 0 0 8px rgba(34,197,94,0); }
   100% { transform: scale(1); }
 }
+.slot--just { animation: slotPop 480ms var(--ease-bounce); }
 
+/* Footer: total display + hint */
 .split-items__foot {
-  display: flex; flex-direction: column; gap: 10px;
-  padding: 12px;
-  background: var(--bg-base);
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 14px 16px;
+  background: var(--bg-chip);
   border: 1px solid var(--border-subtle);
-  border-radius: 14px;
+  border-radius: 16px;
 }
 .split-items__yourTotal {
-  display: flex; align-items: baseline; justify-content: space-between;
+  display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
 }
 .split-items__yourTotal .lab {
-  font-family: var(--font-body); font-size: 12px; font-weight: 600;
-  color: var(--fg-muted); text-transform: uppercase; letter-spacing: 0.08em;
+  font-family: var(--font-mono); font-size: 10px; font-weight: 700;
+  color: var(--fg-muted); text-transform: uppercase; letter-spacing: 0.18em;
 }
 .split-items__yourTotal .val {
-  font-family: var(--font-display); font-weight: 900; font-size: 24px;
+  font-family: var(--font-display); font-weight: 900; font-size: 26px;
   color: var(--fg-primary); font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
 }
 .split-items__hint {
   font-family: var(--font-body); font-size: 12px; color: var(--color-green-700);
-  text-align: center;
+  line-height: 1.4;
 }
 [data-theme="dark"] .split-items__hint { color: var(--color-green-400); }
+
+/* Mobile */
+.carta[data-bp="mobile"] .split-items__list { max-height: 240px; }
+.carta[data-bp="mobile"] .split-line { padding: 10px 12px; gap: 10px; }
+.carta[data-bp="mobile"] .split-line__photo { width: 38px; height: 38px; font-size: 18px; }
+.carta[data-bp="mobile"] .split-line__name { font-size: 13px; }
+.carta[data-bp="mobile"] .split-line__total { font-size: 12px; }
+.carta[data-bp="mobile"] .slot { width: 34px; height: 34px; }
+.carta[data-bp="mobile"] .split-items__yourTotal .val { font-size: 22px; }
+.carta[data-bp="mobile"] .split-items__foot { padding: 12px 14px; }
 
 /* Stage: equit */
 .split-equit { display: flex; flex-direction: column; gap: 14px; align-items: center; }
