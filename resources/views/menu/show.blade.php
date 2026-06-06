@@ -2265,64 +2265,82 @@
                         </div>
                     </div>
 
-                    {{-- ── splitEq: partes iguales con donut ─── --}}
-                    <div x-show="$store.bill.step === 'splitEq'">
-                        <div class="split-equit"
-                             x-data="{
-                                 parts: $store.bill.splitPeople || 2,
-                                 mySlice: 0,
-                                 get slice() { return $store.bill.orderTotal / this.parts; },
-                                 get fmt() { return (n) => Number(n).toFixed(2).replace('.',',') + ' €'; },
-                                 arc(i) {
-                                     const R_OUT = 48, R_IN = 26, CX = 60, CY = 60;
-                                     const a0 = (i / this.parts) * Math.PI * 2 - Math.PI / 2;
-                                     const a1 = ((i + 1) / this.parts) * Math.PI * 2 - Math.PI / 2;
-                                     const lg = (a1 - a0) > Math.PI ? 1 : 0;
-                                     const x0o = CX + R_OUT * Math.cos(a0), y0o = CY + R_OUT * Math.sin(a0);
-                                     const x1o = CX + R_OUT * Math.cos(a1), y1o = CY + R_OUT * Math.sin(a1);
-                                     const x0i = CX + R_IN  * Math.cos(a1), y0i = CY + R_IN  * Math.sin(a1);
-                                     const x1i = CX + R_IN  * Math.cos(a0), y1i = CY + R_IN  * Math.sin(a0);
-                                     return 'M '+x0o+' '+y0o+' A '+R_OUT+' '+R_OUT+' 0 '+lg+' 1 '+x1o+' '+y1o+' L '+x0i+' '+y0i+' A '+R_IN+' '+R_IN+' 0 '+lg+' 0 '+x1i+' '+y1i+' Z';
-                                 },
-                                 labelPos(i) {
-                                     const mid = ((i + 0.5) / this.parts) * Math.PI * 2 - Math.PI / 2;
-                                     const r = 37;
-                                     return { x: 60 + r * Math.cos(mid), y: 60 + r * Math.sin(mid) };
-                                 },
-                             }">
+                    {{-- ── splitEq: partes iguales con donut (DS) ─── --}}
+                    <div x-show="$store.bill.step === 'splitEq'"
+                         x-data="{
+                             mySlice: 0,
+                             get parts() { return $store.bill.splitPeople || 2; },
+                             get slice() { return $store.bill.splitMyPart || ($store.bill.orderTotal / this.parts); },
+                             fmt(n) { return Number(n).toFixed(2).replace('.', ',') + ' €'; },
+                             decParts() {
+                                 if (this.parts > 2) $store.bill.splitPeople = this.parts - 1;
+                                 if (this.mySlice >= $store.bill.splitPeople) this.mySlice = $store.bill.splitPeople - 1;
+                             },
+                             incParts() {
+                                 if (this.parts < ($store.bill.splitMaxParts || 10)) $store.bill.splitPeople = this.parts + 1;
+                             },
+                             arc(i) {
+                                 const R_OUT = 48, R_IN = 30, CX = 60, CY = 60;
+                                 const a0 = (i / this.parts) * Math.PI * 2 - Math.PI / 2;
+                                 const a1 = ((i + 1) / this.parts) * Math.PI * 2 - Math.PI / 2;
+                                 const lg = (a1 - a0) > Math.PI ? 1 : 0;
+                                 const x0o = CX + R_OUT * Math.cos(a0), y0o = CY + R_OUT * Math.sin(a0);
+                                 const x1o = CX + R_OUT * Math.cos(a1), y1o = CY + R_OUT * Math.sin(a1);
+                                 const x0i = CX + R_IN  * Math.cos(a1), y0i = CY + R_IN  * Math.sin(a1);
+                                 const x1i = CX + R_IN  * Math.cos(a0), y1i = CY + R_IN  * Math.sin(a0);
+                                 return 'M '+x0o+' '+y0o+' A '+R_OUT+' '+R_OUT+' 0 '+lg+' 1 '+x1o+' '+y1o+' L '+x0i+' '+y0i+' A '+R_IN+' '+R_IN+' 0 '+lg+' 0 '+x1i+' '+y1i+' Z';
+                             },
+                             labelPos(i) {
+                                 const mid = ((i + 0.5) / this.parts) * Math.PI * 2 - Math.PI / 2;
+                                 return { x: 60 + 39 * Math.cos(mid), y: 60 + 39 * Math.sin(mid) };
+                             },
+                         }">
+                        <div class="split-equit">
+
+                            {{-- Cabecera: cambiar modo + total chip --}}
                             <div class="split-items__head">
-                                <button type="button" class="back" @click="$store.bill.setSplitStage('intro')">← Cambiar modo</button>
-                                <div class="split-items__diners">
-                                    <span class="lab">Total a dividir</span>
-                                    <span class="val" x-text="Number($store.bill.orderTotal).toFixed(2).replace('.',',') + ' €'"></span>
+                                <button type="button" class="back" @click="$store.bill.setSplitStage('intro')">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
+                                    Cambiar modo
+                                </button>
+                                <div class="split-equit__total-chip">
+                                    <span class="k">Total a dividir</span>
+                                    <span class="v" x-text="fmt($store.bill.orderTotal)"></span>
                                 </div>
                             </div>
 
                             {{-- Donut SVG --}}
                             <div class="split-equit__pie">
-                                <svg viewBox="0 0 120 120" width="220" height="220" aria-hidden="true">
+                                <svg viewBox="0 0 120 120" width="220" height="220"
+                                     role="group" :aria-label="`Donut de ${parts} partes iguales, tu porción ${mySlice + 1}`">
                                     <template x-for="i in Array.from({length: parts}, (_, k) => k)" :key="i">
                                         <g :class="'slice' + (i === mySlice ? ' slice--mine' : '')"
                                            @click="mySlice = i"
-                                           style="cursor:pointer">
+                                           @keydown.enter="mySlice = i"
+                                           @keydown.space.prevent="mySlice = i"
+                                           tabindex="0" role="button"
+                                           :aria-label="`Porción ${i + 1}${i === mySlice ? ' · tuya' : ''}`"
+                                           style="cursor:pointer; outline:none">
                                             <path :d="arc(i)"
                                                   :fill="i === mySlice ? 'var(--brand-primary)' : 'var(--bg-chip)'"
-                                                  stroke="var(--bg-base)" stroke-width="2"
-                                                  :opacity="i === mySlice ? 1 : 0.55"/>
+                                                  stroke="var(--bg-canvas)" stroke-width="2.5"/>
                                             <text :x="labelPos(i).x" :y="labelPos(i).y"
                                                   text-anchor="middle" dominant-baseline="middle"
-                                                  font-size="10" font-weight="800"
+                                                  font-size="9" font-weight="800"
                                                   :fill="i === mySlice ? '#fff' : 'var(--fg-secondary)'"
                                                   x-text="i === mySlice ? 'TÚ' : (i + 1)">
                                             </text>
                                         </g>
                                     </template>
                                     {{-- Centro --}}
-                                    <circle cx="60" cy="60" r="24" fill="var(--bg-surface)"/>
-                                    <text x="60" y="57" text-anchor="middle" font-size="6.5" font-weight="600" fill="var(--fg-muted)">TU PARTE</text>
-                                    <text x="60" y="68" text-anchor="middle" font-size="13" font-weight="900" fill="var(--fg-primary)"
-                                          font-family="var(--font-display)"
-                                          x-text="Number(slice).toFixed(2).replace('.',',') + ' €'">
+                                    <circle cx="60" cy="60" r="28" fill="var(--bg-surface)"/>
+                                    <text x="60" y="55" text-anchor="middle"
+                                          font-size="6" font-weight="600" letter-spacing="0.08em"
+                                          fill="var(--fg-muted)" font-family="monospace">TU PARTE</text>
+                                    <text x="60" y="70" text-anchor="middle"
+                                          font-size="14" font-weight="900" letter-spacing="-0.02em"
+                                          fill="var(--fg-primary)"
+                                          x-text="fmt(slice)">
                                     </text>
                                 </svg>
                             </div>
@@ -2331,31 +2349,32 @@
                             <div class="split-equit__stepper">
                                 <span class="lab">¿Cuántos sois?</span>
                                 <div class="step">
-                                    <button type="button"
-                                            @click="parts = Math.max(2, parts - 1); $store.bill.splitPeople = parts"
+                                    <button type="button" aria-label="Reducir número de personas"
+                                            @click="decParts()"
                                             :disabled="parts <= 2">−</button>
-                                    <span class="step__num" x-text="parts"></span>
-                                    <button type="button"
-                                            @click="parts = Math.min($store.bill.splitMaxParts || 10, parts + 1); $store.bill.splitPeople = parts"
+                                    <span class="step__num" x-text="parts" aria-live="polite"></span>
+                                    <button type="button" aria-label="Aumentar número de personas"
+                                            @click="incParts()"
                                             :disabled="parts >= ($store.bill.splitMaxParts || 10)">+</button>
                                 </div>
                                 <span class="hint" x-text="'máx. ' + ($store.bill.splitMaxParts || 10)"></span>
                             </div>
 
+                            {{-- Selector de porción con dots --}}
                             <div class="split-equit__live">
-                                <span>Tú pagas</span>
-                                <div class="dots">
+                                <span x-text="'Tu porción: ' + (mySlice + 1) + ' de ' + parts"></span>
+                                <div class="dots" role="group" aria-label="Elige tu porción">
                                     <template x-for="i in Array.from({length: parts}, (_, k) => k)" :key="i">
-                                        <span :class="'dot' + (i === mySlice ? ' dot--mine' : '')"></span>
+                                        <button type="button"
+                                                :class="'dot' + (i === mySlice ? ' dot--mine' : '')"
+                                                @click="mySlice = i"
+                                                :aria-label="`Porción ${i + 1}`"
+                                                :aria-pressed="(i === mySlice).toString()">
+                                        </button>
                                     </template>
                                 </div>
                             </div>
 
-                            <button type="button" class="btn-primary"
-                                    @click="$store.bill.splitPeople = parts; $store.bill.payEquitative()">
-                                Pagar mi parte ·
-                                <span x-text="Number(slice).toFixed(2).replace('.',',') + ' €'"></span>
-                            </button>
                         </div>
                     </div>
 
@@ -2849,10 +2868,15 @@
 
                     {{-- splitEq --}}
                     <div x-show="$store.bill.step === 'splitEq'">
-                        <button type="button" class="btn-primary" @click="$store.bill.payEquitative()">
-                            Pagar mi parte con tarjeta
-                        </button>
-                        <button type="button" class="btn-text" @click="$store.bill.closeSplitEq()">Atrás</button>
+                        <div class="bill__footRow bill__footRow--stack">
+                            <button type="button" class="btn-primary"
+                                    @click="$store.bill.payEquitative()"
+                                    :disabled="$store.bill.sending">
+                                <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                                <span x-text="'Pagar mi parte · ' + Number($store.bill.splitMyPart || 0).toFixed(2).replace('.',',') + ' €'"></span>
+                            </button>
+                            <button type="button" class="btn-text" @click="$store.bill.closeSplitEq()">Atrás</button>
+                        </div>
                     </div>
 
                     {{-- splitTip --}}
