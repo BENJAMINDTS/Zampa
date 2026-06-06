@@ -2290,40 +2290,49 @@
                                      if (this.mySlice >= this.parts) this.mySlice = this.parts - 1;
                                  }
                              },
-                             arc(i) {
-                                 const R_OUT = 46, R_IN = 28, CX = 60, CY = 60;
-                                 const a0 = (i / this.parts) * Math.PI * 2 - Math.PI / 2;
-                                 const a1 = ((i + 1) / this.parts) * Math.PI * 2 - Math.PI / 2;
-                                 const lg = (a1 - a0) > Math.PI ? 1 : 0;
-                                 const x0o = CX + R_OUT*Math.cos(a0), y0o = CY + R_OUT*Math.sin(a0);
-                                 const x1o = CX + R_OUT*Math.cos(a1), y1o = CY + R_OUT*Math.sin(a1);
-                                 const x0i = CX + R_IN *Math.cos(a1), y0i = CY + R_IN *Math.sin(a1);
-                                 const x1i = CX + R_IN *Math.cos(a0), y1i = CY + R_IN *Math.sin(a0);
-                                 return `M ${x0o} ${y0o} A ${R_OUT} ${R_OUT} 0 ${lg} 1 ${x1o} ${y1o} L ${x0i} ${y0i} A ${R_IN} ${R_IN} 0 ${lg} 0 ${x1i} ${y1i} Z`;
-                             },
-                             labelPos(i) {
-                                 const mid = ((i + 0.5) / this.parts) * Math.PI * 2 - Math.PI / 2;
-                                 const inside = (i === this.mySlice || i < this.paidCount);
-                                 const r = inside ? 37 : 53;
-                                 return { x: 60 + r * Math.cos(mid), y: 60 + r * Math.sin(mid) };
-                             },
-                             sliceColor(i) {
-                                 if (i === this.mySlice) return '#16A34A';
-                                 if (i < this.paidCount) return '#E84FAC';
-                                 return 'var(--bg-chip)';
-                             },
-                             sliceLabel(i) {
-                                 if (i === this.mySlice) return 'TÚ';
-                                 if (i < this.paidCount) return '✓';
-                                 return String(i + 1);
-                             },
-                             sliceLabelFill(i) {
-                                 return (i === this.mySlice || i < this.paidCount) ? '#ffffff' : 'var(--fg-secondary)';
-                             },
                              dotClass(i) {
                                  if (i < this.paidCount) return 'dot dot--paid';
                                  if (i === this.mySlice) return 'dot dot--mine';
                                  return 'dot';
+                             },
+                             buildSvg() {
+                                 const P = this.parts, ms = this.mySlice, pc = this.paidCount;
+                                 const R_OUT = 46, R_IN = 28, CX = 60, CY = 60;
+                                 const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+                                 const graySlice  = isDark ? '#1E2A4A' : '#E5E7EB';
+                                 const centerBg   = isDark ? '#0E1A38' : '#FFFFFF';
+                                 const muteClr    = isDark ? '#6E84C0' : '#6B7280';
+                                 const primaryClr = isDark ? '#C8D8FF' : '#111827';
+                                 let svg = '<svg viewBox="0 0 120 120" width="200" height="200" style="overflow:visible;display:block">';
+                                 for (let i = 0; i < P; i++) {
+                                     const a0 = (i / P) * Math.PI * 2 - Math.PI / 2;
+                                     const a1 = ((i + 1) / P) * Math.PI * 2 - Math.PI / 2;
+                                     const lg = (a1 - a0) > Math.PI ? 1 : 0;
+                                     const x0o = CX + R_OUT*Math.cos(a0), y0o = CY + R_OUT*Math.sin(a0);
+                                     const x1o = CX + R_OUT*Math.cos(a1), y1o = CY + R_OUT*Math.sin(a1);
+                                     const x0i = CX + R_IN *Math.cos(a1), y0i = CY + R_IN *Math.sin(a1);
+                                     const x1i = CX + R_IN *Math.cos(a0), y1i = CY + R_IN *Math.sin(a0);
+                                     const d = `M ${x0o.toFixed(2)} ${y0o.toFixed(2)} A ${R_OUT} ${R_OUT} 0 ${lg} 1 ${x1o.toFixed(2)} ${y1o.toFixed(2)} L ${x0i.toFixed(2)} ${y0i.toFixed(2)} A ${R_IN} ${R_IN} 0 ${lg} 0 ${x1i.toFixed(2)} ${y1i.toFixed(2)} Z`;
+                                     const fill  = i === ms ? '#16A34A' : (i < pc ? '#E84FAC' : graySlice);
+                                     const mid   = ((i + 0.5) / P) * Math.PI * 2 - Math.PI / 2;
+                                     const inside = (i === ms || i < pc);
+                                     const r = inside ? 37 : 53;
+                                     const lx = (CX + r*Math.cos(mid)).toFixed(2);
+                                     const ly = (CY + r*Math.sin(mid)).toFixed(2);
+                                     const label = i === ms ? 'TÚ' : (i < pc ? '✓' : String(i + 1));
+                                     const lFill = inside ? '#FFFFFF' : muteClr;
+                                     const lSize = inside ? 9 : 9.5;
+                                     const cursor = i < pc ? 'default' : 'pointer';
+                                     svg += `<g data-slice="${i}" style="cursor:${cursor}">` +
+                                            `<path d="${d}" fill="${fill}" stroke="#FFFFFF" stroke-width="3"/>` +
+                                            `<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="middle" font-size="${lSize}" font-weight="800" fill="${lFill}">${label}</text>` +
+                                            `</g>`;
+                                 }
+                                 svg += `<circle cx="${CX}" cy="${CY}" r="${R_IN}" fill="${centerBg}"/>`;
+                                 svg += `<text x="${CX}" y="54" text-anchor="middle" font-size="5.5" font-weight="700" letter-spacing="2" fill="${muteClr}">TU PARTE</text>`;
+                                 svg += `<text x="${CX}" y="68" text-anchor="middle" font-size="13" font-weight="900" fill="${primaryClr}">${this.fmt(this.slice)}</text>`;
+                                 svg += '</svg>';
+                                 return svg;
                              },
                          }">
                         <div class="split-equit">
@@ -2341,43 +2350,18 @@
                                 </div>
                             </div>
 
-                            {{-- Donut --}}
-                            <div class="split-equit__pie">
-                                <svg viewBox="0 0 120 120" width="200" height="200"
-                                     :aria-label="`Reparto en ${parts} partes iguales`">
-                                    <template x-for="i in Array.from({length: parts}, (_, k) => k)" :key="i">
-                                        <g @click="if (i >= paidCount) mySlice = i"
-                                           @keydown.enter="if (i >= paidCount) mySlice = i"
-                                           @keydown.space.prevent="if (i >= paidCount) mySlice = i"
-                                           tabindex="0" role="button"
-                                           :aria-label="`Porción ${i + 1}${i < paidCount ? ' · pagada' : (i === mySlice ? ' · la tuya' : '')}`"
-                                           :aria-pressed="(i === mySlice).toString()"
-                                           style="cursor:pointer"
-                                           :class="i === mySlice ? 'slice slice--mine' : 'slice'">
-                                            <path :d="arc(i)"
-                                                  :fill="sliceColor(i)"
-                                                  stroke="#FFFFFF" stroke-width="3"/>
-                                            <text :x="labelPos(i).x"
-                                                  :y="labelPos(i).y"
-                                                  text-anchor="middle" dominant-baseline="middle"
-                                                  :font-size="i === mySlice || i < paidCount ? '9' : '9.5'"
-                                                  font-weight="800"
-                                                  :fill="sliceLabelFill(i)"
-                                                  x-text="sliceLabel(i)">
-                                            </text>
-                                        </g>
-                                    </template>
-                                    {{-- Centro blanco (r = R_IN = 28) --}}
-                                    <circle cx="60" cy="60" r="28" fill="var(--bg-surface)"/>
-                                    <text x="60" y="54" text-anchor="middle"
-                                          font-size="5.5" font-weight="700" letter-spacing="0.14em"
-                                          fill="var(--fg-muted)">TU PARTE</text>
-                                    <text x="60" y="68" text-anchor="middle"
-                                          font-size="13" font-weight="900" letter-spacing="-0.02em"
-                                          fill="var(--fg-primary)"
-                                          x-text="fmt(slice)">
-                                    </text>
-                                </svg>
+                            {{-- Donut — generado via innerHTML para respetar el namespace SVG --}}
+                            <div class="split-equit__pie"
+                                 x-ref="pie"
+                                 x-effect="$refs.pie.innerHTML = buildSvg()"
+                                 :aria-label="`Reparto en ${parts} partes iguales`"
+                                 @click="
+                                     const g = $event.target.closest('[data-slice]');
+                                     if (g) {
+                                         const i = parseInt(g.dataset.slice);
+                                         if (i >= paidCount) mySlice = i;
+                                     }
+                                 ">
                             </div>
 
                             {{-- Stepper --}}
