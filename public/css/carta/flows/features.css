@@ -762,68 +762,109 @@
 .carta[data-bp="mobile"] .split-items__yourTotal .val { font-size: 22px; }
 .carta[data-bp="mobile"] .split-items__foot { padding: 12px 14px; }
 
-/* Stage: equit */
-.split-equit { display: flex; flex-direction: column; gap: 14px; align-items: center; }
-.split-equit > * { width: 100%; }
+/* ════════════════════════════════════════════════════════════
+   SPLIT EQUIT — partes iguales (DS)
+   ════════════════════════════════════════════════════════════ */
+.split-equit { display: flex; flex-direction: column; gap: 14px; }
+
+/* Chip "Total a dividir" en la cabecera */
+.split-equit__total-chip {
+  display: flex; flex-direction: column; align-items: flex-end; gap: 1px;
+}
+.split-equit__total-chip .k {
+  font-family: var(--font-mono); font-size: 9px; font-weight: 700;
+  letter-spacing: 0.18em; text-transform: uppercase; color: var(--fg-muted);
+}
+.split-equit__total-chip .v {
+  font-family: var(--font-display); font-weight: 900; font-size: 15px;
+  color: var(--price-gold); font-variant-numeric: tabular-nums; letter-spacing: -0.01em;
+}
+
+/* Donut */
 .split-equit__pie {
-  display: flex; justify-content: center; padding: 8px 0 4px;
+  display: flex; justify-content: center; padding: 4px 0;
 }
 .split-equit__pie .slice { transition: transform 180ms var(--ease-bounce); }
-.split-equit__pie .slice:hover { transform: scale(1.02); }
-.split-equit__pie .slice--mine path { filter: drop-shadow(0 4px 12px rgba(34,197,94,0.35)); }
-.split-equit__pie .slice--paid path { opacity: 1; }
+.split-equit__pie .slice:hover { transform: scale(1.03); }
+.split-equit__pie .slice:focus-visible { outline: none; }
+.split-equit__pie .slice:focus-visible path { stroke: var(--color-green-500); stroke-width: 4; }
+.split-equit__pie .slice--mine { transform-origin: 60px 60px; }
+.split-equit__pie .slice--mine path {
+  filter: drop-shadow(0 4px 14px rgba(22,163,74,0.45));
+}
 
+/* Mobile: donut más pequeño */
+.carta[data-bp="mobile"] .split-equit__pie svg { width: 180px; height: 180px; }
+
+/* Stepper */
 .split-equit__stepper {
-  display: flex; align-items: center; gap: 12px;
+  display: flex; align-items: center; gap: 10px;
   padding: 12px 14px;
   background: var(--bg-surface); border: 1px solid var(--border-subtle);
   border-radius: 14px;
 }
 .split-equit__stepper .lab {
-  font-family: var(--font-body); font-weight: 700; font-size: 13px; color: var(--fg-primary);
-  flex: 1;
+  font-family: var(--font-body); font-weight: 600; font-size: 13px;
+  color: var(--fg-primary); flex: 1;
 }
 .split-equit__stepper .step {
-  display: inline-flex; align-items: center; gap: 4px;
-  background: var(--bg-base); border: 1px solid var(--border-strong);
-  border-radius: 9999px; padding: 4px;
+  display: inline-flex; align-items: center; gap: 2px;
+  background: var(--bg-chip); border: 1px solid var(--border-strong);
+  border-radius: 9999px; padding: 3px;
 }
 .split-equit__stepper .step button {
   width: 32px; height: 32px; border-radius: 50%;
   background: transparent; border: none; cursor: pointer;
   font-family: var(--font-display); font-weight: 900; font-size: 18px;
-  color: var(--fg-primary);
+  color: var(--fg-primary); line-height: 1;
+  transition: background 120ms ease;
 }
-.split-equit__stepper .step button:hover:not(:disabled) { background: var(--bg-chip); }
+.split-equit__stepper .step button:hover:not(:disabled) {
+  background: var(--bg-surface);
+}
+.split-equit__stepper .step button:focus-visible {
+  outline: 2px solid var(--color-green-500); outline-offset: 1px;
+}
 .split-equit__stepper .step button:disabled { opacity: 0.3; cursor: not-allowed; }
 .split-equit__stepper .step__num {
-  min-width: 24px; text-align: center;
+  min-width: 28px; text-align: center;
   font-family: var(--font-display); font-weight: 900; font-size: 18px;
   color: var(--fg-primary); font-variant-numeric: tabular-nums;
 }
 .split-equit__stepper .hint {
-  font-family: var(--font-mono); font-size: 10.5px; color: var(--fg-muted);
+  font-family: var(--font-mono); font-size: 10px;
+  letter-spacing: 0.08em; color: var(--fg-muted);
 }
 
+/* Live dots row */
 .split-equit__live {
-  display: flex; align-items: center; gap: 12px;
-  padding: 10px 12px;
-  background: var(--bg-base); border: 1px solid var(--border-subtle);
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px;
+  background: var(--bg-chip); border: 1px solid var(--border-subtle);
   border-radius: 12px;
   font-family: var(--font-body); font-size: 12.5px; color: var(--fg-secondary);
 }
-.split-equit__live .dots { display: inline-flex; gap: 4px; margin-left: auto; }
+.split-equit__live .dots { display: inline-flex; gap: 6px; margin-left: auto; flex-wrap: wrap; justify-content: flex-end; }
 .split-equit__live .dots .dot {
-  width: 10px; height: 10px; border-radius: 50%;
-  background: var(--bg-chip);
-  border: 1.5px solid var(--border-strong);
+  width: 12px; height: 12px; border-radius: 50%;
+  background: var(--bg-surface); border: 1.5px solid var(--border-strong);
+  cursor: pointer; padding: 0;
+  transition: transform 120ms var(--ease-bounce), box-shadow 120ms ease, background 120ms ease;
 }
-.split-equit__live .dots .dot--paid {
-  background: var(--color-green-500); border-color: var(--color-green-600);
-}
+.split-equit__live .dots .dot:hover { transform: scale(1.2); }
+.split-equit__live .dots .dot:focus-visible { outline: 2px solid var(--color-green-500); outline-offset: 2px; }
+.split-equit__live .dots .dot--paid { background: var(--color-green-500); border-color: var(--color-green-600); }
 .split-equit__live .dots .dot--mine {
-  box-shadow: 0 0 0 2px var(--color-green-500);
+  background: var(--color-green-600); border-color: var(--color-green-700);
+  box-shadow: 0 0 0 3px rgba(34,197,94,0.35);
+  transform: scale(1.3);
 }
+
+/* Mobile */
+.carta[data-bp="mobile"] .split-equit__stepper { padding: 10px 12px; }
+.carta[data-bp="mobile"] .split-equit__stepper .lab { font-size: 12px; }
+.carta[data-bp="mobile"] .split-equit__stepper .step button { width: 28px; height: 28px; font-size: 16px; }
+.carta[data-bp="mobile"] .split-equit__live { font-size: 12px; padding: 9px 12px; }
 
 /* Stage: pay (per-person) */
 .split-pay { display: flex; flex-direction: column; gap: 14px; }
