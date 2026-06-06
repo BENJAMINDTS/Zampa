@@ -2267,16 +2267,23 @@
 
                     {{-- ── splitEq: donut helper (función global, sin restricciones de comillas) ─── --}}
                     <script>
-                    window._donutSvg = function(parts, mySlice, paidCount, sliceVal) {
+                    // parts      — número de personas
+                    // mySlice    — índice del slice seleccionado por esta sesión
+                    // slotColors — objeto { index: "#HEX" } de slots ya pagados
+                    // sliceVal   — importe de cada parte
+                    // myColor    — color de sesión del usuario actual
+                    window._donutSvg = function(parts, mySlice, slotColors, sliceVal, myColor) {
                         var R_OUT = 46, R_IN = 28, CX = 60, CY = 60;
                         var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-                        var gray   = isDark ? '#1E2A4A' : '#E5E7EB';
+                        var gray   = isDark ? '#2A3A5E' : '#E5E7EB';
                         var cBg    = isDark ? '#0E1A38' : '#FFFFFF';
                         var muted  = isDark ? '#6E84C0' : '#6B7280';
                         var fg     = isDark ? '#C8D8FF' : '#111827';
                         var amt    = Number(sliceVal).toFixed(2).replace('.', ',') + ' €';
                         var s = '<svg viewBox="0 0 120 120" width="200" height="200" style="overflow:visible;display:block">';
                         for (var i = 0; i < parts; i++) {
+                            var isPaid = !!slotColors[i];
+                            var isMine = (i === mySlice && !isPaid);
                             var a0 = (i / parts) * Math.PI * 2 - Math.PI / 2;
                             var a1 = ((i + 1) / parts) * Math.PI * 2 - Math.PI / 2;
                             var lg = (a1 - a0) > Math.PI ? 1 : 0;
@@ -2290,16 +2297,17 @@
                                     ' L ' + x0i.toFixed(2) + ' ' + y0i.toFixed(2) +
                                     ' A ' + R_IN  + ' ' + R_IN  + ' 0 ' + lg + ' 0 ' +
                                     x1i.toFixed(2) + ' ' + y1i.toFixed(2) + ' Z';
-                            var fill   = i === mySlice ? '#16A34A' : (i < paidCount ? '#E84FAC' : gray);
-                            var mid    = ((i + 0.5) / parts) * Math.PI * 2 - Math.PI / 2;
-                            var inside = (i === mySlice || i < paidCount);
-                            var r      = inside ? 37 : 53;
-                            var lx     = (CX + r*Math.cos(mid)).toFixed(2);
-                            var ly     = (CY + r*Math.sin(mid)).toFixed(2);
-                            var lbl    = i === mySlice ? 'TÚ' : (i < paidCount ? '✓' : String(i + 1));
-                            var lFill  = inside ? '#FFFFFF' : muted;
-                            var lSize  = inside ? '9' : '9.5';
-                            var cur    = i < paidCount ? 'default' : 'pointer';
+                            // Pagado → color del pagador | Mío → mi color | Libre → gris
+                            var fill  = isPaid ? slotColors[i] : (isMine ? myColor : gray);
+                            var mid   = ((i + 0.5) / parts) * Math.PI * 2 - Math.PI / 2;
+                            var inside = isPaid || isMine;
+                            var r     = inside ? 37 : 53;
+                            var lx    = (CX + r*Math.cos(mid)).toFixed(2);
+                            var ly    = (CY + r*Math.sin(mid)).toFixed(2);
+                            var lbl   = isPaid ? '✓' : (isMine ? 'TÚ' : String(i + 1));
+                            var lFill = inside ? '#FFFFFF' : muted;
+                            var lSize = inside ? '9' : '9.5';
+                            var cur   = isPaid ? 'default' : 'pointer';
                             s += '<g data-slice="' + i + '" style="cursor:' + cur + '">' +
                                  '<path d="' + d + '" fill="' + fill + '" stroke="#FFFFFF" stroke-width="3"/>' +
                                  '<text x="' + lx + '" y="' + ly + '" text-anchor="middle"' +
@@ -2320,9 +2328,18 @@
                     {{-- ── splitEq: partes iguales con donut (DS) ─── --}}
                     <div x-show="$store.bill.step === 'splitEq'"
                          x-data="{
-                             parts:     $store.bill.splitPeople || 2,
-                             mySlice:   0,
-                             paidCount: 0,
+                             parts:        $store.bill.splitPeople || 2,
+                             mySlice:      $store.bill.splitEqSlice || 0,
+                             paidCount:    0,
+                             slotColors:   {},
+                             sessionColor: (function() {
+                                 const PALETTE = ['#E84FAC','#3B82F6','#F59E0B','#8B5CF6','#06B6D4','#EF4444','#F97316'];
+                                 const key = 'zampa_color_' + ($store.bill.tableHash || 'x');
+                                 if (!localStorage.getItem(key)) {
+                                     localStorage.setItem(key, PALETTE[Math.floor(Math.random() * PALETTE.length)]);
+                                 }
+                                 return localStorage.getItem(key);
+                             })(),
                              get maxParts() {
                                  const m = $store.bill.splitMaxParts;
                                  return (m && m > 2) ? m : 10;
@@ -2343,27 +2360,37 @@
                                  }
                              },
                              _pollTimer: null,
+                             selectSlice(i) {
+                                 if (this.slotColors[i]) return; // ya pagado
+                                 this.mySlice = i;
+                                 $store.bill.splitEqSlice = i;
+                                 $store.bill.splitEqColor = this.sessionColor;
+                             },
+                             // Dots: verde = pagado, anillo sessionColor = mío, gris = libre
                              dotClass(i) {
                                  if (i < this.paidCount) return 'dot dot--paid';
                                  if (i === this.mySlice) return 'dot dot--mine';
                                  return 'dot';
                              },
                              buildSvg() {
-                                 return window._donutSvg(this.parts, this.mySlice, this.paidCount, this.slice);
+                                 return window._donutSvg(this.parts, this.mySlice, this.slotColors, this.slice, this.sessionColor);
                              },
                              async pollEqStatus() {
                                  try {
                                      const res  = await fetch('/api/v1/payment/' + $store.bill.tableHash + '/split/eq-status', { headers: { 'Accept': 'application/json' } });
                                      const data = await res.json();
                                      if (res.ok && data.success) {
-                                         this.paidCount = data.paid_parts || 0;
+                                         this.slotColors = data.slot_colors || {};
+                                         this.paidCount  = data.paid_parts  || 0;
                                          if (data.parts_total > 0 && data.parts_total !== this.parts) {
                                              this.parts = data.parts_total;
                                              $store.bill.splitPeople = data.parts_total;
                                          }
-                                         // Si mi slice ya está pagado, muevo al primero libre
-                                         if (this.mySlice < this.paidCount) {
-                                             this.mySlice = this.paidCount < this.parts ? this.paidCount : this.parts - 1;
+                                         // Si mi slice quedó pagado, muevo al primero libre
+                                         if (this.slotColors[this.mySlice]) {
+                                             for (let j = 0; j < this.parts; j++) {
+                                                 if (!this.slotColors[j]) { this.mySlice = j; $store.bill.splitEqSlice = j; break; }
+                                             }
                                          }
                                      }
                                  } catch (_) {}
@@ -2400,10 +2427,7 @@
                                  :aria-label="`Reparto en ${parts} partes iguales`"
                                  @click="
                                      const g = $event.target.closest('[data-slice]');
-                                     if (g) {
-                                         const i = parseInt(g.dataset.slice);
-                                         if (i >= paidCount) mySlice = i;
-                                     }
+                                     if (g) selectSlice(parseInt(g.dataset.slice));
                                  ">
                             </div>
 
@@ -2427,9 +2451,9 @@
                                     <template x-for="i in Array.from({length: parts}, (_, k) => k)" :key="i">
                                         <button type="button"
                                                 :class="dotClass(i)"
-                                                @click="if (i >= paidCount) mySlice = i"
-                                                :aria-label="`Porción ${i + 1}${i < paidCount ? ': pagada' : (i === mySlice ? ': la tuya' : '')}`"
-                                                :disabled="i < paidCount">
+                                                @click="selectSlice(i)"
+                                                :aria-label="`Porción ${i + 1}${slotColors[i] ? ': pagada' : (i === mySlice ? ': la tuya' : '')}`"
+                                                :disabled="!!slotColors[i]">
                                         </button>
                                     </template>
                                 </div>

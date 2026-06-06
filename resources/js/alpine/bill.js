@@ -98,6 +98,8 @@ export function registerBill() {
         splitItems:       [],
         splitSelected:    [],
         splitPeople:      2,
+        splitEqSlice:     0,
+        splitEqColor:     null,
         splitPayingCard:  false,
         splitStripeReady: false,
         splitStripeError: null,
@@ -747,7 +749,7 @@ export function registerBill() {
                     : '/api/v1/payment/' + this.tableHash + '/split/pay-eq';
                 const body = type === 'items'
                     ? { item_ids: ids, tip }
-                    : { people: Math.max(2, parseInt(this.splitPeople) || 2), part_number: 1, tip };
+                    : { people: Math.max(2, parseInt(this.splitPeople) || 2), part_number: this.splitEqSlice + 1, session_color: this.splitEqColor, tip };
                 const res = await fetch(url, {
                     method:  'POST',
                     headers: {

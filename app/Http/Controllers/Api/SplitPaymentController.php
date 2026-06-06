@@ -163,9 +163,10 @@ class SplitPaymentController extends Controller
     public function payEquitative(Request $request, string $hash): JsonResponse
     {
         $validated = $request->validate([
-            'people'      => 'required|integer|min:2|max:50',
-            'part_number' => 'required|integer|min:1',
-            'tip'         => 'nullable|numeric|min:0|max:500',
+            'people'        => 'required|integer|min:2|max:50',
+            'part_number'   => 'required|integer|min:1',
+            'tip'           => 'nullable|numeric|min:0|max:500',
+            'session_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
         ]);
 
         $table = Table::with('user')->where('unique_hash', $hash)->firstOrFail();
@@ -180,9 +181,10 @@ class SplitPaymentController extends Controller
             return response()->json(['success' => false, 'message' => 'No hay pedido activo.'], 404);
         }
 
-        $people     = (int) $validated['people'];
-        $partNumber = (int) $validated['part_number'];
-        $tip        = (float) ($validated['tip'] ?? 0);
+        $people       = (int) $validated['people'];
+        $partNumber   = (int) $validated['part_number'];
+        $tip          = (float) ($validated['tip'] ?? 0);
+        $sessionColor = $validated['session_color'] ?? null;
 
         $maxParts = $table->user->split_payment_max_parts;
         if ($maxParts !== null && $people > $maxParts) {
@@ -222,6 +224,7 @@ class SplitPaymentController extends Controller
             'mode'                     => 'equitative',
             'parts_total'              => $people,
             'part_number'              => $partNumber,
+            'session_color'            => $sessionColor,
         ]);
 
         return response()->json([
@@ -311,20 +314,28 @@ class SplitPaymentController extends Controller
             return response()->json(['success' => false, 'paid_parts' => 0, 'parts_total' => 0]);
         }
 
-        $paid = OrderItemPayment::where('order_id', $order->id)
-            ->where('mode', 'equitative')
-            ->where('status', 'paid')
-            ->count();
-
-        $total = OrderItemPayment::where('order_id', $order->id)
+        $total = (int) (OrderItemPayment::where('order_id', $order->id)
             ->where('mode', 'equitative')
             ->whereIn('status', ['pending', 'paid'])
-            ->max('parts_total') ?? 0;
+            ->max('parts_total') ?? 0);
+
+        $paidRows = OrderItemPayment::where('order_id', $order->id)
+            ->where('mode', 'equitative')
+            ->where('status', 'paid')
+            ->get(['part_number', 'session_color']);
+
+        // Indexar por part_number (0-based) → color
+        $slotColors = [];
+        foreach ($paidRows as $row) {
+            $idx = $row->part_number - 1;
+            $slotColors[$idx] = $row->session_color ?? '#16A34A';
+        }
 
         return response()->json([
             'success'     => true,
-            'paid_parts'  => $paid,
-            'parts_total' => (int) $total,
+            'paid_parts'  => $paidRows->count(),
+            'parts_total' => $total,
+            'slot_colors' => $slotColors, // { "0": "#E84FAC", "2": "#3B82F6" }
         ]);
     }
 
