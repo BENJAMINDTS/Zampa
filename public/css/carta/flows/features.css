@@ -784,17 +784,20 @@
 .split-equit__pie {
   display: flex; justify-content: center; padding: 4px 0;
 }
-.split-equit__pie .slice { transition: transform 180ms var(--ease-bounce); }
+.split-equit__pie .slice {
+  transition: transform 200ms var(--ease-bounce);
+  transform-box: fill-box;
+  transform-origin: center;
+}
 .split-equit__pie .slice:hover { transform: scale(1.03); }
 .split-equit__pie .slice:focus-visible { outline: none; }
-.split-equit__pie .slice:focus-visible path { stroke: var(--color-green-500); stroke-width: 4; }
-.split-equit__pie .slice--mine { transform-origin: 60px 60px; }
+.split-equit__pie .slice:focus-visible path { stroke: var(--color-green-500) !important; }
 .split-equit__pie .slice--mine path {
-  filter: drop-shadow(0 4px 14px rgba(22,163,74,0.45));
+  filter: drop-shadow(0 3px 10px rgba(22,163,74,0.50));
 }
 
-/* Mobile: donut más pequeño */
-.carta[data-bp="mobile"] .split-equit__pie svg { width: 180px; height: 180px; }
+/* Mobile: donut algo más pequeño */
+.carta[data-bp="mobile"] .split-equit__pie svg { width: 170px; height: 170px; }
 
 /* Stepper */
 .split-equit__stepper {
