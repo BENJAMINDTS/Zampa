@@ -2300,13 +2300,12 @@
                             // Pagado → color del pagador | Mío → mi color | Libre → gris
                             var fill  = isPaid ? slotColors[i] : (isMine ? myColor : gray);
                             var mid   = ((i + 0.5) / parts) * Math.PI * 2 - Math.PI / 2;
-                            var inside = isPaid || isMine;
-                            var r     = inside ? 37 : 53;
+                            var r     = 37;
                             var lx    = (CX + r*Math.cos(mid)).toFixed(2);
                             var ly    = (CY + r*Math.sin(mid)).toFixed(2);
                             var lbl   = isPaid ? '✓' : (isMine ? 'TÚ' : String(i + 1));
-                            var lFill = inside ? '#FFFFFF' : muted;
-                            var lSize = inside ? '9' : '9.5';
+                            var lFill = (isPaid || isMine) ? '#FFFFFF' : muted;
+                            var lSize = '9';
                             var cur   = isPaid ? 'default' : 'pointer';
                             s += '<g data-slice="' + i + '" style="cursor:' + cur + '">' +
                                  '<path d="' + d + '" fill="' + fill + '" stroke="#FFFFFF" stroke-width="3"/>' +
