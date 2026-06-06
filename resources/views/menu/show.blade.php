@@ -2462,11 +2462,10 @@
                          @pointerup.window="dragging = false"
                          @pointercancel.window="dragging = false">
 
-                        <p style="text-align:center; font-family:var(--font-body); font-size:13px; color:var(--fg-secondary); margin:0 0 16px;">
-                            El resto lo cobramos con tarjeta. Total a pagar:
-                            <strong style="font-family:var(--font-display); font-weight:900; color:var(--price-gold);"
-                                    x-text="fmt($store.bill.orderTotal)"></strong>
-                        </p>
+                        <div style="text-align:center; margin:0 0 16px; display:flex; flex-direction:column; align-items:center; gap:2px;">
+                            <span style="font-family:var(--font-body); font-size:13px; color:var(--fg-secondary);">El resto lo cobramos con tarjeta.</span>
+                            <span style="font-family:var(--font-mono); font-size:10px; letter-spacing:0.16em; text-transform:uppercase; color:var(--fg-muted);">Total a pagar: <strong style="font-family:var(--font-display); font-weight:900; font-size:16px; color:var(--price-gold); letter-spacing:-0.01em;" x-text="fmt($store.bill.orderTotal)"></strong></span>
+                        </div>
 
                         {{-- Barra dividida arrastrable --}}
                         <div class="split__bar"
