@@ -2361,6 +2361,10 @@
                                              this.parts = data.parts_total;
                                              $store.bill.splitPeople = data.parts_total;
                                          }
+                                         // Si mi slice ya está pagado, muevo al primero libre
+                                         if (this.mySlice < this.paidCount) {
+                                             this.mySlice = this.paidCount < this.parts ? this.paidCount : this.parts - 1;
+                                         }
                                      }
                                  } catch (_) {}
                              },
