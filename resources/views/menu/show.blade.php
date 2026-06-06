@@ -2265,6 +2265,58 @@
                         </div>
                     </div>
 
+                    {{-- ── splitEq: donut helper (función global, sin restricciones de comillas) ─── --}}
+                    <script>
+                    window._donutSvg = function(parts, mySlice, paidCount, sliceVal) {
+                        var R_OUT = 46, R_IN = 28, CX = 60, CY = 60;
+                        var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+                        var gray   = isDark ? '#1E2A4A' : '#E5E7EB';
+                        var cBg    = isDark ? '#0E1A38' : '#FFFFFF';
+                        var muted  = isDark ? '#6E84C0' : '#6B7280';
+                        var fg     = isDark ? '#C8D8FF' : '#111827';
+                        var amt    = Number(sliceVal).toFixed(2).replace('.', ',') + ' €';
+                        var s = '<svg viewBox="0 0 120 120" width="200" height="200" style="overflow:visible;display:block">';
+                        for (var i = 0; i < parts; i++) {
+                            var a0 = (i / parts) * Math.PI * 2 - Math.PI / 2;
+                            var a1 = ((i + 1) / parts) * Math.PI * 2 - Math.PI / 2;
+                            var lg = (a1 - a0) > Math.PI ? 1 : 0;
+                            var x0o = CX + R_OUT*Math.cos(a0), y0o = CY + R_OUT*Math.sin(a0);
+                            var x1o = CX + R_OUT*Math.cos(a1), y1o = CY + R_OUT*Math.sin(a1);
+                            var x0i = CX + R_IN *Math.cos(a1), y0i = CY + R_IN *Math.sin(a1);
+                            var x1i = CX + R_IN *Math.cos(a0), y1i = CY + R_IN *Math.sin(a0);
+                            var d = 'M ' + x0o.toFixed(2) + ' ' + y0o.toFixed(2) +
+                                    ' A ' + R_OUT + ' ' + R_OUT + ' 0 ' + lg + ' 1 ' +
+                                    x1o.toFixed(2) + ' ' + y1o.toFixed(2) +
+                                    ' L ' + x0i.toFixed(2) + ' ' + y0i.toFixed(2) +
+                                    ' A ' + R_IN  + ' ' + R_IN  + ' 0 ' + lg + ' 0 ' +
+                                    x1i.toFixed(2) + ' ' + y1i.toFixed(2) + ' Z';
+                            var fill   = i === mySlice ? '#16A34A' : (i < paidCount ? '#E84FAC' : gray);
+                            var mid    = ((i + 0.5) / parts) * Math.PI * 2 - Math.PI / 2;
+                            var inside = (i === mySlice || i < paidCount);
+                            var r      = inside ? 37 : 53;
+                            var lx     = (CX + r*Math.cos(mid)).toFixed(2);
+                            var ly     = (CY + r*Math.sin(mid)).toFixed(2);
+                            var lbl    = i === mySlice ? 'TÚ' : (i < paidCount ? '✓' : String(i + 1));
+                            var lFill  = inside ? '#FFFFFF' : muted;
+                            var lSize  = inside ? '9' : '9.5';
+                            var cur    = i < paidCount ? 'default' : 'pointer';
+                            s += '<g data-slice="' + i + '" style="cursor:' + cur + '">' +
+                                 '<path d="' + d + '" fill="' + fill + '" stroke="#FFFFFF" stroke-width="3"/>' +
+                                 '<text x="' + lx + '" y="' + ly + '" text-anchor="middle"' +
+                                 ' dominant-baseline="middle" font-size="' + lSize + '"' +
+                                 ' font-weight="800" fill="' + lFill + '">' + lbl + '</text>' +
+                                 '</g>';
+                        }
+                        s += '<circle cx="' + CX + '" cy="' + CY + '" r="' + R_IN + '" fill="' + cBg + '"/>';
+                        s += '<text x="' + CX + '" y="54" text-anchor="middle" font-size="5.5"' +
+                             ' font-weight="700" letter-spacing="2" fill="' + muted + '">TU PARTE</text>';
+                        s += '<text x="' + CX + '" y="68" text-anchor="middle" font-size="13"' +
+                             ' font-weight="900" fill="' + fg + '">' + amt + '</text>';
+                        s += '</svg>';
+                        return s;
+                    };
+                    </script>
+
                     {{-- ── splitEq: partes iguales con donut (DS) ─── --}}
                     <div x-show="$store.bill.step === 'splitEq'"
                          x-data="{
@@ -2296,43 +2348,7 @@
                                  return 'dot';
                              },
                              buildSvg() {
-                                 const P = this.parts, ms = this.mySlice, pc = this.paidCount;
-                                 const R_OUT = 46, R_IN = 28, CX = 60, CY = 60;
-                                 const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-                                 const graySlice  = isDark ? '#1E2A4A' : '#E5E7EB';
-                                 const centerBg   = isDark ? '#0E1A38' : '#FFFFFF';
-                                 const muteClr    = isDark ? '#6E84C0' : '#6B7280';
-                                 const primaryClr = isDark ? '#C8D8FF' : '#111827';
-                                 let svg = '<svg viewBox="0 0 120 120" width="200" height="200" style="overflow:visible;display:block">';
-                                 for (let i = 0; i < P; i++) {
-                                     const a0 = (i / P) * Math.PI * 2 - Math.PI / 2;
-                                     const a1 = ((i + 1) / P) * Math.PI * 2 - Math.PI / 2;
-                                     const lg = (a1 - a0) > Math.PI ? 1 : 0;
-                                     const x0o = CX + R_OUT*Math.cos(a0), y0o = CY + R_OUT*Math.sin(a0);
-                                     const x1o = CX + R_OUT*Math.cos(a1), y1o = CY + R_OUT*Math.sin(a1);
-                                     const x0i = CX + R_IN *Math.cos(a1), y0i = CY + R_IN *Math.sin(a1);
-                                     const x1i = CX + R_IN *Math.cos(a0), y1i = CY + R_IN *Math.sin(a0);
-                                     const d = `M ${x0o.toFixed(2)} ${y0o.toFixed(2)} A ${R_OUT} ${R_OUT} 0 ${lg} 1 ${x1o.toFixed(2)} ${y1o.toFixed(2)} L ${x0i.toFixed(2)} ${y0i.toFixed(2)} A ${R_IN} ${R_IN} 0 ${lg} 0 ${x1i.toFixed(2)} ${y1i.toFixed(2)} Z`;
-                                     const fill  = i === ms ? '#16A34A' : (i < pc ? '#E84FAC' : graySlice);
-                                     const mid   = ((i + 0.5) / P) * Math.PI * 2 - Math.PI / 2;
-                                     const inside = (i === ms || i < pc);
-                                     const r = inside ? 37 : 53;
-                                     const lx = (CX + r*Math.cos(mid)).toFixed(2);
-                                     const ly = (CY + r*Math.sin(mid)).toFixed(2);
-                                     const label = i === ms ? 'TÚ' : (i < pc ? '✓' : String(i + 1));
-                                     const lFill = inside ? '#FFFFFF' : muteClr;
-                                     const lSize = inside ? 9 : 9.5;
-                                     const cursor = i < pc ? 'default' : 'pointer';
-                                     svg += `<g data-slice="${i}" style="cursor:${cursor}">` +
-                                            `<path d="${d}" fill="${fill}" stroke="#FFFFFF" stroke-width="3"/>` +
-                                            `<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="middle" font-size="${lSize}" font-weight="800" fill="${lFill}">${label}</text>` +
-                                            `</g>`;
-                                 }
-                                 svg += `<circle cx="${CX}" cy="${CY}" r="${R_IN}" fill="${centerBg}"/>`;
-                                 svg += `<text x="${CX}" y="54" text-anchor="middle" font-size="5.5" font-weight="700" letter-spacing="2" fill="${muteClr}">TU PARTE</text>`;
-                                 svg += `<text x="${CX}" y="68" text-anchor="middle" font-size="13" font-weight="900" fill="${primaryClr}">${this.fmt(this.slice)}</text>`;
-                                 svg += '</svg>';
-                                 return svg;
+                                 return window._donutSvg(this.parts, this.mySlice, this.paidCount, this.slice);
                              },
                          }">
                         <div class="split-equit">
