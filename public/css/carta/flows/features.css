@@ -863,11 +863,18 @@
 }
 .split-equit__live .dots .dot:hover { transform: scale(1.2); }
 .split-equit__live .dots .dot:focus-visible { outline: 2px solid var(--color-green-500); outline-offset: 2px; }
-.split-equit__live .dots .dot--paid { background: var(--color-green-500); border-color: var(--color-green-600); }
+/* dot--paid: sólido verde (ya pagó alguien) */
+.split-equit__live .dots .dot--paid {
+  background: var(--color-green-500);
+  border-color: var(--color-green-600);
+  cursor: not-allowed;
+}
+/* dot--mine: anillo verde hueco (mi porción, aún pendiente de pago) */
 .split-equit__live .dots .dot--mine {
-  background: var(--color-green-600); border-color: var(--color-green-700);
-  box-shadow: 0 0 0 3px rgba(34,197,94,0.35);
-  transform: scale(1.3);
+  background: transparent;
+  border: 2px solid var(--color-green-500);
+  box-shadow: 0 0 0 2px rgba(34,197,94,0.30);
+  transform: scale(1.25);
 }
 
 /* Mobile */

@@ -2268,8 +2268,9 @@
                     {{-- ── splitEq: partes iguales con donut (DS) ─── --}}
                     <div x-show="$store.bill.step === 'splitEq'"
                          x-data="{
-                             parts:   $store.bill.splitPeople || 2,
-                             mySlice: 0,
+                             parts:     $store.bill.splitPeople || 2,
+                             mySlice:   0,
+                             paidCount: 0,
                              get maxParts() {
                                  const m = $store.bill.splitMaxParts;
                                  return (m && m > 2) ? m : 10;
@@ -2290,7 +2291,7 @@
                                  }
                              },
                              arc(i) {
-                                 const R_OUT = 46, R_IN = 32, CX = 65, CY = 65;
+                                 const R_OUT = 46, R_IN = 28, CX = 60, CY = 60;
                                  const a0 = (i / this.parts) * Math.PI * 2 - Math.PI / 2;
                                  const a1 = ((i + 1) / this.parts) * Math.PI * 2 - Math.PI / 2;
                                  const lg = (a1 - a0) > Math.PI ? 1 : 0;
@@ -2300,10 +2301,29 @@
                                  const x1i = CX + R_IN *Math.cos(a0), y1i = CY + R_IN *Math.sin(a0);
                                  return `M ${x0o} ${y0o} A ${R_OUT} ${R_OUT} 0 ${lg} 1 ${x1o} ${y1o} L ${x0i} ${y0i} A ${R_IN} ${R_IN} 0 ${lg} 0 ${x1i} ${y1i} Z`;
                              },
-                             labelPos(i, isMine) {
+                             labelPos(i) {
                                  const mid = ((i + 0.5) / this.parts) * Math.PI * 2 - Math.PI / 2;
-                                 const r = isMine ? 39 : 55;
-                                 return { x: 65 + r * Math.cos(mid), y: 65 + r * Math.sin(mid) };
+                                 const inside = (i === this.mySlice || i < this.paidCount);
+                                 const r = inside ? 37 : 53;
+                                 return { x: 60 + r * Math.cos(mid), y: 60 + r * Math.sin(mid) };
+                             },
+                             sliceColor(i) {
+                                 if (i === this.mySlice) return '#16A34A';
+                                 if (i < this.paidCount) return '#E84FAC';
+                                 return 'var(--bg-chip)';
+                             },
+                             sliceLabel(i) {
+                                 if (i === this.mySlice) return 'TÚ';
+                                 if (i < this.paidCount) return '✓';
+                                 return String(i + 1);
+                             },
+                             sliceLabelFill(i) {
+                                 return (i === this.mySlice || i < this.paidCount) ? '#ffffff' : 'var(--fg-secondary)';
+                             },
+                             dotClass(i) {
+                                 if (i < this.paidCount) return 'dot dot--paid';
+                                 if (i === this.mySlice) return 'dot dot--mine';
+                                 return 'dot';
                              },
                          }">
                         <div class="split-equit">
@@ -2323,69 +2343,66 @@
 
                             {{-- Donut --}}
                             <div class="split-equit__pie">
-                                {{-- viewBox 130x130 da margen para las etiquetas exteriores --}}
-                                <svg viewBox="0 0 130 130" width="210" height="210"
+                                <svg viewBox="0 0 120 120" width="200" height="200"
                                      :aria-label="`Reparto en ${parts} partes iguales`">
                                     <template x-for="i in Array.from({length: parts}, (_, k) => k)" :key="i">
-                                        <g @click="mySlice = i"
-                                           @keydown.enter="mySlice = i"
-                                           @keydown.space.prevent="mySlice = i"
+                                        <g @click="if (i >= paidCount) mySlice = i"
+                                           @keydown.enter="if (i >= paidCount) mySlice = i"
+                                           @keydown.space.prevent="if (i >= paidCount) mySlice = i"
                                            tabindex="0" role="button"
-                                           :aria-label="`Porción ${i + 1}${i === mySlice ? ' — la tuya' : ''}`"
+                                           :aria-label="`Porción ${i + 1}${i < paidCount ? ' · pagada' : (i === mySlice ? ' · la tuya' : '')}`"
+                                           :aria-pressed="(i === mySlice).toString()"
                                            style="cursor:pointer"
                                            :class="i === mySlice ? 'slice slice--mine' : 'slice'">
-                                            {{-- Slice path — gap blanco entre slices con stroke --}}
                                             <path :d="arc(i)"
-                                                  :fill="i === mySlice ? 'var(--color-green-600)' : 'var(--bg-chip)'"
-                                                  stroke="#ffffff" stroke-width="2.5"/>
-                                            {{-- Label: dentro del anillo si es mío, fuera si no --}}
-                                            <text :x="labelPos(i, i === mySlice).x"
-                                                  :y="labelPos(i, i === mySlice).y"
+                                                  :fill="sliceColor(i)"
+                                                  stroke="#FFFFFF" stroke-width="3"/>
+                                            <text :x="labelPos(i).x"
+                                                  :y="labelPos(i).y"
                                                   text-anchor="middle" dominant-baseline="middle"
-                                                  font-size="9" font-weight="800"
-                                                  :fill="i === mySlice ? '#ffffff' : 'var(--fg-secondary)'"
-                                                  x-text="i === mySlice ? 'TÚ' : (i + 1)">
+                                                  :font-size="i === mySlice || i < paidCount ? '9' : '9.5'"
+                                                  font-weight="800"
+                                                  :fill="sliceLabelFill(i)"
+                                                  x-text="sliceLabel(i)">
                                             </text>
                                         </g>
                                     </template>
-                                    {{-- Centro: cubre hasta R_IN para ocultar el interior del anillo --}}
-                                    <circle cx="65" cy="65" r="32" fill="var(--bg-surface)"/>
-                                    <text x="65" y="59" text-anchor="middle"
+                                    {{-- Centro blanco (r = R_IN = 28) --}}
+                                    <circle cx="60" cy="60" r="28" fill="var(--bg-surface)"/>
+                                    <text x="60" y="54" text-anchor="middle"
                                           font-size="5.5" font-weight="700" letter-spacing="0.14em"
                                           fill="var(--fg-muted)">TU PARTE</text>
-                                    <text x="65" y="73" text-anchor="middle"
-                                          font-size="12.5" font-weight="900" letter-spacing="-0.02em"
+                                    <text x="60" y="68" text-anchor="middle"
+                                          font-size="13" font-weight="900" letter-spacing="-0.02em"
                                           fill="var(--fg-primary)"
                                           x-text="fmt(slice)">
                                     </text>
                                 </svg>
                             </div>
 
-                            {{-- Stepper ¿Cuántos sois? --}}
+                            {{-- Stepper --}}
                             <div class="split-equit__stepper">
                                 <span class="lab">¿Cuántos sois?</span>
                                 <div class="step">
                                     <button type="button" aria-label="Menos personas"
-                                            @click="dec()"
-                                            :disabled="parts <= 2">−</button>
+                                            @click="dec()" :disabled="parts <= 2">−</button>
                                     <span class="step__num" x-text="parts" aria-live="polite"></span>
                                     <button type="button" aria-label="Más personas"
-                                            @click="inc()"
-                                            :disabled="parts >= maxParts">+</button>
+                                            @click="inc()" :disabled="parts >= maxParts">+</button>
                                 </div>
-                                <span class="hint" x-text="'máx. ' + maxParts"></span>
+                                <span class="hint" x-text="'max. ' + maxParts"></span>
                             </div>
 
-                            {{-- Dots: selector de porción --}}
+                            {{-- Estado de pagos --}}
                             <div class="split-equit__live">
-                                <span x-text="(mySlice + 1) + ' de ' + parts + ' partes'"></span>
-                                <div class="dots" role="group" aria-label="Tu porción">
+                                <span x-text="paidCount + ' de ' + parts + ' han pagado'"></span>
+                                <div class="dots" role="group" aria-label="Estado de pagos">
                                     <template x-for="i in Array.from({length: parts}, (_, k) => k)" :key="i">
                                         <button type="button"
-                                                :class="'dot' + (i === mySlice ? ' dot--mine' : '')"
-                                                @click="mySlice = i"
-                                                :aria-label="`Porción ${i + 1}`"
-                                                :aria-pressed="(i === mySlice).toString()">
+                                                :class="dotClass(i)"
+                                                @click="if (i >= paidCount) mySlice = i"
+                                                :aria-label="`Porción ${i + 1}${i < paidCount ? ': pagada' : (i === mySlice ? ': la tuya' : '')}`"
+                                                :disabled="i < paidCount">
                                         </button>
                                     </template>
                                 </div>
