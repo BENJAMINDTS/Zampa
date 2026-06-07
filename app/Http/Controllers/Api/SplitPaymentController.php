@@ -51,11 +51,12 @@ class SplitPaymentController extends Controller
 
         $items = $order->items()->with('splitPayments')->get()
             ->map(fn (OrderItem $item) => [
-                'id'      => $item->id,
-                'name'    => $item->product?->name ?? 'Producto',
-                'price'   => (float) $item->price,
-                'total'   => round((float) $item->price * $item->quantity, 2),
-                'claimed' => $equitativeLocked || $item->isClaimed(),
+                'id'           => $item->id,
+                'name'         => $item->product?->name ?? 'Producto',
+                'price'        => (float) $item->price,
+                'total'        => round((float) $item->price * $item->quantity, 2),
+                'claimed'      => $equitativeLocked || $item->isClaimed(),
+                'is_courtesy'  => (float) $item->price === 0.0,
             ]);
 
         return response()->json([
