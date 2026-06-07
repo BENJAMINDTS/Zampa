@@ -1903,6 +1903,8 @@
                             </button>
 
                             <button type="button" class="method method--mixed"
+                                    :disabled="$store.bill.requested"
+                                    :title="$store.bill.requested ? 'Ya se ha solicitado la cuenta por otro método' : ''"
                                     @click="$store.bill.openMixed()">
                                 <span class="method__ic" aria-hidden="true">
                                     <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1922,6 +1924,8 @@
 
                             @if($splitPaymentEnabled)
                             <button type="button" class="method method--split"
+                                    :disabled="$store.bill.requested"
+                                    :title="$store.bill.requested ? 'Ya se ha solicitado la cuenta por otro método' : ''"
                                     @click="$store.bill.openSplit()">
                                 <span class="method__ic" aria-hidden="true">
                                     <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
