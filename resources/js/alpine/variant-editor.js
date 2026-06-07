@@ -5,6 +5,8 @@
  * @author BenjaminDTS
  */
 
+import Alpine from 'alpinejs';
+
 /**
  * @param {Array<{name: string, price: string|number, sort_order: number}>} initialVariants
  * @returns {object}
@@ -42,6 +44,6 @@ export function variantEditor(initialVariants) {
  * @param {import('alpinejs').Alpine} Alpine
  * @returns {void}
  */
-export function registerVariantEditor(Alpine) {
+export function registerVariantEditor() {
     Alpine.data('variantEditor', (initialVariants) => variantEditor(initialVariants));
 }
