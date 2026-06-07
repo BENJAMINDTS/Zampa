@@ -2402,8 +2402,7 @@
                                  if (this._pollTimer) { clearInterval(this._pollTimer); this._pollTimer = null; }
                              },
                          }"
-                         x-init="$watch('$store.bill.step', s => { if (s === 'splitEq') startPoll(); else stopPoll(); }); if ($store.bill.step === 'splitEq') startPoll();"
-                         @vue:unmounted.window="stopPoll()"
+                         x-init="$watch('$store.bill.step', s => { if (s === 'splitEq') startPoll(); else stopPoll(); }); if ($store.bill.step === 'splitEq') startPoll();">
                         <div class="split-equit">
 
                             {{-- Cabecera --}}
