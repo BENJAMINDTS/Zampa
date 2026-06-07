@@ -173,6 +173,7 @@ export function registerBill() {
             this.showingMixed     = false;
             this.showingMixedTip  = false;
             this.mixedPayingCard  = false;
+            this.requested        = false;
             this.choosing         = true;
             this.step             = 'method';
         },
