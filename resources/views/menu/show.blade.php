@@ -2186,7 +2186,7 @@
 
                             {{-- Cabecera: cambiar modo --}}
                             <div class="split-items__head">
-                                <button type="button" class="back" @click="$store.bill.setSplitStage('intro')">
+                                <button type="button" class="back" @click="$store.bill.closeSplitItems()">
                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
                                     Cambiar modo
                                 </button>
@@ -2196,15 +2196,15 @@
                             <div class="split-items__status">
                                 <div class="split-items__progress">
                                     <div class="bar" role="progressbar"
-                                         :aria-valuenow="$store.bill.splitItems.filter(i => i.claimed).length"
+                                         :aria-valuenow="$store.bill.splitItems.filter(i => i.claimed || $store.bill.splitSelected.includes(i.id)).length"
                                          :aria-valuemax="$store.bill.splitItems.length"
                                          aria-label="Ítems reclamados">
                                         <div class="bar__fill"
-                                             :style="'width: ' + (($store.bill.splitItems.filter(i => i.claimed).length / Math.max(1, $store.bill.splitItems.length)) * 100) + '%'">
+                                             :style="'width: ' + (($store.bill.splitItems.filter(i => i.claimed || $store.bill.splitSelected.includes(i.id)).length / Math.max(1, $store.bill.splitItems.length)) * 100) + '%'">
                                         </div>
                                     </div>
                                     <span class="ct"
-                                          x-text="$store.bill.splitItems.filter(i => i.claimed).length + '/' + $store.bill.splitItems.length + ' reclamados'">
+                                          x-text="$store.bill.splitItems.filter(i => i.claimed || $store.bill.splitSelected.includes(i.id)).length + '/' + $store.bill.splitItems.length + ' reclamados'">
                                     </span>
                                 </div>
                                 <div class="split-items__legend">
@@ -2215,8 +2215,15 @@
                             {{-- Lista de ítems --}}
                             <div class="split-items__list" role="list">
                                 <template x-for="item in $store.bill.splitItems" :key="item.id">
-                                    <div class="split-line" role="listitem"
-                                         :class="{ 'split-line--mine': $store.bill.isItemSelected(item.id), 'split-line--claimed': item.claimed && !$store.bill.isItemSelected(item.id) }">
+                                    <div class="split-line" role="button"
+                                         tabindex="0"
+                                         :class="{ 'split-line--mine': $store.bill.isItemSelected(item.id), 'split-line--claimed': item.claimed && !$store.bill.isItemSelected(item.id) }"
+                                         :style="item.claimed && !$store.bill.isItemSelected(item.id) ? 'cursor:not-allowed' : 'cursor:pointer'"
+                                         :aria-label="$store.bill.isItemSelected(item.id) ? 'Quitar de mi parte: ' + item.name : (item.claimed ? 'Ya reclamado: ' + item.name : 'Reclamar: ' + item.name)"
+                                         :aria-pressed="$store.bill.isItemSelected(item.id)"
+                                         @click="$store.bill.toggleSplitItem(item.id, item.claimed)"
+                                         @keydown.enter.prevent="$store.bill.toggleSplitItem(item.id, item.claimed)"
+                                         @keydown.space.prevent="$store.bill.toggleSplitItem(item.id, item.claimed)">
 
                                         <div class="split-line__photo" aria-hidden="true">🍽️</div>
 
@@ -2226,26 +2233,22 @@
                                                  x-text="fmt(item.total)"></div>
                                         </div>
 
-                                        {{-- Un slot por ítem (el backend no devuelve qty por unidad) --}}
-                                        <button type="button"
-                                                :class="'slot' + ($store.bill.isItemSelected(item.id) ? ' slot--you' : (item.claimed ? ' slot--other' : ''))"
-                                                @click="$store.bill.toggleSplitItem(item.id, item.claimed)"
-                                                :disabled="item.claimed && !$store.bill.isItemSelected(item.id)"
-                                                :aria-label="$store.bill.isItemSelected(item.id) ? 'Quitar de mi parte' : (item.claimed ? 'Ya reclamado por otro comensal' : 'Reclamar este plato')"
-                                                :aria-pressed="$store.bill.isItemSelected(item.id)">
+                                        {{-- Indicador visual del estado del slot --}}
+                                        <div :class="'slot' + ($store.bill.isItemSelected(item.id) ? ' slot--you' : (item.claimed ? ' slot--other' : ''))"
+                                             aria-hidden="true">
                                             {{-- Unclaimed --}}
                                             <template x-if="!$store.bill.isItemSelected(item.id) && !item.claimed">
-                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                                             </template>
                                             {{-- Mine --}}
                                             <template x-if="$store.bill.isItemSelected(item.id)">
-                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                                             </template>
                                             {{-- Claimed by other --}}
                                             <template x-if="item.claimed && !$store.bill.isItemSelected(item.id)">
-                                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                                             </template>
-                                        </button>
+                                        </div>
                                     </div>
                                 </template>
                             </div>
@@ -2408,7 +2411,7 @@
                             {{-- Cabecera --}}
                             <div class="split-items__head">
                                 <button type="button" class="back"
-                                        @click="$store.bill.setSplitStage('intro')">
+                                        @click="$store.bill.closeSplitEq()">
                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
                                     Cambiar modo
                                 </button>
@@ -2945,7 +2948,6 @@
                                 @click="$store.bill.paySelectedItems()">
                             Pagar mi parte
                         </button>
-                        <button type="button" class="btn-text" @click="$store.bill.closeSplitItems()">Atrás</button>
                     </div>
 
                     {{-- splitEq --}}
@@ -2957,7 +2959,6 @@
                                 <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
                                 <span x-text="'Pagar mi parte · ' + Number($store.bill.splitMyPart || 0).toFixed(2).replace('.',',') + ' €'"></span>
                             </button>
-                            <button type="button" class="btn-text" @click="$store.bill.closeSplitEq()">Atrás</button>
                         </div>
                     </div>
 
