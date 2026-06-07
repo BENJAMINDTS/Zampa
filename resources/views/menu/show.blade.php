@@ -1772,7 +1772,7 @@
                 <div class="drawer__head">
 
                     {{-- Botón atrás (pasos intermedios) --}}
-                    <template x-if="['cashConfirm','tip','pay','split','mixed','mixedTip','splitTip','splitPay','mixedPay'].includes($store.bill.step)">
+                    <template x-if="['cashConfirm','tip','pay','split','mixed','mixedTip','splitPay','mixedPay'].includes($store.bill.step)">
                         <button type="button" class="icon-btn icon-btn--back"
                                 @click="$store.bill.step === 'splitItems' ? $store.bill.closeSplitItems()
                                     : $store.bill.step === 'splitEq'   ? $store.bill.closeSplitEq()
@@ -2231,13 +2231,6 @@
                          x-data="{ fmt(n) { return Number(n).toFixed(2).replace('.', ',') + ' €'; } }">
                         <div class="split-items">
 
-                            {{-- Cabecera: cambiar modo --}}
-                            <div class="split-items__head">
-                                <button type="button" class="back" @click="$store.bill.closeSplitItems()">
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
-                                    Cambiar modo
-                                </button>
-                            </div>
 
                             {{-- Barra de progreso + leyenda --}}
                             <div class="split-items__status">
@@ -2460,11 +2453,6 @@
 
                             {{-- Cabecera --}}
                             <div class="split-items__head">
-                                <button type="button" class="back"
-                                        @click="$store.bill.closeSplitEq()">
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
-                                    Cambiar modo
-                                </button>
                                 <div class="split-equit__total-chip">
                                     <span class="k">Total a dividir</span>
                                     <span class="v" x-text="fmt($store.bill.orderTotal)"></span>
@@ -2516,7 +2504,6 @@
                     {{-- ── splitTip: propina para split ─── --}}
                     <div x-show="$store.bill.step === 'splitTip'">
                         <div class="split-pay">
-                            <button type="button" class="back" @click="$store.bill.backToMethod()">← Cambiar método</button>
                             <div class="split-pay__amt">
                                 <span class="lab">Tu parte</span>
                                 <span class="val"
@@ -2948,7 +2935,14 @@
                     {{-- cashDone --}}
                     <div x-show="$store.bill.step === 'cashDone'">
                         <div class="bill__footRow" style="justify-content:center;">
-                            <button type="button" class="btn-text bill__cancelNotice" @click="$store.bill.backToMethod()">Cancelar aviso</button>
+                            <button type="button" class="btn-text bill__cancelNotice" @click="$store.bill.backToMethod()">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <line x1="15" y1="9" x2="9" y2="15"/>
+                                    <line x1="9" y1="9" x2="15" y2="15"/>
+                                </svg>
+                                Cancelar aviso
+                            </button>
                         </div>
                     </div>
 
@@ -3009,7 +3003,10 @@
                                     @click="$store.bill.paySelectedItems()">
                                 Pagar mi parte
                             </button>
-                            <button type="button" class="back" @click="$store.bill.closeSplitItems()">Cambiar modo</button>
+                            <button type="button" class="back" @click="$store.bill.closeSplitItems()">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
+                                Cambiar modo
+                            </button>
                         </div>
                     </div>
 
@@ -3022,7 +3019,10 @@
                                 <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
                                 <span x-text="'Pagar mi parte · ' + Number($store.bill.splitMyPart || 0).toFixed(2).replace('.',',') + ' €'"></span>
                             </button>
-                            <button type="button" class="back" @click="$store.bill.closeSplitEq()">Cambiar modo</button>
+                            <button type="button" class="back" @click="$store.bill.closeSplitEq()">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
+                                Cambiar modo
+                            </button>
                         </div>
                     </div>
 
