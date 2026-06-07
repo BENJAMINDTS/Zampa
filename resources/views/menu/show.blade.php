@@ -1776,8 +1776,10 @@
                         <button type="button" class="icon-btn icon-btn--back"
                                 @click="$store.bill.step === 'splitItems' ? $store.bill.closeSplitItems()
                                     : $store.bill.step === 'splitEq'   ? $store.bill.closeSplitEq()
+                                    : $store.bill.step === 'splitTip'  ? $store.bill.closeSplitTip()
                                     : $store.bill.step === 'splitPay'  ? $store.bill.closeSplitPayment()
                                     : $store.bill.step === 'mixedPay'  ? $store.bill.closeMixedPayment()
+                                    : $store.bill.step === 'pay'       ? $store.bill.backToTip()
                                     : $store.bill.backToMethod()"
                                 aria-label="Cambiar método de pago">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
@@ -2981,7 +2983,7 @@
                                 </svg>
                                 <span x-text="$store.bill.sending ? 'Procesando…' : 'Pagar ' + Number($store.bill.grandTotal || $store.bill.orderTotal).toFixed(2).replace('.',',') + ' €'"></span>
                             </button>
-                            <button type="button" class="back" @click="$store.bill.backToMethod()">← Atrás</button>
+                            <button type="button" class="back" @click="$store.bill.backToTip()">← Atrás</button>
                         </div>
                     </div>
 
@@ -3032,7 +3034,7 @@
                                 Continuar —
                                 <span x-text="Number($store.bill.splitTipGrandTotal || $store.bill.splitTipBase).toFixed(2).replace('.',',') + ' €'"></span>
                             </button>
-                            <button type="button" class="back" @click="$store.bill.backToMethod()">← Atrás</button>
+                            <button type="button" class="back" @click="$store.bill.closeSplitTip()">← Atrás</button>
                         </div>
                     </div>
 
