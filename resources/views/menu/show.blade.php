@@ -2042,7 +2042,7 @@
                                         Ticket de cortesía
                                     </a>
                                 </template>
-                                <button type="button" class="ps__btn ps__btn--ghost" @click="$store.bill.close()">Ver carta</button>
+                                <button type="button" class="ps__btn ps__btn--primary" @click="$store.bill.close()">Ver carta</button>
                             </div>
                         </div>
                     </div>
@@ -2947,7 +2947,7 @@
 
                     {{-- cashDone --}}
                     <div x-show="$store.bill.step === 'cashDone'">
-                        <div class="bill__footRow">
+                        <div class="bill__footRow" style="justify-content:center;">
                             <button type="button" class="btn-text bill__cancelNotice" @click="$store.bill.backToMethod()">Cancelar aviso</button>
                         </div>
                     </div>
