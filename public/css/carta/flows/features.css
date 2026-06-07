@@ -652,6 +652,16 @@
   background: var(--color-green-50);
 }
 .split-line--claimed { opacity: 0.6; }
+.split-line--courtesy {
+  border-color: var(--brand-primary);
+  background: rgba(99,102,241,0.06);
+  cursor: default !important;
+  pointer-events: none;
+}
+[data-theme="dark"] .split-line--courtesy {
+  border-color: var(--brand-primary);
+  background: rgba(99,102,241,0.12);
+}
 [data-theme="dark"] .split-line--mine {
   border-color: var(--color-green-600);
   background: rgba(34,197,94,0.08);
@@ -673,6 +683,22 @@
   font-family: var(--font-display); font-weight: 800; font-size: 13px;
   color: var(--price-gold); margin-top: 2px;
   font-variant-numeric: tabular-nums;
+}
+.split-line__badge {
+  display: inline-flex; align-items: center;
+  margin-top: 3px; padding: 1px 7px;
+  border-radius: 20px; font-size: 10px; font-weight: 700;
+  letter-spacing: 0.04em; text-transform: uppercase;
+}
+.split-line__badge--courtesy {
+  background: rgba(99,102,241,0.15);
+  color: var(--brand-primary);
+  border: 1px solid rgba(99,102,241,0.3);
+}
+[data-theme="dark"] .split-line__badge--courtesy {
+  background: rgba(99,102,241,0.2);
+  color: #a5b4fc;
+  border-color: rgba(99,102,241,0.4);
 }
 
 /* Slot button — one per item */
@@ -718,6 +744,20 @@
   cursor: not-allowed;
 }
 [data-theme="dark"] .slot--other { border-color: rgba(255,255,255,0.12); }
+
+/* Courtesy item → indigo heart icon, non-interactive */
+.slot--courtesy {
+  background: rgba(99,102,241,0.1);
+  border: 2px solid rgba(99,102,241,0.35);
+  border-style: solid;
+  color: var(--brand-primary);
+  cursor: default;
+}
+[data-theme="dark"] .slot--courtesy {
+  background: rgba(99,102,241,0.18);
+  border-color: rgba(99,102,241,0.5);
+  color: #a5b4fc;
+}
 
 @keyframes slotPop {
   0%   { transform: scale(0.5); box-shadow: 0 0 0 0 rgba(34,197,94,0.6); }
