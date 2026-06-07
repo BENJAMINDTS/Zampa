@@ -2300,7 +2300,6 @@
                                     </div>
                                 </template>
                             </div>
-                            </div>
 
                             {{-- Total de tu parte (solo lectura, el CTA está en drawer__foot) --}}
                             <div class="split-items__foot">
