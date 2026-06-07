@@ -2989,7 +2989,9 @@
 
                     {{-- split --}}
                     <div x-show="$store.bill.step === 'split'">
-                        <button type="button" class="btn-text" @click="$store.bill.closeSplitSelector()">Cancelar</button>
+                        <div class="bill__footRow bill__footRow--stack">
+                            <button type="button" class="btn-secondary" @click="$store.bill.closeSplitSelector()">← Cambiar método</button>
+                        </div>
                     </div>
 
                     {{-- splitItems --}}
@@ -3032,12 +3034,14 @@
 
                     {{-- mixed --}}
                     <div x-show="$store.bill.step === 'mixed'">
-                        <button type="button" class="btn-primary"
-                                :disabled="!$store.bill.mixedCashValid && !($store.bill.mixedCashAmount >= $store.bill.orderTotal - 0.001)"
-                                @click="$store.bill.proceedFromMixed()">
-                            <span x-text="($store.bill.mixedCashAmount >= $store.bill.orderTotal - 0.001) ? 'Continuar · Pago en efectivo' : 'Continuar con tarjeta'"></span>
-                        </button>
-                        <button type="button" class="btn-text" @click="$store.bill.closeMixed()">Cancelar</button>
+                        <div class="bill__footRow bill__footRow--stack">
+                            <button type="button" class="btn-primary"
+                                    :disabled="!$store.bill.mixedCashValid && !($store.bill.mixedCashAmount >= $store.bill.orderTotal - 0.001)"
+                                    @click="$store.bill.proceedFromMixed()">
+                                <span x-text="($store.bill.mixedCashAmount >= $store.bill.orderTotal - 0.001) ? 'Continuar · Pago en efectivo' : 'Continuar con tarjeta'"></span>
+                            </button>
+                            <button type="button" class="btn-secondary" @click="$store.bill.closeMixed()">← Cambiar método</button>
+                        </div>
                     </div>
 
                     {{-- mixedTip --}}
