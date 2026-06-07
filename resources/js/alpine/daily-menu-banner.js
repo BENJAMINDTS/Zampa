@@ -6,6 +6,8 @@
  * @author AyrtonAlania
  */
 
+import Alpine from 'alpinejs';
+
 const SECTION_LABELS = {
     first_course:  'Primer plato',
     second_course: 'Segundo plato',
@@ -347,6 +349,6 @@ export function dailyMenuBanner(hash) {
  * @param {import('alpinejs').Alpine} Alpine
  * @returns {void}
  */
-export function registerDailyMenuBanner(Alpine) {
+export function registerDailyMenuBanner() {
     Alpine.data('dailyMenuBanner', (hash) => dailyMenuBanner(hash));
 }
