@@ -376,8 +376,8 @@ export function registerBill() {
             return this.splitSelected.includes(id);
         },
 
-        toggleSplitItem(id, claimed) {
-            if (claimed) return;
+        toggleSplitItem(id, claimed, isCourtesy) {
+            if (claimed || isCourtesy) return;
             const idx = this.splitSelected.indexOf(id);
             if (idx === -1) this.splitSelected.push(id);
             else            this.splitSelected.splice(idx, 1);
