@@ -6,6 +6,8 @@
  * @author BenjaminDTS
  */
 
+import Alpine from 'alpinejs';
+
 /**
  * @returns {object}
  */
@@ -45,6 +47,6 @@ export function ticketConfigData() {
  * @param {import('alpinejs').Alpine} Alpine
  * @returns {void}
  */
-export function registerTicketConfig(Alpine) {
+export function registerTicketConfig() {
     Alpine.data('ticketConfigData', () => ticketConfigData());
 }
