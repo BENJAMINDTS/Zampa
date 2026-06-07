@@ -1772,12 +1772,14 @@
                 <div class="drawer__head">
 
                     {{-- Botón atrás (pasos intermedios) --}}
-                    <template x-if="['cashConfirm','tip','pay','split','splitItems','splitEq','mixed','mixedTip','splitTip','splitPay','mixedPay'].includes($store.bill.step)">
+                    <template x-if="['cashConfirm','tip','pay','split','mixed','mixedTip','splitPay','mixedPay'].includes($store.bill.step)">
                         <button type="button" class="icon-btn icon-btn--back"
                                 @click="$store.bill.step === 'splitItems' ? $store.bill.closeSplitItems()
                                     : $store.bill.step === 'splitEq'   ? $store.bill.closeSplitEq()
+                                    : $store.bill.step === 'splitTip'  ? $store.bill.closeSplitTip()
                                     : $store.bill.step === 'splitPay'  ? $store.bill.closeSplitPayment()
                                     : $store.bill.step === 'mixedPay'  ? $store.bill.closeMixedPayment()
+                                    : $store.bill.step === 'pay'       ? $store.bill.backToTip()
                                     : $store.bill.backToMethod()"
                                 aria-label="Cambiar método de pago">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
@@ -1903,6 +1905,8 @@
                             </button>
 
                             <button type="button" class="method method--mixed"
+                                    :disabled="$store.bill.requested"
+                                    :title="$store.bill.requested ? 'Ya se ha solicitado la cuenta por otro método' : ''"
                                     @click="$store.bill.openMixed()">
                                 <span class="method__ic" aria-hidden="true">
                                     <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1922,6 +1926,8 @@
 
                             @if($splitPaymentEnabled)
                             <button type="button" class="method method--split"
+                                    :disabled="$store.bill.requested"
+                                    :title="$store.bill.requested ? 'Ya se ha solicitado la cuenta por otro método' : ''"
                                     @click="$store.bill.openSplit()">
                                 <span class="method__ic" aria-hidden="true">
                                     <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -2036,28 +2042,69 @@
                                         Ticket de cortesía
                                     </a>
                                 </template>
-                                <button type="button" class="ps__btn ps__btn--ghost" @click="$store.bill.close()">Ver carta</button>
+                                <button type="button" class="ps__btn ps__btn--primary" @click="$store.bill.close()">Ver carta</button>
                             </div>
                         </div>
                     </div>
 
                     {{-- ── tip: selector de propina para tarjeta ─── --}}
                     <div x-show="$store.bill.step === 'tip'">
-                        <div class="tip-row" role="group" aria-label="Porcentaje de propina">
-                            <template x-for="pct in [0, 10, 15, 20]" :key="pct">
-                                <div :class="'tip' + ($store.bill.tipPercent === pct ? ' tip--selected' : '')"
-                                     @click="$store.bill.setTipPercent(pct)"
-                                     role="button" tabindex="0"
-                                     :aria-pressed="($store.bill.tipPercent === pct).toString()"
-                                     @keydown.enter="$store.bill.setTipPercent(pct)">
-                                    <div class="pct" x-text="pct + '%'"></div>
-                                    <div class="amt"
-                                         x-text="pct === 0 ? '—' : Number(Math.round($store.bill.orderTotal * pct) / 100).toFixed(2).replace('.',',') + ' €'"></div>
+                        <div class="cashTip">
+                            <div class="cashTip__hero">
+                                <span class="lab">Total del pedido</span>
+                                <span class="val" x-text="Number($store.bill.orderTotal).toFixed(2).replace('.',',') + ' €'"></span>
+                            </div>
+                            <section class="cashTip__section">
+                                <div class="cashTip__label">
+                                    <span>Propina sugerida</span>
+                                    <span class="hint">Toca para elegir</span>
                                 </div>
-                            </template>
+                                <div class="cashTip__grid">
+                                    <template x-for="pct in [5, 10, 15, 20]" :key="pct">
+                                        <button type="button"
+                                                class="cashTip__chip"
+                                                :class="$store.bill.tipPercent === pct ? 'is-active' : ''"
+                                                :aria-pressed="($store.bill.tipPercent === pct).toString()"
+                                                @click="$store.bill.setTipPercent(pct)">
+                                            <span class="cashTip__pct" x-text="pct + '%'"></span>
+                                            <span class="cashTip__amt"
+                                                  x-text="Number(Math.round($store.bill.orderTotal * pct) / 100).toFixed(2).replace('.',',') + ' €'"></span>
+                                        </button>
+                                    </template>
+                                </div>
+                                <div class="cashTip__input">
+                                    <label for="card-tip-bill" class="sr-only">Propina personalizada en euros</label>
+                                    <input id="card-tip-bill"
+                                           type="number" min="0" step="0.50" inputmode="decimal"
+                                           placeholder="Otra cantidad…"
+                                           @input="$store.bill.updateCustomTip($event.target.value)"
+                                           :value="$store.bill.tipPercent === null && $store.bill.tipAmount > 0 ? $store.bill.tipAmount : ''">
+                                    <span class="cashTip__currency" aria-hidden="true">€</span>
+                                </div>
+                            </section>
+                            <section class="cashTip__summary" aria-live="polite">
+                                <div class="cashTip__row">
+                                    <span>Pedido</span>
+                                    <span class="v" x-text="Number($store.bill.orderTotal).toFixed(2).replace('.',',') + ' €'"></span>
+                                </div>
+                                <div class="cashTip__row cashTip__row--tip"
+                                     x-show="($store.bill.tipAmount || 0) > 0">
+                                    <span>Propina</span>
+                                    <span class="v" x-text="'+ ' + Number($store.bill.tipAmount || 0).toFixed(2).replace('.',',') + ' €'"></span>
+                                </div>
+                                <div class="cashTip__row cashTip__row--total">
+                                    <span>Total a pagar</span>
+                                    <span class="v" x-text="Number($store.bill.grandTotal || $store.bill.orderTotal).toFixed(2).replace('.',',') + ' €'"></span>
+                                </div>
+                            </section>
+                            <p class="cashTip__info">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                                </svg>
+                                <span>La propina se incluye en el cargo de Stripe.</span>
+                            </p>
                         </div>
                     </div>
-
                     {{-- ── pay: formulario Stripe ─── --}}
                     <div x-show="$store.bill.step === 'pay'">
                         <div class="stripe-mock" style="display:flex;flex-direction:column;gap:16px">
@@ -2179,169 +2226,284 @@
                         </div>
                     </div>
 
-                    {{-- ── splitItems: reclamar ítems ─── --}}
-                    <div x-show="$store.bill.step === 'splitItems'">
+                    {{-- ── splitItems: reclamar ítems (DS) ─── --}}
+                    <div x-show="$store.bill.step === 'splitItems'"
+                         x-data="{ fmt(n) { return Number(n).toFixed(2).replace('.', ',') + ' €'; } }">
                         <div class="split-items">
-                            <div class="split-items__head">
-                                <button type="button" class="back" @click="$store.bill.setSplitStage('intro')">← Cambiar modo</button>
-                            </div>
 
+
+                            {{-- Barra de progreso + leyenda --}}
                             <div class="split-items__status">
                                 <div class="split-items__progress">
-                                    <div class="bar">
+                                    <div class="bar" role="progressbar"
+                                         :aria-valuenow="$store.bill.splitItems.filter(i => !i.is_courtesy && (i.claimed || $store.bill.splitSelected.includes(i.id))).length"
+                                         :aria-valuemax="$store.bill.splitItems.filter(i => !i.is_courtesy).length"
+                                         aria-label="Ítems reclamados">
                                         <div class="bar__fill"
-                                             :style="'width: ' + (($store.bill.splitItems.filter(i => i.claimed).length / Math.max(1, $store.bill.splitItems.length)) * 100) + '%'">
+                                             :style="'width: ' + (($store.bill.splitItems.filter(i => !i.is_courtesy && (i.claimed || $store.bill.splitSelected.includes(i.id))).length / Math.max(1, $store.bill.splitItems.filter(i => !i.is_courtesy).length)) * 100) + '%'">
                                         </div>
                                     </div>
                                     <span class="ct"
-                                          x-text="$store.bill.splitItems.filter(i => i.claimed).length + '/' + $store.bill.splitItems.length + ' reclamados'">
+                                          x-text="$store.bill.splitItems.filter(i => !i.is_courtesy && (i.claimed || $store.bill.splitSelected.includes(i.id))).length + '/' + $store.bill.splitItems.filter(i => !i.is_courtesy).length + ' reclamados'">
                                     </span>
                                 </div>
                                 <div class="split-items__legend">
-                                    Marca los platos que quieres pagar tú. Los ya marcados por otros están bloqueados.
+                                    Pulsa el círculo de un plato para reclamarlo. Los bloqueados ya los paga otro comensal.
                                 </div>
                             </div>
 
-                            <div class="split-items__list">
+                            {{-- Lista de ítems --}}
+                            <div class="split-items__list" role="list">
                                 <template x-for="item in $store.bill.splitItems" :key="item.id">
-                                    <div class="split-line">
+                                    <div :class="'split-line' + ($store.bill.isItemSelected(item.id) ? ' split-line--mine' : (item.claimed && !$store.bill.isItemSelected(item.id) ? ' split-line--claimed' : (item.is_courtesy ? ' split-line--courtesy' : '')))"
+                                         :role="item.is_courtesy ? 'listitem' : 'button'"
+                                         :tabindex="item.is_courtesy ? '-1' : '0'"
+                                         :style="item.is_courtesy ? 'cursor:default' : (item.claimed && !$store.bill.isItemSelected(item.id) ? 'cursor:not-allowed' : 'cursor:pointer')"
+                                         :aria-label="item.is_courtesy ? 'Cortesía: ' + item.name : ($store.bill.isItemSelected(item.id) ? 'Quitar de mi parte: ' + item.name : (item.claimed ? 'Ya reclamado: ' + item.name : 'Reclamar: ' + item.name))"
+                                         @click="$store.bill.toggleSplitItem(item.id, item.claimed, item.is_courtesy)"
+                                         @keydown.enter.prevent="$store.bill.toggleSplitItem(item.id, item.claimed, item.is_courtesy)"
+                                         @keydown.space.prevent="$store.bill.toggleSplitItem(item.id, item.claimed, item.is_courtesy)">
+
                                         <div class="split-line__photo" aria-hidden="true">🍽️</div>
+
                                         <div class="split-line__main">
                                             <div class="split-line__name" x-text="item.name"></div>
-                                            <div class="split-line__price">
-                                                <span x-text="Number(item.price).toFixed(2).replace('.',',') + ' €'"></span>
-                                                <span>/ ud.</span>
-                                            </div>
+                                            <div x-show="item.is_courtesy" class="split-line__badge split-line__badge--courtesy">Cortesía</div>
+                                            <div x-show="!item.is_courtesy" class="split-line__total" x-text="fmt(item.total)"></div>
                                         </div>
-                                        <div class="split-line__slots">
-                                            <template x-for="idx in item.quantity" :key="idx">
-                                                <button type="button"
-                                                        :class="'slot' + ($store.bill.isItemSelected(item.id) && idx === 1 ? ' slot--you slot--just' : (item.claimed ? ' slot--other' : ''))"
-                                                        @click="!item.claimed && $store.bill.toggleSplitItem(item.id, item.claimed)"
-                                                        :disabled="item.claimed"
-                                                        :aria-label="item.claimed ? 'Ya reclamado' : 'Reclamar'">
-                                                    <span x-text="$store.bill.isItemSelected(item.id) && idx === 1 ? 'T' : (item.claimed ? '✓' : '+')"></span>
-                                                </button>
+
+                                        {{-- Indicador visual del estado del slot --}}
+                                        <div :class="'slot' + ($store.bill.isItemSelected(item.id) ? ' slot--you' : (item.claimed && !$store.bill.isItemSelected(item.id) ? ' slot--other' : (item.is_courtesy ? ' slot--courtesy' : '')))"
+                                             aria-hidden="true">
+                                            {{-- Courtesy --}}
+                                            <template x-if="item.is_courtesy">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                                            </template>
+                                            {{-- Unclaimed --}}
+                                            <template x-if="!item.is_courtesy && !$store.bill.isItemSelected(item.id) && !item.claimed">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                            </template>
+                                            {{-- Mine --}}
+                                            <template x-if="$store.bill.isItemSelected(item.id)">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                            </template>
+                                            {{-- Claimed by other --}}
+                                            <template x-if="!item.is_courtesy && item.claimed && !$store.bill.isItemSelected(item.id)">
+                                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                                             </template>
                                         </div>
                                     </div>
                                 </template>
                             </div>
 
+                            {{-- Total de tu parte (solo lectura, el CTA está en drawer__foot) --}}
                             <div class="split-items__foot">
                                 <div class="split-items__yourTotal">
                                     <span class="lab">Tu parte</span>
                                     <span class="val"
-                                          x-text="Number($store.bill.splitItemsTotal || 0).toFixed(2).replace('.',',') + ' €'"></span>
+                                          x-text="fmt($store.bill.splitItemsTotal || 0)"></span>
                                 </div>
-                                <button type="button" class="btn-primary"
-                                        :disabled="!$store.bill.splitSelected || $store.bill.splitSelected.length === 0"
-                                        @click="$store.bill.paySelectedItems()">
-                                    Pagar mi parte ·
-                                    <span x-text="Number($store.bill.splitItemsTotal || 0).toFixed(2).replace('.',',') + ' €'"></span>
-                                </button>
+                                <div class="split-items__hint"
+                                     x-show="($store.bill.splitSelected || []).length > 0">
+                                    Confirma en el botón de abajo para pagar con tarjeta.
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    {{-- ── splitEq: partes iguales con donut ─── --}}
-                    <div x-show="$store.bill.step === 'splitEq'">
-                        <div class="split-equit"
-                             x-data="{
-                                 parts: $store.bill.splitPeople || 2,
-                                 mySlice: 0,
-                                 get slice() { return $store.bill.orderTotal / this.parts; },
-                                 get fmt() { return (n) => Number(n).toFixed(2).replace('.',',') + ' €'; },
-                                 arc(i) {
-                                     const R_OUT = 48, R_IN = 26, CX = 60, CY = 60;
-                                     const a0 = (i / this.parts) * Math.PI * 2 - Math.PI / 2;
-                                     const a1 = ((i + 1) / this.parts) * Math.PI * 2 - Math.PI / 2;
-                                     const lg = (a1 - a0) > Math.PI ? 1 : 0;
-                                     const x0o = CX + R_OUT * Math.cos(a0), y0o = CY + R_OUT * Math.sin(a0);
-                                     const x1o = CX + R_OUT * Math.cos(a1), y1o = CY + R_OUT * Math.sin(a1);
-                                     const x0i = CX + R_IN  * Math.cos(a1), y0i = CY + R_IN  * Math.sin(a1);
-                                     const x1i = CX + R_IN  * Math.cos(a0), y1i = CY + R_IN  * Math.sin(a0);
-                                     return 'M '+x0o+' '+y0o+' A '+R_OUT+' '+R_OUT+' 0 '+lg+' 1 '+x1o+' '+y1o+' L '+x0i+' '+y0i+' A '+R_IN+' '+R_IN+' 0 '+lg+' 0 '+x1i+' '+y1i+' Z';
-                                 },
-                                 labelPos(i) {
-                                     const mid = ((i + 0.5) / this.parts) * Math.PI * 2 - Math.PI / 2;
-                                     const r = 37;
-                                     return { x: 60 + r * Math.cos(mid), y: 60 + r * Math.sin(mid) };
-                                 },
-                             }">
+                    {{-- ── splitEq: donut helper (función global, sin restricciones de comillas) ─── --}}
+                    <script>
+                    // parts      — número de personas
+                    // mySlice    — índice del slice seleccionado por esta sesión
+                    // slotColors — objeto { index: "#HEX" } de slots ya pagados
+                    // sliceVal   — importe de cada parte
+                    // myColor    — color de sesión del usuario actual
+                    window._donutSvg = function(parts, mySlice, slotColors, sliceVal, myColor) {
+                        var R_OUT = 46, R_IN = 28, CX = 60, CY = 60;
+                        var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+                        var gray   = isDark ? '#2A3A5E' : '#E5E7EB';
+                        var cBg    = isDark ? '#0E1A38' : '#FFFFFF';
+                        var muted  = isDark ? '#6E84C0' : '#6B7280';
+                        var fg     = isDark ? '#C8D8FF' : '#111827';
+                        var amt    = Number(sliceVal).toFixed(2).replace('.', ',') + ' €';
+                        var s = '<svg viewBox="0 0 120 120" width="200" height="200" style="overflow:visible;display:block">';
+                        for (var i = 0; i < parts; i++) {
+                            var isPaid = !!slotColors[i];
+                            var isMine = (i === mySlice && !isPaid);
+                            var a0 = (i / parts) * Math.PI * 2 - Math.PI / 2;
+                            var a1 = ((i + 1) / parts) * Math.PI * 2 - Math.PI / 2;
+                            var lg = (a1 - a0) > Math.PI ? 1 : 0;
+                            var x0o = CX + R_OUT*Math.cos(a0), y0o = CY + R_OUT*Math.sin(a0);
+                            var x1o = CX + R_OUT*Math.cos(a1), y1o = CY + R_OUT*Math.sin(a1);
+                            var x0i = CX + R_IN *Math.cos(a1), y0i = CY + R_IN *Math.sin(a1);
+                            var x1i = CX + R_IN *Math.cos(a0), y1i = CY + R_IN *Math.sin(a0);
+                            var d = 'M ' + x0o.toFixed(2) + ' ' + y0o.toFixed(2) +
+                                    ' A ' + R_OUT + ' ' + R_OUT + ' 0 ' + lg + ' 1 ' +
+                                    x1o.toFixed(2) + ' ' + y1o.toFixed(2) +
+                                    ' L ' + x0i.toFixed(2) + ' ' + y0i.toFixed(2) +
+                                    ' A ' + R_IN  + ' ' + R_IN  + ' 0 ' + lg + ' 0 ' +
+                                    x1i.toFixed(2) + ' ' + y1i.toFixed(2) + ' Z';
+                            // Pagado → color del pagador | Mío → mi color | Libre → gris
+                            var fill  = isPaid ? slotColors[i] : (isMine ? myColor : gray);
+                            var mid   = ((i + 0.5) / parts) * Math.PI * 2 - Math.PI / 2;
+                            var r     = 37;
+                            var lx    = (CX + r*Math.cos(mid)).toFixed(2);
+                            var ly    = (CY + r*Math.sin(mid)).toFixed(2);
+                            var lbl   = isPaid ? '✓' : (isMine ? 'TÚ' : String(i + 1));
+                            var lFill = (isPaid || isMine) ? '#FFFFFF' : muted;
+                            var lSize = '9';
+                            var cur   = isPaid ? 'default' : 'pointer';
+                            s += '<g data-slice="' + i + '" style="cursor:' + cur + '">' +
+                                 '<path d="' + d + '" fill="' + fill + '" stroke="#FFFFFF" stroke-width="3"/>' +
+                                 '<text x="' + lx + '" y="' + ly + '" text-anchor="middle"' +
+                                 ' dominant-baseline="middle" font-size="' + lSize + '"' +
+                                 ' font-weight="800" fill="' + lFill + '">' + lbl + '</text>' +
+                                 '</g>';
+                        }
+                        s += '<circle cx="' + CX + '" cy="' + CY + '" r="' + R_IN + '" fill="' + cBg + '"/>';
+                        s += '<text x="' + CX + '" y="54" text-anchor="middle" font-size="5.5"' +
+                             ' font-weight="700" letter-spacing="2" fill="' + muted + '">TU PARTE</text>';
+                        s += '<text x="' + CX + '" y="68" text-anchor="middle" font-size="13"' +
+                             ' font-weight="900" fill="' + fg + '">' + amt + '</text>';
+                        s += '</svg>';
+                        return s;
+                    };
+                    </script>
+
+                    {{-- ── splitEq: partes iguales con donut (DS) ─── --}}
+                    <div x-show="$store.bill.step === 'splitEq'"
+                         x-data="{
+                             parts:        $store.bill.splitPeople || 2,
+                             mySlice:      $store.bill.splitEqSlice || 0,
+                             paidCount:    0,
+                             slotColors:   {},
+                             sessionColor: (function() {
+                                 const PALETTE = ['#E84FAC','#3B82F6','#F59E0B','#8B5CF6','#06B6D4','#EF4444','#F97316'];
+                                 const key = 'zampa_color_' + ($store.bill.tableHash || 'x');
+                                 if (!localStorage.getItem(key)) {
+                                     localStorage.setItem(key, PALETTE[Math.floor(Math.random() * PALETTE.length)]);
+                                 }
+                                 return localStorage.getItem(key);
+                             })(),
+                             get maxParts() {
+                                 const m = $store.bill.splitMaxParts;
+                                 return (m && m > 2) ? m : 10;
+                             },
+                             get slice() { return $store.bill.orderTotal / this.parts; },
+                             fmt(n) { return Number(n).toFixed(2).replace('.', ',') + ' €'; },
+                             inc() {
+                                 if (this.parts < this.maxParts) {
+                                     this.parts++;
+                                     $store.bill.splitPeople = this.parts;
+                                 }
+                             },
+                             dec() {
+                                 if (this.parts > 2) {
+                                     this.parts--;
+                                     $store.bill.splitPeople = this.parts;
+                                     if (this.mySlice >= this.parts) this.mySlice = this.parts - 1;
+                                 }
+                             },
+                             _pollTimer: null,
+                             selectSlice(i) {
+                                 if (this.slotColors[i]) return; // ya pagado
+                                 this.mySlice = i;
+                                 $store.bill.splitEqSlice = i;
+                                 $store.bill.splitEqColor = this.sessionColor;
+                             },
+                             // Dots: verde = pagado, anillo sessionColor = mío, gris = libre
+                             dotClass(i) {
+                                 if (i < this.paidCount) return 'dot dot--paid';
+                                 if (i === this.mySlice) return 'dot dot--mine';
+                                 return 'dot';
+                             },
+                             buildSvg() {
+                                 return window._donutSvg(this.parts, this.mySlice, this.slotColors, this.slice, this.sessionColor);
+                             },
+                             async pollEqStatus() {
+                                 try {
+                                     const res  = await fetch('/api/v1/payment/' + $store.bill.tableHash + '/split/eq-status', { headers: { 'Accept': 'application/json' } });
+                                     const data = await res.json();
+                                     if (res.ok && data.success) {
+                                         this.slotColors = data.slot_colors || {};
+                                         this.paidCount  = data.paid_parts  || 0;
+                                         if (data.parts_total > 0 && data.parts_total !== this.parts) {
+                                             this.parts = data.parts_total;
+                                             $store.bill.splitPeople = data.parts_total;
+                                         }
+                                         // Si mi slice quedó pagado, muevo al primero libre
+                                         if (this.slotColors[this.mySlice]) {
+                                             for (let j = 0; j < this.parts; j++) {
+                                                 if (!this.slotColors[j]) { this.mySlice = j; $store.bill.splitEqSlice = j; break; }
+                                             }
+                                         }
+                                     }
+                                 } catch (_) {}
+                             },
+                             startPoll() {
+                                 this.pollEqStatus();
+                                 this._pollTimer = setInterval(() => this.pollEqStatus(), 5000);
+                             },
+                             stopPoll() {
+                                 if (this._pollTimer) { clearInterval(this._pollTimer); this._pollTimer = null; }
+                             },
+                         }"
+                         x-init="$watch('$store.bill.step', s => { if (s === 'splitEq') startPoll(); else stopPoll(); }); if ($store.bill.step === 'splitEq') startPoll();">
+                        <div class="split-equit">
+
+                            {{-- Cabecera --}}
                             <div class="split-items__head">
-                                <button type="button" class="back" @click="$store.bill.setSplitStage('intro')">← Cambiar modo</button>
-                                <div class="split-items__diners">
-                                    <span class="lab">Total a dividir</span>
-                                    <span class="val" x-text="Number($store.bill.orderTotal).toFixed(2).replace('.',',') + ' €'"></span>
+                                <div class="split-equit__total-chip">
+                                    <span class="k">Total a dividir</span>
+                                    <span class="v" x-text="fmt($store.bill.orderTotal)"></span>
                                 </div>
                             </div>
 
-                            {{-- Donut SVG --}}
-                            <div class="split-equit__pie">
-                                <svg viewBox="0 0 120 120" width="220" height="220" aria-hidden="true">
-                                    <template x-for="i in Array.from({length: parts}, (_, k) => k)" :key="i">
-                                        <g :class="'slice' + (i === mySlice ? ' slice--mine' : '')"
-                                           @click="mySlice = i"
-                                           style="cursor:pointer">
-                                            <path :d="arc(i)"
-                                                  :fill="i === mySlice ? 'var(--brand-primary)' : 'var(--bg-chip)'"
-                                                  stroke="var(--bg-base)" stroke-width="2"
-                                                  :opacity="i === mySlice ? 1 : 0.55"/>
-                                            <text :x="labelPos(i).x" :y="labelPos(i).y"
-                                                  text-anchor="middle" dominant-baseline="middle"
-                                                  font-size="10" font-weight="800"
-                                                  :fill="i === mySlice ? '#fff' : 'var(--fg-secondary)'"
-                                                  x-text="i === mySlice ? 'TÚ' : (i + 1)">
-                                            </text>
-                                        </g>
-                                    </template>
-                                    {{-- Centro --}}
-                                    <circle cx="60" cy="60" r="24" fill="var(--bg-surface)"/>
-                                    <text x="60" y="57" text-anchor="middle" font-size="6.5" font-weight="600" fill="var(--fg-muted)">TU PARTE</text>
-                                    <text x="60" y="68" text-anchor="middle" font-size="13" font-weight="900" fill="var(--fg-primary)"
-                                          font-family="var(--font-display)"
-                                          x-text="Number(slice).toFixed(2).replace('.',',') + ' €'">
-                                    </text>
-                                </svg>
+                            {{-- Donut — generado via innerHTML para respetar el namespace SVG --}}
+                            <div class="split-equit__pie"
+                                 x-ref="pie"
+                                 x-effect="$refs.pie.innerHTML = buildSvg()"
+                                 :aria-label="`Reparto en ${parts} partes iguales`"
+                                 @click="
+                                     const g = $event.target.closest('[data-slice]');
+                                     if (g) selectSlice(parseInt(g.dataset.slice));
+                                 ">
                             </div>
 
                             {{-- Stepper --}}
                             <div class="split-equit__stepper">
                                 <span class="lab">¿Cuántos sois?</span>
                                 <div class="step">
-                                    <button type="button"
-                                            @click="parts = Math.max(2, parts - 1); $store.bill.splitPeople = parts"
-                                            :disabled="parts <= 2">−</button>
-                                    <span class="step__num" x-text="parts"></span>
-                                    <button type="button"
-                                            @click="parts = Math.min($store.bill.splitMaxParts || 10, parts + 1); $store.bill.splitPeople = parts"
-                                            :disabled="parts >= ($store.bill.splitMaxParts || 10)">+</button>
+                                    <button type="button" aria-label="Menos personas"
+                                            @click="dec()" :disabled="parts <= 2">−</button>
+                                    <span class="step__num" x-text="parts" aria-live="polite"></span>
+                                    <button type="button" aria-label="Más personas"
+                                            @click="inc()" :disabled="parts >= maxParts">+</button>
                                 </div>
-                                <span class="hint" x-text="'máx. ' + ($store.bill.splitMaxParts || 10)"></span>
+                                <span class="hint" x-text="'max. ' + maxParts"></span>
                             </div>
 
+                            {{-- Estado de pagos --}}
                             <div class="split-equit__live">
-                                <span>Tú pagas</span>
-                                <div class="dots">
+                                <span x-text="paidCount + ' de ' + parts + ' han pagado'"></span>
+                                <div class="dots" role="group" aria-label="Estado de pagos">
                                     <template x-for="i in Array.from({length: parts}, (_, k) => k)" :key="i">
-                                        <span :class="'dot' + (i === mySlice ? ' dot--mine' : '')"></span>
+                                        <button type="button"
+                                                :class="dotClass(i)"
+                                                @click="selectSlice(i)"
+                                                :aria-label="`Porción ${i + 1}${slotColors[i] ? ': pagada' : (i === mySlice ? ': la tuya' : '')}`"
+                                                :disabled="!!slotColors[i]">
+                                        </button>
                                     </template>
                                 </div>
                             </div>
 
-                            <button type="button" class="btn-primary"
-                                    @click="$store.bill.splitPeople = parts; $store.bill.payEquitative()">
-                                Pagar mi parte ·
-                                <span x-text="Number(slice).toFixed(2).replace('.',',') + ' €'"></span>
-                            </button>
                         </div>
                     </div>
 
                     {{-- ── splitTip: propina para split ─── --}}
                     <div x-show="$store.bill.step === 'splitTip'">
                         <div class="split-pay">
-                            <button type="button" class="back" @click="$store.bill.backToMethod()">← Cambiar método</button>
                             <div class="split-pay__amt">
                                 <span class="lab">Tu parte</span>
                                 <span class="val"
@@ -2420,207 +2582,237 @@
                         </div>
                     </div>
 
-                    {{-- ── mixed: fader efectivo/tarjeta ─── --}}
+                    {{-- ── mixed: split bar efectivo/tarjeta (DS) ─── --}}
                     <div x-show="$store.bill.step === 'mixed'"
                          x-data="{
+                             dragging: false,
+                             setFromX(clientX) {
+                                 const r = this.$refs.track.getBoundingClientRect();
+                                 let ratio = (clientX - r.left) / r.width;
+                                 ratio = Math.max(0, Math.min(1, ratio));
+                                 let cash = ratio * $store.bill.orderTotal;
+                                 cash = Math.round(cash / 0.10) * 0.10;
+                                 const maxCash = Math.max(0.50, Math.round(($store.bill.orderTotal - 0.50) * 100) / 100);
+                                 $store.bill.mixedCashAmount = Math.round(Math.min(maxCash, Math.max(0.50, cash)) * 100) / 100;
+                             },
                              get card() { return Math.max(0, $store.bill.orderTotal - ($store.bill.mixedCashAmount || 0)); },
                              get cashRatio() { return Math.max(0, Math.min(1, ($store.bill.mixedCashAmount || 0) / $store.bill.orderTotal)); },
-                             get cashAllOnly() { return ($store.bill.mixedCashAmount || 0) >= $store.bill.orderTotal - 0.001; },
-                             get cardOnly() { return ($store.bill.mixedCashAmount || 0) <= 0.001; },
-                             get cardBelowMin() { return !this.cashAllOnly && this.card > 0 && this.card < 0.50; },
-                             get canContinue() { return !this.cardBelowMin; },
-                             fmt(n) { return Number(n).toFixed(2).replace('.',',') + ' €'; },
-                             presets: [],
-                             initPresets() {
-                                 const t = $store.bill.orderTotal;
-                                 this.presets = [
-                                     { label: '10 €',       value: 10 },
-                                     { label: '20 €',       value: 20 },
-                                     { label: '50 €',       value: Math.min(50, t) },
-                                     { label: 'Mitad',      value: Math.round(t / 2 * 2) / 2 },
-                                     { label: 'Solo efect.', value: t },
-                                 ];
+                             get maxCash() { return Math.max(0.50, Math.round(($store.bill.orderTotal - 0.50) * 100) / 100); },
+                             fmt(n) { return Number(n).toFixed(2).replace('.', ',') + ' €'; },
+                             presetActive(v) {
+                                 const clamped = Math.min(this.maxCash, Math.max(0.50, v));
+                                 return Math.abs(($store.bill.mixedCashAmount || 0) - clamped) < 0.005;
+                             },
+                             get halfActive() {
+                                 const half = Math.round($store.bill.orderTotal / 2 * 100) / 100;
+                                 const clamped = Math.min(this.maxCash, Math.max(0.50, half));
+                                 return Math.abs(($store.bill.mixedCashAmount || 0) - clamped) < 0.005;
+                             },
+                             nudge(delta) {
+                                 $store.bill.mixedCashAmount = Math.round(Math.min(this.maxCash, Math.max(0.50, ($store.bill.mixedCashAmount || 0) + delta)) * 100) / 100;
+                             },
+                             setPreset(v) {
+                                 if (v >= $store.bill.orderTotal) return;
+                                 $store.bill.mixedCashAmount = Math.round(Math.min(this.maxCash, Math.max(0.50, v)) * 100) / 100;
+                             },
+                             setHalf() {
+                                 const half = Math.round($store.bill.orderTotal / 2 * 100) / 100;
+                                 this.setPreset(half);
                              },
                          }"
-                         x-init="initPresets()">
-                        <div class="mixed-flow">
-                            <div class="mixed-stage">
-                                <div class="mixed-stage__head">
-                                    <div class="mixed-stage__title">¿Cuánto en efectivo?</div>
-                                    <div class="mixed-stage__sub">
-                                        El resto lo cobramos con tarjeta. Total a pagar:
-                                        <strong x-text="Number($store.bill.orderTotal).toFixed(2).replace('.',',') + ' €'"></strong>
-                                    </div>
-                                </div>
+                         @pointermove.window="dragging && setFromX($event.clientX)"
+                         @pointerup.window="dragging = false"
+                         @pointercancel.window="dragging = false">
 
-                                {{-- Fader visual --}}
-                                <div class="fader">
-                                    <div class="fader__bar">
-                                        <div class="fader__cash"
-                                             :style="'width: ' + (cashRatio * 100) + '%'">
-                                            <span class="fader__lab">EFECTIVO</span>
-                                            <span class="fader__amt"
-                                                  x-text="fmt($store.bill.mixedCashAmount || 0)"></span>
-                                        </div>
-                                        <div class="fader__card"
-                                             :style="'width: ' + ((1 - cashRatio) * 100) + '%'">
-                                            <span class="fader__lab">TARJETA</span>
-                                            <span class="fader__amt" x-text="fmt(card)"></span>
-                                        </div>
-                                    </div>
-                                    <input type="range"
-                                           min="0"
-                                           :max="$store.bill.orderTotal"
-                                           step="0.50"
-                                           :value="$store.bill.mixedCashAmount || 0"
-                                           @input="$store.bill.mixedCashAmount = Number($event.target.value)"
-                                           class="fader__range"
-                                           aria-label="Cantidad en efectivo">
-                                </div>
+                        <div style="text-align:center; margin:0 0 16px; display:flex; flex-direction:column; align-items:center; gap:2px;">
+                            <span style="font-family:var(--font-body); font-size:13px; color:var(--fg-secondary);">El resto lo cobramos con tarjeta.</span>
+                            <span style="font-family:var(--font-mono); font-size:10px; letter-spacing:0.16em; text-transform:uppercase; color:var(--fg-muted);">Total a pagar: <strong style="font-family:var(--font-display); font-weight:900; font-size:16px; color:var(--price-gold); letter-spacing:-0.01em;" x-text="fmt($store.bill.orderTotal)"></strong></span>
+                        </div>
 
-                                {{-- Chips de presets --}}
-                                <div class="mixed-chips">
-                                    <template x-for="p in presets" :key="p.label">
-                                        <button type="button"
-                                                :class="'mixed-chip' + (Math.abs(p.value - ($store.bill.mixedCashAmount || 0)) < 0.01 ? ' mixed-chip--active' : '')"
-                                                @click="$store.bill.mixedCashAmount = Math.min($store.bill.orderTotal, p.value)">
-                                            <span x-text="p.label"></span>
-                                        </button>
-                                    </template>
-                                </div>
+                        {{-- Barra dividida arrastrable --}}
+                        <div class="split__bar"
+                             :class="{ 'is-dragging': dragging }"
+                             x-ref="track"
+                             role="slider"
+                             aria-label="Reparto entre efectivo y tarjeta"
+                             :aria-valuenow="$store.bill.mixedCashAmount"
+                             :aria-valuetext="`${fmt($store.bill.mixedCashAmount || 0)} en efectivo, ${fmt(card)} con tarjeta`"
+                             tabindex="0"
+                             @pointerdown="dragging = true; setFromX($event.clientX)"
+                             @keydown.arrow-left.prevent="nudge(-0.5)"
+                             @keydown.arrow-right.prevent="nudge(0.5)">
 
-                                {{-- Ajuste fino --}}
-                                <div class="mixed-precise">
-                                    <span class="lab">Ajuste fino</span>
-                                    <button type="button" class="mixed-precise__b"
-                                            @click="$store.bill.mixedCashAmount = Math.max(0, Math.round((($store.bill.mixedCashAmount || 0) - 0.5) * 100) / 100)">
-                                        −0,50
-                                    </button>
-                                    <span class="mixed-precise__num"
-                                          x-text="Number($store.bill.mixedCashAmount || 0).toFixed(2).replace('.',',') + ' €'"></span>
-                                    <button type="button" class="mixed-precise__b"
-                                            @click="$store.bill.mixedCashAmount = Math.min($store.bill.orderTotal, Math.round((($store.bill.mixedCashAmount || 0) + 0.5) * 100) / 100)">
-                                        +0,50
-                                    </button>
-                                </div>
-
-                                {{-- Avisos --}}
-                                <div class="mixed-warn" x-show="cardBelowMin">
-                                    <span class="mixed-warn__ic">!</span>
-                                    <div>
-                                        <strong>La parte de tarjeta debe ser al menos 0,50 €.</strong>
-                                        <span x-text="'Sube el efectivo a ' + fmt($store.bill.orderTotal) + ' (100% efectivo) o bájalo a ' + fmt($store.bill.orderTotal - 0.50) + '.'"></span>
-                                    </div>
-                                </div>
-                                <div class="mixed-note" x-show="cashAllOnly">
-                                    ✓ Pagarás el total en efectivo. Continuando te llevamos al cobro en efectivo.
-                                </div>
-                                <div class="mixed-note" x-show="cardOnly && !cashAllOnly">
-                                    ✓ Pagarás el total con tarjeta.
-                                </div>
+                            <div class="split__side split__side--cash"
+                                 :style="`flex-basis:${cashRatio * 100}%`">
+                                <span class="split__lab">Efectivo</span>
+                                <span class="split__amt" x-text="fmt($store.bill.mixedCashAmount || 0)"></span>
                             </div>
+                            <div class="split__side split__side--card"
+                                 :style="`flex-basis:${(1 - cashRatio) * 100}%`">
+                                <span class="split__lab">Tarjeta</span>
+                                <span class="split__amt" x-text="fmt(card)"></span>
+                            </div>
+
+                            <span class="split__handle" aria-hidden="true"
+                                  :style="`left:${cashRatio * 100}%`"></span>
+                        </div>
+
+                        {{-- Atajos rápidos --}}
+                        <div class="split-chips">
+                            <template x-for="v in [10, 20, 50]" :key="v">
+                                <button type="button" class="split-chip"
+                                        :class="{ 'is-active': presetActive(v) }"
+                                        :disabled="v >= $store.bill.orderTotal"
+                                        @click="setPreset(v)"
+                                        x-text="v + ' €'"></button>
+                            </template>
+                            <button type="button" class="split-chip"
+                                    :class="{ 'is-active': halfActive }"
+                                    @click="setHalf()">Mitad</button>
+                            <button type="button" class="split-chip split-chip--solo"
+                                    @click="$store.bill.mixedCashAmount = $store.bill.orderTotal; $store.bill.proceedFromMixed()">Sólo efectivo</button>
+                        </div>
+
+                        {{-- Ajuste fino --}}
+                        <div class="fine">
+                            <span class="fine__lab">Ajuste fino</span>
+                            <div class="fine__main">
+                                <button type="button" class="fine__btn"
+                                        :disabled="($store.bill.mixedCashAmount || 0) <= 0.5"
+                                        @click="nudge(-0.5)">− 0,50</button>
+                                <span class="fine__val" x-text="fmt($store.bill.mixedCashAmount || 0)"></span>
+                                <button type="button" class="fine__btn"
+                                        :disabled="($store.bill.mixedCashAmount || 0) >= maxCash"
+                                        @click="nudge(0.5)">+ 0,50</button>
+                            </div>
+                        </div>
+
+                        {{-- Desglose efectivo/tarjeta --}}
+                        <div class="breakdown">
+                            <div class="breakdown__cell breakdown__cell--cash">
+                                <span class="k"><span class="dot" aria-hidden="true"></span>Efectivo</span>
+                                <span class="v" x-text="fmt($store.bill.mixedCashAmount || 0)"></span>
+                            </div>
+                            <div class="breakdown__cell breakdown__cell--card">
+                                <span class="k"><span class="dot" aria-hidden="true"></span>Tarjeta</span>
+                                <span class="v" x-text="fmt(card)"></span>
+                            </div>
+                        </div>
+
+                        {{-- Alerta de validación --}}
+                        <div class="mixed-alert" role="alert"
+                             x-show="($store.bill.mixedCashAmount || 0) > 0 && !$store.bill.mixedCashValid && ($store.bill.mixedCashAmount || 0) < $store.bill.orderTotal - 0.001">
+                            <span class="mixed-alert__ic" aria-hidden="true">!</span>
+                            <span>El importe mínimo con tarjeta es 0,50 €. Reduce un poco el efectivo.</span>
                         </div>
                     </div>
 
-                    {{-- ── mixedTip: propina sobre parte tarjeta ─── --}}
+                    {{-- ── mixedTip: propina sobre parte tarjeta (DS) ─── --}}
                     <div x-show="$store.bill.step === 'mixedTip'"
                          x-data="{
-                             get card() { return Math.max(0, $store.bill.orderTotal - ($store.bill.mixedCashAmount || 0)); },
-                             fmt(n) { return Number(n).toFixed(2).replace('.',',') + ' €'; },
+                             fmt(n) { return Number(n).toFixed(2).replace('.', ',') + ' €'; },
                          }">
-                        <div class="mixed-flow">
-                            <div class="mixed-stage">
-                                <div class="mixed-stage__head">
-                                    <div class="mixed-stage__title">Añadir propina</div>
-                                    <div class="mixed-stage__sub">Va incluida en la parte de tarjeta, nunca en el efectivo.</div>
-                                </div>
 
-                                {{-- Resumen del reparto --}}
-                                <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
-                                    <span class="mixed-tile mixed-tile--cash"
-                                          x-text="'Efectivo ' + fmt($store.bill.mixedCashAmount || 0)"></span>
-                                    <span class="mixed-tile mixed-tile--card"
-                                          x-text="'Tarjeta base ' + fmt(card)"></span>
-                                </div>
-
-                                {{-- Chips de propina --}}
-                                <div class="mixed-tipChips">
-                                    <button type="button"
-                                            :class="'mixed-tipChip' + ($store.bill.mixedTipPercent === 0 ? ' mixed-tipChip--active' : '')"
-                                            :aria-pressed="$store.bill.mixedTipPercent === 0"
-                                            @click="$store.bill.setMixedTipPercent(0)">
-                                        <span class="pct">Sin</span>
-                                        <span class="amt">propina</span>
-                                    </button>
-                                    <template x-for="p in [5, 10, 15, 20]" :key="p">
-                                        <button type="button"
-                                                :class="'mixed-tipChip' + ($store.bill.mixedTipPercent === p ? ' mixed-tipChip--active' : '')"
-                                                :aria-pressed="$store.bill.mixedTipPercent === p"
-                                                @click="$store.bill.setMixedTipPercent(p)">
-                                            <span class="pct" x-text="p + '%'"></span>
-                                            <span class="amt"
-                                                  x-text="fmt(Math.round(card * p) / 100)"></span>
-                                        </button>
-                                    </template>
-                                </div>
-
-                                {{-- Importe libre --}}
-                                <label for="mixed-tip-free" class="sr-only">Propina personalizada en euros</label>
-                                <div class="mixed-tipInput">
-                                    <input id="mixed-tip-free"
-                                           type="number" min="0" max="500" step="0.50" inputmode="decimal"
-                                           placeholder="O introduce un importe…"
-                                           :value="$store.bill.mixedTipPercent === null && $store.bill.mixedTipAmount > 0 ? $store.bill.mixedTipAmount : ''"
-                                           @input="$store.bill.updateCustomMixedTip ? $store.bill.updateCustomMixedTip($event.target.value) : null">
-                                    <span class="mixed-tipInput__cur" aria-hidden="true">€</span>
-                                </div>
-
-                                {{-- Resumen --}}
-                                <div class="mixed-tipSummary" aria-live="polite">
-                                    <div class="mixed-tipSummary__row">
-                                        <span>Parte de tarjeta</span>
-                                        <span class="v" x-text="fmt(card)"></span>
-                                    </div>
-                                    <div class="mixed-tipSummary__row mixed-tipSummary__row--tip"
-                                         x-show="($store.bill.mixedTipAmount || 0) > 0">
-                                        <span>Propina</span>
-                                        <span class="v"
-                                              x-text="'+ ' + fmt($store.bill.mixedTipAmount || 0)"></span>
-                                    </div>
-                                    <div class="mixed-tipSummary__row mixed-tipSummary__row--total">
-                                        <span>Total con tarjeta</span>
-                                        <span class="v"
-                                              x-text="fmt($store.bill.mixedTipGrandTotal || card)"></span>
-                                    </div>
-                                </div>
+                        {{-- Resumen de solo lectura --}}
+                        <div class="recap">
+                            <div class="recap__row recap__row--cash">
+                                <span>Efectivo al camarero</span>
+                                <span class="v" x-text="fmt($store.bill.mixedCashAmount || 0)"></span>
+                            </div>
+                            <div class="recap__row recap__row--card">
+                                <span>Tarjeta · base</span>
+                                <span class="v" x-text="fmt($store.bill.mixedTipBase || 0)"></span>
                             </div>
                         </div>
+
+                        {{-- Selector de propina --}}
+                        <div class="mixed-sec-label">
+                            <span>Propina sobre la tarjeta</span>
+                            <span class="hint">Toca para elegir</span>
+                        </div>
+                        <div class="tip-grid">
+                            <button type="button" class="tip-chip"
+                                    :class="{ 'is-active': $store.bill.mixedTipPercent === 0 }"
+                                    @click="$store.bill.setMixedTipPercent(0)">
+                                <span class="tip-chip__pct">0%</span>
+                                <span class="tip-chip__amt">Sin</span>
+                            </button>
+                            <template x-for="pct in [5, 10, 15, 20]" :key="pct">
+                                <button type="button" class="tip-chip"
+                                        :class="{ 'is-active': $store.bill.mixedTipPercent === pct }"
+                                        @click="$store.bill.setMixedTipPercent(pct)">
+                                    <span class="tip-chip__pct" x-text="pct + '%'"></span>
+                                    <span class="tip-chip__amt"
+                                          x-text="fmt(Math.round(($store.bill.mixedTipBase || 0) * pct) / 100)"></span>
+                                </button>
+                            </template>
+                        </div>
+
+                        {{-- Input propina libre --}}
+                        <label for="mixed-tip-free" class="sr-only">Propina personalizada en euros</label>
+                        <div class="tip-input">
+                            <input id="mixed-tip-free"
+                                   type="number" min="0" max="500" step="0.50" inputmode="decimal"
+                                   placeholder="O introduce un importe…"
+                                   :value="$store.bill.mixedTipPercent === null && ($store.bill.mixedTipAmount || 0) > 0 ? $store.bill.mixedTipAmount : ''"
+                                   @input="$store.bill.updateCustomMixedTip($event.target.value)">
+                            <span class="tip-input__currency" aria-hidden="true">€</span>
+                        </div>
+
+                        {{-- Resumen reactivo --}}
+                        <section class="mixed-summary" aria-live="polite">
+                            <div class="mixed-summary__row">
+                                <span>Parte de tarjeta</span>
+                                <span class="v" x-text="fmt($store.bill.mixedTipBase || 0)"></span>
+                            </div>
+                            <div class="mixed-summary__row mixed-summary__row--tip"
+                                 x-show="($store.bill.mixedTipAmount || 0) > 0">
+                                <span>Propina</span>
+                                <span class="v" x-text="'+ ' + fmt($store.bill.mixedTipAmount || 0)"></span>
+                            </div>
+                            <div class="mixed-summary__row mixed-summary__row--total">
+                                <span>Total con tarjeta</span>
+                                <span class="v"
+                                      x-text="fmt($store.bill.mixedTipGrandTotal || $store.bill.mixedTipBase || 0)"></span>
+                            </div>
+                        </section>
                     </div>
 
-                    {{-- ── mixedPay: Stripe parte tarjeta ─── --}}
+                    {{-- ── mixedPay: Stripe parte tarjeta (DS) ─── --}}
                     <div x-show="$store.bill.step === 'mixedPay'"
                          x-data="{
-                             get card() { return Math.max(0, $store.bill.orderTotal - ($store.bill.mixedCashAmount || 0)); },
-                             fmt(n) { return Number(n).toFixed(2).replace('.',',') + ' €'; },
+                             fmt(n) { return Number(n).toFixed(2).replace('.', ',') + ' €'; },
                          }">
-                        <div class="mixed-flow">
-                            <div class="mixed-stage">
-                                <div class="mixed-stage__head">
-                                    <div class="mixed-stage__title">Pago de la parte tarjeta</div>
-                                    <div class="mixed-stage__sub" style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
-                                        <span class="mixed-tile mixed-tile--cash"
-                                              x-text="'Efectivo ' + fmt($store.bill.mixedCashAmount || 0)"></span>
-                                        <span class="mixed-tile mixed-tile--card"
-                                              x-text="'Tarjeta ' + fmt($store.bill.mixedTipGrandTotal || card)"></span>
-                                    </div>
-                                </div>
-                                <div id="mixed-stripe-element"
-                                     style="padding:16px;border:1px solid var(--glass-border);border-radius:12px;background:var(--glass-bg-surface)"></div>
-                                <template x-if="$store.bill.mixedStripeError">
-                                    <p style="color:var(--color-red-400);font-size:13px;margin-top:4px"
-                                       role="alert" x-text="$store.bill.mixedStripeError"></p>
-                                </template>
+
+                        {{-- Resumen de solo lectura --}}
+                        <div class="recap">
+                            <div class="recap__row recap__row--cash">
+                                <span>Efectivo al camarero</span>
+                                <span class="v" x-text="fmt($store.bill.mixedCashAmount || 0)"></span>
                             </div>
+                        </div>
+
+                        {{-- Banner azul: importe del cargo en tarjeta --}}
+                        <div class="stripe-charge">
+                            <span class="k">Cargo en tarjeta ahora</span>
+                            <span class="v" x-text="fmt($store.bill.mixedStripeTotal || $store.bill.mixedTipGrandTotal || 0)"></span>
+                        </div>
+
+                        {{-- Contenedor Stripe con spinner de carga --}}
+                        {{-- #mixed-stripe-element DEBE estar siempre en el DOM (x-show, no x-if) --}}
+                        <div class="stripe-frame">
+                            <div class="stripe-loading" x-show="!$store.bill.mixedStripeReady" aria-live="polite">
+                                <span class="ring" aria-hidden="true"></span>
+                                <span>Cargando pago seguro…</span>
+                            </div>
+                            <div id="mixed-stripe-element" x-show="$store.bill.mixedStripeReady"></div>
+                        </div>
+
+                        {{-- Error de Stripe --}}
+                        <div class="stripe-error" role="alert" aria-live="assertive"
+                             x-show="$store.bill.mixedStripeError">
+                            <span class="stripe-error__ic" aria-hidden="true">!</span>
+                            <span x-text="$store.bill.mixedStripeError"></span>
                         </div>
                     </div>
 
@@ -2732,30 +2924,45 @@
                                 </span>
                                 <span x-show="!$store.bill.sending"
                                       x-text="($store.bill.cashTipAmount || 0) > 0
-                                          ? 'Solicitar cuenta · ' + Number($store.bill.cashGrandTotal).toFixed(2).replace('.',',') + ' € (con propina)'
-                                          : 'Solicitar cuenta · ' + Number($store.bill.orderTotal).toFixed(2).replace('.',',') + ' € (sin propina)'">
+                                          ? 'Solicitar cuenta · ' + Number($store.bill.cashGrandTotal).toFixed(2).replace('.',',') + ' € (con propina)'
+                                          : 'Solicitar cuenta · ' + Number($store.bill.orderTotal).toFixed(2).replace('.',',') + ' € (sin propina)'">
                                 </span>
                             </button>
-                            <button type="button" class="btn-secondary" @click="$store.bill.backToMethod()">← Cambiar método</button>
+                            <button type="button" class="back" @click="$store.bill.backToMethod()">← Cambiar método</button>
                         </div>
                     </div>
 
                     {{-- cashDone --}}
                     <div x-show="$store.bill.step === 'cashDone'">
-                        <div class="bill__footRow">
-                            <button type="button" class="btn-text bill__cancelNotice" @click="$store.bill.backToMethod()">Cancelar aviso</button>
+                        <div class="bill__footRow" style="justify-content:center;">
+                            <button type="button" class="btn-text bill__cancelNotice" @click="$store.bill.backToMethod()">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <line x1="15" y1="9" x2="9" y2="15"/>
+                                    <line x1="9" y1="9" x2="15" y2="15"/>
+                                </svg>
+                                Cancelar aviso
+                            </button>
                         </div>
                     </div>
 
                     {{-- tip --}}
                     <div x-show="$store.bill.step === 'tip'">
                         <div class="bill__footRow bill__footRow--stack">
-                            <button type="button" class="btn-primary"
+                            <button type="button" class="btn-primary cashTip__cta"
+                                    :disabled="$store.bill.sending"
                                     @click="$store.bill.proceedToStripe()">
-                                Continuar —
-                                <span x-text="Number($store.bill.orderTotal + ($store.bill.tipAmount || 0)).toFixed(2).replace('.',',') + ' €'"></span>
+                                <span x-show="$store.bill.sending">
+                                    <span class="cashTip__spin" aria-hidden="true"></span>
+                                    Procesando…
+                                </span>
+                                <span x-show="!$store.bill.sending"
+                                      x-text="($store.bill.tipAmount || 0) > 0
+                                          ? 'Pagar con tarjeta · ' + Number($store.bill.grandTotal).toFixed(2).replace('.',',') + ' € (con propina)'
+                                          : 'Pagar con tarjeta · ' + Number($store.bill.orderTotal).toFixed(2).replace('.',',') + ' € (sin propina)'">
+                                </span>
                             </button>
-                            <button type="button" class="btn-secondary" @click="$store.bill.backToMethod()">← Cambiar método</button>
+                            <button type="button" class="back" @click="$store.bill.backToMethod()">← Cambiar método</button>
                         </div>
                     </div>
 
@@ -2768,9 +2975,9 @@
                                 <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
                                 </svg>
-                                <span x-text="$store.bill.sending ? 'Procesando…' : 'Pagar ' + Number($store.bill.grandTotal || $store.bill.orderTotal).toFixed(2).replace('.',',') + ' €'"></span>
+                                <span x-text="$store.bill.sending ? 'Procesando…' : 'Pagar ' + Number($store.bill.grandTotal || $store.bill.orderTotal).toFixed(2).replace('.',',') + ' €'"></span>
                             </button>
-                            <button type="button" class="btn-secondary" @click="$store.bill.backToMethod()">← Cambiar método</button>
+                            <button type="button" class="back" @click="$store.bill.backToTip()">← Atrás</button>
                         </div>
                     </div>
 
@@ -2778,30 +2985,45 @@
 
                     {{-- split --}}
                     <div x-show="$store.bill.step === 'split'">
-                        <button type="button" class="btn-text" @click="$store.bill.closeSplitSelector()">Cancelar</button>
+                        <div class="bill__footRow bill__footRow--stack">
+                            <button type="button" class="back" @click="$store.bill.closeSplitSelector()">← Cambiar método</button>
+                        </div>
                     </div>
 
                     {{-- splitItems --}}
                     <div x-show="$store.bill.step === 'splitItems'">
-                        <div style="display:flex;justify-content:space-between;margin-bottom:10px;font-family:var(--font-body);font-size:13px">
-                            <span style="color:var(--fg-muted)">Mi parte</span>
-                            <span style="font-weight:700;color:var(--price-gold)"
-                                  x-text="Number($store.bill.splitItemsTotal || 0).toFixed(2).replace('.',',') + ' €'"></span>
+                        <div class="bill__footRow bill__footRow--stack">
+                            <div style="display:flex;justify-content:space-between;margin-bottom:4px;font-family:var(--font-body);font-size:13px">
+                                <span style="color:var(--fg-muted)">Mi parte</span>
+                                <span style="font-weight:700;color:var(--price-gold)"
+                                      x-text="Number($store.bill.splitItemsTotal || 0).toFixed(2).replace('.',',') + ' €'"></span>
+                            </div>
+                            <button type="button" class="btn-primary"
+                                    :disabled="!$store.bill.splitSelected || $store.bill.splitSelected.length === 0"
+                                    @click="$store.bill.paySelectedItems()">
+                                Pagar mi parte
+                            </button>
+                            <button type="button" class="back" @click="$store.bill.closeSplitItems()">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
+                                Cambiar modo
+                            </button>
                         </div>
-                        <button type="button" class="btn-primary"
-                                :disabled="!$store.bill.splitSelected || $store.bill.splitSelected.length === 0"
-                                @click="$store.bill.paySelectedItems()">
-                            Pagar mi parte
-                        </button>
-                        <button type="button" class="btn-text" @click="$store.bill.closeSplitItems()">Atrás</button>
                     </div>
 
                     {{-- splitEq --}}
                     <div x-show="$store.bill.step === 'splitEq'">
-                        <button type="button" class="btn-primary" @click="$store.bill.payEquitative()">
-                            Pagar mi parte con tarjeta
-                        </button>
-                        <button type="button" class="btn-text" @click="$store.bill.closeSplitEq()">Atrás</button>
+                        <div class="bill__footRow bill__footRow--stack">
+                            <button type="button" class="btn-primary"
+                                    @click="$store.bill.payEquitative()"
+                                    :disabled="$store.bill.sending">
+                                <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                                <span x-text="'Pagar mi parte · ' + Number($store.bill.splitMyPart || 0).toFixed(2).replace('.',',') + ' €'"></span>
+                            </button>
+                            <button type="button" class="back" @click="$store.bill.closeSplitEq()">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
+                                Cambiar modo
+                            </button>
+                        </div>
                     </div>
 
                     {{-- splitTip --}}
@@ -2810,20 +3032,22 @@
                             <button type="button" class="btn-primary"
                                     @click="$store.bill.confirmSplitTip()">
                                 Continuar —
-                                <span x-text="Number($store.bill.splitTipGrandTotal || $store.bill.splitTipBase).toFixed(2).replace('.',',') + ' €'"></span>
+                                <span x-text="Number($store.bill.splitTipGrandTotal || $store.bill.splitTipBase).toFixed(2).replace('.',',') + ' €'"></span>
                             </button>
-                            <button type="button" class="btn-secondary" @click="$store.bill.backToMethod()">← Cambiar método</button>
+                            <button type="button" class="back" @click="$store.bill.closeSplitTip()">← Atrás</button>
                         </div>
                     </div>
 
                     {{-- mixed --}}
                     <div x-show="$store.bill.step === 'mixed'">
-                        <button type="button" class="btn-primary"
-                                :disabled="!$store.bill.mixedCashValid && !($store.bill.mixedCashAmount >= $store.bill.orderTotal - 0.001)"
-                                @click="$store.bill.proceedFromMixed()">
-                            <span x-text="($store.bill.mixedCashAmount >= $store.bill.orderTotal - 0.001) ? 'Continuar · Pago en efectivo' : 'Continuar con tarjeta'"></span>
-                        </button>
-                        <button type="button" class="btn-text" @click="$store.bill.closeMixed()">Cancelar</button>
+                        <div class="bill__footRow bill__footRow--stack">
+                            <button type="button" class="btn-primary"
+                                    :disabled="!$store.bill.mixedCashValid && !($store.bill.mixedCashAmount >= $store.bill.orderTotal - 0.001)"
+                                    @click="$store.bill.proceedFromMixed()">
+                                <span x-text="($store.bill.mixedCashAmount >= $store.bill.orderTotal - 0.001) ? 'Continuar · Pago en efectivo' : 'Continuar con tarjeta'"></span>
+                            </button>
+                            <button type="button" class="back" @click="$store.bill.closeMixed()">← Cambiar método</button>
+                        </div>
                     </div>
 
                     {{-- mixedTip --}}
@@ -2832,9 +3056,9 @@
                             <button type="button" class="btn-primary"
                                     @click="$store.bill.confirmMixedTip()">
                                 Continuar —
-                                <span x-text="Number($store.bill.mixedTipGrandTotal || $store.bill.mixedCardAmount).toFixed(2).replace('.',',') + ' €'"></span>
+                                <span x-text="Number($store.bill.mixedTipGrandTotal || $store.bill.mixedCardAmount).toFixed(2).replace('.',',') + ' €'"></span>
                             </button>
-                            <button type="button" class="btn-secondary" @click="$store.bill.closeMixedTip()">← Atrás</button>
+                            <button type="button" class="back" @click="$store.bill.closeMixedTip()">← Atrás</button>
                         </div>
                     </div>
 
@@ -2849,7 +3073,7 @@
                                 </svg>
                                 <span x-text="$store.bill.sending ? 'Procesando…' : 'Pagar ' + Number($store.bill.splitStripeTotal || 0).toFixed(2).replace('.',',') + ' €'"></span>
                             </button>
-                            <button type="button" class="btn-secondary" @click="$store.bill.closeSplitPayment()">← Atrás</button>
+                            <button type="button" class="back" @click="$store.bill.closeSplitPayment()">← Atrás</button>
                         </div>
                     </div>
 
@@ -2864,7 +3088,7 @@
                                 </svg>
                                 <span x-text="$store.bill.sending ? 'Procesando…' : 'Pagar ' + Number($store.bill.mixedTipGrandTotal || $store.bill.mixedCardAmount).toFixed(2).replace('.',',') + ' €'"></span>
                             </button>
-                            <button type="button" class="btn-secondary" @click="$store.bill.closeMixedPayment()">← Atrás</button>
+                            <button type="button" class="back" @click="$store.bill.closeMixedPayment()">← Atrás</button>
                         </div>
                     </div>
 

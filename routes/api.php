@@ -27,6 +27,9 @@ Route::post('/v1/payment/{hash}/confirm', [CardPaymentController::class, 'confir
     ->name('api.payment.confirm');
 
 // Cobro partido — rutas públicas (sin autenticación, contexto por table_hash)
+Route::get('/v1/payment/{hash}/split/eq-status',   [SplitPaymentController::class, 'eqStatus'])
+    ->middleware('throttle:30,1')
+    ->name('api.split.eq-status');
 Route::get('/v1/payment/{hash}/split/items',       [SplitPaymentController::class, 'claimedItems'])
     ->middleware('throttle:30,1')
     ->name('api.split.items');

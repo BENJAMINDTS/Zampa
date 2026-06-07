@@ -98,6 +98,8 @@ export function registerBill() {
         splitItems:       [],
         splitSelected:    [],
         splitPeople:      2,
+        splitEqSlice:     0,
+        splitEqColor:     null,
         splitPayingCard:  false,
         splitStripeReady: false,
         splitStripeError: null,
@@ -138,9 +140,10 @@ export function registerBill() {
 
         open() {
             if (this.sending) return;
-            this.error    = null;
-            this.choosing = true;
-            this.step     = 'method';
+            this.error     = null;
+            this.requested = false;
+            this.choosing  = true;
+            this.step      = 'method';
         },
 
         close() {
@@ -171,6 +174,7 @@ export function registerBill() {
             this.showingMixed     = false;
             this.showingMixedTip  = false;
             this.mixedPayingCard  = false;
+            this.requested        = false;
             this.choosing         = true;
             this.step             = 'method';
         },
@@ -224,8 +228,9 @@ export function registerBill() {
             } catch {
                 // use cached total from page load
             }
-            this.tipAmount  = 0;
             this.tipPercent = 10;
+            this.tipAmount  = calculateTipFromPercent(this.orderTotal, 10);
+            this.grandTotal = this.orderTotal + this.tipAmount;
             this.showingTip = true;
             this.step       = 'tip';
         },
@@ -310,6 +315,16 @@ export function registerBill() {
             this._stripe     = null;
         },
 
+        backToTip() {
+            this.payingCard  = false;
+            this.stripeReady = false;
+            this.stripeError = null;
+            this.sending     = false;
+            this._elements   = null;
+            this._stripe     = null;
+            this.step        = 'tip';
+        },
+
         async submitCardPayment() {
             if (!this._stripe || !this._elements || this.sending) return;
             this.sending     = true;
@@ -373,8 +388,8 @@ export function registerBill() {
             return this.splitSelected.includes(id);
         },
 
-        toggleSplitItem(id, claimed) {
-            if (claimed) return;
+        toggleSplitItem(id, claimed, isCourtesy) {
+            if (claimed || isCourtesy) return;
             const idx = this.splitSelected.indexOf(id);
             if (idx === -1) this.splitSelected.push(id);
             else            this.splitSelected.splice(idx, 1);
@@ -519,8 +534,10 @@ export function registerBill() {
             this.splitTipPercent = null;
             if (this.splitTipType === 'items') {
                 this.splitShowItems = true;
+                this.step           = 'splitItems';
             } else {
                 this.splitShowEq = true;
+                this.step        = 'splitEq';
             }
         },
 
@@ -747,7 +764,7 @@ export function registerBill() {
                     : '/api/v1/payment/' + this.tableHash + '/split/pay-eq';
                 const body = type === 'items'
                     ? { item_ids: ids, tip }
-                    : { people: Math.max(2, parseInt(this.splitPeople) || 2), part_number: 1, tip };
+                    : { people: Math.max(2, parseInt(this.splitPeople) || 2), part_number: this.splitEqSlice + 1, session_color: this.splitEqColor, tip };
                 const res = await fetch(url, {
                     method:  'POST',
                     headers: {
@@ -799,8 +816,7 @@ export function registerBill() {
             this.splitMode        = null;
             this._splitElements   = null;
             this._splitStripe     = null;
-            this.step             = 'method';
-            this.choosing         = true;
+            this.step             = 'splitTip';
         },
 
         payMixedCard() {
