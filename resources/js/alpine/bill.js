@@ -313,6 +313,16 @@ export function registerBill() {
             this._stripe     = null;
         },
 
+        backToTip() {
+            this.payingCard  = false;
+            this.stripeReady = false;
+            this.stripeError = null;
+            this.sending     = false;
+            this._elements   = null;
+            this._stripe     = null;
+            this.step        = 'tip';
+        },
+
         async submitCardPayment() {
             if (!this._stripe || !this._elements || this.sending) return;
             this.sending     = true;
@@ -522,8 +532,10 @@ export function registerBill() {
             this.splitTipPercent = null;
             if (this.splitTipType === 'items') {
                 this.splitShowItems = true;
+                this.step           = 'splitItems';
             } else {
                 this.splitShowEq = true;
+                this.step        = 'splitEq';
             }
         },
 
@@ -802,8 +814,7 @@ export function registerBill() {
             this.splitMode        = null;
             this._splitElements   = null;
             this._splitStripe     = null;
-            this.step             = 'method';
-            this.choosing         = true;
+            this.step             = 'splitTip';
         },
 
         payMixedCard() {
