@@ -140,9 +140,10 @@ export function registerBill() {
 
         open() {
             if (this.sending) return;
-            this.error    = null;
-            this.choosing = true;
-            this.step     = 'method';
+            this.error     = null;
+            this.requested = false;
+            this.choosing  = true;
+            this.step      = 'method';
         },
 
         close() {
