@@ -40,13 +40,11 @@
 /* ----- Bill flow (bottom-sheet variant of the drawer) ----- */
 .drawer--bill { height: auto; max-height: 70%; }
 
-/* Mobile: the bill drawer must stay in the lower thumb-zone.
-   The cart drawer rule above pins .drawer to 70% on mobile, which is
-   too tall for the bill (only 2 short steps). Override to a compact
-   auto-height capped under half the carta height. */
+/* Mobile: tall enough to show all 4 payment method cards (2×2 grid)
+   without any scroll. Previous 48% was too short. */
 .carta[data-bp="mobile"] .drawer--bill {
   height: auto;
-  max-height: 48%;
+  max-height: 72%;
 }
 .drawer__total {
   display: flex; flex-direction: column;
@@ -75,20 +73,36 @@
 }
 .btn-text:hover { color: var(--fg-primary); }
 
-.bill__methods { 
-  display: grid; 
-  grid-template-columns: 1fr;
+.bill__methods {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 12px;
 }
 .carta[data-bp="tablet"] .bill__methods {
-  display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
 }
 .carta[data-bp="desktop"] .bill__methods {
-  display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
+}
+/* Mobile: compact cards so 2×2 fits without scroll */
+.carta[data-bp="mobile"] .bill__methods {
+  gap: 10px;
+}
+.carta[data-bp="mobile"] .bill__method {
+  padding: 14px 10px;
+  gap: 7px;
+}
+.carta[data-bp="mobile"] .bill__method .ic {
+  width: 40px;
+  height: 40px;
+}
+.carta[data-bp="mobile"] .bill__method .nm {
+  font-size: 13px;
+}
+.carta[data-bp="mobile"] .bill__method .ds {
+  font-size: 10px;
 }
 .bill__method {
   padding: 22px 14px; border: 1px solid var(--glass-border); border-radius: 16px;
