@@ -2241,15 +2241,15 @@
                             <div class="split-items__status">
                                 <div class="split-items__progress">
                                     <div class="bar" role="progressbar"
-                                         :aria-valuenow="$store.bill.splitItems.filter(i => i.claimed || $store.bill.splitSelected.includes(i.id)).length"
-                                         :aria-valuemax="$store.bill.splitItems.length"
+                                         :aria-valuenow="$store.bill.splitItems.filter(i => !i.is_courtesy && (i.claimed || $store.bill.splitSelected.includes(i.id))).length"
+                                         :aria-valuemax="$store.bill.splitItems.filter(i => !i.is_courtesy).length"
                                          aria-label="Ítems reclamados">
                                         <div class="bar__fill"
-                                             :style="'width: ' + (($store.bill.splitItems.filter(i => i.claimed || $store.bill.splitSelected.includes(i.id)).length / Math.max(1, $store.bill.splitItems.length)) * 100) + '%'">
+                                             :style="'width: ' + (($store.bill.splitItems.filter(i => !i.is_courtesy && (i.claimed || $store.bill.splitSelected.includes(i.id))).length / Math.max(1, $store.bill.splitItems.filter(i => !i.is_courtesy).length)) * 100) + '%'">
                                         </div>
                                     </div>
                                     <span class="ct"
-                                          x-text="$store.bill.splitItems.filter(i => i.claimed || $store.bill.splitSelected.includes(i.id)).length + '/' + $store.bill.splitItems.length + ' reclamados'">
+                                          x-text="$store.bill.splitItems.filter(i => !i.is_courtesy && (i.claimed || $store.bill.splitSelected.includes(i.id))).length + '/' + $store.bill.splitItems.filter(i => !i.is_courtesy).length + ' reclamados'">
                                     </span>
                                 </div>
                                 <div class="split-items__legend">
@@ -2260,29 +2260,32 @@
                             {{-- Lista de ítems --}}
                             <div class="split-items__list" role="list">
                                 <template x-for="item in $store.bill.splitItems" :key="item.id">
-                                    <div class="split-line" role="button"
-                                         tabindex="0"
-                                         :class="{ 'split-line--mine': $store.bill.isItemSelected(item.id), 'split-line--claimed': item.claimed && !$store.bill.isItemSelected(item.id) }"
-                                         :style="item.claimed && !$store.bill.isItemSelected(item.id) ? 'cursor:not-allowed' : 'cursor:pointer'"
-                                         :aria-label="$store.bill.isItemSelected(item.id) ? 'Quitar de mi parte: ' + item.name : (item.claimed ? 'Ya reclamado: ' + item.name : 'Reclamar: ' + item.name)"
-                                         :aria-pressed="$store.bill.isItemSelected(item.id)"
-                                         @click="$store.bill.toggleSplitItem(item.id, item.claimed)"
-                                         @keydown.enter.prevent="$store.bill.toggleSplitItem(item.id, item.claimed)"
-                                         @keydown.space.prevent="$store.bill.toggleSplitItem(item.id, item.claimed)">
+                                    <div :class="'split-line' + ($store.bill.isItemSelected(item.id) ? ' split-line--mine' : (item.claimed && !$store.bill.isItemSelected(item.id) ? ' split-line--claimed' : (item.is_courtesy ? ' split-line--courtesy' : '')))"
+                                         :role="item.is_courtesy ? 'listitem' : 'button'"
+                                         :tabindex="item.is_courtesy ? '-1' : '0'"
+                                         :style="item.is_courtesy ? 'cursor:default' : (item.claimed && !$store.bill.isItemSelected(item.id) ? 'cursor:not-allowed' : 'cursor:pointer')"
+                                         :aria-label="item.is_courtesy ? 'Cortesía: ' + item.name : ($store.bill.isItemSelected(item.id) ? 'Quitar de mi parte: ' + item.name : (item.claimed ? 'Ya reclamado: ' + item.name : 'Reclamar: ' + item.name))"
+                                         @click="$store.bill.toggleSplitItem(item.id, item.claimed, item.is_courtesy)"
+                                         @keydown.enter.prevent="$store.bill.toggleSplitItem(item.id, item.claimed, item.is_courtesy)"
+                                         @keydown.space.prevent="$store.bill.toggleSplitItem(item.id, item.claimed, item.is_courtesy)">
 
                                         <div class="split-line__photo" aria-hidden="true">🍽️</div>
 
                                         <div class="split-line__main">
                                             <div class="split-line__name" x-text="item.name"></div>
-                                            <div class="split-line__total"
-                                                 x-text="fmt(item.total)"></div>
+                                            <div x-show="item.is_courtesy" class="split-line__badge split-line__badge--courtesy">Cortesía</div>
+                                            <div x-show="!item.is_courtesy" class="split-line__total" x-text="fmt(item.total)"></div>
                                         </div>
 
                                         {{-- Indicador visual del estado del slot --}}
-                                        <div :class="'slot' + ($store.bill.isItemSelected(item.id) ? ' slot--you' : (item.claimed ? ' slot--other' : ''))"
+                                        <div :class="'slot' + ($store.bill.isItemSelected(item.id) ? ' slot--you' : (item.claimed && !$store.bill.isItemSelected(item.id) ? ' slot--other' : (item.is_courtesy ? ' slot--courtesy' : '')))"
                                              aria-hidden="true">
+                                            {{-- Courtesy --}}
+                                            <template x-if="item.is_courtesy">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                                            </template>
                                             {{-- Unclaimed --}}
-                                            <template x-if="!$store.bill.isItemSelected(item.id) && !item.claimed">
+                                            <template x-if="!item.is_courtesy && !$store.bill.isItemSelected(item.id) && !item.claimed">
                                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                                             </template>
                                             {{-- Mine --}}
@@ -2290,12 +2293,13 @@
                                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                                             </template>
                                             {{-- Claimed by other --}}
-                                            <template x-if="item.claimed && !$store.bill.isItemSelected(item.id)">
+                                            <template x-if="!item.is_courtesy && item.claimed && !$store.bill.isItemSelected(item.id)">
                                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                                             </template>
                                         </div>
                                     </div>
                                 </template>
+                            </div>
                             </div>
 
                             {{-- Total de tu parte (solo lectura, el CTA está en drawer__foot) --}}
