@@ -681,7 +681,7 @@
 }
 .bill__footRow--stack > .btn-primary,
 .bill__footRow--stack > .btn-secondary { width: 100%; }
-.bill__footRow--stack > .back { align-self: center; width: auto; margin-top: 2px; }
+.bill__footRow--stack > .back { width: 100%; }
 
 /* Mobile compaction inside cashTip */
 .carta[data-bp="mobile"] .cashTip { gap: 14px; }
