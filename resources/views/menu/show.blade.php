@@ -2935,11 +2935,11 @@
                                 </span>
                                 <span x-show="!$store.bill.sending"
                                       x-text="($store.bill.cashTipAmount || 0) > 0
-                                          ? 'Solicitar cuenta · ' + Number($store.bill.cashGrandTotal).toFixed(2).replace('.',',') + ' € (con propina)'
-                                          : 'Solicitar cuenta · ' + Number($store.bill.orderTotal).toFixed(2).replace('.',',') + ' € (sin propina)'">
+                                          ? 'Solicitar cuenta · ' + Number($store.bill.cashGrandTotal).toFixed(2).replace('.',',') + ' € (con propina)'
+                                          : 'Solicitar cuenta · ' + Number($store.bill.orderTotal).toFixed(2).replace('.',',') + ' € (sin propina)'">
                                 </span>
                             </button>
-                            <button type="button" class="btn-secondary" @click="$store.bill.backToMethod()">← Cambiar método</button>
+                            <button type="button" class="back" @click="$store.bill.backToMethod()">← Cambiar método</button>
                         </div>
                     </div>
 
@@ -2966,7 +2966,7 @@
                                           : 'Pagar con tarjeta · ' + Number($store.bill.orderTotal).toFixed(2).replace('.',',') + ' € (sin propina)'">
                                 </span>
                             </button>
-                            <button type="button" class="btn-secondary" @click="$store.bill.backToMethod()">← Cambiar método</button>
+                            <button type="button" class="back" @click="$store.bill.backToMethod()">← Cambiar método</button>
                         </div>
                     </div>
 
@@ -2979,9 +2979,9 @@
                                 <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
                                 </svg>
-                                <span x-text="$store.bill.sending ? 'Procesando…' : 'Pagar ' + Number($store.bill.grandTotal || $store.bill.orderTotal).toFixed(2).replace('.',',') + ' €'"></span>
+                                <span x-text="$store.bill.sending ? 'Procesando…' : 'Pagar ' + Number($store.bill.grandTotal || $store.bill.orderTotal).toFixed(2).replace('.',',') + ' €'"></span>
                             </button>
-                            <button type="button" class="btn-secondary" @click="$store.bill.backToMethod()">← Cambiar método</button>
+                            <button type="button" class="back" @click="$store.bill.backToMethod()">← Atrás</button>
                         </div>
                     </div>
 
@@ -2990,22 +2990,25 @@
                     {{-- split --}}
                     <div x-show="$store.bill.step === 'split'">
                         <div class="bill__footRow bill__footRow--stack">
-                            <button type="button" class="btn-secondary" @click="$store.bill.closeSplitSelector()">← Cambiar método</button>
+                            <button type="button" class="back" @click="$store.bill.closeSplitSelector()">← Cambiar método</button>
                         </div>
                     </div>
 
                     {{-- splitItems --}}
                     <div x-show="$store.bill.step === 'splitItems'">
-                        <div style="display:flex;justify-content:space-between;margin-bottom:10px;font-family:var(--font-body);font-size:13px">
-                            <span style="color:var(--fg-muted)">Mi parte</span>
-                            <span style="font-weight:700;color:var(--price-gold)"
-                                  x-text="Number($store.bill.splitItemsTotal || 0).toFixed(2).replace('.',',') + ' €'"></span>
+                        <div class="bill__footRow bill__footRow--stack">
+                            <div style="display:flex;justify-content:space-between;margin-bottom:4px;font-family:var(--font-body);font-size:13px">
+                                <span style="color:var(--fg-muted)">Mi parte</span>
+                                <span style="font-weight:700;color:var(--price-gold)"
+                                      x-text="Number($store.bill.splitItemsTotal || 0).toFixed(2).replace('.',',') + ' €'"></span>
+                            </div>
+                            <button type="button" class="btn-primary"
+                                    :disabled="!$store.bill.splitSelected || $store.bill.splitSelected.length === 0"
+                                    @click="$store.bill.paySelectedItems()">
+                                Pagar mi parte
+                            </button>
+                            <button type="button" class="back" @click="$store.bill.closeSplitItems()">Cambiar modo</button>
                         </div>
-                        <button type="button" class="btn-primary"
-                                :disabled="!$store.bill.splitSelected || $store.bill.splitSelected.length === 0"
-                                @click="$store.bill.paySelectedItems()">
-                            Pagar mi parte
-                        </button>
                     </div>
 
                     {{-- splitEq --}}
@@ -3017,6 +3020,7 @@
                                 <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
                                 <span x-text="'Pagar mi parte · ' + Number($store.bill.splitMyPart || 0).toFixed(2).replace('.',',') + ' €'"></span>
                             </button>
+                            <button type="button" class="back" @click="$store.bill.closeSplitEq()">Cambiar modo</button>
                         </div>
                     </div>
 
@@ -3026,9 +3030,9 @@
                             <button type="button" class="btn-primary"
                                     @click="$store.bill.confirmSplitTip()">
                                 Continuar —
-                                <span x-text="Number($store.bill.splitTipGrandTotal || $store.bill.splitTipBase).toFixed(2).replace('.',',') + ' €'"></span>
+                                <span x-text="Number($store.bill.splitTipGrandTotal || $store.bill.splitTipBase).toFixed(2).replace('.',',') + ' €'"></span>
                             </button>
-                            <button type="button" class="btn-secondary" @click="$store.bill.backToMethod()">← Cambiar método</button>
+                            <button type="button" class="back" @click="$store.bill.backToMethod()">← Atrás</button>
                         </div>
                     </div>
 
@@ -3040,7 +3044,7 @@
                                     @click="$store.bill.proceedFromMixed()">
                                 <span x-text="($store.bill.mixedCashAmount >= $store.bill.orderTotal - 0.001) ? 'Continuar · Pago en efectivo' : 'Continuar con tarjeta'"></span>
                             </button>
-                            <button type="button" class="btn-secondary" @click="$store.bill.closeMixed()">← Cambiar método</button>
+                            <button type="button" class="back" @click="$store.bill.closeMixed()">← Cambiar método</button>
                         </div>
                     </div>
 
@@ -3050,9 +3054,9 @@
                             <button type="button" class="btn-primary"
                                     @click="$store.bill.confirmMixedTip()">
                                 Continuar —
-                                <span x-text="Number($store.bill.mixedTipGrandTotal || $store.bill.mixedCardAmount).toFixed(2).replace('.',',') + ' €'"></span>
+                                <span x-text="Number($store.bill.mixedTipGrandTotal || $store.bill.mixedCardAmount).toFixed(2).replace('.',',') + ' €'"></span>
                             </button>
-                            <button type="button" class="btn-secondary" @click="$store.bill.closeMixedTip()">← Atrás</button>
+                            <button type="button" class="back" @click="$store.bill.closeMixedTip()">← Atrás</button>
                         </div>
                     </div>
 
@@ -3067,7 +3071,7 @@
                                 </svg>
                                 <span x-text="$store.bill.sending ? 'Procesando…' : 'Pagar ' + Number($store.bill.splitStripeTotal || 0).toFixed(2).replace('.',',') + ' €'"></span>
                             </button>
-                            <button type="button" class="btn-secondary" @click="$store.bill.closeSplitPayment()">← Atrás</button>
+                            <button type="button" class="back" @click="$store.bill.closeSplitPayment()">← Atrás</button>
                         </div>
                     </div>
 
@@ -3082,7 +3086,7 @@
                                 </svg>
                                 <span x-text="$store.bill.sending ? 'Procesando…' : 'Pagar ' + Number($store.bill.mixedTipGrandTotal || $store.bill.mixedCardAmount).toFixed(2).replace('.',',') + ' €'"></span>
                             </button>
-                            <button type="button" class="btn-secondary" @click="$store.bill.closeMixedPayment()">← Atrás</button>
+                            <button type="button" class="back" @click="$store.bill.closeMixedPayment()">← Atrás</button>
                         </div>
                     </div>
 
