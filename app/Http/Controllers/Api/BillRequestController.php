@@ -45,13 +45,6 @@ class BillRequestController extends Controller
             ], 404);
         }
 
-        if ($order->bill_requested) {
-            return response()->json([
-                'success' => false,
-                'message' => 'La cuenta ya fue solicitada. El camarero está en camino.',
-            ], 422);
-        }
-
         $order->update([
             'bill_requested'           => true,
             'requested_payment_method' => $validated['payment_method'],
