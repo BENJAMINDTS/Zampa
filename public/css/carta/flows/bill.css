@@ -387,7 +387,16 @@
 .bill__footRow > .btn-primary { flex: 1 1 auto; width: auto; }
 .bill__footRow > .btn-secondary { flex: 0 0 auto; width: auto; }
 .bill__footRow > .btn-text { flex: 0 0 auto; width: auto; margin-right: auto; }
-.bill__cancelNotice { color: var(--fg-muted); }
+.bill__cancelNotice {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  margin: 0 auto; width: auto !important; flex: none !important;
+  padding: 11px 22px; border-radius: 12px;
+  background: #fee2e2; color: #dc2626;
+  border: 1.5px solid #fca5a5;
+  font-weight: 700; font-size: 14px;
+  cursor: pointer; transition: background 0.15s, border-color 0.15s;
+}
+.bill__cancelNotice:hover { background: #fecaca; border-color: #f87171; color: #b91c1c; }
 .bill__callWaiter { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
 .bill__doneAmt { color: var(--price-gold); font-variant-numeric: tabular-nums; }
 
