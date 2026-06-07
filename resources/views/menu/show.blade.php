@@ -2047,21 +2047,62 @@
 
                     {{-- ── tip: selector de propina para tarjeta ─── --}}
                     <div x-show="$store.bill.step === 'tip'">
-                        <div class="tip-row" role="group" aria-label="Porcentaje de propina">
-                            <template x-for="pct in [0, 10, 15, 20]" :key="pct">
-                                <div :class="'tip' + ($store.bill.tipPercent === pct ? ' tip--selected' : '')"
-                                     @click="$store.bill.setTipPercent(pct)"
-                                     role="button" tabindex="0"
-                                     :aria-pressed="($store.bill.tipPercent === pct).toString()"
-                                     @keydown.enter="$store.bill.setTipPercent(pct)">
-                                    <div class="pct" x-text="pct + '%'"></div>
-                                    <div class="amt"
-                                         x-text="pct === 0 ? '—' : Number(Math.round($store.bill.orderTotal * pct) / 100).toFixed(2).replace('.',',') + ' €'"></div>
+                        <div class="cashTip">
+                            <div class="cashTip__hero">
+                                <span class="lab">Total del pedido</span>
+                                <span class="val" x-text="Number($store.bill.orderTotal).toFixed(2).replace('.',',') + ' €'"></span>
+                            </div>
+                            <section class="cashTip__section">
+                                <div class="cashTip__label">
+                                    <span>Propina sugerida</span>
+                                    <span class="hint">Toca para elegir</span>
                                 </div>
-                            </template>
+                                <div class="cashTip__grid">
+                                    <template x-for="pct in [5, 10, 15, 20]" :key="pct">
+                                        <button type="button"
+                                                class="cashTip__chip"
+                                                :class="$store.bill.tipPercent === pct ? 'is-active' : ''"
+                                                :aria-pressed="($store.bill.tipPercent === pct).toString()"
+                                                @click="$store.bill.setTipPercent(pct)">
+                                            <span class="cashTip__pct" x-text="pct + '%'"></span>
+                                            <span class="cashTip__amt"
+                                                  x-text="Number(Math.round($store.bill.orderTotal * pct) / 100).toFixed(2).replace('.',',') + ' €'"></span>
+                                        </button>
+                                    </template>
+                                </div>
+                                <div class="cashTip__input">
+                                    <label for="card-tip-bill" class="sr-only">Propina personalizada en euros</label>
+                                    <input id="card-tip-bill"
+                                           type="number" min="0" step="0.50" inputmode="decimal"
+                                           placeholder="Otra cantidad…"
+                                           @input="$store.bill.updateCustomTip($event.target.value)"
+                                           :value="$store.bill.tipPercent === null && $store.bill.tipAmount > 0 ? $store.bill.tipAmount : ''">
+                                    <span class="cashTip__currency" aria-hidden="true">€</span>
+                                </div>
+                            </section>
+                            <section class="cashTip__summary" aria-live="polite">
+                                <div class="cashTip__row">
+                                    <span>Pedido</span>
+                                    <span class="v" x-text="Number($store.bill.orderTotal).toFixed(2).replace('.',',') + ' €'"></span>
+                                </div>
+                                <div class="cashTip__row cashTip__row--tip"
+                                     x-show="($store.bill.tipAmount || 0) > 0">
+                                    <span>Propina</span>
+                                    <span class="v" x-text="'+ ' + Number($store.bill.tipAmount || 0).toFixed(2).replace('.',',') + ' €'"></span>
+                                </div>
+                                <div class="cashTip__row cashTip__row--total">
+                                    <span>Total a pagar</span>
+                                    <span class="v" x-text="Number($store.bill.grandTotal || $store.bill.orderTotal).toFixed(2).replace('.',',') + ' €'"></span>
+                                </div>
+                            </section>
+                            <p class="cashTip__info">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                                </svg>
+                                <span>La propina se incluye en el cargo de Stripe.</span>
+                            </p>
                         </div>
                     </div>
-
                     {{-- ── pay: formulario Stripe ─── --}}
                     <div x-show="$store.bill.step === 'pay'">
                         <div class="stripe-mock" style="display:flex;flex-direction:column;gap:16px">
@@ -2909,10 +2950,18 @@
                     {{-- tip --}}
                     <div x-show="$store.bill.step === 'tip'">
                         <div class="bill__footRow bill__footRow--stack">
-                            <button type="button" class="btn-primary"
+                            <button type="button" class="btn-primary cashTip__cta"
+                                    :disabled="$store.bill.sending"
                                     @click="$store.bill.proceedToStripe()">
-                                Continuar —
-                                <span x-text="Number($store.bill.orderTotal + ($store.bill.tipAmount || 0)).toFixed(2).replace('.',',') + ' €'"></span>
+                                <span x-show="$store.bill.sending">
+                                    <span class="cashTip__spin" aria-hidden="true"></span>
+                                    Procesando…
+                                </span>
+                                <span x-show="!$store.bill.sending"
+                                      x-text="($store.bill.tipAmount || 0) > 0
+                                          ? 'Pagar con tarjeta · ' + Number($store.bill.grandTotal).toFixed(2).replace('.',',') + ' € (con propina)'
+                                          : 'Pagar con tarjeta · ' + Number($store.bill.orderTotal).toFixed(2).replace('.',',') + ' € (sin propina)'">
+                                </span>
                             </button>
                             <button type="button" class="btn-secondary" @click="$store.bill.backToMethod()">← Cambiar método</button>
                         </div>
