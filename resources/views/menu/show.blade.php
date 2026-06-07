@@ -1772,7 +1772,7 @@
                 <div class="drawer__head">
 
                     {{-- Botón atrás (pasos intermedios) --}}
-                    <template x-if="['cashConfirm','tip','pay','split','splitItems','splitEq','mixed','mixedTip','splitTip','splitPay','mixedPay'].includes($store.bill.step)">
+                    <template x-if="['cashConfirm','tip','pay','split','mixed','mixedTip','splitTip','splitPay','mixedPay'].includes($store.bill.step)">
                         <button type="button" class="icon-btn icon-btn--back"
                                 @click="$store.bill.step === 'splitItems' ? $store.bill.closeSplitItems()
                                     : $store.bill.step === 'splitEq'   ? $store.bill.closeSplitEq()
