@@ -5,6 +5,8 @@
  * @author BenjaminDTS
  */
 
+import Alpine from 'alpinejs';
+
 /**
  * @param {string} initialStyle  One of 'modern' | 'classic' | 'minimal'.
  * @returns {object}
@@ -152,6 +154,6 @@ export function menuStylePage(initialStyle) {
  * @param {import('alpinejs').Alpine} Alpine
  * @returns {void}
  */
-export function registerMenuStyle(Alpine) {
+export function registerMenuStyle() {
     Alpine.data('menuStylePage', (initialStyle) => menuStylePage(initialStyle));
 }
