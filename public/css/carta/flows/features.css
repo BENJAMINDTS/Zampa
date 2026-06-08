@@ -185,7 +185,7 @@
   cursor: pointer;
   width: auto;
   box-shadow: var(--ti-shadow-base);
-  animation: tapas-indicator-attention 5s var(--ease-smooth) 1.2s infinite;
+  animation: tapas-indicator-attention 3s ease-in-out infinite;
   transition: filter var(--duration-fast), transform 140ms var(--ease-bounce);
 }
 .tapas-indicator:hover {
@@ -210,20 +210,14 @@
 }
 
 @keyframes tapas-indicator-attention {
-  0%, 62%, 100% {
+  0%, 70%, 100% {
     transform: translateY(0) scale(1);
     box-shadow: var(--ti-shadow-base);
   }
-  70% {
-    transform: translateY(-8px) scale(1.03);
-    box-shadow: var(--ti-shadow-peak);
+  85% {
+    transform: translateY(-2px) scale(1.008);
+    box-shadow: 0 12px 26px rgba(180,83,9,0.48), 0 0 0 4px rgba(245,158,11,0.14);
   }
-  78% {
-    transform: translateY(0) scale(1);
-    box-shadow: var(--ti-shadow-ring);
-  }
-  85% { transform: translateY(-3px) scale(1.015); }
-  92% { transform: translateY(0) scale(1); }
 }
 @media (prefers-reduced-motion: reduce) {
   .tapas-indicator { animation: none; }
