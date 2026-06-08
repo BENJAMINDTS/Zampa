@@ -31,6 +31,20 @@ export function calculateTipFromPercent(base, percent) {
 }
 
 /**
+ * Returns the suggested tip percentage based on the bill total.
+ * Larger bills get a higher suggested percentage.
+ *
+ * @param {number} total - Bill total in euros.
+ * @returns {number} Suggested tip percentage (5, 10, 15 or 20).
+ */
+export function suggestedTipPercent(total) {
+    if (total > 80) return 20;
+    if (total > 40) return 15;
+    if (total > 15) return 10;
+    return 5;
+}
+
+/**
  * Returns the total of all selected split items.
  *
  * @param {Array<{id: number, total: number}>} splitItems    - All split-able items.
@@ -228,8 +242,8 @@ export function registerBill() {
             } catch {
                 // use cached total from page load
             }
-            this.tipPercent = 10;
-            this.tipAmount  = calculateTipFromPercent(this.orderTotal, 10);
+            this.tipPercent = suggestedTipPercent(this.orderTotal);
+            this.tipAmount  = calculateTipFromPercent(this.orderTotal, this.tipPercent);
             this.grandTotal = this.orderTotal + this.tipAmount;
             this.showingTip = true;
             this.step       = 'tip';
@@ -470,9 +484,9 @@ export function registerBill() {
 
         openCashTip() {
             this.choosing       = false;
-            this.cashTipAmount  = 0;
-            this.cashTipPercent = 10;
-            this.cashGrandTotal = this.orderTotal + calculateTipFromPercent(this.orderTotal, 10);
+            this.cashTipPercent = suggestedTipPercent(this.orderTotal);
+            this.cashTipAmount  = calculateTipFromPercent(this.orderTotal, this.cashTipPercent);
+            this.cashGrandTotal = this.orderTotal + this.cashTipAmount;
             this.showingCashTip = true;
             this.step           = 'cashConfirm';
         },
@@ -506,9 +520,9 @@ export function registerBill() {
             this.splitTipBase       = amount;
             this.splitTipType       = type;
             this.splitTipItemIds    = itemIds || [];
-            this.splitTipAmount     = 0;
-            this.splitTipPercent    = 10;
-            this.splitTipGrandTotal = amount + calculateTipFromPercent(amount, 10);
+            this.splitTipPercent    = suggestedTipPercent(amount);
+            this.splitTipAmount     = calculateTipFromPercent(amount, this.splitTipPercent);
+            this.splitTipGrandTotal = amount + this.splitTipAmount;
             this.splitShowItems     = false;
             this.splitShowEq        = false;
             this.showingSplitTip    = true;
@@ -609,9 +623,9 @@ export function registerBill() {
         openMixedTip() {
             this.showingMixed       = false;
             this.mixedTipBase       = this.mixedCardAmount;
-            this.mixedTipAmount     = 0;
-            this.mixedTipPercent    = 10;
-            this.mixedTipGrandTotal = this.mixedCardAmount + calculateTipFromPercent(this.mixedCardAmount, 10);
+            this.mixedTipPercent    = suggestedTipPercent(this.mixedCardAmount);
+            this.mixedTipAmount     = calculateTipFromPercent(this.mixedCardAmount, this.mixedTipPercent);
+            this.mixedTipGrandTotal = this.mixedCardAmount + this.mixedTipAmount;
             this.showingMixedTip    = true;
             this.step               = 'mixedTip';
         },
