@@ -3344,7 +3344,7 @@
                     </button>
                     <div class="tapas-head__pre">
                         <span class="tapas-head__ornament" aria-hidden="true">— ❦ —</span>
-                        <span class="tapas-head__kicker">LA CASA · TAPAS</span>
+                        <span class="tapas-head__kicker">{{ mb_strtoupper($table->user->business_name ?: $table->user->name) }} · TAPAS</span>
                     </div>
                     <h2 class="tapas-head__big"
                         x-text="limitReached ? 'Has llegado al límite' : (left > 0 ? 'Lleva una tapa' : 'Sin tapas disponibles')">
