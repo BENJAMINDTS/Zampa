@@ -983,6 +983,32 @@
              ══════════════════════════════════════════════════════════════════════ --}}
         <div x-data="dailyMenuBanner('{{ $table->unique_hash }}')">
 
+        {{-- DS: dm-chip-strip — visible en mobile Y tablet (desktop: sidebar lo maneja) --}}
+        <div class="dm-chip-strip"
+             x-show="menuData !== null"
+             x-cloak
+             aria-label="Menú del día disponible">
+            <button type="button"
+                    :class="'dm-chip dm-chip--compact' + (agotado ? ' dm-chip--agotado' : '')"
+                    @click="!agotado && openStepper()"
+                    :disabled="agotado"
+                    :aria-label="agotado ? 'Menú del día agotado' : 'Ver menú del día — ' + (menuData?.menu?.title ?? '')">
+                <span class="dm-chip__mark" aria-hidden="true">◇</span>
+                <span class="dm-chip__main">
+                    <span class="dm-chip__top" x-text="menuData?.menu?.title ?? 'Menú del Día'"></span>
+                    <span class="dm-chip__sub"
+                          x-text="agotado ? 'Agotado por hoy' : parseFloat(menuData?.menu?.price ?? 0).toFixed(2).replace('.', ',') + ' €'">
+                    </span>
+                </span>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2.4"
+                     stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true" x-show="!agotado">
+                    <path d="M5 12h14M13 5l7 7-7 7"/>
+                </svg>
+            </button>
+        </div>
+
         {{-- ══════════════════════════════════════════════════════════════════════
              FILTER BAR (mobile) + ALLERGEN SHEET — x-data local para allergensOpen
              ══════════════════════════════════════════════════════════════════════ --}}
@@ -1026,25 +1052,6 @@
                         {{ $cat->name }}
                     </button>
                     @endforeach
-                    {{-- Menú del Día — chip compacto (DS: DailyMenuFilterChip compact, mobile) --}}
-                    <template x-if="menuData !== null">
-                        <span class="contents">
-                            <span class="dm-filter-sep" aria-hidden="true"></span>
-                            <button type="button"
-                                    :class="'dm-chip dm-chip--compact' + (agotado ? ' dm-chip--agotado' : '')"
-                                    @click="!agotado && openStepper()"
-                                    :disabled="agotado"
-                                    :aria-label="agotado ? 'Menú del día agotado' : 'Ver menú del día'">
-                                <span class="dm-chip__mark" aria-hidden="true">◇</span>
-                                <span class="dm-chip__main">
-                                    <span class="dm-chip__top">Menú del Día</span>
-                                    <span class="dm-chip__sub"
-                                          x-text="agotado ? 'Agotado' : parseFloat(menuData?.menu?.price ?? 0).toFixed(2).replace('.', ',') + ' €'">
-                                    </span>
-                                </span>
-                            </button>
-                        </span>
-                    </template>
                 </div>
                 {{-- Desplegable de alérgenos --}}
                 <div class="allergen-dropdown" @click.away="allergensOpen = false">
