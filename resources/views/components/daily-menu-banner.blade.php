@@ -6,23 +6,21 @@
 @props(['hash'])
 
 {{-- ── Banner DS ────────────────────────────────────────────── --}}
+{{-- position:sticky requiere que .dm-banner sea hijo directo de carta__body;
+     por eso x-show va aquí y no en un wrapper intermedio. --}}
 <div
+    class="dm-banner"
     x-show="menuData !== null && !bannerDismissed"
     x-cloak
+    :class="(exiting ? ' dm-banner--exit' : '') + (stuck ? ' dm-banner--stuck' : '') + (agotado ? '' : ' dm-banner--clickable')"
+    :role="agotado ? 'status' : 'button'"
+    :tabindex="agotado ? undefined : 0"
+    :aria-label="agotado ? undefined : 'Abrir ' + (menuData?.menu?.title ?? 'Menú del día')"
+    aria-live="polite"
+    @click="!agotado && openStepper()"
+    @keydown.enter.prevent="!agotado && openStepper()"
+    @keydown.space.prevent="!agotado && openStepper()"
 >
-    <div
-        :class="'dm-banner' +
-            (exiting   ? ' dm-banner--exit'      : '') +
-            (stuck     ? ' dm-banner--stuck'     : '') +
-            (agotado   ? ''                       : ' dm-banner--clickable')"
-        :role="agotado ? 'status' : 'button'"
-        :tabindex="agotado ? undefined : 0"
-        :aria-label="agotado ? undefined : 'Abrir ' + (menuData?.menu?.title ?? 'Menú del día')"
-        aria-live="polite"
-        @click="!agotado && openStepper()"
-        @keydown.enter.prevent="!agotado && openStepper()"
-        @keydown.space.prevent="!agotado && openStepper()"
-    >
         <div class="dm-banner__stamp" aria-hidden="true">
             <span class="dm-banner__stampMark">◇</span>
             <span class="dm-banner__stampLabel">MENÚ DEL DÍA</span>
@@ -73,9 +71,8 @@
         </button>
     </div>
 
-    {{-- ── Diálogo de exclusividad ────────────────────────────── --}}
-    <x-daily-menu-exclusivity-dialog />
-</div>
+{{-- ── Diálogo de exclusividad ──────────────────────────────────── --}}
+<x-daily-menu-exclusivity-dialog />
 
 {{-- ── Stepper modal (teleportado a .carta vía x-teleport) ──────── --}}
 <x-daily-menu-stepper :hash="$hash" />
