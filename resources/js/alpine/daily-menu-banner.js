@@ -24,12 +24,15 @@ const SECTION_LABELS = {
 export function dailyMenuBanner(hash) {
     return {
         hash,
-        menuData:  null,
-        loading:   true,
-        open:      false,
-        exiting:   false,
-        stuck:     false,
+        menuData:        null,
+        loading:         true,
+        open:            false,
+        exiting:         false,
+        stuck:           false,
+        bannerDismissed: false,
         showExclusivityWarning: false,
+        _autoDismissTimer: null,
+        _scrollEl:         null,
 
         /* ── Stepper ─────────────────────────────────────────────────────────── */
         pasos:          [],
@@ -80,7 +83,11 @@ export function dailyMenuBanner(hash) {
                 const res  = await fetch('/api/v1/menu/' + this.hash + '/daily-menu');
                 const json = await res.json();
                 this.menuData = json.data ?? null;
-                if (this.menuData) this._buildFromData(this.menuData);
+                if (this.menuData) {
+                    this._buildFromData(this.menuData);
+                    this._startAutoDismiss();
+                    this._bindScroll();
+                }
             } catch {
                 this.menuData = null;
             } finally {
@@ -88,10 +95,27 @@ export function dailyMenuBanner(hash) {
             }
         },
 
+        _startAutoDismiss() {
+            this._autoDismissTimer = setTimeout(() => this.dismiss(), 22000);
+        },
+
+        _bindScroll() {
+            this._scrollEl = document.getElementById('main-content');
+            if (!this._scrollEl) return;
+            const onScroll = () => { this.stuck = this._scrollEl.scrollTop > 6; };
+            this._scrollEl.addEventListener('scroll', onScroll, { passive: true });
+            onScroll();
+        },
+
         /* ── Banner ───────────────────────────────────────────────────────────── */
         dismiss() {
             if (this.exiting) return;
             this.exiting = true;
+            if (this._autoDismissTimer) {
+                clearTimeout(this._autoDismissTimer);
+                this._autoDismissTimer = null;
+            }
+            setTimeout(() => { this.bannerDismissed = true; }, 280);
         },
 
         openStepper() {
