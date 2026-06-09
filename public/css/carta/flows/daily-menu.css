@@ -735,6 +735,17 @@
   flex-shrink: 0;
 }
 
+/* DM chip strip — visible en mobile y tablet; desktop lo maneja el sidebar */
+.dm-chip-strip {
+  display: none;
+  padding: 8px 16px 0;
+  align-items: center;
+}
+.carta[data-bp="mobile"] .dm-chip-strip,
+.carta[data-bp="tablet"] .dm-chip-strip { display: flex; }
+.carta[data-bp="desktop"] .dm-chip-strip { display: none !important; }
+.dm-chip-strip .dm-chip--compact { width: 100%; max-width: 340px; }
+
 
 /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    MENÃš DEL DÃA Â· presentaciÃ³n dentro de "Mis pedidos"
