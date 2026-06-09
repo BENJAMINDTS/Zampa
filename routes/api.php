@@ -64,3 +64,6 @@ Route::get('/v1/menu/{hash}/daily-menu',        [DailyMenuPublicController::clas
 Route::post('/v1/menu/{hash}/daily-menu/order', [DailyMenuPublicController::class, 'order'])
     ->middleware('throttle:10,1')
     ->name('api.daily-menu.order');
+Route::post('/v1/menu/{hash}/cancel-alacarte', [DailyMenuPublicController::class, 'cancelAlaCarteOrders'])
+    ->middleware('throttle:10,1')
+    ->name('api.daily-menu.cancel-alacarte');

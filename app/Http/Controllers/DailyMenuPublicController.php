@@ -107,6 +107,30 @@ class DailyMenuPublicController extends Controller
     }
 
     /**
+     * Cancela las órdenes à la carte de hoy para liberar la mesa y permitir el menú del día.
+     * Solo cancela órdenes pending/cooking sin dailyMenuOrder creadas hoy.
+     *
+     * @param  string  $hash
+     * @return JsonResponse
+     */
+    public function cancelAlaCarteOrders(string $hash): JsonResponse
+    {
+        $table = Table::where('unique_hash', $hash)->first();
+
+        if (! $table) {
+            return response()->json(['success' => false, 'message' => 'Mesa no encontrada.'], 404);
+        }
+
+        $cancelled = Order::where('table_id', $table->id)
+            ->whereIn('status', ['pending', 'cooking'])
+            ->whereDoesntHave('dailyMenuOrder')
+            ->whereDate('created_at', today())
+            ->update(['status' => 'cancelled']);
+
+        return response()->json(['success' => true, 'cancelled' => $cancelled]);
+    }
+
+    /**
      * Crea el pedido de menú del día con las selecciones y preferencias de timing del cliente.
      *
      * @param  Request  $request
@@ -130,6 +154,7 @@ class DailyMenuPublicController extends Controller
         $hasAlaCarteOrders = Order::where('table_id', $table->id)
             ->whereIn('status', ['pending', 'cooking'])
             ->whereDoesntHave('dailyMenuOrder')
+            ->whereDate('created_at', today())
             ->exists();
 
         if ($hasAlaCarteOrders) {

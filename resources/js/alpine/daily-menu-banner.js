@@ -103,7 +103,7 @@ export function dailyMenuBanner(hash) {
             }
         },
 
-        clearCartAndOpen() {
+        async clearCartAndOpen() {
             const cart = Alpine.store('cart');
             cart.items          = [];
             cart._barItemsCount = 0;
@@ -111,6 +111,16 @@ export function dailyMenuBanner(hash) {
             cart.sent           = false;
             cart.error          = null;
             this.showExclusivityWarning = false;
+
+            await fetch('/api/v1/menu/' + this.hash + '/cancel-alacarte', {
+                method:  'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
+                    'Accept':       'application/json',
+                },
+            }).catch(() => {});
+
             this._doOpen();
         },
 
