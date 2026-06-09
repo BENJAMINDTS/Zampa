@@ -1,17 +1,15 @@
 {{-- @author SebastianBCF --}}
 {{-- @author AyrtonAlania --}}
 {{-- Banner del Menú del Día — estructura idéntica al Design System (dm-banner).
-     Se inserta al inicio del carta__body. Gestiona el stepper vía Alpine.
+     Sin x-data propio: hereda el scope dailyMenuBanner declarado en carta__main (show.blade.php).
      Alpine component → resources/js/alpine/daily-menu-banner.js --}}
 @props(['hash'])
 
-{{-- ── Wrapper Alpine ──────────────────────────────────────────── --}}
+{{-- ── Banner DS ────────────────────────────────────────────── --}}
 <div
-    x-data="dailyMenuBanner('{{ $hash }}')"
-    x-show="!loading && menuData !== null"
+    x-show="menuData !== null && !bannerDismissed"
     x-cloak
 >
-    {{-- ── Banner DS ────────────────────────────────────────────── --}}
     <div
         :class="'dm-banner' +
             (exiting   ? ' dm-banner--exit'      : '') +
@@ -77,7 +75,7 @@
 
     {{-- ── Diálogo de exclusividad ────────────────────────────── --}}
     <x-daily-menu-exclusivity-dialog />
-
-    {{-- ── Stepper modal ──────────────────────────────────────── --}}
-    <x-daily-menu-stepper :hash="$hash" />
 </div>
+
+{{-- ── Stepper modal (teleportado a .carta vía x-teleport) ──────── --}}
+<x-daily-menu-stepper :hash="$hash" />
