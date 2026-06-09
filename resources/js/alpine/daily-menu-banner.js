@@ -31,8 +31,7 @@ export function dailyMenuBanner(hash) {
         stuck:           false,
         bannerDismissed: false,
         showExclusivityWarning: false,
-        _autoDismissTimer: null,
-        _scrollEl:         null,
+        _scrollEl: null,
 
         /* ── Stepper ─────────────────────────────────────────────────────────── */
         pasos:          [],
@@ -85,7 +84,6 @@ export function dailyMenuBanner(hash) {
                 this.menuData = json.data ?? null;
                 if (this.menuData) {
                     this._buildFromData(this.menuData);
-                    this._startAutoDismiss();
                     this._bindScroll();
                 }
             } catch {
@@ -93,10 +91,6 @@ export function dailyMenuBanner(hash) {
             } finally {
                 this.loading = false;
             }
-        },
-
-        _startAutoDismiss() {
-            this._autoDismissTimer = setTimeout(() => this.dismiss(), 22000);
         },
 
         _bindScroll() {
@@ -111,10 +105,6 @@ export function dailyMenuBanner(hash) {
         dismiss() {
             if (this.exiting) return;
             this.exiting = true;
-            if (this._autoDismissTimer) {
-                clearTimeout(this._autoDismissTimer);
-                this._autoDismissTimer = null;
-            }
             setTimeout(() => { this.bannerDismissed = true; }, 280);
         },
 
