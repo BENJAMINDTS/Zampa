@@ -981,7 +981,8 @@
              DAILY MENU SCOPE — envuelve filter-bar + carta__main para que el chip
              mobile y el sidebar chip compartan el mismo scope Alpine.
              ══════════════════════════════════════════════════════════════════════ --}}
-        <div x-data="dailyMenuBanner('{{ $table->unique_hash }}')">
+        <div x-data="dailyMenuBanner('{{ $table->unique_hash }}')"
+             style="flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden">
 
         {{-- DS: dm-chip-strip — visible en mobile Y tablet (desktop: sidebar lo maneja) --}}
         <div class="dm-chip-strip"
