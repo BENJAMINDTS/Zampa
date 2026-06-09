@@ -80,6 +80,7 @@ class DailyMenuPublicController extends Controller
                     'description' => $p->description,
                     'price'       => $p->price,
                     'image'       => $p->image,
+                    'is_active'   => (bool) $p->is_active,
                 ])->values(),
                 'timing_rule'   => $timingRule ? [
                     'round_number'           => $timingRule->round_number,
