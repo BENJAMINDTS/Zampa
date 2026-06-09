@@ -5,9 +5,7 @@
 @props(['hash'])
 
 {{-- ── Scrim + dm-modal ─────────────────────────────────────────── --}}
-<div
-    x-teleport=".carta"
->
+<template x-teleport=".carta">
 <div
     class="scrim scrim--center scrim--dm"
     x-show="open"
@@ -287,4 +285,4 @@
 
     </div>{{-- /dm-modal --}}
 </div>{{-- /scrim --}}
-</div>{{-- /x-teleport --}}
+</template>{{-- /x-teleport --}}
