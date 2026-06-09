@@ -367,6 +367,8 @@ export function dailyMenuBanner(hash) {
 
                 if (res.ok) {
                     this.enviado = true;
+                    const summary = result.data?.order_summary;
+                    if (summary) Alpine.store('orders').push(summary);
                 } else {
                     this.errorMsg = result.message ?? 'Error al enviar el pedido.';
                 }
