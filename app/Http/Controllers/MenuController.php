@@ -179,7 +179,7 @@ class MenuController extends Controller
             ->orderBy('created_at')
             ->with([
                 'items.product:id,name',
-                'dailyMenuOrder.menu:id,title',
+                'dailyMenuOrder.dailyMenu:id,title',
                 'dailyMenuOrder.selections.section:id,type',
                 'dailyMenuOrder.selections.product:id,name',
             ])
@@ -194,7 +194,7 @@ class MenuController extends Controller
                 'total'       => (float) $order->total,
                 'sentAt'      => $order->created_at->format('H:i'),
                 'isDailyMenu' => $order->dailyMenuOrder !== null,
-                'dmTitle'     => $order->dailyMenuOrder?->menu?->title ?? 'Menú del Día',
+                'dmTitle'     => $order->dailyMenuOrder?->dailyMenu?->title ?? 'Menú del Día',
                 'picks'       => $order->dailyMenuOrder
                     ? $order->dailyMenuOrder->selections->map(fn ($sel) => [
                         'lab' => $dmSectionLabels[$sel->section?->type ?? ''] ?? ($sel->section?->type ?? 'Plato'),
