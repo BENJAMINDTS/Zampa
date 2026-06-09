@@ -6,6 +6,9 @@
 
 {{-- ── Scrim + dm-modal ─────────────────────────────────────────── --}}
 <div
+    x-teleport=".carta"
+>
+<div
     class="scrim scrim--center scrim--dm"
     x-show="open"
     :class="closingModal ? 'is-closing' : ''"
@@ -284,3 +287,4 @@
 
     </div>{{-- /dm-modal --}}
 </div>{{-- /scrim --}}
+</div>{{-- /x-teleport --}}
