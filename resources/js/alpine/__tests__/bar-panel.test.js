@@ -181,6 +181,16 @@ describe('waiterCallPolling component', () => {
         expect(comp.waiterOrders).toHaveLength(1);
     });
 
+    it('preserves called_at field from poll response', async () => {
+        global.fetch = vi.fn().mockResolvedValue({
+            ok: true,
+            json: async () => ({ orders: [{ id: 11, table: 'Mesa 3', called_at: '14:35' }] }),
+        });
+        const comp = waiterCallPolling(urls);
+        await comp.poll();
+        expect(comp.waiterOrders[0].called_at).toBe('14:35');
+    });
+
     it('calls the correct dismiss URL replacing __ID__', async () => {
         let calledUrl = '';
         global.fetch = vi.fn().mockImplementation((url) => {
