@@ -52,6 +52,16 @@ it('returns 404 when there is no active order', function () {
          ->assertJson(['success' => false]);
 });
 
+it('does not set waiter_called on closed order', function () {
+    $table = Table::factory()->for($this->user)->create();
+    $order = Order::factory()->for($table)->create(['status' => 'closed', 'waiter_called' => false]);
+
+    $this->postJson("/api/v1/waiter-call/{$table->unique_hash}")
+         ->assertStatus(404);
+
+    expect($order->fresh()->waiter_called)->toBeFalse();
+});
+
 it('returns 429 after exceeding throttle limit', function () {
     $table = Table::factory()->for($this->user)->create();
     Order::factory()->for($table)->create(['status' => 'pending']);
