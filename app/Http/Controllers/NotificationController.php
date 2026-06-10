@@ -112,4 +112,39 @@ class NotificationController extends Controller
 
         return response()->json(['success' => true]);
     }
+
+    /**
+     * Devuelve los pedidos con waiter_called=true del restaurante autenticado.
+     *
+     * @return JsonResponse
+     */
+    public function waiterCalls(): JsonResponse
+    {
+        $orders = Order::with('table')
+            ->where('waiter_called', true)
+            ->whereHas('table', fn ($q) => $q->where('user_id', Auth::user()->ownerUserId()))
+            ->get()
+            ->map(fn (Order $order) => [
+                'id'    => $order->id,
+                'table' => $order->table->name,
+            ])
+            ->values();
+
+        return response()->json(['orders' => $orders]);
+    }
+
+    /**
+     * Descarta la llamada al camarero de un pedido concreto.
+     *
+     * @param  Order  $order
+     * @return JsonResponse
+     */
+    public function dismissWaiterCall(Order $order): JsonResponse
+    {
+        abort_if($order->table->user_id !== Auth::user()->ownerUserId(), 403, 'Acceso denegado.');
+
+        $order->update(['waiter_called' => false]);
+
+        return response()->json(['success' => true]);
+    }
 }
