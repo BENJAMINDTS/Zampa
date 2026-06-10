@@ -5,6 +5,7 @@ import {
     countPendingBarItems,
     billRequestPolling,
     notificationPolling,
+    waiterCallPolling,
     barPanel,
 } from '../bar-panel.js';
 
@@ -14,6 +15,8 @@ const urls = {
     payments:                     '/payments',
     notificationsReady:           '/api/notifications/ready',
     notificationsDismissTemplate: '/api/notifications/__ID__/dismiss',
+    waiterCalls:                  '/api/waiter-calls',
+    waiterDismissTemplate:        '/api/waiter/__ID__/dismiss',
     barPending:                   '/api/bar/pending',
     barItems:                     '/api/bar/items',
 };
@@ -129,6 +132,67 @@ describe('notificationPolling component', () => {
         const comp = notificationPolling([{ id: 9 }], urls);
         await comp.dismiss(9);
         expect(comp.readyOrders).toHaveLength(0);
+    });
+});
+
+describe('waiterCallPolling component', () => {
+    beforeEach(() => vi.restoreAllMocks());
+
+    it('starts with empty waiterOrders', () => {
+        const comp = waiterCallPolling(urls);
+        expect(comp.waiterOrders).toEqual([]);
+    });
+
+    it('loads orders on successful poll', async () => {
+        global.fetch = vi.fn().mockResolvedValue({
+            ok: true,
+            json: async () => ({ orders: [{ id: 11, table: 'Mesa 3' }] }),
+        });
+        const comp = waiterCallPolling(urls);
+        await comp.poll();
+        expect(comp.waiterOrders[0].id).toBe(11);
+        expect(comp.waiterOrders[0].table).toBe('Mesa 3');
+    });
+
+    it('does nothing when poll returns non-ok', async () => {
+        global.fetch = vi.fn().mockResolvedValue({ ok: false });
+        const comp = waiterCallPolling(urls);
+        await comp.poll();
+        expect(comp.waiterOrders).toHaveLength(0);
+    });
+
+    it('removes dismissed order from list', async () => {
+        global.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) });
+        document.querySelector = vi.fn(() => ({ content: 'token' }));
+
+        const comp = waiterCallPolling(urls);
+        comp.waiterOrders = [{ id: 11, table: 'Mesa 3' }];
+        await comp.dismiss(11);
+        expect(comp.waiterOrders).toHaveLength(0);
+    });
+
+    it('preserves order when dismiss fetch fails', async () => {
+        global.fetch = vi.fn().mockRejectedValue(new Error('net'));
+        document.querySelector = vi.fn(() => ({ content: 'token' }));
+
+        const comp = waiterCallPolling(urls);
+        comp.waiterOrders = [{ id: 11 }];
+        await comp.dismiss(11);
+        expect(comp.waiterOrders).toHaveLength(1);
+    });
+
+    it('calls the correct dismiss URL replacing __ID__', async () => {
+        let calledUrl = '';
+        global.fetch = vi.fn().mockImplementation((url) => {
+            calledUrl = url;
+            return Promise.resolve({ ok: true, json: async () => ({}) });
+        });
+        document.querySelector = vi.fn(() => ({ content: 'token' }));
+
+        const comp = waiterCallPolling(urls);
+        comp.waiterOrders = [{ id: 42 }];
+        await comp.dismiss(42);
+        expect(calledUrl).toBe('/api/waiter/42/dismiss');
     });
 });
 
