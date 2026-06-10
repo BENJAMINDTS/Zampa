@@ -65,20 +65,23 @@ export function calculateSelectedTotal(splitItems, selectedIds) {
  */
 const WAITER_COUNTDOWN_SECS = 20;
 const WAITER_SENT_RESET_MS  = 5000;
+const WAITER_COOLDOWN_MS    = 30000;
 
 export function waiterCallWidget(hash) {
     return {
-        modalOpen: false,
-        sending:   false,
-        sent:      false,
-        countdown: WAITER_COUNTDOWN_SECS,
-        _timer:    null,
+        modalOpen:  false,
+        sending:    false,
+        sent:       false,
+        onCooldown: false,
+        countdown:  WAITER_COUNTDOWN_SECS,
+        _timer:     null,
 
         init() {
             // nothing on mount
         },
 
         openModal() {
+            if (this.onCooldown) return;
             this.modalOpen = true;
             this.countdown = WAITER_COUNTDOWN_SECS;
             this._startCountdown();
@@ -113,10 +116,12 @@ export function waiterCallWidget(hash) {
             } catch {
                 // silent — still show confirmation to customer
             }
-            this.sending  = false;
-            this.sent     = true;
+            this.sending    = false;
+            this.sent       = true;
+            this.onCooldown = true;
             this.closeModal();
             setTimeout(() => { this.sent = false; }, WAITER_SENT_RESET_MS);
+            setTimeout(() => { this.onCooldown = false; }, WAITER_COOLDOWN_MS);
         },
     };
 }
