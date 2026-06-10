@@ -1569,8 +1569,9 @@
                 type="button"
                 @click="openModal()"
                 x-show="!sent && !$store.bill.paymentDone && $store.bill.step === '' && !$store.chat.open"
-                class="fab fab--waiter"
-                aria-label="Llamar al camarero"
+                :disabled="onCooldown"
+                :class="onCooldown ? 'fab fab--waiter fab--waiter--cooldown' : 'fab fab--waiter'"
+                :aria-label="onCooldown ? 'Camarero avisado, espera un momento' : 'Llamar al camarero'"
                 style="display:none"
             >
                 <span class="fab__ic" aria-hidden="true">

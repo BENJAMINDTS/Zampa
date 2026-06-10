@@ -2408,3 +2408,11 @@
 .fab--waiter:focus svg {
   animation: bell-ring 0.5s ease-in-out;
 }
+
+/* Cooldown state */
+.fab--waiter--cooldown {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+.fab--waiter--cooldown svg { animation: none; }
