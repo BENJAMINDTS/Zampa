@@ -63,12 +63,15 @@ export function calculateSelectedTotal(splitItems, selectedIds) {
  * @param {string} hash - Table unique_hash used to POST the waiter call.
  * @returns {Object} Alpine component definition.
  */
+const WAITER_COUNTDOWN_SECS = 20;
+const WAITER_SENT_RESET_MS  = 5000;
+
 export function waiterCallWidget(hash) {
     return {
         modalOpen: false,
         sending:   false,
         sent:      false,
-        countdown: 20,
+        countdown: WAITER_COUNTDOWN_SECS,
         _timer:    null,
 
         init() {
@@ -77,7 +80,7 @@ export function waiterCallWidget(hash) {
 
         openModal() {
             this.modalOpen = true;
-            this.countdown = 20;
+            this.countdown = WAITER_COUNTDOWN_SECS;
             this._startCountdown();
         },
 
@@ -113,7 +116,7 @@ export function waiterCallWidget(hash) {
             this.sending  = false;
             this.sent     = true;
             this.closeModal();
-            setTimeout(() => { this.sent = false; }, 5000);
+            setTimeout(() => { this.sent = false; }, WAITER_SENT_RESET_MS);
         },
     };
 }
