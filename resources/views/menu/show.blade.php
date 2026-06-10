@@ -1558,6 +1558,135 @@
         </div>
 
         {{-- ══════════════════════════════════════════════════════════════════════
+             LLAMAR CAMARERO — Botón campana + modal de confirmación
+             ══════════════════════════════════════════════════════════════════════ --}}
+        <div
+            x-data="waiterCallWidget('{{ $table->unique_hash }}')"
+            x-init="init()"
+        >
+            {{-- Botón campana --}}
+            <button
+                type="button"
+                @click="openModal()"
+                x-show="!sent && !$store.bill.paymentDone"
+                class="fab fab--waiter"
+                aria-label="Llamar al camarero"
+                style="display:none"
+            >
+                <span class="fab__ic" aria-hidden="true">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                        <path d="M13.73 21a2 2 0 01-3.46 0"/>
+                        <circle cx="12" cy="2" r="1" fill="currentColor" stroke="none"/>
+                    </svg>
+                </span>
+                <span class="fab__label">Camarero</span>
+            </button>
+
+            {{-- Confirmación de envío --}}
+            <div
+                x-show="sent"
+                x-transition:enter="transition duration-300"
+                x-transition:enter-start="opacity-0 scale-90"
+                x-transition:enter-end="opacity-100 scale-100"
+                class="fab fab--waiter fab--waiter--sent"
+                aria-live="polite"
+                style="display:none"
+            >
+                <span class="fab__ic" aria-hidden="true">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M5 13l4 4L19 7"/>
+                    </svg>
+                </span>
+                <span class="fab__label">En camino</span>
+            </div>
+
+            {{-- Modal de confirmación --}}
+            <div
+                x-show="modalOpen"
+                x-transition:enter="transition duration-200"
+                x-transition:enter-start="opacity-0"
+                x-transition:enter-end="opacity-100"
+                x-transition:leave="transition duration-150"
+                x-transition:leave-start="opacity-100"
+                x-transition:leave-end="opacity-0"
+                class="scrim scrim--waiter"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="waiter-modal-title"
+                style="display:none"
+                @keydown.escape.window="closeModal()"
+            >
+                <div
+                    x-transition:enter="transition duration-250"
+                    x-transition:enter-start="opacity-0 translate-y-4"
+                    x-transition:enter-end="opacity-100 translate-y-0"
+                    class="waiter-modal"
+                >
+                    {{-- Botón cerrar --}}
+                    <button
+                        type="button"
+                        @click="closeModal()"
+                        class="waiter-modal__close"
+                        aria-label="Cerrar"
+                    >
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <path d="M18 6L6 18M6 6l12 12"/>
+                        </svg>
+                    </button>
+
+                    {{-- Cabecera con Zampi --}}
+                    <div class="waiter-modal__header">
+                        <div class="zampi-float waiter-modal__avatar" aria-hidden="true">
+                            <svg width="48" height="44"><use href="#zampi-mascot"/></svg>
+                        </div>
+                        <div class="waiter-modal__bubble">
+                            <p id="waiter-modal-title" class="waiter-modal__question">
+                                ¿Quieres llamar al camarero para que resuelva alguna duda?
+                            </p>
+                        </div>
+                    </div>
+
+                    {{-- Contador regresivo --}}
+                    <p class="waiter-modal__countdown" aria-live="polite">
+                        Se cerrará en <strong x-text="countdown"></strong>s
+                    </p>
+
+                    {{-- Acciones --}}
+                    <div class="waiter-modal__actions">
+                        <button
+                            type="button"
+                            @click="closeModal()"
+                            class="waiter-modal__btn waiter-modal__btn--cancel"
+                        >
+                            Cancelar
+                        </button>
+                        <button
+                            type="button"
+                            @click="confirm()"
+                            :disabled="sending"
+                            class="waiter-modal__btn waiter-modal__btn--confirm"
+                        >
+                            <template x-if="!sending">
+                                <span>Confirmar</span>
+                            </template>
+                            <template x-if="sending">
+                                <svg class="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10"
+                                            stroke="currentColor" stroke-width="4"/>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                                </svg>
+                            </template>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- ══════════════════════════════════════════════════════════════════════
              CART DRAWER — DS: .scrim > .drawer.drawer--cart
              ══════════════════════════════════════════════════════════════════════ --}}
         <div class="scrim"
