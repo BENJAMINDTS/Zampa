@@ -33,21 +33,25 @@ class SecurityHeaders
             'Permissions-Policy',
             'camera=(), microphone=(), geolocation=(self), payment=(self)'
         );
+        $isLocal  = config('app.env') === 'local';
+        $viteSrc  = $isLocal ? ' http://127.0.0.1:5173' : '';
+        $viteWs   = $isLocal ? ' ws://127.0.0.1:5173'   : '';
+
         $response->headers->set(
             'Content-Security-Policy',
-            implode('; ', [
+            implode('; ', array_filter([
                 "default-src 'self'",
-                "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com",
-                "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-                "font-src 'self' https://fonts.gstatic.com",
+                "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com{$viteSrc}",
+                "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com{$viteSrc}",
+                "font-src 'self' https://fonts.gstatic.com{$viteSrc}",
                 "img-src 'self' data: blob: https:",
-                "connect-src 'self' https://api.stripe.com https://api.openai.com https://api.x.ai",
+                "connect-src 'self' https://api.stripe.com https://api.openai.com https://api.x.ai{$viteSrc}{$viteWs}",
                 "frame-src https://js.stripe.com https://hooks.stripe.com",
                 "object-src 'none'",
                 "base-uri 'self'",
                 "form-action 'self'",
-                "upgrade-insecure-requests",
-            ])
+                $isLocal ? null : "upgrade-insecure-requests",
+            ]))
         );
 
         if (config('app.env') === 'production') {
