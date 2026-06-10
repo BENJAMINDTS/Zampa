@@ -213,6 +213,12 @@ export function registerMenuFilters() {
                         }
                     },
                 );
+                // Sincroniza kitchenOpen con el store de horarios para que los
+                // binding locales (pdetail, chip de categoría) reaccionen al polling.
+                this.$watch(
+                    () => Alpine.store('schedule').kitchenOpen,
+                    val => { this.kitchenOpen = val; },
+                );
             },
 
             toggleAllergen(id) {
