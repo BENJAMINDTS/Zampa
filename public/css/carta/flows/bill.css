@@ -2205,3 +2205,186 @@
   .stripe-charge .v { font-size: 17px; }
 }
 
+
+/* ── Llamar camarero — botón campana + modal ────────────────── */
+.fab--waiter {
+  position: fixed;
+  right: 16px;
+  bottom: 92px;
+  z-index: 30;
+  width: auto;
+  height: 44px;
+  padding: 0 16px 0 10px;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #F59E0B, #D97706);
+  color: #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow: 0 8px 20px rgba(217, 119, 6, 0.45);
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  animation: waiter-btn-in 320ms var(--ease-smooth);
+  transition: filter 0.2s;
+}
+.fab--waiter:hover { filter: brightness(1.08); }
+[data-theme="dark"] .fab--waiter {
+  background: linear-gradient(135deg, #D97706, #B45309);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255,255,255,0.1);
+}
+@keyframes waiter-btn-in {
+  from { transform: translateY(8px) scale(0.95); opacity: 0; }
+  to   { transform: translateY(0) scale(1); opacity: 1; }
+}
+.fab--waiter--sent {
+  background: linear-gradient(135deg, #22C55E, #16A34A);
+  box-shadow: 0 8px 20px rgba(34, 197, 94, 0.4);
+  pointer-events: none;
+}
+.carta[data-bp="tablet"]  .fab--waiter { right: 24px; bottom: 92px; }
+.carta[data-bp="desktop"] .fab--waiter { right: 32px; bottom: 92px; }
+.carta[data-bp="mobile"]  .fab--waiter .fab__label {
+  max-width: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-width .3s var(--ease-smooth), opacity .3s;
+}
+
+/* Scrim waiter */
+.scrim--waiter {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  z-index: 50;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.carta[data-bp="tablet"]  .scrim--waiter,
+.carta[data-bp="desktop"] .scrim--waiter {
+  align-items: center;
+}
+
+/* Modal */
+.waiter-modal {
+  position: relative;
+  background: var(--card-bg, #FFFFFF);
+  border-radius: 20px 20px 0 0;
+  padding: 28px 20px 24px;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0 -6px 32px rgba(0, 0, 0, 0.18);
+}
+.carta[data-bp="tablet"]  .waiter-modal,
+.carta[data-bp="desktop"] .waiter-modal {
+  border-radius: 20px;
+  max-width: 440px;
+  padding: 32px 28px 28px;
+}
+[data-theme="dark"] .waiter-modal {
+  background: #1F2937;
+  box-shadow: 0 -6px 32px rgba(0, 0, 0, 0.5);
+}
+.waiter-modal__close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 32px;
+  height: 32px;
+  border-radius: 9999px;
+  background: transparent;
+  border: none;
+  color: #9CA3AF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.waiter-modal__close:hover {
+  background: #F3F4F6;
+  color: #374151;
+}
+[data-theme="dark"] .waiter-modal__close:hover {
+  background: #374151;
+  color: #D1D5DB;
+}
+.waiter-modal__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.waiter-modal__avatar {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.waiter-modal__bubble {
+  background: #F0F4FF;
+  border-radius: 0 14px 14px 14px;
+  padding: 12px 16px;
+  flex: 1;
+}
+[data-theme="dark"] .waiter-modal__bubble {
+  background: #1E3A8A30;
+}
+.waiter-modal__question {
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  color: #1E293B;
+  line-height: 1.45;
+  margin: 0;
+}
+[data-theme="dark"] .waiter-modal__question {
+  color: #F1F5F9;
+}
+.waiter-modal__countdown {
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: #9CA3AF;
+  text-align: center;
+  margin: 0 0 18px;
+}
+.waiter-modal__countdown strong { color: #6B7280; }
+[data-theme="dark"] .waiter-modal__countdown strong { color: #D1D5DB; }
+.waiter-modal__actions {
+  display: flex;
+  gap: 10px;
+}
+.waiter-modal__btn {
+  flex: 1;
+  height: 46px;
+  border-radius: 12px;
+  font-family: var(--font-body);
+  font-size: 14.5px;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  transition: filter 0.15s, opacity 0.15s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.waiter-modal__btn:disabled { opacity: 0.65; cursor: not-allowed; }
+.waiter-modal__btn--cancel {
+  background: #F3F4F6;
+  color: #374151;
+}
+.waiter-modal__btn--cancel:hover { filter: brightness(0.96); }
+[data-theme="dark"] .waiter-modal__btn--cancel {
+  background: #374151;
+  color: #D1D5DB;
+}
+.waiter-modal__btn--confirm {
+  background: linear-gradient(135deg, #F59E0B, #D97706);
+  color: #FFFFFF;
+  box-shadow: 0 4px 12px rgba(217, 119, 6, 0.35);
+}
+.waiter-modal__btn--confirm:hover { filter: brightness(1.07); }
