@@ -53,7 +53,31 @@ class SendDailyMenuRound implements ShouldQueue
             return;
         }
 
-        // PASO 2 — Obtener la timing rule de esta ronda
+        // PASO 2 — Ronda 0: sin timing rules, enviar todas las selecciones inmediatamente
+        if ($this->round === 0) {
+            $selections = $order->selections()
+                ->with(['section', 'product.categories'])
+                ->get();
+
+            DB::transaction(function () use ($order, $selections) {
+                foreach ($selections as $selection) {
+                    OrderItem::create([
+                        'order_id'      => $order->order_id,
+                        'product_id'    => $selection->product_id,
+                        'quantity'      => $selection->quantity,
+                        'price'         => $selection->section->is_free ? 0.00 : (float) $selection->product->price,
+                        'status'        => 'queued',
+                        'destination'   => $selection->product->categories->first()?->destination ?? 'kitchen',
+                        'is_daily_menu' => true,
+                    ]);
+                }
+            });
+
+            $order->update(['current_round' => 0, 'status' => 'completed']);
+            return;
+        }
+
+        // PASO 3 — Obtener la timing rule de esta ronda
         $timingRule = $order->dailyMenu
             ->timingRules()
             ->where('round_number', $this->round)
@@ -63,13 +87,13 @@ class SendDailyMenuRound implements ShouldQueue
             return;
         }
 
-        // PASO 3 — Obtener las selecciones que pertenecen a esta ronda
+        // PASO 4 — Obtener las selecciones que pertenecen a esta ronda
         $selections = $order->selections()
             ->whereHas('section', fn ($q) => $q->whereIn('type', $timingRule->section_types))
             ->with(['section', 'product.categories'])
             ->get();
 
-        // PASO 4 — Crear los order_items dentro de una transacción
+        // PASO 5 — Crear los order_items dentro de una transacción
         DB::transaction(function () use ($order, $selections) {
             foreach ($selections as $selection) {
                 $price = $selection->section->is_free
@@ -88,10 +112,10 @@ class SendDailyMenuRound implements ShouldQueue
             }
         });
 
-        // PASO 5 — Actualizar la ronda actual
+        // PASO 6 — Actualizar la ronda actual
         $order->update(['current_round' => $this->round]);
 
-        // PASO 6 — Si es la última ronda, marcar como completado
+        // PASO 7 — Si es la última ronda, marcar como completado
         if ($this->round >= $order->rounds_total) {
             $order->update(['status' => 'completed']);
         }
