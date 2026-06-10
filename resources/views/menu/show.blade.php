@@ -1655,7 +1655,7 @@
                     </div>
 
                     {{-- Contador regresivo --}}
-                    <p class="waiter-modal__countdown" aria-live="polite">
+                    <p id="waiter-countdown" class="waiter-modal__countdown" aria-live="polite" aria-atomic="true">
                         Se cerrará en <strong x-text="countdown"></strong>s
                     </p>
 
