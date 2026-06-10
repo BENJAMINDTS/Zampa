@@ -158,37 +158,7 @@
 .biz-closed__btn:hover { background: var(--color-amber-400); }
 .biz-closed__btn:active { transform: scale(0.97); }
 
-/* ---- 1c) Responsive — CutoffStrip ---- */
-
-/* Mobile: chip se oculta (pantalla estrecha), padding reducido */
-.carta[data-bp="mobile"] .cutoff-strip__row {
-  padding: 8px 12px;
-  gap: 8px;
-}
-.carta[data-bp="mobile"] .cutoff-strip__chip {
-  display: none;
-}
-.carta[data-bp="mobile"] .cutoff-strip__copy strong {
-  font-size: 12px;
-}
-.carta[data-bp="mobile"] .cutoff-strip__copy span {
-  font-size: 10.5px;
-}
-
-/* Tablet: chip visible, padding moderado */
-.carta[data-bp="tablet"] .cutoff-strip__row {
-  padding: 10px 14px;
-}
-
-/* Desktop: más respiración (sidebar ocupa ~240px, carta__body es más ancha) */
-.carta[data-bp="desktop"] .cutoff-strip__row {
-  padding: 11px 20px;
-}
-.carta[data-bp="desktop"] .cutoff-strip__copy strong {
-  font-size: 14px;
-}
-
-/* ---- 1d) Responsive — BusinessClosed overlay ---- */
+/* ---- 1c) Responsive — BusinessClosed overlay ---- */
 
 /* Mobile: card más compacta, fuentes reducidas, blind scrolleable */
 .carta[data-bp="mobile"] .biz-closed__blind {
