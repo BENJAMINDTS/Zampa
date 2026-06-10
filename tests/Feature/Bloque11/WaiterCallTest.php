@@ -125,6 +125,22 @@ it('dismisses waiter_called on own order', function () {
     expect($order->fresh()->waiter_called)->toBeFalse();
 });
 
+it('waiter-calls response includes table name and called_at', function () {
+    $table = Table::factory()->for($this->user)->create(['name' => 'Mesa 7']);
+    Order::factory()->for($table)->create([
+        'status'           => 'pending',
+        'waiter_called'    => true,
+        'waiter_called_at' => now(),
+    ]);
+
+    $response = $this->actingAs($this->user)
+                     ->getJson(route('notifications.waiter.calls'))
+                     ->assertOk();
+
+    expect($response->json('orders.0.table'))->toBe('Mesa 7');
+    expect($response->json('orders.0.called_at'))->not->toBeNull();
+});
+
 it('returns 403 when dismissing another users order', function () {
     $table = Table::factory()->for($this->other)->create();
     $order = Order::factory()->for($table)->create(['waiter_called' => true]);
