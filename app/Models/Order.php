@@ -39,6 +39,7 @@ class Order extends Model
         'notification_ready',
         'bill_requested',
         'waiter_called',
+        'waiter_called_at',
         'requested_payment_method',
     ];
 
@@ -46,6 +47,7 @@ class Order extends Model
         'notification_ready' => 'boolean',
         'bill_requested'     => 'boolean',
         'waiter_called'      => 'boolean',
+        'waiter_called_at'   => 'datetime',
         'total'              => 'float',
         'tip'                => 'float',
         'mixed_cash_amount'  => 'float',
