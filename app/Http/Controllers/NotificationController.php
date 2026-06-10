@@ -144,7 +144,7 @@ class NotificationController extends Controller
     {
         abort_if($order->table->user_id !== Auth::user()->ownerUserId(), 403, 'Acceso denegado.');
 
-        $order->update(['waiter_called' => false]);
+        $order->update(['waiter_called' => false, 'waiter_called_at' => null]);
 
         return response()->json(['success' => true]);
     }
