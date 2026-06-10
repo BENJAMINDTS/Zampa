@@ -17,12 +17,14 @@ import { registerLanding }        from './alpine/landing.js';
 import { registerVariantEditor }  from './alpine/variant-editor.js';
 import { registerDailyMenuBanner } from './alpine/daily-menu-banner.js';
 import { registerMenuStyle }      from './alpine/menu-style.js';
+import { registerSchedule }       from './alpine/schedule.js';
 import { registerTicketConfig }   from './alpine/ticket-config.js';
 import { initProductReorder }     from './pages/product-reorder.js';
 
 window.Alpine = Alpine;
 
 document.addEventListener('alpine:init', () => {
+    registerSchedule();
     registerLayoutBadges();
     registerKitchenPanel();
     registerBarComponents();
