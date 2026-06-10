@@ -38,12 +38,14 @@ class Order extends Model
         'note',
         'notification_ready',
         'bill_requested',
+        'waiter_called',
         'requested_payment_method',
     ];
 
     protected $casts = [
         'notification_ready' => 'boolean',
         'bill_requested'     => 'boolean',
+        'waiter_called'      => 'boolean',
         'total'              => 'float',
         'tip'                => 'float',
         'mixed_cash_amount'  => 'float',
