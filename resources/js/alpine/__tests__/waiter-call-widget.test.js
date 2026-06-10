@@ -82,6 +82,29 @@ describe('waiterCallWidget', () => {
         expect(w.sent).toBe(true);
     });
 
+    it('sets onCooldown true after confirm', async () => {
+        global.fetch = vi.fn().mockResolvedValue({ ok: true });
+        const w = waiterCallWidget(HASH);
+        await w.confirm();
+        expect(w.onCooldown).toBe(true);
+    });
+
+    it('openModal does nothing while onCooldown', () => {
+        const w = waiterCallWidget(HASH);
+        w.onCooldown = true;
+        w.openModal();
+        expect(w.modalOpen).toBe(false);
+    });
+
+    it('clears onCooldown after 30 seconds', async () => {
+        global.fetch = vi.fn().mockResolvedValue({ ok: true });
+        const w = waiterCallWidget(HASH);
+        await w.confirm();
+        expect(w.onCooldown).toBe(true);
+        vi.advanceTimersByTime(30000);
+        expect(w.onCooldown).toBe(false);
+    });
+
     it('resets sent to false after 5 seconds', async () => {
         global.fetch = vi.fn().mockResolvedValue({ ok: true });
         const w = waiterCallWidget(HASH);
