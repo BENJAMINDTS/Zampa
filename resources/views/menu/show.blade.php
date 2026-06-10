@@ -1568,7 +1568,7 @@
             <button
                 type="button"
                 @click="openModal()"
-                x-show="!sent && !$store.bill.paymentDone"
+                x-show="!sent && !$store.bill.paymentDone && $store.bill.step === '' && !$store.chat.open"
                 class="fab fab--waiter"
                 aria-label="Llamar al camarero"
                 style="display:none"
