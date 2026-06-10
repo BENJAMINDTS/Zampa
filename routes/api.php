@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\BillRequestController;
 use App\Http\Controllers\Api\CardPaymentController;
+use App\Http\Controllers\Api\CartaStatusController;
 use App\Http\Controllers\Api\MixedPaymentController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\SplitPaymentController;
@@ -67,3 +68,8 @@ Route::post('/v1/menu/{hash}/daily-menu/order', [DailyMenuPublicController::clas
 Route::post('/v1/menu/{hash}/cancel-alacarte', [DailyMenuPublicController::class, 'cancelAlaCarteOrders'])
     ->middleware('throttle:10,1')
     ->name('api.daily-menu.cancel-alacarte');
+
+// Estado de horarios (cocina / negocio) — polling reactivo desde Alpine.store('schedule')
+Route::get('/v1/carta/{hash}/schedule', [CartaStatusController::class, 'show'])
+    ->middleware('throttle:120,1')
+    ->name('api.carta.schedule');
