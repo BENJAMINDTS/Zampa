@@ -2416,3 +2416,8 @@
   pointer-events: none;
 }
 .fab--waiter--cooldown svg { animation: none; }
+
+/* ── Mobile: raise bell button above fab-cluster ────────────── */
+.carta[data-bp="mobile"] .fab--waiter {
+  bottom: 148px;
+}
