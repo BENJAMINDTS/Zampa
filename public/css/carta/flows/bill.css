@@ -2421,3 +2421,8 @@
 .carta[data-bp="mobile"] .fab--waiter {
   bottom: 148px;
 }
+
+/* Dark mode scrim */
+[data-theme="dark"] .scrim--waiter {
+  background: rgba(0, 0, 0, 0.65);
+}
