@@ -278,12 +278,14 @@
 .filter-section--dm .dm-chip { width: 100%; }
 
 /* â”€â”€ DiÃ¡logo de exclusividad â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-.modal--center { align-items: center; }
-.carta[data-bp="mobile"] .modal--center { align-items: center; padding: 0 16px; }
+.modal--center { align-items: center; justify-content: center; }
+.carta[data-bp="mobile"] .modal--center { padding: 0 16px; }
 .modal__panel--narrow {
+  width: 100%;
   max-width: 360px;
   border-radius: 18px;
   padding: 22px 22px 18px;
+  animation: fade-in 180ms var(--ease-out);
 }
 .dm-excl {
   display: flex; flex-direction: column; align-items: center; text-align: center;
@@ -313,6 +315,7 @@
   display: flex; gap: 8px; width: 100%; margin-top: 8px;
 }
 .dm-excl__actions > * { flex: 1; }
+.carta[data-bp="mobile"] .dm-excl__actions { flex-direction: column; gap: 6px; }
 .dm-excl__btnPrimary {
   background: var(--color-amber-400);
   box-shadow: 0 8px 20px rgba(245, 158, 11, 0.35);
