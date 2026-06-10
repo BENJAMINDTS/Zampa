@@ -84,11 +84,12 @@ class KitchenController extends Controller
 
         $orders = $rawOrders
             ->map(fn(Order $order) => [
-                'id'         => $order->id,
-                'table_name' => $order->table->name,
-                'created_at' => $order->created_at->format('H:i'),
-                'status'     => $order->status,
-                'items'      => $order->items
+                'id'            => $order->id,
+                'table_name'    => $order->table->name,
+                'created_at'    => $order->created_at->format('H:i'),
+                'status'        => $order->status,
+                'is_daily_menu' => $order->items->isNotEmpty() && $order->items->every(fn($i) => $i->is_daily_menu),
+                'items'         => $order->items
                     ->where('status', 'queued')
                     ->map(fn(OrderItem $item) => [
                         'id'            => $item->id,

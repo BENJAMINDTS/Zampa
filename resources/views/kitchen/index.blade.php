@@ -43,12 +43,26 @@
         <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
 
           {{-- Cabecera de la comanda --}}
-          <div class="flex items-center justify-between px-4 py-3 bg-red-600 dark:bg-red-700 text-white">
+          <div
+            class="flex items-center justify-between px-4 py-3 text-white"
+            :class="order.is_daily_menu ? 'bg-amber-600 dark:bg-amber-700' : 'bg-red-600 dark:bg-red-700'"
+          >
             <div class="flex items-center gap-2">
-                <svg class="w-4 h-4 text-red-200 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-                </svg>
+                <template x-if="order.is_daily_menu">
+                    <svg class="w-4 h-4 text-amber-200 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                    </svg>
+                </template>
+                <template x-if="!order.is_daily_menu">
+                    <svg class="w-4 h-4 text-red-200 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                    </svg>
+                </template>
                 <span class="font-bold text-base" x-text="order.table_name"></span>
+                <span
+                    x-show="order.is_daily_menu"
+                    class="text-xs bg-white/25 rounded px-1.5 py-0.5 font-semibold tracking-wide"
+                >Menú del Día</span>
             </div>
             <span class="text-xs bg-white/20 rounded-md px-2 py-1 tabular-nums" x-text="order.created_at"></span>
           </div>
@@ -164,12 +178,13 @@
   @push('scripts')
   @php
     $ordersForJs = $orders->map(fn($o) => [
-      'id'         => $o->id,
-      'table_name' => $o->table->name,
-      'created_at' => $o->created_at->format('H:i'),
-      'status'     => $o->status,
-      'all_ready'  => false,
-      'serving'    => false,
+      'id'            => $o->id,
+      'table_name'    => $o->table->name,
+      'created_at'    => $o->created_at->format('H:i'),
+      'status'        => $o->status,
+      'is_daily_menu' => $o->items->isNotEmpty() && $o->items->every(fn($i) => $i->is_daily_menu),
+      'all_ready'     => false,
+      'serving'       => false,
       'items'      => $o->items->map(fn($i) => [
         'id'            => $i->id,
         'product_name'  => $i->product->name . ($i->variant_name ? ' — ' . $i->variant_name : ''),
