@@ -1617,6 +1617,7 @@
                 aria-modal="true"
                 aria-labelledby="waiter-modal-title"
                 style="display:none"
+                @click.self="closeModal()"
                 @keydown.escape.window="closeModal()"
             >
                 <div
