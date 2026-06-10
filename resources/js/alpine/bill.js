@@ -242,9 +242,9 @@ export function registerBill() {
             } catch {
                 // use cached total from page load
             }
-            this.tipPercent = suggestedTipPercent(this.orderTotal);
-            this.tipAmount  = calculateTipFromPercent(this.orderTotal, this.tipPercent);
-            this.grandTotal = this.orderTotal + this.tipAmount;
+            this.tipPercent = null;
+            this.tipAmount  = 0;
+            this.grandTotal = this.orderTotal;
             this.showingTip = true;
             this.step       = 'tip';
         },
