@@ -13,7 +13,7 @@
     <template x-for="order in waiterOrders" :key="order.id">
       <div
         class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-300 dark:border-yellow-700
-               rounded-xl px-4 py-3 mb-2 shadow-sm"
+               rounded-xl px-4 py-3 mb-2 shadow-sm animate-pulse-once"
         role="alert"
       >
         <div class="flex items-center justify-between gap-3">
