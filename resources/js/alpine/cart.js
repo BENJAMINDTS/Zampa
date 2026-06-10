@@ -436,13 +436,14 @@ export function registerCart() {
                     });
 
                     const bill              = Alpine.store('bill');
+                    const allTotal          = Alpine.store('orders').grandTotal;
                     bill.active             = true;
                     bill.requested          = false;
                     bill.method             = null;
                     bill.paymentDone        = false;
-                    bill.orderTotal         = parseFloat(data.total) || 0;
-                    bill.grandTotal         = parseFloat(data.total) || 0;
-                    bill.originalOrderTotal = parseFloat(data.total) || 0;
+                    bill.orderTotal         = allTotal;
+                    bill.grandTotal         = allTotal;
+                    bill.originalOrderTotal = allTotal;
                     this.sent  = true;
                     this.items = [];
                     this.open  = false;
