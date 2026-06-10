@@ -85,6 +85,7 @@ export function dailyMenuBanner(hash) {
                 if (this.menuData) {
                     this._buildFromData(this.menuData);
                     this._bindScroll();
+                    setTimeout(() => this.dismiss(), 15_000);
                 }
             } catch {
                 this.menuData = null;
@@ -110,31 +111,6 @@ export function dailyMenuBanner(hash) {
 
         openStepper() {
             if (this.agotado) return;
-            if (Alpine.store('cart').items.length > 0) {
-                this.showExclusivityWarning = true;
-            } else {
-                this._doOpen();
-            }
-        },
-
-        async clearCartAndOpen() {
-            const cart = Alpine.store('cart');
-            cart.items          = [];
-            cart._barItemsCount = 0;
-            cart._variantsUsed  = 0;
-            cart.sent           = false;
-            cart.error          = null;
-            this.showExclusivityWarning = false;
-
-            await fetch('/api/v1/menu/' + this.hash + '/cancel-alacarte', {
-                method:  'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
-                    'Accept':       'application/json',
-                },
-            }).catch(() => {});
-
             this._doOpen();
         },
 
