@@ -1281,37 +1281,92 @@
             @endif
 
             {{-- DS: .carta__body — área scrolleable con productos --}}
-            <div class="carta__body" id="main-content">
+            <div class="carta__body" id="main-content" style="position:relative">
 
                 {{-- Banner Menú del Día --}}
                 <x-daily-menu-banner :hash="$table->unique_hash" />
 
-                @if(!$businessOpen)
-                {{-- ══ NEGOCIO CERRADO ══ --}}
-                <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:64px 24px;text-align:center;gap:16px;min-height:60%"
-                     role="status" aria-live="polite">
-                    <div style="font-size:56px;line-height:1">🕐</div>
-                    <div style="font-family:var(--font-display);font-weight:900;font-size:24px;color:var(--fg-primary);line-height:1.2">
-                        {{ $table->user->business_name ?: $table->user->name }} está cerrado
+                @if($kitchenOpen && $minutesUntilKitchenClose !== null && $minutesUntilKitchenClose > 0 && $minutesUntilKitchenClose <= 15)
+                {{-- DS: .cutoff-strip — cuenta atrás hasta el cierre de cocina --}}
+                <div class="cutoff-strip"
+                     role="status" aria-live="polite"
+                     x-data="{
+                         secsLeft: {{ $minutesUntilKitchenClose * 60 }},
+                         totalSecs: {{ $minutesUntilKitchenClose * 60 }},
+                         get mm() { return String(Math.floor(Math.max(0, this.secsLeft) / 60)).padStart(2, '0') },
+                         get ss() { return String(Math.max(0, this.secsLeft) % 60).padStart(2, '0') },
+                         init() { setInterval(() => { if (this.secsLeft > 0) this.secsLeft--; }, 1000); }
+                     }">
+                    <div class="cutoff-strip__bar"
+                         :style="`width:${Math.min(100, Math.max(0, (secsLeft / totalSecs) * 100))}%`"></div>
+                    <div class="cutoff-strip__row">
+                        <span class="cutoff-strip__pulse" aria-hidden="true"></span>
+                        <div class="cutoff-strip__copy">
+                            <strong x-text="`Últimos pedidos · cierre en ${mm}:${ss}`"></strong>
+                            <span>Cocina cierra a las <strong>{{ $kitchenCloseAt }}</strong> — después solo barra 🍺</span>
+                        </div>
+                        <span class="cutoff-strip__chip">
+                            <span class="dot" aria-hidden="true"></span> Cerrando
+                        </span>
                     </div>
-                    <div style="font-family:var(--font-body);font-size:14px;color:var(--fg-muted);max-width:280px;line-height:1.5">
-                        Estamos fuera de nuestro horario de atención. Vuelve cuando estemos abiertos.
-                    </div>
-                    @if($businessNextOpening)
-                    <div style="background:var(--glass-bg-surface);border:1px solid var(--glass-border);border-radius:9999px;padding:8px 20px;font-family:var(--font-body);font-size:13px;font-weight:600;color:var(--fg-primary)">
-                        Próxima apertura a las {{ $businessNextOpening }}
-                    </div>
-                    @endif
-                    @if($hasActiveOrder)
-                    <button type="button"
-                            @click="$store.bill.open()"
-                            style="margin-top:8px;padding:12px 24px;border-radius:9999px;background:var(--cta-view-order);color:#fff;border:none;cursor:pointer;font-family:var(--font-body);font-weight:700;font-size:14px;box-shadow:var(--shadow-fab)">
-                        💳 Solicitar la cuenta
-                    </button>
-                    @endif
                 </div>
+                @endif
 
-                @else
+                @if(!$businessOpen)
+                {{-- DS: .biz-closed — overlay de negocio cerrado, permite mirar la carta --}}
+                <div class="biz-closed"
+                     x-data="{ dismissed: false }"
+                     x-show="!dismissed"
+                     x-transition:leave="transition duration-300 ease-in"
+                     x-transition:leave-start="opacity-100"
+                     x-transition:leave-end="opacity-0"
+                     aria-modal="true" role="dialog"
+                     aria-label="Negocio cerrado">
+                    <div class="biz-closed__blind">
+                        <div class="biz-closed__teeth" aria-hidden="true">
+                            @for($i = 0; $i < 32; $i++)<span></span>@endfor
+                        </div>
+                        <div class="biz-closed__card">
+                            <div class="biz-closed__clock">
+                                <svg viewBox="0 0 64 64" width="64" height="64" fill="none"
+                                     stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                     aria-hidden="true">
+                                    <circle cx="32" cy="32" r="28"></circle>
+                                    <path d="M32 16v16l11 7"></path>
+                                    <circle cx="32" cy="32" r="2" fill="currentColor"></circle>
+                                </svg>
+                            </div>
+                            <div class="biz-closed__h1">Estamos cerrados</div>
+                            <div class="biz-closed__p">
+                                Puedes mirar la carta sin compromiso.<br>
+                                @if($businessNextOpening)
+                                Volvemos <strong>{{ $businessNextOpening }}</strong>.
+                                @else
+                                Vuelve pronto.
+                                @endif
+                            </div>
+                            <div class="biz-closed__row">
+                                <span class="biz-closed__tag">🔒 Pedidos pausados</span>
+                                <span class="biz-closed__tag">👀 Carta visible</span>
+                            </div>
+                            @if($hasActiveOrder)
+                            <button type="button"
+                                    class="biz-closed__btn"
+                                    @click="$store.bill.open()"
+                                    style="margin-bottom:12px">
+                                💳 Solicitar la cuenta
+                            </button>
+                            @endif
+                            <button type="button"
+                                    class="biz-closed__btn"
+                                    @click="dismissed = true">
+                                Mirar la carta
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                @endif
+
                 {{-- ══ PRODUCTOS POR CATEGORÍA ══ --}}
                 @forelse($categories as $category)
                 @php $photoCycle = 0; @endphp
@@ -1457,7 +1512,6 @@
                     La carta no está disponible en este momento.
                 </div>
                 @endforelse
-                @endif
 
             </div>{{-- /carta__body --}}
         </div>{{-- /carta__main --}}
