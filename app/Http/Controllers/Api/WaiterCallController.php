@@ -33,7 +33,10 @@ class WaiterCallController extends Controller
             return response()->json(['success' => false, 'message' => 'No hay pedido activo.'], 404);
         }
 
-        $order->update(['waiter_called' => true]);
+        $order->update([
+            'waiter_called'    => true,
+            'waiter_called_at' => now(),
+        ]);
 
         return response()->json(['success' => true]);
     }
