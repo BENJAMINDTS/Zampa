@@ -282,6 +282,8 @@
       'billDismissTemplate'          => route('notifications.bill.dismiss', ['order' => '__ID__']),
       'notificationsDismissTemplate' => route('notifications.dismiss', ['order' => '__ID__']),
       'notificationsReady'           => route('notifications.ready'),
+      'waiterCalls'                  => route('notifications.waiter.calls'),
+      'waiterDismissTemplate'        => route('notifications.waiter.dismiss', ['order' => '__ID__']),
       'payments'                     => url('/payments'),
       'barItems'                     => url('/bar/items'),
     ];
