@@ -75,7 +75,6 @@ class MenuController extends Controller
 
         $categories = $allCategories
             ->filter(fn ($cat) => $cat->products->isNotEmpty())
-            ->when(! $kitchenOpen, fn ($col) => $col->reject(fn ($cat) => $cat->destination === 'kitchen'))
             ->when($config && $config->tapas_enabled, fn ($col) => $col->reject(fn ($cat) => $cat->name === 'Tapas'))
             ->values();
 
