@@ -80,6 +80,7 @@ class DailyMenuPublicController extends Controller
                     'description' => $p->description,
                     'price'       => $p->price,
                     'image'       => $p->image,
+                    'is_active'   => (bool) $p->is_active,
                 ])->values(),
                 'timing_rule'   => $timingRule ? [
                     'round_number'           => $timingRule->round_number,
@@ -106,6 +107,30 @@ class DailyMenuPublicController extends Controller
     }
 
     /**
+     * Cancela las órdenes à la carte de hoy para liberar la mesa y permitir el menú del día.
+     * Solo cancela órdenes pending/cooking sin dailyMenuOrder creadas hoy.
+     *
+     * @param  string  $hash
+     * @return JsonResponse
+     */
+    public function cancelAlaCarteOrders(string $hash): JsonResponse
+    {
+        $table = Table::where('unique_hash', $hash)->first();
+
+        if (! $table) {
+            return response()->json(['success' => false, 'message' => 'Mesa no encontrada.'], 404);
+        }
+
+        $cancelled = Order::where('table_id', $table->id)
+            ->whereIn('status', ['pending', 'cooking'])
+            ->whereDoesntHave('dailyMenuOrder')
+            ->whereDate('created_at', today())
+            ->update(['status' => 'cancelled']);
+
+        return response()->json(['success' => true, 'cancelled' => $cancelled]);
+    }
+
+    /**
      * Crea el pedido de menú del día con las selecciones y preferencias de timing del cliente.
      *
      * @param  Request  $request
@@ -129,6 +154,7 @@ class DailyMenuPublicController extends Controller
         $hasAlaCarteOrders = Order::where('table_id', $table->id)
             ->whereIn('status', ['pending', 'cooking'])
             ->whereDoesntHave('dailyMenuOrder')
+            ->whereDate('created_at', today())
             ->exists();
 
         if ($hasAlaCarteOrders) {
@@ -290,11 +316,45 @@ class DailyMenuPublicController extends Controller
             $arrivesAt   = now()->addMinutes($clientDelay)->format('H:i');
 
             return [
-                'round'     => $rule->round_number,
-                'sections'  => $rule->section_types,
-                'arrives_at'=> $arrivesAt,
+                'round'      => $rule->round_number,
+                'sections'   => $rule->section_types,
+                'arrives_at' => $arrivesAt,
             ];
         })->values();
+
+        // PASO 7b — Construir order_summary para que el frontend actualice Mis pedidos
+        $sectionLabels = [
+            'first_course'  => 'Primer plato',
+            'second_course' => 'Segundo plato',
+            'dessert'       => 'Postre',
+            'coffee'        => 'Café',
+            'drink'         => 'Bebida',
+            'bread'         => 'Pan',
+        ];
+
+        $dailyMenuOrder->load(['selections.section:id,type', 'selections.product:id,name']);
+
+        $pendingCount = Order::where('table_id', $table->id)
+            ->whereNotIn('status', ['closed'])
+            ->where('payment_status', 'pending')
+            ->count();
+
+        $picks = $dailyMenuOrder->selections->map(fn ($sel) => [
+            'lab' => $sectionLabels[$sel->section?->type ?? ''] ?? ($sel->section?->type ?? 'Plato'),
+            'val' => $sel->product?->name ?? '—',
+        ])->values();
+
+        $orderSummary = [
+            'id'          => $order->id,
+            'number'      => $pendingCount,
+            'itemCount'   => $dailyMenuOrder->selections->count(),
+            'total'       => (float) $menu->price,
+            'sentAt'      => now()->format('H:i'),
+            'isDailyMenu' => true,
+            'dmTitle'     => $menu->title,
+            'picks'       => $picks,
+            'items'       => [],
+        ];
 
         // PASO 8 — Respuesta 201
         return response()->json([
@@ -302,6 +362,7 @@ class DailyMenuPublicController extends Controller
             'data'    => [
                 'order_id'        => $order->id,
                 'estimated_times' => $estimatedTimes,
+                'order_summary'   => $orderSummary,
             ],
         ], 201);
     }

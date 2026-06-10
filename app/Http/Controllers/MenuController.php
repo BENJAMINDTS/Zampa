@@ -164,24 +164,50 @@ class MenuController extends Controller
                 ->toArray()
             : [];
 
+        $dmSectionLabels = [
+            'first_course'  => 'Primer plato',
+            'second_course' => 'Segundo plato',
+            'dessert'       => 'Postre',
+            'coffee'        => 'Café',
+            'drink'         => 'Bebida',
+            'bread'         => 'Pan',
+        ];
+
         $allOrdersForAlpine = Order::where('table_id', $table->id)
             ->whereNotIn('status', ['closed'])
             ->where('payment_status', 'pending')
             ->orderBy('created_at')
-            ->with(['items.product:id,name'])
+            ->with([
+                'items.product:id,name',
+                'dailyMenuOrder.dailyMenu:id,title',
+                'dailyMenuOrder.selections.section:id,type',
+                'dailyMenuOrder.selections.product:id,name',
+            ])
             ->get()
             ->values()
             ->map(fn (Order $order, int $index) => [
-                'id'        => $order->id,
-                'number'    => $index + 1,
-                'itemCount' => (int) $order->items->sum('quantity'),
-                'total'     => (float) $order->total,
-                'sentAt'    => $order->created_at->format('H:i'),
-                'items'     => $order->items->map(fn (OrderItem $item) => [
-                    'name'     => $item->product?->name ?? 'Producto',
-                    'quantity' => (int) $item->quantity,
-                    'price'    => (float) $item->price,
-                ])->values()->toArray(),
+                'id'          => $order->id,
+                'number'      => $index + 1,
+                'itemCount'   => $order->dailyMenuOrder
+                    ? $order->dailyMenuOrder->selections->count()
+                    : (int) $order->items->sum('quantity'),
+                'total'       => (float) $order->total,
+                'sentAt'      => $order->created_at->format('H:i'),
+                'isDailyMenu' => $order->dailyMenuOrder !== null,
+                'dmTitle'     => $order->dailyMenuOrder?->dailyMenu?->title ?? 'Menú del Día',
+                'picks'       => $order->dailyMenuOrder
+                    ? $order->dailyMenuOrder->selections->map(fn ($sel) => [
+                        'lab' => $dmSectionLabels[$sel->section?->type ?? ''] ?? ($sel->section?->type ?? 'Plato'),
+                        'val' => $sel->product?->name ?? '—',
+                    ])->values()->toArray()
+                    : [],
+                'items'       => $order->dailyMenuOrder
+                    ? []
+                    : $order->items->map(fn (OrderItem $item) => [
+                        'name'     => $item->product?->name ?? 'Producto',
+                        'quantity' => (int) $item->quantity,
+                        'price'    => (float) $item->price,
+                    ])->values()->toArray(),
             ])
             ->toArray();
 

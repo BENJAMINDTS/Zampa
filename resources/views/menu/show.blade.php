@@ -978,6 +978,39 @@
         @endif
 
         {{-- ══════════════════════════════════════════════════════════════════════
+             DAILY MENU SCOPE — envuelve filter-bar + carta__main para que el chip
+             mobile y el sidebar chip compartan el mismo scope Alpine.
+             ══════════════════════════════════════════════════════════════════════ --}}
+        <div x-data="dailyMenuBanner('{{ $table->unique_hash }}')"
+             style="flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden">
+
+        {{-- DS: dm-chip-strip — visible en mobile Y tablet (desktop: sidebar lo maneja) --}}
+        <div class="dm-chip-strip"
+             x-show="menuData !== null"
+             x-cloak
+             aria-label="Menú del día disponible">
+            <button type="button"
+                    :class="'dm-chip dm-chip--compact' + (agotado ? ' dm-chip--agotado' : '')"
+                    @click="!agotado && openStepper()"
+                    :disabled="agotado"
+                    :aria-label="agotado ? 'Menú del día agotado' : 'Ver menú del día — ' + (menuData?.menu?.title ?? '')">
+                <span class="dm-chip__mark" aria-hidden="true">◇</span>
+                <span class="dm-chip__main">
+                    <span class="dm-chip__top" x-text="menuData?.menu?.title ?? 'Menú del Día'"></span>
+                    <span class="dm-chip__sub"
+                          x-text="agotado ? 'Agotado por hoy' : parseFloat(menuData?.menu?.price ?? 0).toFixed(2).replace('.', ',') + ' €'">
+                    </span>
+                </span>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2.4"
+                     stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true" x-show="!agotado">
+                    <path d="M5 12h14M13 5l7 7-7 7"/>
+                </svg>
+            </button>
+        </div>
+
+        {{-- ══════════════════════════════════════════════════════════════════════
              FILTER BAR (mobile) + ALLERGEN SHEET — x-data local para allergensOpen
              ══════════════════════════════════════════════════════════════════════ --}}
         @if($businessOpen && $categories->isNotEmpty())
@@ -1120,6 +1153,30 @@
             {{-- DS: .carta__filters — sidebar (tablet + desktop, hidden on mobile via CSS) --}}
             @if($businessOpen && $categories->isNotEmpty())
             <div class="carta__filters" aria-label="Filtros">
+
+                {{-- Menú del Día — chip persistente en sidebar (DS: DailyMenuFilterChip) --}}
+                <div class="filter-section--dm" x-show="menuData !== null" x-cloak>
+                    <button type="button"
+                            :class="'dm-chip' + (agotado ? ' dm-chip--agotado' : '')"
+                            @click="!agotado && openStepper()"
+                            :disabled="agotado"
+                            :aria-label="agotado ? 'Menú del día agotado' : 'Abrir menú del día'">
+                        <span class="dm-chip__mark" aria-hidden="true">◇</span>
+                        <span class="dm-chip__main">
+                            <span class="dm-chip__top" x-text="menuData?.menu?.title ?? 'Menú del Día'"></span>
+                            <span class="dm-chip__sub"
+                                  x-text="agotado ? 'Agotado por hoy' : parseFloat(menuData?.menu?.price ?? 0).toFixed(2).replace('.', ',') + ' €'">
+                            </span>
+                        </span>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2.2"
+                             stroke-linecap="round" stroke-linejoin="round"
+                             aria-hidden="true" x-show="!agotado">
+                            <path d="M5 12h14M13 5l7 7-7 7"/>
+                        </svg>
+                    </button>
+                    <div class="dm-filter-sep" aria-hidden="true"></div>
+                </div>
 
                 {{-- Destino (cocina / barra / todo) --}}
                 <div class="filter-section">
@@ -1405,6 +1462,7 @@
 
             </div>{{-- /carta__body --}}
         </div>{{-- /carta__main --}}
+        </div>{{-- /dailyMenuBanner scope --}}
 
         {{-- ══════════════════════════════════════════════════════════════════════
              CART BAR — .cart-bar position:absolute dentro de .carta
@@ -3119,7 +3177,11 @@
                 <div class="drawer__head">
                     <div>
                         <div class="drawer__title"
-                             x-text="$store.orders.selectedId === null ? 'Mis pedidos' : 'Pedido #' + $store.orders.selected?.number">
+                             x-text="$store.orders.selectedId === null
+                                 ? 'Mis pedidos'
+                                 : ($store.orders.selected?.isDailyMenu
+                                     ? ($store.orders.selected?.dmTitle ?? 'Menú del Día')
+                                     : 'Pedido #' + $store.orders.selected?.number)">
                         </div>
                         <div style="font-family:var(--font-body);font-size:12px;color:var(--fg-muted);margin-top:2px"
                              x-text="$store.orders.selectedId === null
@@ -3139,12 +3201,24 @@
                     <div class="orders-body">
                         <div class="orders-list">
                             <template x-for="order in $store.orders.list" :key="order.id">
-                                <button type="button" class="order-row" @click="$store.orders.openDetail(order.id)">
-                                    <div class="order-row__num" x-text="'#' + order.number" aria-hidden="true"></div>
+                                <button type="button"
+                                        :class="'order-row' + (order.isDailyMenu ? ' order-row--dm' : '')"
+                                        @click="$store.orders.openDetail(order.id)">
+                                    <div :class="'order-row__num' + (order.isDailyMenu ? ' order-row__num--dm' : '')"
+                                         aria-hidden="true">
+                                        <span x-show="order.isDailyMenu" class="order-row__dmMark">◇</span>
+                                        <span x-show="!order.isDailyMenu" x-text="'#' + order.number"></span>
+                                    </div>
                                     <div class="order-row__main">
-                                        <div class="order-row__title" x-text="'Pedido #' + order.number"></div>
+                                        <div class="order-row__title">
+                                            <span x-text="order.isDailyMenu ? (order.dmTitle ?? 'Menú del Día') : 'Pedido #' + order.number"></span>
+                                            <span class="order-row__dmTag" x-show="order.isDailyMenu">MENÚ DEL DÍA</span>
+                                        </div>
                                         <div class="order-row__meta">
-                                            <span x-text="order.itemCount + ' ' + (order.itemCount === 1 ? 'artículo' : 'artículos')"></span>
+                                            <span x-text="order.isDailyMenu
+                                                ? 'Menú completo'
+                                                : order.itemCount + ' ' + (order.itemCount === 1 ? 'artículo' : 'artículos')">
+                                            </span>
                                             <template x-if="order.sentAt">
                                                 <span class="order-row__dot" aria-hidden="true">·</span>
                                             </template>
@@ -3181,28 +3255,57 @@
                                 <span>Volver a mis pedidos</span>
                             </button>
 
-                            <div class="orders-detail__head">
-                                <div class="orders-detail__num"
-                                     x-text="'#' + $store.orders.selected?.number" aria-hidden="true"></div>
+                            <div :class="'orders-detail__head' + ($store.orders.selected?.isDailyMenu ? ' orders-detail__head--dm' : '')">
+                                <div :class="'orders-detail__num' + ($store.orders.selected?.isDailyMenu ? ' orders-detail__num--dm' : '')"
+                                     aria-hidden="true">
+                                    <span x-show="$store.orders.selected?.isDailyMenu">◇</span>
+                                    <span x-show="!$store.orders.selected?.isDailyMenu"
+                                          x-text="'#' + $store.orders.selected?.number"></span>
+                                </div>
                                 <div>
-                                    <div class="orders-detail__title"
-                                         x-text="'Pedido #' + $store.orders.selected?.number"></div>
+                                    <div class="orders-detail__title">
+                                        <span x-text="$store.orders.selected?.isDailyMenu
+                                            ? ($store.orders.selected?.dmTitle ?? 'Menú del Día')
+                                            : 'Pedido #' + $store.orders.selected?.number">
+                                        </span>
+                                        <span class="order-row__dmTag"
+                                              x-show="$store.orders.selected?.isDailyMenu">MENÚ DEL DÍA</span>
+                                    </div>
                                     <div class="orders-detail__meta"
-                                         x-text="($store.orders.selected?.itemCount ?? 0) + ' ' + (($store.orders.selected?.itemCount ?? 0) === 1 ? 'artículo' : 'artículos') + ($store.orders.selected?.sentAt ? ' · Enviado a las ' + $store.orders.selected.sentAt : '')">
+                                         x-text="$store.orders.selected?.isDailyMenu
+                                             ? 'Menú completo' + ($store.orders.selected?.sentAt ? ' · Enviado a las ' + $store.orders.selected.sentAt : '')
+                                             : (($store.orders.selected?.itemCount ?? 0) + ' ' + (($store.orders.selected?.itemCount ?? 0) === 1 ? 'artículo' : 'artículos') + ($store.orders.selected?.sentAt ? ' · Enviado a las ' + $store.orders.selected.sentAt : ''))">
                                     </div>
                                 </div>
                             </div>
 
                             <div class="orders-detail__items">
-                                <template x-for="item in ($store.orders.selected?.items ?? [])"
-                                          :key="item.name + item.price">
-                                    <div class="orders-line">
-                                        <div class="orders-line__qty" x-text="item.quantity + '×'"></div>
-                                        <div class="orders-line__body">
-                                            <div class="orders-line__name" x-text="item.name"></div>
-                                        </div>
-                                        <div class="orders-line__price"
-                                             x-text="$store.orders.fmt(item.price * item.quantity)"></div>
+                                {{-- Menú del Día: picks list --}}
+                                <template x-if="$store.orders.selected?.isDailyMenu">
+                                    <div class="orders-dm__picks">
+                                        <template x-for="pick in ($store.orders.selected?.picks ?? [])"
+                                                  :key="pick.lab">
+                                            <div class="orders-dm__pickRow">
+                                                <span class="orders-dm__pickLab" x-text="pick.lab"></span>
+                                                <span class="orders-dm__pickVal" x-text="pick.val"></span>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </template>
+                                {{-- Regular order: items list --}}
+                                <template x-if="!$store.orders.selected?.isDailyMenu">
+                                    <div>
+                                        <template x-for="item in ($store.orders.selected?.items ?? [])"
+                                                  :key="item.name + item.price">
+                                            <div class="orders-line">
+                                                <div class="orders-line__qty" x-text="item.quantity + '×'"></div>
+                                                <div class="orders-line__body">
+                                                    <div class="orders-line__name" x-text="item.name"></div>
+                                                </div>
+                                                <div class="orders-line__price"
+                                                     x-text="$store.orders.fmt(item.price * item.quantity)"></div>
+                                            </div>
+                                        </template>
                                     </div>
                                 </template>
                             </div>
@@ -3255,7 +3358,8 @@
              @click.self="$store.orders.dismissConfirmed()"
              role="dialog" aria-modal="true" aria-label="Pedido enviado">
 
-            <div class="order-confirmed__panel" @click.stop>
+            <div :class="'order-confirmed__panel' + ($store.orders.confirmedOrder?.isDailyMenu ? ' order-confirmed__panel--dm' : '')"
+                 @click.stop>
                 <button type="button" class="icon-btn order-confirmed__x"
                         @click="$store.orders.dismissConfirmed()" aria-label="Cerrar">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
@@ -3264,39 +3368,77 @@
                     </svg>
                 </button>
 
-                <div class="order-confirmed__badge" aria-hidden="true">
-                    <svg viewBox="0 0 32 32" width="34" height="34" fill="none">
-                        <path d="M7 16.5l6 6 12-13" stroke="currentColor" stroke-width="3"
-                              stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
+                <div :class="'order-confirmed__badge' + ($store.orders.confirmedOrder?.isDailyMenu ? ' order-confirmed__badge--dm' : '')"
+                     aria-hidden="true">
+                    <template x-if="$store.orders.confirmedOrder?.isDailyMenu">
+                        <span style="font-family:var(--font-display);font-weight:900;font-size:30px;line-height:1">◇</span>
+                    </template>
+                    <template x-if="!$store.orders.confirmedOrder?.isDailyMenu">
+                        <svg viewBox="0 0 32 32" width="34" height="34" fill="none">
+                            <path d="M7 16.5l6 6 12-13" stroke="currentColor" stroke-width="3"
+                                  stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </template>
                 </div>
 
                 <div class="order-confirmed__num"
-                     x-text="'Pedido #' + $store.orders.confirmedOrder?.number"></div>
-                <div class="order-confirmed__title">Pedido enviado</div>
-                <div class="order-confirmed__sub">Lo llevamos en unos minutos 🍽</div>
+                     x-text="$store.orders.confirmedOrder?.isDailyMenu
+                         ? ($store.orders.confirmedOrder?.dmTitle ?? 'Menú del Día')
+                         : 'Pedido #' + $store.orders.confirmedOrder?.number">
+                </div>
+                <div class="order-confirmed__title"
+                     x-text="$store.orders.confirmedOrder?.isDailyMenu ? '¡Pedido enviado a cocina!' : 'Pedido enviado'">
+                </div>
+                <div class="order-confirmed__sub"
+                     x-text="$store.orders.confirmedOrder?.isDailyMenu
+                         ? 'Tu menú del día está en camino 🍽'
+                         : 'Lo llevamos en unos minutos 🍽'">
+                </div>
 
                 <div class="order-confirmed__items">
-                    <template x-for="item in ($store.orders.confirmedOrder?.items.slice(0, 5) ?? [])"
-                              :key="item.name + item.price">
-                        <div class="order-confirmed__row">
-                            <span class="qty" x-text="item.quantity + '×'"></span>
-                            <span class="name" x-text="item.name"></span>
-                            <span class="price"
-                                  x-text="$store.orders.fmt(item.price * item.quantity)"></span>
+                    {{-- DM: picks list --}}
+                    <template x-if="$store.orders.confirmedOrder?.isDailyMenu">
+                        <div class="orders-dm__picks order-confirmed__panel--dm">
+                            <template x-for="pick in ($store.orders.confirmedOrder?.picks ?? [])"
+                                      :key="pick.lab">
+                                <div class="orders-dm__pickRow">
+                                    <span class="orders-dm__pickLab" x-text="pick.lab"></span>
+                                    <span class="orders-dm__pickVal" x-text="pick.val"></span>
+                                </div>
+                            </template>
                         </div>
                     </template>
-                    <template x-if="($store.orders.confirmedOrder?.items.length ?? 0) > 5">
-                        <div class="order-confirmed__more"
-                             x-text="'+ ' + ($store.orders.confirmedOrder.items.length - 5) + ' más…'"></div>
+                    {{-- Regular: items list --}}
+                    <template x-if="!$store.orders.confirmedOrder?.isDailyMenu">
+                        <div>
+                            <template x-for="item in ($store.orders.confirmedOrder?.items.slice(0, 5) ?? [])"
+                                      :key="item.name + item.price">
+                                <div class="order-confirmed__row">
+                                    <span class="qty" x-text="item.quantity + '×'"></span>
+                                    <span class="name" x-text="item.name"></span>
+                                    <span class="price"
+                                          x-text="$store.orders.fmt(item.price * item.quantity)"></span>
+                                </div>
+                            </template>
+                            <template x-if="($store.orders.confirmedOrder?.items.length ?? 0) > 5">
+                                <div class="order-confirmed__more"
+                                     x-text="'+ ' + ($store.orders.confirmedOrder.items.length - 5) + ' más…'"></div>
+                            </template>
+                        </div>
                     </template>
                 </div>
 
                 <div class="order-confirmed__sub-total">
-                    <span class="lab">Subtotal</span>
+                    <span class="lab">
+                        <span x-text="$store.orders.confirmedOrder?.isDailyMenu ? 'Total menú' : 'Subtotal'"></span>
+                    </span>
                     <span class="val"
                           x-text="$store.orders.fmt($store.orders.confirmedOrder?.total ?? 0)"></span>
                 </div>
+
+                <template x-if="$store.orders.confirmedOrder?.isDailyMenu">
+                    <div class="order-confirmed__dmTag">Menú del Día</div>
+                </template>
 
                 <button type="button" class="btn-primary"
                         @click="$store.orders.dismissConfirmed()">
@@ -3344,7 +3486,7 @@
                     </button>
                     <div class="tapas-head__pre">
                         <span class="tapas-head__ornament" aria-hidden="true">— ❦ —</span>
-                        <span class="tapas-head__kicker">LA CASA · TAPAS</span>
+                        <span class="tapas-head__kicker">{{ mb_strtoupper($table->user->business_name ?: $table->user->name) }} · TAPAS</span>
                     </div>
                     <h2 class="tapas-head__big"
                         x-text="limitReached ? 'Has llegado al límite' : (left > 0 ? 'Lleva una tapa' : 'Sin tapas disponibles')">

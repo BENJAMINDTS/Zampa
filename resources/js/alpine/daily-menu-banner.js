@@ -24,12 +24,14 @@ const SECTION_LABELS = {
 export function dailyMenuBanner(hash) {
     return {
         hash,
-        menuData:  null,
-        loading:   true,
-        open:      false,
-        exiting:   false,
-        stuck:     false,
+        menuData:        null,
+        loading:         true,
+        open:            false,
+        exiting:         false,
+        stuck:           false,
+        bannerDismissed: false,
         showExclusivityWarning: false,
+        _scrollEl: null,
 
         /* ── Stepper ─────────────────────────────────────────────────────────── */
         pasos:          [],
@@ -80,7 +82,10 @@ export function dailyMenuBanner(hash) {
                 const res  = await fetch('/api/v1/menu/' + this.hash + '/daily-menu');
                 const json = await res.json();
                 this.menuData = json.data ?? null;
-                if (this.menuData) this._buildFromData(this.menuData);
+                if (this.menuData) {
+                    this._buildFromData(this.menuData);
+                    this._bindScroll();
+                }
             } catch {
                 this.menuData = null;
             } finally {
@@ -88,10 +93,19 @@ export function dailyMenuBanner(hash) {
             }
         },
 
+        _bindScroll() {
+            this._scrollEl = document.getElementById('main-content');
+            if (!this._scrollEl) return;
+            const onScroll = () => { this.stuck = this._scrollEl.scrollTop > 6; };
+            this._scrollEl.addEventListener('scroll', onScroll, { passive: true });
+            onScroll();
+        },
+
         /* ── Banner ───────────────────────────────────────────────────────────── */
         dismiss() {
             if (this.exiting) return;
             this.exiting = true;
+            setTimeout(() => { this.bannerDismissed = true; }, 280);
         },
 
         openStepper() {
@@ -103,7 +117,7 @@ export function dailyMenuBanner(hash) {
             }
         },
 
-        clearCartAndOpen() {
+        async clearCartAndOpen() {
             const cart = Alpine.store('cart');
             cart.items          = [];
             cart._barItemsCount = 0;
@@ -111,6 +125,16 @@ export function dailyMenuBanner(hash) {
             cart.sent           = false;
             cart.error          = null;
             this.showExclusivityWarning = false;
+
+            await fetch('/api/v1/menu/' + this.hash + '/cancel-alacarte', {
+                method:  'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
+                    'Accept':       'application/json',
+                },
+            }).catch(() => {});
+
             this._doOpen();
         },
 
@@ -333,6 +357,8 @@ export function dailyMenuBanner(hash) {
 
                 if (res.ok) {
                     this.enviado = true;
+                    const summary = result.data?.order_summary;
+                    if (summary) Alpine.store('orders').push(summary);
                 } else {
                     this.errorMsg = result.message ?? 'Error al enviar el pedido.';
                 }
