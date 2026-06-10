@@ -650,18 +650,19 @@ export function registerTableMap() {
                 });
             },
 
-            hasCollision(item) {
+            hasCollision(item, excludeIds = new Set()) {
                 if (this.floorsEnabled && this.currentView === 'general') return false;
                 const isSpecial = ['bar', 'stool', 'chair', 'fireplace', 'pillar', 'column'].includes(item.shape);
                 const selfId    = item.id ?? null;
                 const itemFloor = this.floorsEnabled ? (item.floor ?? this.currentFloor) : null;
                 const sameFloor = (other) => !this.floorsEnabled || (other.floor ?? 1) === (itemFloor ?? 1);
+                const notExcluded = (other) => !excludeIds.has(other.id);
                 if (isSpecial) {
-                    return this.tables.filter(sameFloor).some(t => overlaps(item, t)) ||
-                           this.elements.filter(sameFloor).some(e => e.id !== selfId && overlaps(item, e));
+                    return this.tables.filter(sameFloor).some(t => notExcluded(t) && overlaps(item, t)) ||
+                           this.elements.filter(sameFloor).some(e => e.id !== selfId && notExcluded(e) && overlaps(item, e));
                 }
-                return this.tables.filter(sameFloor).some(t => t.id !== selfId && overlaps(item, t)) ||
-                       this.elements.filter(sameFloor).some(e => overlaps(item, e));
+                return this.tables.filter(sameFloor).some(t => t.id !== selfId && notExcluded(t) && overlaps(item, t)) ||
+                       this.elements.filter(sameFloor).some(e => notExcluded(e) && overlaps(item, e));
             },
 
             snapshot() {
@@ -794,6 +795,13 @@ export function registerTableMap() {
                                 this.draggingId    = id;
                                 el._dragStartX     = item?.position_x;
                                 el._dragStartY     = item?.position_y;
+                                // Capture items already overlapping at drag start so they are
+                                // excluded from the collision check on drop (seeder chairs at tables).
+                                el._preOverlapIds  = item
+                                    ? new Set([...this.tables, ...this.elements]
+                                        .filter(o => o.id !== id && overlaps(item, o))
+                                        .map(o => o.id))
+                                    : new Set();
                             },
                             move: (event) => {
                                 const el   = event.target;
@@ -819,7 +827,7 @@ export function registerTableMap() {
                                 const h    = Math.round(parseFloat(el.style.height) || 100);
                                 const item = this.tables.find(t => t.id === id) ?? this.elements.find(e => e.id === id);
                                 this.draggingId = null;
-                                if (item && this.hasCollision(item)) {
+                                if (item && this.hasCollision(item, el._preOverlapIds ?? new Set())) {
                                     const origX = el._dragStartX ?? x;
                                     const origY = el._dragStartY ?? y;
                                     item.position_x = origX;
@@ -948,6 +956,11 @@ export function registerTableMap() {
                 const startPy = element.position_y;
                 const startMX = event.clientX;
                 const startMY = event.clientY;
+                const preOverlapIds = new Set(
+                    [...this.tables, ...this.elements]
+                        .filter(o => o.id !== element.id && overlaps(element, o))
+                        .map(o => o.id)
+                );
                 this.closeEditPanels();
                 this.draggingId            = element.id;
                 document.body.style.cursor = 'grabbing';
@@ -961,7 +974,7 @@ export function registerTableMap() {
                     document.removeEventListener('mouseup',   onUp);
                     this.draggingId            = null;
                     document.body.style.cursor = '';
-                    if (this.hasCollision(element)) {
+                    if (this.hasCollision(element, preOverlapIds)) {
                         element.position_x = startPx;
                         element.position_y = startPy;
                         this.undoStack.pop();
