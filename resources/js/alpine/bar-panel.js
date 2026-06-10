@@ -5,6 +5,11 @@
  * @author BenjaminDTS
  */
 
+const BILL_POLL_MS         = 15000;
+const NOTIFICATION_POLL_MS = 20000;
+const WAITER_CALL_POLL_MS  = 15000;
+const BAR_PANEL_TICK_MS    = 5000;
+
 /**
  * Reads URL configuration from `<script id="bar-urls" type="application/json">`.
  *
@@ -91,7 +96,7 @@ export function billRequestPolling(urls) {
 
         init() {
             this.poll();
-            setInterval(() => this.poll(), 15000);
+            setInterval(() => this.poll(), BILL_POLL_MS);
         },
 
         async poll() {
@@ -208,7 +213,7 @@ export function notificationPolling(initialOrders, urls) {
             // does not re-surface them before the waiter takes action.
             this.readyOrders.forEach(o => addAcknowledged(o.id));
             this.poll();
-            setInterval(() => this.poll(), 20000);
+            setInterval(() => this.poll(), NOTIFICATION_POLL_MS);
         },
 
         async poll() {
@@ -283,7 +288,7 @@ export function barPanel(initialOrders, urls) {
 
         init() {
             this.tick();
-            this.pollInterval = setInterval(() => this.tick(), 5000);
+            this.pollInterval = setInterval(() => this.tick(), BAR_PANEL_TICK_MS);
         },
 
         async tick() {
@@ -341,7 +346,7 @@ export function waiterCallPolling(urls) {
 
         init() {
             this.poll();
-            setInterval(() => this.poll(), 15000);
+            setInterval(() => this.poll(), WAITER_CALL_POLL_MS);
         },
 
         async poll() {
