@@ -42,8 +42,10 @@ class MenuController extends Controller
         $businessNextOpening    = ($config && ! $businessOpen) ? $config->getBusinessNextOpeningTime() : null;
         $minutesUntilClose      = ($config && $businessOpen && ! $orderingAllowed) ? $config->minutesUntilBusinessClose() : null;
 
-        $kitchenOpen     = ! $config || $config->isKitchenOpen();
-        $nextOpeningTime = ($config && ! $kitchenOpen) ? $config->nextOpeningTime() : null;
+        $kitchenOpen              = ! $config || $config->isKitchenOpen();
+        $nextOpeningTime          = ($config && ! $kitchenOpen) ? $config->nextOpeningTime() : null;
+        $minutesUntilKitchenClose = ($config && $kitchenOpen) ? $config->minutesUntilKitchenClose() : null;
+        $kitchenCloseAt           = ($config && $kitchenOpen) ? $config->kitchenCloseAtDisplay() : null;
 
         $allCategories = Cache::remember("menu:{$table->user_id}", 300, function () use ($table) {
             return Category::where('user_id', $table->user_id)
@@ -216,7 +218,8 @@ class MenuController extends Controller
             'tapaVariantsUsed', 'tapasQuantityUsed', 'tapaProducts', 'shouldSuggest',
             'hasActiveOrder', 'activeOrderTotal', 'billRequested', 'stripePublicKey',
             'splitPaymentEnabled', 'splitPaymentMaxParts', 'activeOrderItemsForAlpine', 'allOrdersForAlpine',
-            'businessOpen', 'orderingAllowed', 'businessNextOpening', 'minutesUntilClose'
+            'businessOpen', 'orderingAllowed', 'businessNextOpening', 'minutesUntilClose',
+            'minutesUntilKitchenClose', 'kitchenCloseAt'
         ));
     }
 }
