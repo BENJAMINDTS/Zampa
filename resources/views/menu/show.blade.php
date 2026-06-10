@@ -191,13 +191,20 @@
         ];
 
         $menuContext = [
-            'tableHash'           => $table->unique_hash,
-            'hasActiveOrder'      => $hasActiveOrder,
-            'billRequested'       => $billRequested,
-            'activeOrderTotal'    => (float) $activeOrderTotal,
-            'splitPaymentEnabled' => $splitPaymentEnabled,
-            'splitPaymentMaxParts'=> $splitPaymentMaxParts,
-            'kitchenOpen'         => $kitchenOpen,
+            'tableHash'                   => $table->unique_hash,
+            'hasActiveOrder'              => $hasActiveOrder,
+            'billRequested'               => $billRequested,
+            'activeOrderTotal'            => (float) $activeOrderTotal,
+            'splitPaymentEnabled'         => $splitPaymentEnabled,
+            'splitPaymentMaxParts'        => $splitPaymentMaxParts,
+            // Estado de horarios — leído por Alpine.store('schedule') en schedule.js
+            'kitchenOpen'                 => $kitchenOpen,
+            'kitchenNextOpening'          => $nextOpeningTime,
+            'minutesUntilKitchenClose'    => $minutesUntilKitchenClose,
+            'kitchenCloseAt'              => $kitchenCloseAt,
+            'businessOpen'                => $businessOpen,
+            'businessNextOpening'         => $businessNextOpening,
+            'orderingAllowed'             => $orderingAllowed,
         ];
     @endphp
 
@@ -282,16 +289,25 @@
                 </div>
             </div>
             <div class="header__actions">
-                {{-- Estado cocina --}}
-                @if(!$kitchenOpen && $nextOpeningTime)
-                <span class="kitchen-pill kitchen-pill--closed" aria-label="Cocina cerrada">
-                    <span class="kitchen-pill__dot"></span>
+                {{-- Estado cocina — siempre visible, reactivo al store de horarios --}}
+                <span class="kitchen-pill"
+                      x-show="$store.schedule.kitchenOpen"
+                      aria-label="Cocina abierta">
+                    <span class="kitchen-pill__dot" aria-hidden="true"></span>
+                    <span>Cocina abierta</span>
+                </span>
+                <span class="kitchen-pill kitchen-pill--closed"
+                      x-show="!$store.schedule.kitchenOpen"
+                      style="display:none"
+                      :aria-label="'Cocina cerrada' + ($store.schedule.kitchenNextOpening ? ', abre a las ' + $store.schedule.kitchenNextOpening : '')">
+                    <span class="kitchen-pill__dot" aria-hidden="true"></span>
                     <span class="kitchen-pill__stack">
                         <span class="kitchen-pill__l1">Cocina cerrada</span>
-                        <span class="kitchen-pill__l2">abre {{ $nextOpeningTime }}</span>
+                        <span class="kitchen-pill__l2"
+                              x-show="$store.schedule.kitchenNextOpening"
+                              x-text="'abre ' + $store.schedule.kitchenNextOpening"></span>
                     </span>
                 </span>
-                @endif
 
                 {{-- Toggle dark/light — data-theme en .carta, html conserva el tema base --}}
                 <button class="theme-toggle"
@@ -929,19 +945,51 @@
              Zampi chatbot preservado intacto en las líneas anteriores (1-1071)
              ══════════════════════════════════════════════════════════════════════ --}}
 
-        {{-- ── Banner cocina cerrada (DS: banner-closed) ──────────────────────── --}}
-        @if(!$kitchenOpen)
-        <div class="banner-closed" role="status" aria-live="polite">
+        {{-- ── Banner cocina cerrada (DS: banner-closed) — reactivo al store ──── --}}
+        <div class="banner-closed" role="status" aria-live="polite"
+             x-show="!$store.schedule.kitchenOpen"
+             style="display:none">
             <span class="banner-closed__ic" aria-hidden="true">🌙</span>
             <div>
                 <div class="banner-closed__title">La cocina está cerrada</div>
                 <div class="banner-closed__sub">
-                    @if($nextOpeningTime)Abre a las {{ $nextOpeningTime }}. @endif
-                    Mientras tanto puedes pedir de barra 🍺
+                    <span x-show="$store.schedule.kitchenNextOpening"
+                          x-text="'Abre a las ' + $store.schedule.kitchenNextOpening + '. '"></span>Mientras tanto puedes pedir de barra 🍺
                 </div>
             </div>
         </div>
-        @endif
+
+        {{-- ── CutoffStrip: cocina cierra pronto (DS: cutoff-strip) — reactivo ── --}}
+        <div class="cutoff-strip"
+             role="status" aria-live="polite"
+             style="display:none"
+             x-show="$store.schedule.kitchenOpen && ($store.schedule.minutesUntilKitchenClose ?? 0) > 0 && ($store.schedule.minutesUntilKitchenClose ?? 0) <= 15"
+             x-data="{
+                 secsLeft: 0,
+                 get mm() { return String(Math.floor(Math.max(0, this.secsLeft) / 60)).padStart(2, '0') },
+                 get ss() { return String(Math.max(0, this.secsLeft) % 60).padStart(2, '0') },
+                 init() {
+                     this.secsLeft = (this.$store.schedule.minutesUntilKitchenClose ?? 0) * 60;
+                     setInterval(() => { if (this.secsLeft > 0) this.secsLeft--; }, 1000);
+                     this.$watch(() => this.$store.schedule.minutesUntilKitchenClose, val => {
+                         const fromStore = (val ?? 0) * 60;
+                         if (fromStore > 0 && Math.abs(this.secsLeft - fromStore) > 90) this.secsLeft = fromStore;
+                     });
+                 }
+             }">
+            <div class="cutoff-strip__bar"
+                 :style="`width:${Math.min(100, Math.max(0, (secsLeft / (15 * 60)) * 100))}%`"></div>
+            <div class="cutoff-strip__row">
+                <span class="cutoff-strip__pulse" aria-hidden="true"></span>
+                <div class="cutoff-strip__copy">
+                    <strong x-text="`Últimos pedidos · cierre en ${mm}:${ss}`"></strong>
+                    <span x-text="'Cocina cierra a las ' + ($store.schedule.kitchenCloseAt || '') + ' — después solo barra 🍺'"></span>
+                </div>
+                <span class="cutoff-strip__chip">
+                    <span class="dot" aria-hidden="true"></span> Cerrando
+                </span>
+            </div>
+        </div>
 
         {{-- ── Indicador de tapas (DS: .tapas-indicator) — reactivo Alpine ──── --}}
         @if($tapaConfig && $tapaConfig->tapas_enabled)
@@ -1012,7 +1060,7 @@
         {{-- ══════════════════════════════════════════════════════════════════════
              FILTER BAR (mobile) + ALLERGEN SHEET — x-data local para allergensOpen
              ══════════════════════════════════════════════════════════════════════ --}}
-        @if($businessOpen && $categories->isNotEmpty())
+        @if($categories->isNotEmpty())
         <div x-data="{ allergensOpen: false }">
 
             {{-- DS: .filter-bar > .filter-row --}}
@@ -1150,7 +1198,7 @@
         <div class="carta__main">
 
             {{-- DS: .carta__filters — sidebar (tablet + desktop, hidden on mobile via CSS) --}}
-            @if($businessOpen && $categories->isNotEmpty())
+            @if($categories->isNotEmpty())
             <div class="carta__filters" aria-label="Filtros">
 
                 {{-- Menú del Día — chip persistente en sidebar (DS: DailyMenuFilterChip) --}}
@@ -1281,91 +1329,10 @@
             @endif
 
             {{-- DS: .carta__body — área scrolleable con productos --}}
-            <div class="carta__body" id="main-content" style="position:relative">
+            <div class="carta__body" id="main-content">
 
                 {{-- Banner Menú del Día --}}
                 <x-daily-menu-banner :hash="$table->unique_hash" />
-
-                @if($kitchenOpen && $minutesUntilKitchenClose !== null && $minutesUntilKitchenClose > 0 && $minutesUntilKitchenClose <= 15)
-                {{-- DS: .cutoff-strip — cuenta atrás hasta el cierre de cocina --}}
-                <div class="cutoff-strip"
-                     role="status" aria-live="polite"
-                     x-data="{
-                         secsLeft: {{ $minutesUntilKitchenClose * 60 }},
-                         totalSecs: {{ $minutesUntilKitchenClose * 60 }},
-                         get mm() { return String(Math.floor(Math.max(0, this.secsLeft) / 60)).padStart(2, '0') },
-                         get ss() { return String(Math.max(0, this.secsLeft) % 60).padStart(2, '0') },
-                         init() { setInterval(() => { if (this.secsLeft > 0) this.secsLeft--; }, 1000); }
-                     }">
-                    <div class="cutoff-strip__bar"
-                         :style="`width:${Math.min(100, Math.max(0, (secsLeft / totalSecs) * 100))}%`"></div>
-                    <div class="cutoff-strip__row">
-                        <span class="cutoff-strip__pulse" aria-hidden="true"></span>
-                        <div class="cutoff-strip__copy">
-                            <strong x-text="`Últimos pedidos · cierre en ${mm}:${ss}`"></strong>
-                            <span>Cocina cierra a las <strong>{{ $kitchenCloseAt }}</strong> — después solo barra 🍺</span>
-                        </div>
-                        <span class="cutoff-strip__chip">
-                            <span class="dot" aria-hidden="true"></span> Cerrando
-                        </span>
-                    </div>
-                </div>
-                @endif
-
-                @if(!$businessOpen)
-                {{-- DS: .biz-closed — overlay de negocio cerrado, permite mirar la carta --}}
-                <div class="biz-closed"
-                     x-data="{ dismissed: false }"
-                     x-show="!dismissed"
-                     x-transition:leave="transition duration-300 ease-in"
-                     x-transition:leave-start="opacity-100"
-                     x-transition:leave-end="opacity-0"
-                     aria-modal="true" role="dialog"
-                     aria-label="Negocio cerrado">
-                    <div class="biz-closed__blind">
-                        <div class="biz-closed__teeth" aria-hidden="true">
-                            @for($i = 0; $i < 32; $i++)<span></span>@endfor
-                        </div>
-                        <div class="biz-closed__card">
-                            <div class="biz-closed__clock">
-                                <svg viewBox="0 0 64 64" width="64" height="64" fill="none"
-                                     stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                     aria-hidden="true">
-                                    <circle cx="32" cy="32" r="28"></circle>
-                                    <path d="M32 16v16l11 7"></path>
-                                    <circle cx="32" cy="32" r="2" fill="currentColor"></circle>
-                                </svg>
-                            </div>
-                            <div class="biz-closed__h1">Estamos cerrados</div>
-                            <div class="biz-closed__p">
-                                Puedes mirar la carta sin compromiso.<br>
-                                @if($businessNextOpening)
-                                Volvemos <strong>{{ $businessNextOpening }}</strong>.
-                                @else
-                                Vuelve pronto.
-                                @endif
-                            </div>
-                            <div class="biz-closed__row">
-                                <span class="biz-closed__tag">🔒 Pedidos pausados</span>
-                                <span class="biz-closed__tag">👀 Carta visible</span>
-                            </div>
-                            @if($hasActiveOrder)
-                            <button type="button"
-                                    class="biz-closed__btn"
-                                    @click="$store.bill.open()"
-                                    style="margin-bottom:12px">
-                                💳 Solicitar la cuenta
-                            </button>
-                            @endif
-                            <button type="button"
-                                    class="biz-closed__btn"
-                                    @click="dismissed = true">
-                                Mirar la carta
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                @endif
 
                 {{-- ══ PRODUCTOS POR CATEGORÍA ══ --}}
                 @forelse($categories as $category)
@@ -1373,15 +1340,15 @@
                 <div class="category"
                      x-show="isCategoryVisible({{ $category->id }})"
                      x-transition
-                     @if(!$kitchenOpen && $category->destination === 'kitchen')
-                     style="opacity:0.45;pointer-events:none"
-                     @endif>
+                     :style="{{ $category->destination === 'kitchen' ? '!$store.schedule.kitchenOpen ? \'opacity:0.45;pointer-events:none\' : \'\'' : '\'\'' }}">
 
                     <div class="category__head">
                         <span class="category__name">{{ $category->name }}</span>
                         <span class="category__count">{{ $category->products->count() }}</span>
-                        @if(!$kitchenOpen && $category->destination === 'kitchen')
-                        <span class="category__closed" role="status">
+                        @if($category->destination === 'kitchen')
+                        <span class="category__closed" role="status"
+                              x-show="!$store.schedule.kitchenOpen"
+                              style="display:none">
                             <span class="category__closedDot" aria-hidden="true"></span>
                             Cocina cerrada
                         </span>
@@ -1455,22 +1422,21 @@
                                         <span class="pcard__price">
                                             Desde&nbsp;{{ number_format((float)$product->variants->min('price'), 2, ',', '.') }}&nbsp;€
                                         </span>
-                                        @if($orderingAllowed)
                                         <button type="button"
                                                 class="btn-add"
+                                                x-show="$store.schedule.orderingAllowed"
+                                                style="display:none"
                                                 @click.stop="$store.variantPicker.show(products.find(p => p.id === {{ $product->id }}))"
                                                 aria-label="Elegir variante de {{ $product->name }}">
                                             +
                                         </button>
-                                        @endif
                                     </div>
                                     @else
                                     {{-- Producto SIN variantes --}}
                                     <span class="pcard__price">{{ number_format((float)$product->price, 2, ',', '.') }}&nbsp;€</span>
 
-                                    @if($orderingAllowed)
                                     {{-- Tapa de cortesía: bloqueado --}}
-                                    <span x-show="$store.cart.items.some(i => i.productId === {{ $product->id }} && !i.variantId && i.isTapa)"
+                                    <span x-show="$store.schedule.orderingAllowed && $store.cart.items.some(i => i.productId === {{ $product->id }} && !i.variantId && i.isTapa)"
                                           style="font-family:var(--font-body);font-size:11px;font-weight:700;color:var(--color-amber-800);background:linear-gradient(135deg,#F5DC92,#ECC25A);padding:3px 8px;border-radius:9999px;"
                                           @click.stop>
                                         🫕 Cortesía
@@ -1478,12 +1444,12 @@
                                     {{-- btn-add cuando qty = 0 y no es tapa --}}
                                     <button type="button"
                                             class="btn-add"
-                                            x-show="!$store.cart.items.some(i => i.productId === {{ $product->id }} && !i.variantId)"
+                                            x-show="$store.schedule.orderingAllowed && !$store.cart.items.some(i => i.productId === {{ $product->id }} && !i.variantId)"
                                             @click.stop="$store.cart.add(products.find(p => p.id === {{ $product->id }}))"
                                             aria-label="Añadir {{ $product->name }}">+</button>
                                     {{-- qty control cuando qty > 0 y NO es tapa --}}
                                     <div class="qty"
-                                         x-show="$store.cart.items.some(i => i.productId === {{ $product->id }} && !i.variantId && !i.isTapa)"
+                                         x-show="$store.schedule.orderingAllowed && $store.cart.items.some(i => i.productId === {{ $product->id }} && !i.variantId && !i.isTapa)"
                                          @click.stop>
                                         <button class="qty-minus"
                                                 @click.stop="$store.cart.dec('{{ $product->id }}:none')"
@@ -1494,9 +1460,9 @@
                                                 @click.stop="$store.cart.add(products.find(p => p.id === {{ $product->id }}))"
                                                 aria-label="Añadir otro de {{ $product->name }}">+</button>
                                     </div>
-                                    @else
-                                    <span style="font-family:var(--font-body);font-size:11px;color:var(--fg-muted)">Cerrado</span>
-                                    @endif
+                                    {{-- Cerrado: pedidos no permitidos --}}
+                                    <span x-show="!$store.schedule.orderingAllowed"
+                                          style="display:none;font-family:var(--font-body);font-size:11px;color:var(--fg-muted)">Cerrado</span>
                                     @endif
 
                                 </div>{{-- /pcard__foot --}}
@@ -1516,6 +1482,59 @@
             </div>{{-- /carta__body --}}
         </div>{{-- /carta__main --}}
         </div>{{-- /dailyMenuBanner scope --}}
+
+        {{-- DS: .biz-closed — overlay negocio cerrado; hijo directo de .carta para
+             que position:absolute;inset:0 cubra el viewport completo (100dvh) --}}
+        <div class="biz-closed"
+             x-data="{ dismissed: false }"
+             x-show="!$store.schedule.businessOpen && !dismissed"
+             style="display:none"
+             x-transition:leave="transition duration-300 ease-in"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             aria-modal="true" role="dialog"
+             aria-label="Negocio cerrado">
+            <div class="biz-closed__blind">
+                <div class="biz-closed__teeth" aria-hidden="true">
+                    @for($i = 0; $i < 32; $i++)<span></span>@endfor
+                </div>
+                <div class="biz-closed__card">
+                    <div class="biz-closed__clock">
+                        <svg viewBox="0 0 64 64" width="64" height="64" fill="none"
+                             stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                             aria-hidden="true">
+                            <circle cx="32" cy="32" r="28"></circle>
+                            <path d="M32 16v16l11 7"></path>
+                            <circle cx="32" cy="32" r="2" fill="currentColor"></circle>
+                        </svg>
+                    </div>
+                    <div class="biz-closed__h1">Estamos cerrados</div>
+                    <div class="biz-closed__p">
+                        Puedes mirar la carta sin compromiso.<br>
+                        <span x-text="$store.schedule.businessNextOpening
+                            ? 'Volvemos a las ' + $store.schedule.businessNextOpening + '.'
+                            : 'Vuelve pronto.'"></span>
+                    </div>
+                    <div class="biz-closed__row">
+                        <span class="biz-closed__tag">🔒 Pedidos pausados</span>
+                        <span class="biz-closed__tag">👀 Carta visible</span>
+                    </div>
+                    @if($hasActiveOrder)
+                    <button type="button"
+                            class="biz-closed__btn"
+                            @click="$store.bill.open()"
+                            style="margin-bottom:12px">
+                        💳 Solicitar la cuenta
+                    </button>
+                    @endif
+                    <button type="button"
+                            class="biz-closed__btn"
+                            @click="dismissed = true">
+                        Mirar la carta
+                    </button>
+                </div>
+            </div>
+        </div>
 
         {{-- ══════════════════════════════════════════════════════════════════════
              CART BAR — .cart-bar position:absolute dentro de .carta
@@ -3673,7 +3692,7 @@
                         <div class="pdetail__photo-fade" aria-hidden="true"></div>
                         <div class="pdetail__chip-row">
                             <span class="pdetail__catchip" x-text="selectedProduct?.categoryName || ''"></span>
-                            <template x-if="selectedProduct?.destination === 'kitchen' && !kitchenOpen">
+                            <template x-if="selectedProduct?.destination === 'kitchen' && !$store.schedule.kitchenOpen">
                                 <span class="pdetail__catchip pdetail__catchip--warn">Cocina cerrada</span>
                             </template>
                         </div>
@@ -3762,8 +3781,9 @@
                         </div>{{-- /pdetail__scroll --}}
 
                         {{-- Footer: cantidad + CTA --}}
-                        @if($orderingAllowed)
-                        <div class="pdetail__foot">
+                        <div class="pdetail__foot"
+                             x-show="$store.schedule.orderingAllowed"
+                             style="display:none">
                             <div class="pdetail__qty">
                                 <button type="button"
                                         class="pdetail__qtybtn pdetail__qtybtn--minus"
@@ -3778,7 +3798,7 @@
                             <button type="button"
                                     class="pdetail__cta"
                                     @click="pdetailAddToCart()"
-                                    :disabled="selectedProduct?.destination === 'kitchen' && !kitchenOpen">
+                                    :disabled="selectedProduct?.destination === 'kitchen' && !$store.schedule.kitchenOpen">
                                 <span class="pdetail__cta-lab"
                                       x-text="$store.cart.items.some(i => i.productId === selectedProduct?.id && !i.variantId)
                                           ? 'Actualizar carrito' : 'Añadir al carrito'"></span>
@@ -3786,7 +3806,6 @@
                                       x-text="Number(((selectedProduct?.price || 0) + (selectedProduct?.extras || []).filter(e => pdetailExtraIds.includes(e.id)).reduce((s, e) => s + e.price, 0)) * pdetailQty).toFixed(2).replace('.',',') + ' €'"></span>
                             </button>
                         </div>
-                        @endif
 
                     </div>{{-- /pdetail__content --}}
                 </div>{{-- /pdetail__layout --}}
