@@ -52,6 +52,18 @@ it('returns 404 when there is no active order', function () {
          ->assertJson(['success' => false]);
 });
 
+it('sets waiter_called on the latest active order when multiple exist', function () {
+    $table = Table::factory()->for($this->user)->create();
+    $old   = Order::factory()->for($table)->create(['status' => 'pending', 'waiter_called' => false, 'created_at' => now()->subMinute()]);
+    $new   = Order::factory()->for($table)->create(['status' => 'pending', 'waiter_called' => false, 'created_at' => now()]);
+
+    $this->postJson("/api/v1/waiter-call/{$table->unique_hash}")
+         ->assertOk();
+
+    expect($new->fresh()->waiter_called)->toBeTrue();
+    expect($old->fresh()->waiter_called)->toBeFalse();
+});
+
 it('does not set waiter_called on closed order', function () {
     $table = Table::factory()->for($this->user)->create();
     $order = Order::factory()->for($table)->create(['status' => 'closed', 'waiter_called' => false]);
