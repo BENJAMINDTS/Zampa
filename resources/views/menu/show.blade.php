@@ -195,7 +195,6 @@
             'hasActiveOrder'      => $hasActiveOrder,
             'billRequested'       => $billRequested,
             'activeOrderTotal'    => (float) $activeOrderTotal,
-            'originalOrderTotal'  => (float) $originalOrderTotal,
             'splitPaymentEnabled' => $splitPaymentEnabled,
             'splitPaymentMaxParts'=> $splitPaymentMaxParts,
             'kitchenOpen'         => $kitchenOpen,

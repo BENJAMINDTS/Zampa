@@ -133,17 +133,14 @@ class MenuController extends Controller
             $shouldSuggest = $config->shouldSuggestTapa((int) $barItemsCount, $tapaVariantsUsed);
         }
 
-        $activeOrder = Order::where('table_id', $table->id)
-            ->whereIn('status', ['pending', 'cooking', 'ready'])
-            ->where('payment_status', 'pending')
-            ->latest()
-            ->first();
+        $activeOrders = Order::activeForTable($table->id)->get();
+        $activeOrder  = $activeOrders->sortByDesc('created_at')->first();
 
-        $hasActiveOrder      = (bool) $activeOrder;
-        $originalOrderTotal  = $activeOrder?->total ?? 0;
-        $paidViaSplit        = $activeOrder?->getPaidAmountViaSplit() ?? 0;
-        $activeOrderTotal    = max(0, $originalOrderTotal - $paidViaSplit);
-        $billRequested       = (bool) ($activeOrder?->bill_requested);
+        $hasActiveOrder   = $activeOrders->isNotEmpty();
+        $activeOrderTotal = $activeOrders->sum(
+            fn ($o) => max(0, $o->total - $o->getPaidAmountViaSplit())
+        );
+        $billRequested    = $activeOrders->contains('bill_requested', true);
 
         $stripePublicKey = config('services.stripe.key');
 
@@ -217,7 +214,7 @@ class MenuController extends Controller
             'theme', 'table', 'categories', 'allergens',
             'tapaConfig', 'barItemsCount', 'kitchenOpen', 'nextOpeningTime',
             'tapaVariantsUsed', 'tapasQuantityUsed', 'tapaProducts', 'shouldSuggest',
-            'hasActiveOrder', 'activeOrderTotal', 'originalOrderTotal', 'billRequested', 'stripePublicKey',
+            'hasActiveOrder', 'activeOrderTotal', 'billRequested', 'stripePublicKey',
             'splitPaymentEnabled', 'splitPaymentMaxParts', 'activeOrderItemsForAlpine', 'allOrdersForAlpine',
             'businessOpen', 'orderingAllowed', 'businessNextOpening', 'minutesUntilClose'
         ));
