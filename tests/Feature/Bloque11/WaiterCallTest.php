@@ -141,6 +141,20 @@ it('waiter-calls response includes table name and called_at', function () {
     expect($response->json('orders.0.called_at'))->not->toBeNull();
 });
 
+it('dismissing also clears waiter_called_at', function () {
+    $table = Table::factory()->for($this->user)->create();
+    $order = Order::factory()->for($table)->create([
+        'waiter_called'    => true,
+        'waiter_called_at' => now(),
+    ]);
+
+    $this->actingAs($this->user)
+         ->patchJson(route('notifications.waiter.dismiss', $order))
+         ->assertOk();
+
+    expect($order->fresh()->waiter_called_at)->toBeNull();
+});
+
 it('returns 403 when dismissing another users order', function () {
     $table = Table::factory()->for($this->other)->create();
     $order = Order::factory()->for($table)->create(['waiter_called' => true]);
