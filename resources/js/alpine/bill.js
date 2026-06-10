@@ -58,6 +58,67 @@ export function calculateSelectedTotal(splitItems, selectedIds) {
 }
 
 /**
+ * Alpine component for the waiter-call bell button and confirmation modal.
+ *
+ * @param {string} hash - Table unique_hash used to POST the waiter call.
+ * @returns {Object} Alpine component definition.
+ */
+export function waiterCallWidget(hash) {
+    return {
+        modalOpen: false,
+        sending:   false,
+        sent:      false,
+        countdown: 20,
+        _timer:    null,
+
+        init() {
+            // nothing on mount
+        },
+
+        openModal() {
+            this.modalOpen = true;
+            this.countdown = 20;
+            this._startCountdown();
+        },
+
+        closeModal() {
+            this.modalOpen = false;
+            clearInterval(this._timer);
+        },
+
+        _startCountdown() {
+            clearInterval(this._timer);
+            this._timer = setInterval(() => {
+                this.countdown -= 1;
+                if (this.countdown <= 0) {
+                    this.closeModal();
+                }
+            }, 1000);
+        },
+
+        async confirm() {
+            this.sending = true;
+            try {
+                await fetch(`/api/v1/waiter-call/${hash}`, {
+                    method:  'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept':       'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    },
+                });
+            } catch {
+                // silent — still show confirmation to customer
+            }
+            this.sending  = false;
+            this.sent     = true;
+            this.closeModal();
+            setTimeout(() => { this.sent = false; }, 5000);
+        },
+    };
+}
+
+/**
  * Registers the `bill` global Alpine store and the `chat` global store.
  * Reads initial state from `<script id="menu-context" type="application/json">`.
  *
