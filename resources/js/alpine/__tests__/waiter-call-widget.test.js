@@ -82,6 +82,16 @@ describe('waiterCallWidget', () => {
         expect(w.sent).toBe(true);
     });
 
+    it('closeModal stops the countdown timer', () => {
+        const w = waiterCallWidget(HASH);
+        w.openModal();
+        vi.advanceTimersByTime(3000);
+        expect(w.countdown).toBe(17);
+        w.closeModal();
+        vi.advanceTimersByTime(10000);
+        expect(w.countdown).toBe(17); // timer stopped — no more decrements
+    });
+
     it('sets onCooldown true after confirm', async () => {
         global.fetch = vi.fn().mockResolvedValue({ ok: true });
         const w = waiterCallWidget(HASH);
