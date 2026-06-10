@@ -623,9 +623,9 @@ export function registerBill() {
         openMixedTip() {
             this.showingMixed       = false;
             this.mixedTipBase       = this.mixedCardAmount;
-            this.mixedTipPercent    = suggestedTipPercent(this.mixedCardAmount);
-            this.mixedTipAmount     = calculateTipFromPercent(this.mixedCardAmount, this.mixedTipPercent);
-            this.mixedTipGrandTotal = this.mixedCardAmount + this.mixedTipAmount;
+            this.mixedTipPercent    = null;
+            this.mixedTipAmount     = 0;
+            this.mixedTipGrandTotal = this.mixedCardAmount;
             this.showingMixedTip    = true;
             this.step               = 'mixedTip';
         },
