@@ -24,6 +24,12 @@
             </svg>
             <strong x-text="order.table"></strong>
             <span class="font-normal opacity-80">solicita al camarero</span>
+            <span
+              x-show="order.called_at"
+              x-text="order.called_at"
+              class="text-xs font-normal opacity-60 tabular-nums"
+              aria-label="Hora de la llamada"
+            ></span>
           </div>
           <button
             @click="dismiss(order.id)"
