@@ -520,9 +520,9 @@ export function registerBill() {
             this.splitTipBase       = amount;
             this.splitTipType       = type;
             this.splitTipItemIds    = itemIds || [];
-            this.splitTipPercent    = suggestedTipPercent(amount);
-            this.splitTipAmount     = calculateTipFromPercent(amount, this.splitTipPercent);
-            this.splitTipGrandTotal = amount + this.splitTipAmount;
+            this.splitTipPercent    = null;
+            this.splitTipAmount     = 0;
+            this.splitTipGrandTotal = amount;
             this.splitShowItems     = false;
             this.splitShowEq        = false;
             this.showingSplitTip    = true;
