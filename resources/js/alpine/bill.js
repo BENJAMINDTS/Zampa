@@ -484,9 +484,9 @@ export function registerBill() {
 
         openCashTip() {
             this.choosing       = false;
-            this.cashTipPercent = suggestedTipPercent(this.orderTotal);
-            this.cashTipAmount  = calculateTipFromPercent(this.orderTotal, this.cashTipPercent);
-            this.cashGrandTotal = this.orderTotal + this.cashTipAmount;
+            this.cashTipPercent = null;
+            this.cashTipAmount  = 0;
+            this.cashGrandTotal = this.orderTotal;
             this.showingCashTip = true;
             this.step           = 'cashConfirm';
         },
