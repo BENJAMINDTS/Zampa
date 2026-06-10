@@ -41,7 +41,7 @@ class SecurityHeaders
             'Content-Security-Policy',
             implode('; ', array_filter([
                 "default-src 'self'",
-                "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com{$viteSrc}",
+                "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://cdn.jsdelivr.net{$viteSrc}",
                 "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com{$viteSrc}",
                 "font-src 'self' https://fonts.gstatic.com{$viteSrc}",
                 "img-src 'self' data: blob: https:",
