@@ -58,6 +58,75 @@ export function calculateSelectedTotal(splitItems, selectedIds) {
 }
 
 /**
+ * Alpine component for the waiter-call bell button and confirmation modal.
+ *
+ * @param {string} hash - Table unique_hash used to POST the waiter call.
+ * @returns {Object} Alpine component definition.
+ */
+const WAITER_COUNTDOWN_SECS = 20;
+const WAITER_SENT_RESET_MS  = 5000;
+const WAITER_COOLDOWN_MS    = 30000;
+
+export function waiterCallWidget(hash) {
+    return {
+        modalOpen:  false,
+        sending:    false,
+        sent:       false,
+        onCooldown: false,
+        countdown:  WAITER_COUNTDOWN_SECS,
+        _timer:     null,
+
+        init() {
+            // nothing on mount
+        },
+
+        openModal() {
+            if (this.onCooldown) return;
+            this.modalOpen = true;
+            this.countdown = WAITER_COUNTDOWN_SECS;
+            this._startCountdown();
+        },
+
+        closeModal() {
+            this.modalOpen = false;
+            clearInterval(this._timer);
+        },
+
+        _startCountdown() {
+            clearInterval(this._timer);
+            this._timer = setInterval(() => {
+                this.countdown -= 1;
+                if (this.countdown <= 0) {
+                    this.closeModal();
+                }
+            }, 1000);
+        },
+
+        async confirm() {
+            this.sending = true;
+            try {
+                await fetch(`/api/v1/waiter-call/${hash}`, {
+                    method:  'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept':       'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    },
+                });
+            } catch {
+                // silent — still show confirmation to customer
+            }
+            this.sending    = false;
+            this.sent       = true;
+            this.onCooldown = true;
+            this.closeModal();
+            setTimeout(() => { this.sent = false; }, WAITER_SENT_RESET_MS);
+            setTimeout(() => { this.onCooldown = false; }, WAITER_COOLDOWN_MS);
+        },
+    };
+}
+
+/**
  * Registers the `bill` global Alpine store and the `chat` global store.
  * Reads initial state from `<script id="menu-context" type="application/json">`.
  *

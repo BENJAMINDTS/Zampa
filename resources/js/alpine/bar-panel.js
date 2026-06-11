@@ -5,6 +5,11 @@
  * @author BenjaminDTS
  */
 
+const BILL_POLL_MS         = 15000;
+const NOTIFICATION_POLL_MS = 20000;
+const WAITER_CALL_POLL_MS  = 15000;
+const BAR_PANEL_TICK_MS    = 5000;
+
 /**
  * Reads URL configuration from `<script id="bar-urls" type="application/json">`.
  *
@@ -91,7 +96,7 @@ export function billRequestPolling(urls) {
 
         init() {
             this.poll();
-            setInterval(() => this.poll(), 15000);
+            setInterval(() => this.poll(), BILL_POLL_MS);
         },
 
         async poll() {
@@ -208,7 +213,7 @@ export function notificationPolling(initialOrders, urls) {
             // does not re-surface them before the waiter takes action.
             this.readyOrders.forEach(o => addAcknowledged(o.id));
             this.poll();
-            setInterval(() => this.poll(), 20000);
+            setInterval(() => this.poll(), NOTIFICATION_POLL_MS);
         },
 
         async poll() {
@@ -283,7 +288,7 @@ export function barPanel(initialOrders, urls) {
 
         init() {
             this.tick();
-            this.pollInterval = setInterval(() => this.tick(), 5000);
+            this.pollInterval = setInterval(() => this.tick(), BAR_PANEL_TICK_MS);
         },
 
         async tick() {
@@ -329,17 +334,67 @@ export function barPanel(initialOrders, urls) {
 }
 
 /**
+ * Alpine component for showing waiter-call notifications from customers.
+ *
+ * @param {Object} urls - API endpoint URL map.
+ * @returns {Object} Alpine component definition.
+ */
+export function waiterCallPolling(urls) {
+    return {
+        /** @type {Array<Object>} Active waiter call requests. */
+        waiterOrders: [],
+
+        init() {
+            this.poll();
+            setInterval(() => this.poll(), WAITER_CALL_POLL_MS);
+        },
+
+        async poll() {
+            try {
+                const res = await fetch(urls.waiterCalls, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                });
+                if (!res.ok) return;
+                const data = await res.json();
+                this.waiterOrders = data.orders ?? [];
+            } catch {
+                // silent
+            }
+        },
+
+        async dismiss(id) {
+            const url = urls.waiterDismissTemplate.replace('__ID__', id);
+            try {
+                const res = await fetch(url, {
+                    method:  'PATCH',
+                    headers: {
+                        'X-CSRF-TOKEN':     document.querySelector('meta[name="csrf-token"]').content,
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept':           'application/json',
+                    },
+                });
+                if (!res.ok) return;
+                this.waiterOrders = this.waiterOrders.filter(o => o.id !== id);
+            } catch {
+                // keep item — next poll will reflect DB
+            }
+        },
+    };
+}
+
+/**
  * Registers all bar-panel Alpine.data components.
  * Reads initial state from injected JSON script tags.
  *
  * @returns {void}
  */
 export function registerBarComponents() {
-    const urls         = readBarUrls();
-    const readyOrders  = readReadyOrders();
+    const urls          = readBarUrls();
+    const readyOrders   = readReadyOrders();
     const initialOrders = readBarInit();
 
     Alpine.data('billRequestPolling',  () => billRequestPolling(urls));
     Alpine.data('notificationPolling', () => notificationPolling(readyOrders, urls));
+    Alpine.data('waiterCallPolling',   () => waiterCallPolling(urls));
     Alpine.data('barPanel',            () => barPanel(initialOrders, urls));
 }

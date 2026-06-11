@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\BillRequestController;
+use App\Http\Controllers\Api\WaiterCallController;
 use App\Http\Controllers\Api\CardPaymentController;
 use App\Http\Controllers\Api\MixedPaymentController;
 use App\Http\Controllers\Api\OrderController;
@@ -10,6 +11,10 @@ use App\Http\Controllers\DailyMenuPublicController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/v1/orders', [OrderController::class, 'store'])->name('api.orders.store');
+
+Route::post('/v1/waiter-call/{hash}', [WaiterCallController::class, 'store'])
+    ->middleware('throttle:5,1')
+    ->name('api.waiter.call');
 
 Route::post('/v1/bill-request/{hash}', [BillRequestController::class, 'store'])
     ->middleware('throttle:10,1')

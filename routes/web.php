@@ -171,6 +171,11 @@ Route::middleware(['auth', 'business.active'])->group(function () {
         Route::patch('/notifications/{order}/dismiss-bill-request', [NotificationController::class, 'dismissBillRequest'])
              ->name('notifications.bill.dismiss');
 
+        Route::get('/notifications/waiter-calls', [NotificationController::class, 'waiterCalls'])
+             ->name('notifications.waiter.calls');
+        Route::patch('/notifications/{order}/dismiss-waiter-call', [NotificationController::class, 'dismissWaiterCall'])
+             ->name('notifications.waiter.dismiss');
+
         // Pagos desde la mesa — efectivo
         Route::post('/payments/{order}/cash', [PaymentController::class, 'cashPayment'])
              ->name('payments.cash');

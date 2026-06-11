@@ -9,7 +9,7 @@ import { registerBarComponents }  from './alpine/bar-panel.js';
 import { registerBusinessConfig } from './alpine/business-config.js';
 import { registerCart, registerVariantPicker } from './alpine/cart.js';
 import { registerMenuFilters }    from './alpine/menu-filters.js';
-import { registerBill }           from './alpine/bill.js';
+import { registerBill, waiterCallWidget } from './alpine/bill.js';
 import { registerOrders }         from './alpine/orders.js';
 import { registerChatWidget }     from './alpine/chat-widget.js';
 import { registerTableMap }       from './pages/table-map.js';
@@ -31,6 +31,7 @@ document.addEventListener('alpine:init', () => {
     registerVariantPicker();
     registerMenuFilters();
     registerBill();
+    Alpine.data('waiterCallWidget', (hash) => waiterCallWidget(hash));
     registerOrders();
     registerChatWidget();
     registerTableMap();

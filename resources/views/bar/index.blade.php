@@ -2,6 +2,48 @@
 {{-- @author AyrtonAlania --}}
 <x-app-layout>
 
+  {{-- Llamadas al camarero: polling cada 15 segundos --}}
+  <div
+    x-data="waiterCallPolling()"
+    x-init="init()"
+    class="max-w-6xl mx-auto px-4 sm:px-6 pt-4"
+    role="region"
+    aria-label="Llamadas al camarero"
+  >
+    <template x-for="order in waiterOrders" :key="order.id">
+      <div
+        class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-300 dark:border-yellow-700
+               rounded-xl px-4 py-3 mb-2 shadow-sm animate-pulse-once"
+        role="alert"
+      >
+        <div class="flex items-center justify-between gap-3">
+          <div class="flex items-center gap-2 text-yellow-800 dark:text-yellow-200 font-medium text-sm min-w-0">
+            <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/>
+              <circle cx="12" cy="2" r="1" fill="currentColor" stroke="none"/>
+            </svg>
+            <strong x-text="order.table"></strong>
+            <span class="font-normal opacity-80">solicita al camarero</span>
+            <span
+              x-show="order.called_at"
+              x-text="order.called_at"
+              class="text-xs font-normal opacity-60 tabular-nums"
+              aria-label="Hora de la llamada"
+            ></span>
+          </div>
+          <button
+            @click="dismiss(order.id)"
+            class="shrink-0 inline-flex items-center gap-1.5 bg-yellow-500 hover:bg-yellow-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2 transition-colors cursor-pointer"
+            :aria-label="'Confirmar atención a: ' + order.table"
+          >
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>
+            Atendido
+          </button>
+        </div>
+      </div>
+    </template>
+  </div>
+
   {{-- Solicitudes de cuenta: polling cada 15 segundos --}}
   <div
     x-data="billRequestPolling()"
@@ -282,6 +324,8 @@
       'billDismissTemplate'          => route('notifications.bill.dismiss', ['order' => '__ID__']),
       'notificationsDismissTemplate' => route('notifications.dismiss', ['order' => '__ID__']),
       'notificationsReady'           => route('notifications.ready'),
+      'waiterCalls'                  => route('notifications.waiter.calls'),
+      'waiterDismissTemplate'        => route('notifications.waiter.dismiss', ['order' => '__ID__']),
       'payments'                     => url('/payments'),
       'barItems'                     => url('/bar/items'),
     ];
