@@ -245,6 +245,78 @@ class TapaConfig extends Model
         return $this->nextSlotOpeningTime($this->businessSchedules);
     }
 
+    /**
+     * Minutos que quedan hasta el cierre del tramo de cocina activo.
+     * Null si la cocina está cerrada o no hay tramos configurados.
+     *
+     * @return int|null
+     */
+    public function minutesUntilKitchenClose(): ?int
+    {
+        if (! $this->isKitchenOpen()) {
+            return null;
+        }
+
+        $schedules = $this->kitchenSchedules;
+
+        if ($schedules->isEmpty()) {
+            return null;
+        }
+
+        $now = Carbon::now()->format('H:i:s');
+
+        foreach ($schedules as $schedule) {
+            $opens  = $schedule->opens_at;
+            $closes = $schedule->closes_at;
+
+            $inSlot = ($opens <= $closes)
+                ? ($now >= $opens && $now <= $closes)
+                : ($now >= $opens || $now <= $closes);
+
+            if ($inSlot) {
+                return $this->minutesToTime($closes);
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Hora de cierre del tramo de cocina activo en formato "HH:MM".
+     * Null si la cocina está cerrada o no hay tramos configurados.
+     *
+     * @return string|null
+     */
+    public function kitchenCloseAtDisplay(): ?string
+    {
+        if (! $this->isKitchenOpen()) {
+            return null;
+        }
+
+        $schedules = $this->kitchenSchedules;
+
+        if ($schedules->isEmpty()) {
+            return null;
+        }
+
+        $now = Carbon::now()->format('H:i:s');
+
+        foreach ($schedules as $schedule) {
+            $opens  = $schedule->opens_at;
+            $closes = $schedule->closes_at;
+
+            $inSlot = ($opens <= $closes)
+                ? ($now >= $opens && $now <= $closes)
+                : ($now >= $opens || $now <= $closes);
+
+            if ($inSlot) {
+                return substr($closes, 0, 5);
+            }
+        }
+
+        return null;
+    }
+
     // ─── Lógica de tapas ─────────────────────────────────────────────────────
 
     /**

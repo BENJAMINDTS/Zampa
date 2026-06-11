@@ -31,9 +31,13 @@
             </div>
 
             <div class="dm-excl__copy" id="dm-excl-desc">
-                Para pedir el menú del día tu carrito debe estar vacío. Tienes
-                <strong x-text="Alpine.store('cart').items.length + (Alpine.store('cart').items.length === 1 ? ' artículo' : ' artículos')"></strong>
-                añadidos à la carte.
+                El Menú del Día no se puede combinar con pedidos à la carte en la misma mesa.
+                <template x-if="Alpine.store('cart').items.length > 0">
+                    <span>Tienes <strong x-text="Alpine.store('cart').count + (Alpine.store('cart').count === 1 ? ' artículo' : ' artículos')"></strong> en el carrito.</span>
+                </template>
+                <template x-if="Alpine.store('cart').items.length === 0">
+                    <span>Cancela los pedidos activos para continuar.</span>
+                </template>
             </div>
 
             <div class="dm-excl__actions">

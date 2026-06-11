@@ -572,7 +572,7 @@ it('fails when kitchen_schedules array exceeds 4 slots', function () {
          ->assertSessionHasErrors('kitchen_schedules');
 });
 
-it('menu hides kitchen categories when kitchen is closed', function () {
+it('menu reports kitchen as closed and keeps kitchen categories for Alpine dimming', function () {
     Carbon::setTestNow('2026-05-03 15:00:00');
 
     $config = TapaConfig::factory()->create(['user_id' => $this->user->id, 'tapas_enabled' => true]);
@@ -590,9 +590,12 @@ it('menu hides kitchen categories when kitchen is closed', function () {
     $response->assertOk();
     expect($response->viewData('kitchenOpen'))->toBeFalse();
 
+    // Las categorías de cocina se incluyen siempre en $categories;
+    // Alpine.js gestiona el dimming visual via $store.schedule.kitchenOpen.
     $categories   = $response->viewData('categories');
     $destinations = $categories->pluck('destination')->unique()->values()->toArray();
-    expect($destinations)->not->toContain('kitchen');
+    expect($destinations)->toContain('kitchen');
+    expect($destinations)->toContain('bar');
 
     Carbon::setTestNow();
 });

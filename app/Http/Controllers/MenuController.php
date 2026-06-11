@@ -42,8 +42,10 @@ class MenuController extends Controller
         $businessNextOpening    = ($config && ! $businessOpen) ? $config->getBusinessNextOpeningTime() : null;
         $minutesUntilClose      = ($config && $businessOpen && ! $orderingAllowed) ? $config->minutesUntilBusinessClose() : null;
 
-        $kitchenOpen     = ! $config || $config->isKitchenOpen();
-        $nextOpeningTime = ($config && ! $kitchenOpen) ? $config->nextOpeningTime() : null;
+        $kitchenOpen              = ! $config || $config->isKitchenOpen();
+        $nextOpeningTime          = ($config && ! $kitchenOpen) ? $config->nextOpeningTime() : null;
+        $minutesUntilKitchenClose = ($config && $kitchenOpen) ? $config->minutesUntilKitchenClose() : null;
+        $kitchenCloseAt           = ($config && $kitchenOpen) ? $config->kitchenCloseAtDisplay() : null;
 
         $allCategories = Cache::remember("menu:{$table->user_id}", 300, function () use ($table) {
             return Category::where('user_id', $table->user_id)
@@ -73,7 +75,6 @@ class MenuController extends Controller
 
         $categories = $allCategories
             ->filter(fn ($cat) => $cat->products->isNotEmpty())
-            ->when(! $kitchenOpen, fn ($col) => $col->reject(fn ($cat) => $cat->destination === 'kitchen'))
             ->when($config && $config->tapas_enabled, fn ($col) => $col->reject(fn ($cat) => $cat->name === 'Tapas'))
             ->values();
 
@@ -133,17 +134,14 @@ class MenuController extends Controller
             $shouldSuggest = $config->shouldSuggestTapa((int) $barItemsCount, $tapaVariantsUsed);
         }
 
-        $activeOrder = Order::where('table_id', $table->id)
-            ->whereIn('status', ['pending', 'cooking', 'ready'])
-            ->where('payment_status', 'pending')
-            ->latest()
-            ->first();
+        $activeOrders = Order::activeForTable($table->id)->get();
+        $activeOrder  = $activeOrders->sortByDesc('created_at')->first();
 
-        $hasActiveOrder      = (bool) $activeOrder;
-        $originalOrderTotal  = $activeOrder?->total ?? 0;
-        $paidViaSplit        = $activeOrder?->getPaidAmountViaSplit() ?? 0;
-        $activeOrderTotal    = max(0, $originalOrderTotal - $paidViaSplit);
-        $billRequested       = (bool) ($activeOrder?->bill_requested);
+        $hasActiveOrder   = $activeOrders->isNotEmpty();
+        $activeOrderTotal = $activeOrders->sum(
+            fn ($o) => max(0, $o->total - $o->getPaidAmountViaSplit())
+        );
+        $billRequested    = $activeOrders->contains('bill_requested', true);
 
         $stripePublicKey = config('services.stripe.key');
 
@@ -217,9 +215,10 @@ class MenuController extends Controller
             'theme', 'table', 'categories', 'allergens',
             'tapaConfig', 'barItemsCount', 'kitchenOpen', 'nextOpeningTime',
             'tapaVariantsUsed', 'tapasQuantityUsed', 'tapaProducts', 'shouldSuggest',
-            'hasActiveOrder', 'activeOrderTotal', 'originalOrderTotal', 'billRequested', 'stripePublicKey',
+            'hasActiveOrder', 'activeOrderTotal', 'billRequested', 'stripePublicKey',
             'splitPaymentEnabled', 'splitPaymentMaxParts', 'activeOrderItemsForAlpine', 'allOrdersForAlpine',
-            'businessOpen', 'orderingAllowed', 'businessNextOpening', 'minutesUntilClose'
+            'businessOpen', 'orderingAllowed', 'businessNextOpening', 'minutesUntilClose',
+            'minutesUntilKitchenClose', 'kitchenCloseAt'
         ));
     }
 }

@@ -158,9 +158,9 @@ export function registerBill() {
         showingTip:  false,
         tipAmount:   0,
         tipPercent:  null,
-        orderTotal:         ctx.activeOrderTotal   ?? 0,
-        originalOrderTotal: ctx.originalOrderTotal ?? 0,
-        grandTotal:         ctx.activeOrderTotal   ?? 0,
+        orderTotal:         ctx.activeOrderTotal ?? 0,
+        originalOrderTotal: ctx.activeOrderTotal ?? 0,
+        grandTotal:         ctx.activeOrderTotal ?? 0,
 
         payingCard:   false,
         stripeReady:  false,

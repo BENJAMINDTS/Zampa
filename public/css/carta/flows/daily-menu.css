@@ -278,12 +278,14 @@
 .filter-section--dm .dm-chip { width: 100%; }
 
 /* â”€â”€ DiÃ¡logo de exclusividad â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-.modal--center { align-items: center; }
-.carta[data-bp="mobile"] .modal--center { align-items: center; padding: 0 16px; }
+.modal--center { align-items: center; justify-content: center; }
+.carta[data-bp="mobile"] .modal--center { padding: 0 16px; }
 .modal__panel--narrow {
+  width: 100%;
   max-width: 360px;
   border-radius: 18px;
   padding: 22px 22px 18px;
+  animation: fade-in 180ms var(--ease-out);
 }
 .dm-excl {
   display: flex; flex-direction: column; align-items: center; text-align: center;
@@ -313,6 +315,7 @@
   display: flex; gap: 8px; width: 100%; margin-top: 8px;
 }
 .dm-excl__actions > * { flex: 1; }
+.carta[data-bp="mobile"] .dm-excl__actions { flex-direction: column; gap: 6px; }
 .dm-excl__btnPrimary {
   background: var(--color-amber-400);
   box-shadow: 0 8px 20px rgba(245, 158, 11, 0.35);
@@ -927,8 +930,8 @@
    visibilidad; en claro mantiene el verde primario del sistema. */
 :root         { --select-accent: var(--color-green-600); --select-accent-fg: #FFFFFF; --select-accent-soft: var(--color-green-50); }
 [data-theme="dark"] {
-  --select-accent:      #22D3EE;            /* cyan-400 */
-  --select-accent-fg:   #001823;            /* navy oscuro, contraste AAA sobre cyan */
+  --select-accent:      #22D3EE;
+  --select-accent-fg:   #FFFFFF;
   --select-accent-soft: rgba(34, 211, 238, 0.14);
 }
 
@@ -941,12 +944,14 @@
    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
 /* Chips horizontales (Cocina / Barra / Todas / categorÃ­as) â€” mÃ³vil */
+[data-theme="modern"] .chip--active,
 [data-theme="light"] .chip--active {
   background: var(--select-accent);
   color: var(--select-accent-fg);
   font-weight: 700;
   box-shadow: 0 0 0 1px rgba(22, 163, 74, 0.55), 0 6px 16px rgba(22, 163, 74, 0.28);
 }
+[data-theme="modern"] .chip--active:hover,
 [data-theme="light"] .chip--active:hover {
   background: var(--select-accent);
   color: var(--select-accent-fg);
@@ -954,16 +959,16 @@
 }
 
 /* Toggle Servicio (Todo / ðŸ³ / ðŸº) â€” sidebar tablet+desktop */
+[data-theme="modern"] .dest-toggle button.active,
 [data-theme="light"] .dest-toggle button.active {
   background: var(--select-accent);
   color: var(--select-accent-fg);
   font-weight: 800;
-  box-shadow:
-    0 0 0 1px rgba(22, 163, 74, 0.5) inset,
-    0 3px 8px rgba(22, 163, 74, 0.28);
+  box-shadow: 0 0 0 1px rgba(22,163,74,.5) inset, 0 3px 8px rgba(22,163,74,.28);
 }
 
 /* Lista de CategorÃ­as (sidebar) â€” NO los alÃ©rgenos (siguen en Ã¡mbar) */
+[data-theme="modern"] .filter-list:not(.filter-list--allergens) .filter-list__item--active,
 [data-theme="light"] .filter-list:not(.filter-list--allergens) .filter-list__item--active {
   background: var(--select-accent-soft);
   color: var(--color-green-800);
@@ -971,10 +976,12 @@
   box-shadow: inset 3px 0 0 var(--select-accent);
   padding-left: 13px;   /* compensa la barra para que el texto no salte */
 }
+[data-theme="modern"] .filter-list:not(.filter-list--allergens) .filter-list__item--active .filter-list__count,
 [data-theme="light"] .filter-list:not(.filter-list--allergens) .filter-list__item--active .filter-list__count {
   color: var(--brand-primary);
   font-weight: 700;
 }
+[data-theme="modern"] .filter-list:not(.filter-list--allergens) .filter-list__item--active .filter-list__check,
 [data-theme="light"] .filter-list:not(.filter-list--allergens) .filter-list__item--active .filter-list__check {
   background: var(--select-accent);
   border-color: var(--select-accent);
@@ -1011,13 +1018,11 @@
   color: var(--color-blue-200);
 }
 [data-theme="dark"] .dest-toggle button:hover { color: #FFFFFF; }
-[data-theme="dark"] .dest-toggle button.active {
+[data-theme=”dark”] .dest-toggle button.active {
   background: var(--select-accent);
   color: var(--select-accent-fg);
   font-weight: 800;
-  box-shadow:
-    0 0 0 1px rgba(34, 211, 238, 0.6) inset,
-    0 4px 10px rgba(34, 211, 238, 0.25);
+  box-shadow: 0 0 0 1px rgba(34,211,238,.6) inset, 0 4px 10px rgba(34,211,238,.25);
 }
 
 /* â”€â”€ Lista de CategorÃ­as y AlÃ©rgenos (sidebar) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
@@ -1028,23 +1033,21 @@
 [data-theme="dark"] .filter-list__item:hover {
   background: rgba(255, 255, 255, 0.05);
 }
-[data-theme="dark"] .filter-list__item--active {
-  /* SelecciÃ³n: fondo soft-cyan + barra lateral cian saturada */
-  background: var(--select-accent-soft);
-  color: #FFFFFF;
-  font-weight: 700;
-  box-shadow: inset 3px 0 0 var(--select-accent);
-  padding-left: 13px;   /* compensa la barra para que el texto no salte */
-}
-[data-theme="dark"] .filter-list__item--active .filter-list__count {
-  color: var(--select-accent);
-  font-weight: 700;
-}
-/* Caja del check de alÃ©rgenos tambiÃ©n en cian al estar activa */
-[data-theme="dark"] .filter-list__item--active .filter-list__check {
+[data-theme=”dark”] .filter-list__item--active {
   background: var(--select-accent);
-  border-color: var(--select-accent);
   color: var(--select-accent-fg);
+  font-weight: 700;
+  box-shadow: none;
+  padding-left: 10px;
+}
+[data-theme=”dark”] .filter-list__item--active .filter-list__count {
+  color: var(--select-accent-fg);
+  font-weight: 700;
+}
+[data-theme=”dark”] .filter-list__item--active .filter-list__check {
+  background: var(--select-accent-fg);
+  border-color: var(--select-accent-fg);
+  color: var(--select-accent);
 }
 
 /* â”€â”€ Mobile filter row: refuerzo de chip activo y separadores â”€â”€ */
@@ -1141,14 +1144,7 @@
      c) forma (barra lateral, halo, glifo, peso de fuente)
    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
-/* Sidebar: el activo necesita mÃ¡s luminancia y borde lateral mÃ¡s grueso */
-[data-theme="dark"] .filter-list__item--active {
-  background: rgba(34, 211, 238, 0.22);
-  box-shadow:
-    inset 4px 0 0 var(--select-accent),
-    inset 0 0 0 1px rgba(34, 211, 238, 0.35);
-  padding-left: 12px;
-}
+/* Sidebar: refuerzo — ya resuelto con fondo sólido en las reglas superiores */
 
 /* Allergens keep the amber look in dark mode too (matches mobile chip) */
 [data-theme="dark"] .carta__filters .filter-list--allergens .filter-list__item--active {
@@ -1174,22 +1170,18 @@
 [data-theme="dark"] .chip--active {
   background: var(--select-accent);
   color: var(--select-accent-fg);
-  border: 1px solid #001823;        /* anillo oscuro = cue de forma */
+  border: 1px solid #001823;
   box-shadow:
     0 0 0 2px rgba(34, 211, 238, 0.45),
     0 6px 16px rgba(34, 211, 238, 0.25);
 }
 
-/* dest-toggle activo: mismo refuerzo + peso visible */
+/* dest-toggle activo: acento cyan en oscuro */
 [data-theme="dark"] .dest-toggle button.active {
   background: var(--select-accent);
   color: var(--select-accent-fg);
   font-weight: 900;
-  outline: 1px solid #001823;
-  outline-offset: -1px;
-  box-shadow:
-    0 0 0 2px rgba(34, 211, 238, 0.45),
-    0 4px 10px rgba(34, 211, 238, 0.30);
+  box-shadow: 0 0 0 2px rgba(34,211,238,.45), 0 4px 10px rgba(34,211,238,.30);
 }
 
 /* Daily-menu option seleccionada en oscuro: el radio/check pasa de

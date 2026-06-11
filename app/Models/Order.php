@@ -135,4 +135,20 @@ class Order extends Model
     {
         return $this->getPaidAmountViaSplit() >= (float) $this->total;
     }
+
+    /**
+     * Scope: todos los pedidos activos (sin cerrar, sin pagar) de una mesa.
+     * Usado por los controladores de pago para agregar múltiples pedidos activos
+     * simultáneos (p. ej. à la carte + menú del día).
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @param  int  $tableId
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeActiveForTable(\Illuminate\Database\Eloquent\Builder $query, int $tableId): \Illuminate\Database\Eloquent\Builder
+    {
+        return $query->where('table_id', $tableId)
+            ->whereIn('status', ['pending', 'cooking', 'ready', 'served'])
+            ->where('payment_status', 'pending');
+    }
 }

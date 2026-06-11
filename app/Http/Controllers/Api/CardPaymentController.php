@@ -30,20 +30,16 @@ class CardPaymentController extends Controller
     {
         $table = Table::where('unique_hash', $hash)->firstOrFail();
 
-        $order = Order::where('table_id', $table->id)
-            ->whereIn('status', ['pending', 'cooking', 'ready'])
-            ->where('payment_status', 'pending')
-            ->latest()
-            ->first();
+        $orders = Order::activeForTable($table->id)->get();
 
-        if (! $order) {
+        if ($orders->isEmpty()) {
             return response()->json([
                 'success' => false,
                 'message' => 'No hay un pedido activo en esta mesa.',
             ], 404);
         }
 
-        $remaining = max(0, $order->total - $order->getPaidAmountViaSplit());
+        $remaining = $orders->sum(fn ($o) => max(0, $o->total - $o->getPaidAmountViaSplit()));
 
         return response()->json(['success' => true, 'total' => $remaining]);
     }
@@ -67,20 +63,16 @@ class CardPaymentController extends Controller
 
         $table = Table::with('user')->where('unique_hash', $hash)->firstOrFail();
 
-        $order = Order::where('table_id', $table->id)
-            ->whereIn('status', ['pending', 'cooking', 'ready'])
-            ->where('payment_status', 'pending')
-            ->latest()
-            ->first();
+        $orders = Order::activeForTable($table->id)->get();
 
-        if (! $order) {
+        if ($orders->isEmpty()) {
             return response()->json([
                 'success' => false,
                 'message' => 'No hay un pedido activo en esta mesa.',
             ], 404);
         }
 
-        $remaining  = max(0, $order->total - $order->getPaidAmountViaSplit());
+        $remaining  = $orders->sum(fn ($o) => max(0, $o->total - $o->getPaidAmountViaSplit()));
         $grandTotal = $remaining + $tip;
 
         $stripeAccountId = ($table->user->stripe_onboarding_completed && $table->user->stripe_account_id)
@@ -90,7 +82,7 @@ class CardPaymentController extends Controller
         $result = $this->stripe->createPaymentIntent(
             amount:          (int) round($grandTotal * 100),
             currency:        'eur',
-            metadata:        ['order_id' => $order->id, 'table_name' => $table->name, 'tip' => $tip],
+            metadata:        ['order_ids' => $orders->pluck('id')->implode(','), 'table_name' => $table->name, 'tip' => $tip],
             stripeAccountId: $stripeAccountId,
         );
 
@@ -120,13 +112,9 @@ class CardPaymentController extends Controller
 
         $table = Table::where('unique_hash', $hash)->firstOrFail();
 
-        $order = Order::where('table_id', $table->id)
-            ->whereIn('status', ['pending', 'cooking', 'ready'])
-            ->where('payment_status', 'pending')
-            ->latest()
-            ->first();
+        $orders = Order::activeForTable($table->id)->get();
 
-        if (! $order) {
+        if ($orders->isEmpty()) {
             return response()->json([
                 'success' => false,
                 'message' => 'No hay un pedido activo en esta mesa.',
@@ -142,14 +130,19 @@ class CardPaymentController extends Controller
             ], 422);
         }
 
-        $order->update([
-            'payment_method' => 'card',
-            'payment_status' => 'paid',
-            'status'         => 'closed',
-            'bill_requested' => false,
-            'tip'            => $validated['tip'] ?? 0,
-        ]);
+        // Cerrar todos los pedidos activos de la mesa con el mismo pago
+        $tip = (float) ($validated['tip'] ?? 0);
+        foreach ($orders as $index => $order) {
+            $order->update([
+                'payment_method' => 'card',
+                'payment_status' => 'paid',
+                'status'         => 'closed',
+                'bill_requested' => false,
+                // La propina se asigna solo al primer pedido para no duplicarla
+                'tip'            => $index === 0 ? $tip : 0,
+            ]);
+        }
 
-        return response()->json(['success' => true, 'order_id' => $order->id]);
+        return response()->json(['success' => true, 'order_id' => $orders->first()->id]);
     }
 }

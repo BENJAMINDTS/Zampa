@@ -158,6 +158,65 @@
 .biz-closed__btn:hover { background: var(--color-amber-400); }
 .biz-closed__btn:active { transform: scale(0.97); }
 
+/* ---- 1c) Responsive — BusinessClosed overlay ---- */
+
+/* Mobile: card más compacta, fuentes reducidas, blind scrolleable */
+.carta[data-bp="mobile"] .biz-closed__blind {
+  overflow-y: auto;
+  justify-content: flex-start;
+  padding-top: 16px;
+}
+.carta[data-bp="mobile"] .biz-closed__card {
+  width: calc(100% - 28px);
+  padding: 22px 18px;
+  border-radius: 14px;
+  margin: auto 0;
+}
+.carta[data-bp="mobile"] .biz-closed__clock {
+  width: 52px;
+  height: 52px;
+  margin-bottom: 10px;
+}
+.carta[data-bp="mobile"] .biz-closed__clock svg {
+  width: 52px;
+  height: 52px;
+}
+.carta[data-bp="mobile"] .biz-closed__h1 {
+  font-size: 20px;
+}
+.carta[data-bp="mobile"] .biz-closed__p {
+  font-size: 13px;
+  margin-bottom: 14px;
+}
+.carta[data-bp="mobile"] .biz-closed__row {
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.carta[data-bp="mobile"] .biz-closed__tag {
+  font-size: 10.5px;
+  padding: 4px 8px;
+}
+.carta[data-bp="mobile"] .biz-closed__btn {
+  padding: 11px 14px;
+  font-size: 13.5px;
+}
+
+/* Tablet: carta__body es carta - sidebar (~220px); card ligeramente más estrecha */
+.carta[data-bp="tablet"] .biz-closed__card {
+  max-width: 360px;
+  padding: 26px 28px;
+}
+
+/* Desktop: carta__body es carta - sidebar (~240px); más generoso */
+.carta[data-bp="desktop"] .biz-closed__card {
+  max-width: 400px;
+  padding: 32px 36px;
+}
+.carta[data-bp="desktop"] .biz-closed__h1 {
+  font-size: 24px;
+}
+
 /* ---- 2) Tapas indicator ---- */
 /* Custom props permiten que @keyframes adapte sombra a cada tema */
 .tapas-indicator {

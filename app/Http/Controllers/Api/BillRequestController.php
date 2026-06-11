@@ -32,23 +32,24 @@ class BillRequestController extends Controller
 
         $table = Table::where('unique_hash', $hash)->firstOrFail();
 
-        $order = Order::where('table_id', $table->id)
-            ->whereIn('status', ['pending', 'cooking', 'ready'])
-            ->where('payment_status', 'pending')
-            ->latest()
-            ->first();
+        $orders = Order::activeForTable($table->id)->get();
 
-        if (! $order) {
+        if ($orders->isEmpty()) {
             return response()->json([
                 'success' => false,
                 'message' => 'No hay un pedido activo en esta mesa.',
             ], 404);
         }
 
-        $order->update([
+        // Marcar todos los pedidos activos: el cliente puede tener à la carte + menú del día
+        $orders->each(fn ($o) => $o->update([
             'bill_requested'           => true,
             'requested_payment_method' => $validated['payment_method'],
-            'tip'                      => (float) ($validated['tip'] ?? 0),
+        ]));
+
+        // La propina se asigna al pedido más reciente para no duplicarla
+        $orders->sortByDesc('created_at')->first()->update([
+            'tip' => (float) ($validated['tip'] ?? 0),
         ]);
 
         return response()->json(['success' => true]);

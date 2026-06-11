@@ -173,10 +173,11 @@ it('returns 404 when no daily menu is available today', function () {
     ])->assertStatus(404);
 });
 
-it('returns 409 when the table has a la carte orders pending', function () {
+it('allows placing daily menu order when the table has a la carte orders pending', function () {
+    Queue::fake();
     ['menu' => $menu, 'section' => $section, 'product' => $product] = buildTodayMenu($this->user->id);
 
-    $order = Order::factory()->create(['table_id' => $this->table->id, 'status' => 'pending']);
+    Order::factory()->create(['table_id' => $this->table->id, 'status' => 'pending']);
 
     $this->postJson("/api/v1/menu/{$this->table->unique_hash}/daily-menu/order", [
         'selections' => [[
@@ -184,7 +185,7 @@ it('returns 409 when the table has a la carte orders pending', function () {
             'product_id' => $product->id,
             'quantity'   => 1,
         ]],
-    ])->assertStatus(409);
+    ])->assertCreated();
 });
 
 it('creates a daily menu order successfully', function () {

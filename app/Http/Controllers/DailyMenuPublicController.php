@@ -150,22 +150,7 @@ class DailyMenuPublicController extends Controller
             ], 404);
         }
 
-        // PASO 2 — Verificar exclusividad con pedidos à la carte
-        $hasAlaCarteOrders = Order::where('table_id', $table->id)
-            ->whereIn('status', ['pending', 'cooking'])
-            ->whereDoesntHave('dailyMenuOrder')
-            ->whereDate('created_at', today())
-            ->exists();
-
-        if ($hasAlaCarteOrders) {
-            return response()->json([
-                'success' => false,
-                'data'    => null,
-                'message' => 'Ya tienes productos à la carte en el carrito. Vacíalo para pedir el Menú del Día.',
-            ], 409);
-        }
-
-        // PASO 3 — Resolver el menú de hoy
+        // PASO 2 — Resolver el menú de hoy
         $menu = DailyMenu::forToday($table->user_id);
 
         if (! $menu) {
@@ -176,7 +161,7 @@ class DailyMenuPublicController extends Controller
             ], 404);
         }
 
-        // PASO 4 — Validación de input
+        // PASO 3 — Validación de input
         $request->validate([
             'selections'                       => 'required|array|min:1',
             'selections.*.section_id'          => 'required|integer',
@@ -296,9 +281,6 @@ class DailyMenuPublicController extends Controller
                     'quantity'              => $sel['quantity'],
                 ]);
             }
-
-            // PASO 6d — Despachar rondas
-            DailyMenuOrderService::dispatchRounds($dailyMenuOrder, $menu->timingRules, $timingOverrides);
         });
 
         if ($soldOut) {
@@ -308,6 +290,9 @@ class DailyMenuPublicController extends Controller
                 'message' => 'El Menú del Día está agotado por hoy.',
             ], 409);
         }
+
+        // PASO 6d — Despachar rondas fuera de la transacción para que los datos estén confirmados
+        DailyMenuOrderService::dispatchRounds($dailyMenuOrder, $menu->timingRules, $timingOverrides);
 
         // PASO 7 — Calcular estimated_times para la respuesta
         $estimatedTimes = $menu->timingRules->map(function ($rule) use ($timingOverrides) {

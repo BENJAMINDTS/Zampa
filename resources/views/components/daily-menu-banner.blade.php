@@ -71,8 +71,5 @@
         </button>
     </div>
 
-{{-- ── Diálogo de exclusividad ──────────────────────────────────── --}}
-<x-daily-menu-exclusivity-dialog />
-
 {{-- ── Stepper modal (teleportado a .carta vía x-teleport) ──────── --}}
 <x-daily-menu-stepper :hash="$hash" />
