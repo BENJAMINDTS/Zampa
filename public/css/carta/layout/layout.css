@@ -368,10 +368,10 @@ html, body {
   padding-left: 13px;
 }
 [data-theme="dark"] .filter-list:not(.filter-list--allergens) .filter-list__item--active {
-  background: var(--select-accent-soft);
-  color: #FFFFFF;
-  box-shadow: inset 3px 0 0 var(--select-accent);
-  padding-left: 13px;
+  background: var(--select-accent);
+  color: var(--select-accent-fg);
+  box-shadow: none;
+  padding-left: 10px;
 }
 .filter-list__count { margin-left: auto; font-size: 11px; color: var(--fg-muted); font-variant-numeric: tabular-nums; }
 .filter-list__item--active .filter-list__count { color: var(--select-accent); font-weight: 700; }
@@ -411,12 +411,18 @@ html, body {
 }
 .carta[data-bp=”tablet”][data-theme=”dark”] .filter-list:not(.filter-list--allergens) .filter-list__item--active,
 .carta[data-bp=”desktop”][data-theme=”dark”] .filter-list:not(.filter-list--allergens) .filter-list__item--active {
-  background: var(--select-accent-soft);
-  color: #FFFFFF;
+  background: var(--select-accent);
+  color: var(--select-accent-fg);
+  box-shadow: none;
+  padding-left: 10px;
 }
 .carta[data-bp=”tablet”] .filter-list:not(.filter-list--allergens) .filter-list__item--active .filter-list__count,
 .carta[data-bp=”desktop”] .filter-list:not(.filter-list--allergens) .filter-list__item--active .filter-list__count {
   color: var(--select-accent); font-weight: 700;
+}
+.carta[data-bp=”tablet”][data-theme=”dark”] .filter-list:not(.filter-list--allergens) .filter-list__item--active .filter-list__count,
+.carta[data-bp=”desktop”][data-theme=”dark”] .filter-list:not(.filter-list--allergens) .filter-list__item--active .filter-list__count {
+  color: var(--select-accent-fg);
 }
 .carta[data-bp=”tablet”] .filter-list:not(.filter-list--allergens) .filter-list__item--active .filter-list__check,
 .carta[data-bp=”desktop”] .filter-list:not(.filter-list--allergens) .filter-list__item--active .filter-list__check {
