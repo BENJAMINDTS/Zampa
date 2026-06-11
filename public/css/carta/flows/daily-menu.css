@@ -930,8 +930,8 @@
    visibilidad; en claro mantiene el verde primario del sistema. */
 :root         { --select-accent: var(--color-green-600); --select-accent-fg: #FFFFFF; --select-accent-soft: var(--color-green-50); }
 [data-theme="dark"] {
-  --select-accent:      #22D3EE;            /* cyan-400 */
-  --select-accent-fg:   #001823;            /* navy oscuro, contraste AAA sobre cyan */
+  --select-accent:      #22D3EE;
+  --select-accent-fg:   #FFFFFF;
   --select-accent-soft: rgba(34, 211, 238, 0.14);
 }
 
@@ -1033,23 +1033,21 @@
 [data-theme="dark"] .filter-list__item:hover {
   background: rgba(255, 255, 255, 0.05);
 }
-[data-theme="dark"] .filter-list__item--active {
-  /* SelecciÃ³n: fondo soft-cyan + barra lateral cian saturada */
-  background: var(--select-accent-soft);
-  color: #FFFFFF;
-  font-weight: 700;
-  box-shadow: inset 3px 0 0 var(--select-accent);
-  padding-left: 13px;   /* compensa la barra para que el texto no salte */
-}
-[data-theme="dark"] .filter-list__item--active .filter-list__count {
-  color: var(--select-accent);
-  font-weight: 700;
-}
-/* Caja del check de alÃ©rgenos tambiÃ©n en cian al estar activa */
-[data-theme="dark"] .filter-list__item--active .filter-list__check {
+[data-theme=”dark”] .filter-list__item--active {
   background: var(--select-accent);
-  border-color: var(--select-accent);
   color: var(--select-accent-fg);
+  font-weight: 700;
+  box-shadow: none;
+  padding-left: 10px;
+}
+[data-theme=”dark”] .filter-list__item--active .filter-list__count {
+  color: var(--select-accent-fg);
+  font-weight: 700;
+}
+[data-theme=”dark”] .filter-list__item--active .filter-list__check {
+  background: var(--select-accent-fg);
+  border-color: var(--select-accent-fg);
+  color: var(--select-accent);
 }
 
 /* â”€â”€ Mobile filter row: refuerzo de chip activo y separadores â”€â”€ */
@@ -1146,14 +1144,7 @@
      c) forma (barra lateral, halo, glifo, peso de fuente)
    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
-/* Sidebar: el activo necesita mÃ¡s luminancia y borde lateral mÃ¡s grueso */
-[data-theme="dark"] .filter-list__item--active {
-  background: rgba(34, 211, 238, 0.22);
-  box-shadow:
-    inset 4px 0 0 var(--select-accent),
-    inset 0 0 0 1px rgba(34, 211, 238, 0.35);
-  padding-left: 12px;
-}
+/* Sidebar: refuerzo — ya resuelto con fondo sólido en las reglas superiores */
 
 /* Allergens keep the amber look in dark mode too (matches mobile chip) */
 [data-theme="dark"] .carta__filters .filter-list--allergens .filter-list__item--active {
@@ -1179,7 +1170,7 @@
 [data-theme="dark"] .chip--active {
   background: var(--select-accent);
   color: var(--select-accent-fg);
-  border: 1px solid #001823;        /* anillo oscuro = cue de forma */
+  border: 1px solid #001823;
   box-shadow:
     0 0 0 2px rgba(34, 211, 238, 0.45),
     0 6px 16px rgba(34, 211, 238, 0.25);
