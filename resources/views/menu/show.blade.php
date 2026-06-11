@@ -16,8 +16,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     @endif
     @vite(['resources/js/app.js'])
-    <link rel="stylesheet" href="{{ asset('css/carta/colors_and_type.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/carta/styles.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/carta/colors_and_type.css') }}?v={{ filemtime(public_path('css/carta/colors_and_type.css')) }}">
+    <link rel="stylesheet" href="{{ asset('css/carta/styles.css') }}?v={{ filemtime(public_path('css/carta/styles.css')) }}">
     <meta name="stripe-key" content="{{ $stripePublicKey }}">
     <script src="{{ asset('js/allergen-pictograms.js') }}"></script>
     <script>window.ZAMPA_ALLERGEN_LABELS = @json(\App\Models\Ingredient::ALLERGEN_TYPES);</script>
@@ -263,11 +263,15 @@
                 document.documentElement.removeAttribute('data-dark-pending');
             }
             const updateBp = () => {
-                const w = window.innerWidth;
+                const w = $el.offsetWidth || window.innerWidth;
                 $el.dataset.bp = w < 640 ? 'mobile' : w < 1024 ? 'tablet' : 'desktop';
             };
             updateBp();
-            window.addEventListener('resize', updateBp);
+            if (typeof ResizeObserver !== 'undefined') {
+                new ResizeObserver(updateBp).observe($el);
+            } else {
+                window.addEventListener('resize', updateBp);
+            }
             $nextTick(() => {
                 $el.classList.add('carta--reveal');
                 void $el.offsetWidth;
@@ -1068,14 +1072,14 @@
                 <div class="filter-row">
                     {{-- Destino: cocina / barra --}}
                     <button type="button"
-                            class="chip chip--small"
+                            class="chip chip--small chip--dest"
                             :class="activeDestination === 'kitchen' ? 'chip--active' : ''"
                             @click="setDestination('kitchen')"
                             :aria-pressed="(activeDestination === 'kitchen').toString()">
                         🍳 Cocina
                     </button>
                     <button type="button"
-                            class="chip chip--small"
+                            class="chip chip--small chip--dest"
                             :class="activeDestination === 'bar' ? 'chip--active' : ''"
                             @click="setDestination('bar')"
                             :aria-pressed="(activeDestination === 'bar').toString()">
