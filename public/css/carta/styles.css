@@ -1,11 +1,11 @@
 /* =========================================================
    Carta Digital Pública — entry point
    ========================================================= */
-@import url('./colors_and_type.css');
-@import './layout/layout.css?v=4';
+@import url('./colors_and_type.css?v=3');
+@import './layout/layout.css?v=7';
 @import './components/products.css';
 @import './components/cart.css';
 @import './flows/bill.css';
-@import './flows/daily-menu.css?v=5';
+@import './flows/daily-menu.css?v=10';
 @import './flows/features.css';
 @import './themes/themes.css';
