@@ -18,6 +18,23 @@
     @vite(['resources/js/app.js'])
     <link rel="stylesheet" href="{{ asset('css/carta/colors_and_type.css') }}?v={{ filemtime(public_path('css/carta/colors_and_type.css')) }}">
     <link rel="stylesheet" href="{{ asset('css/carta/styles.css') }}?v={{ filemtime(public_path('css/carta/styles.css')) }}">
+    <style>
+    /* ── Dark mode: categoría seleccionada en sidebar ──────────────────
+       Mismo estilo que light mode: fondo suave + barra lateral izquierda.
+       Light:  soft-green bg  + green left-bar  + dark-green text
+       Dark:   soft-cyan bg   + cyan left-bar   + white text            */
+    .carta[data-theme="dark"] .filter-list:not(.filter-list--allergens) .filter-list__item--active {
+      background: rgba(34, 211, 238, 0.14) !important;
+      color: #FFFFFF !important;
+      box-shadow: inset 3px 0 0 #22D3EE !important;
+      padding-left: 13px !important;
+      font-weight: 700 !important;
+    }
+    .carta[data-theme="dark"] .filter-list__item--active .filter-list__count {
+      color: #22D3EE !important;
+      font-weight: 700 !important;
+    }
+    </style>
     <meta name="stripe-key" content="{{ $stripePublicKey }}">
     <script src="{{ asset('js/allergen-pictograms.js') }}"></script>
     <script>window.ZAMPA_ALLERGEN_LABELS = @json(\App\Models\Ingredient::ALLERGEN_TYPES);</script>
