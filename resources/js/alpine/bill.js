@@ -242,9 +242,9 @@ export function registerBill() {
             } catch {
                 // use cached total from page load
             }
-            this.tipPercent = suggestedTipPercent(this.orderTotal);
-            this.tipAmount  = calculateTipFromPercent(this.orderTotal, this.tipPercent);
-            this.grandTotal = this.orderTotal + this.tipAmount;
+            this.tipPercent = null;
+            this.tipAmount  = 0;
+            this.grandTotal = this.orderTotal;
             this.showingTip = true;
             this.step       = 'tip';
         },
@@ -484,9 +484,9 @@ export function registerBill() {
 
         openCashTip() {
             this.choosing       = false;
-            this.cashTipPercent = suggestedTipPercent(this.orderTotal);
-            this.cashTipAmount  = calculateTipFromPercent(this.orderTotal, this.cashTipPercent);
-            this.cashGrandTotal = this.orderTotal + this.cashTipAmount;
+            this.cashTipPercent = null;
+            this.cashTipAmount  = 0;
+            this.cashGrandTotal = this.orderTotal;
             this.showingCashTip = true;
             this.step           = 'cashConfirm';
         },
@@ -520,9 +520,9 @@ export function registerBill() {
             this.splitTipBase       = amount;
             this.splitTipType       = type;
             this.splitTipItemIds    = itemIds || [];
-            this.splitTipPercent    = suggestedTipPercent(amount);
-            this.splitTipAmount     = calculateTipFromPercent(amount, this.splitTipPercent);
-            this.splitTipGrandTotal = amount + this.splitTipAmount;
+            this.splitTipPercent    = null;
+            this.splitTipAmount     = 0;
+            this.splitTipGrandTotal = amount;
             this.splitShowItems     = false;
             this.splitShowEq        = false;
             this.showingSplitTip    = true;
@@ -623,9 +623,9 @@ export function registerBill() {
         openMixedTip() {
             this.showingMixed       = false;
             this.mixedTipBase       = this.mixedCardAmount;
-            this.mixedTipPercent    = suggestedTipPercent(this.mixedCardAmount);
-            this.mixedTipAmount     = calculateTipFromPercent(this.mixedCardAmount, this.mixedTipPercent);
-            this.mixedTipGrandTotal = this.mixedCardAmount + this.mixedTipAmount;
+            this.mixedTipPercent    = null;
+            this.mixedTipAmount     = 0;
+            this.mixedTipGrandTotal = this.mixedCardAmount;
             this.showingMixedTip    = true;
             this.step               = 'mixedTip';
         },
