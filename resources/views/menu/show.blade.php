@@ -4032,5 +4032,21 @@
         </div>
 
     </div>{{-- /carta (Alpine) --}}
+
+    <script>
+        (function () {
+            var el = document.getElementById('main-content');
+            if (!el) return;
+            function update() {
+                var remaining = el.scrollHeight - el.clientHeight - el.scrollTop;
+                var fade = Math.max(0, Math.min(64, remaining));
+                el.style.setProperty('--carta-fade', fade + 'px');
+            }
+            update();
+            el.addEventListener('scroll', update, { passive: true });
+            window.addEventListener('resize', update);
+            new ResizeObserver(update).observe(el);
+        })();
+    </script>
 </body>
 </html>
