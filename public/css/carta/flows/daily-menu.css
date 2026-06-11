@@ -944,12 +944,14 @@
    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
 /* Chips horizontales (Cocina / Barra / Todas / categorÃ­as) â€” mÃ³vil */
+[data-theme="modern"] .chip--active,
 [data-theme="light"] .chip--active {
   background: var(--select-accent);
   color: var(--select-accent-fg);
   font-weight: 700;
   box-shadow: 0 0 0 1px rgba(22, 163, 74, 0.55), 0 6px 16px rgba(22, 163, 74, 0.28);
 }
+[data-theme="modern"] .chip--active:hover,
 [data-theme="light"] .chip--active:hover {
   background: var(--select-accent);
   color: var(--select-accent-fg);
@@ -957,16 +959,16 @@
 }
 
 /* Toggle Servicio (Todo / ðŸ³ / ðŸº) â€” sidebar tablet+desktop */
+[data-theme="modern"] .dest-toggle button.active,
 [data-theme="light"] .dest-toggle button.active {
   background: var(--select-accent);
   color: var(--select-accent-fg);
   font-weight: 800;
-  box-shadow:
-    0 0 0 1px rgba(22, 163, 74, 0.5) inset,
-    0 3px 8px rgba(22, 163, 74, 0.28);
+  box-shadow: 0 0 0 1px rgba(22,163,74,.5) inset, 0 3px 8px rgba(22,163,74,.28);
 }
 
 /* Lista de CategorÃ­as (sidebar) â€” NO los alÃ©rgenos (siguen en Ã¡mbar) */
+[data-theme="modern"] .filter-list:not(.filter-list--allergens) .filter-list__item--active,
 [data-theme="light"] .filter-list:not(.filter-list--allergens) .filter-list__item--active {
   background: var(--select-accent-soft);
   color: var(--color-green-800);
@@ -974,10 +976,12 @@
   box-shadow: inset 3px 0 0 var(--select-accent);
   padding-left: 13px;   /* compensa la barra para que el texto no salte */
 }
+[data-theme="modern"] .filter-list:not(.filter-list--allergens) .filter-list__item--active .filter-list__count,
 [data-theme="light"] .filter-list:not(.filter-list--allergens) .filter-list__item--active .filter-list__count {
   color: var(--brand-primary);
   font-weight: 700;
 }
+[data-theme="modern"] .filter-list:not(.filter-list--allergens) .filter-list__item--active .filter-list__check,
 [data-theme="light"] .filter-list:not(.filter-list--allergens) .filter-list__item--active .filter-list__check {
   background: var(--select-accent);
   border-color: var(--select-accent);
@@ -1014,13 +1018,11 @@
   color: var(--color-blue-200);
 }
 [data-theme="dark"] .dest-toggle button:hover { color: #FFFFFF; }
-[data-theme="dark"] .dest-toggle button.active {
+[data-theme=”dark”] .dest-toggle button.active {
   background: var(--select-accent);
   color: var(--select-accent-fg);
   font-weight: 800;
-  box-shadow:
-    0 0 0 1px rgba(34, 211, 238, 0.6) inset,
-    0 4px 10px rgba(34, 211, 238, 0.25);
+  box-shadow: 0 0 0 1px rgba(34,211,238,.6) inset, 0 4px 10px rgba(34,211,238,.25);
 }
 
 /* â”€â”€ Lista de CategorÃ­as y AlÃ©rgenos (sidebar) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
@@ -1183,16 +1185,12 @@
     0 6px 16px rgba(34, 211, 238, 0.25);
 }
 
-/* dest-toggle activo: mismo refuerzo + peso visible */
+/* dest-toggle activo: acento cyan en oscuro */
 [data-theme="dark"] .dest-toggle button.active {
   background: var(--select-accent);
   color: var(--select-accent-fg);
   font-weight: 900;
-  outline: 1px solid #001823;
-  outline-offset: -1px;
-  box-shadow:
-    0 0 0 2px rgba(34, 211, 238, 0.45),
-    0 4px 10px rgba(34, 211, 238, 0.30);
+  box-shadow: 0 0 0 2px rgba(34,211,238,.45), 0 4px 10px rgba(34,211,238,.30);
 }
 
 /* Daily-menu option seleccionada en oscuro: el radio/check pasa de
