@@ -725,17 +725,13 @@
 .category__closedDot {
   width: 7px; height: 7px; border-radius: 50%;
   background: var(--color-amber-400);
-  box-shadow: 0 0 0 3px rgba(245,158,11,0.20);
-  animation: cat-closed-pulse 1.8s ease-in-out infinite;
+  box-shadow: 0 0 0 0 rgba(245,158,11,0.45);
+  animation: cutoffPulse 1.4s ease-in-out infinite;
   flex-shrink: 0;
 }
 [data-theme="dark"] .category__closedDot {
   background: var(--color-amber-300);
-  box-shadow: 0 0 0 3px rgba(251,191,36,0.20);
-}
-@keyframes cat-closed-pulse {
-  0%, 100% { transform: scale(1);   opacity: 1; }
-  50%      { transform: scale(0.85); opacity: 0.65; }
+  box-shadow: 0 0 0 0 rgba(251,191,36,0.45);
 }
 
 

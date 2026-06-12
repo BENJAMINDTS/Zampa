@@ -41,6 +41,7 @@ class CartaStatusController extends Controller
             'kitchen_close_at'            => ($config && $kitchenOpen)  ? $config->kitchenCloseAtDisplay()    : null,
             'business_open'               => $businessOpen,
             'business_next_opening'       => ($config && ! $businessOpen) ? $config->getBusinessNextOpeningTime() : null,
+            'business_close_at'           => ($config && $businessOpen)  ? $config->businessCloseAtDisplay()  : null,
             'ordering_allowed'            => ! $config || $config->isOrderingAllowed(),
         ]);
     }

@@ -40,6 +40,26 @@
 .pcard__foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 4px; min-width: 0; }
 .pcard__price { font-family: var(--font-display); font-weight: 800; font-size: 18px; color: var(--price-gold); font-variant-numeric: tabular-nums; letter-spacing: -0.01em; white-space: nowrap; flex-shrink: 0; }
 
+/* Closed badge — shown in pcard__foot when ordering is not allowed */
+.pcard__closed {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 10px; border-radius: 9999px;
+  background: var(--color-amber-100); color: var(--color-amber-800);
+  font-family: var(--font-body); font-size: 11px; font-weight: 600;
+  border: 1px solid rgba(245,158,11,0.25);
+  white-space: nowrap; flex-shrink: 0;
+}
+.pcard__closed::before {
+  content: ''; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--color-amber-400);
+  flex-shrink: 0;
+}
+[data-theme="dark"] .pcard__closed {
+  background: rgba(251,191,36,0.12); color: var(--color-amber-300);
+  border-color: rgba(251,191,36,0.25);
+}
+[data-theme="dark"] .pcard__closed::before { background: var(--color-amber-300); }
+
 /* Plus button */
 .btn-add {
   width: 34px; height: 34px; border-radius: 9999px;
