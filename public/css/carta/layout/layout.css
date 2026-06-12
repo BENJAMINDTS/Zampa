@@ -448,6 +448,12 @@ html, body {
   cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 4px;
 }
 .dest-toggle button.active { background: var(--bg-base); color: var(--fg-primary); box-shadow: var(--shadow-card); }
+.carta[data-theme="dark"] .dest-toggle button.active {
+  background: #22D3EE;
+  color: #001823;
+  font-weight: 800;
+  box-shadow: 0 0 0 1px rgba(34,211,238,0.6) inset, 0 4px 10px rgba(34,211,238,0.25);
+}
 
 /* ----- Body / product grid -----
    Bottom padding clears the floating FABs (bottom: 92 + 56 height = 148) and
