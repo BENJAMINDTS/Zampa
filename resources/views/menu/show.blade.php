@@ -1587,7 +1587,8 @@
                 @click="$store.cart.open = true"
                 :aria-label="'Ver pedido — ' + $store.cart.displayCount + ($store.cart.displayCount === 1 ? ' artículo' : ' artículos') + ', total ' + Number($store.cart.displayTotal).toFixed(2).replace('.',',') + ' €'">
             <div class="cart-bar__left">
-                <span class="cart-bar__icon">
+                <span class="cart-bar__icon"
+                      x-effect="$store.cart.count; $el.classList.remove('cart-bar__icon--bump'); void $el.offsetWidth; $el.classList.add('cart-bar__icon--bump');">
                     <svg aria-hidden="true" width="18" height="18" fill="none"
                          stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round"
