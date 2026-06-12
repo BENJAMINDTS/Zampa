@@ -137,6 +137,12 @@ html, body {
 .kitchen-pill--closed { align-items: flex-start; padding: 8px 12px; }
 .kitchen-pill--closed .kitchen-pill__dot { margin-top: 5px; }
 
+/* Mobile: pill más compacta, solo primera línea visible */
+.carta[data-bp="mobile"] .kitchen-pill--closed { padding: 5px 8px; align-items: center; }
+.carta[data-bp="mobile"] .kitchen-pill--closed .kitchen-pill__dot { margin-top: 0; }
+.carta[data-bp="mobile"] .kitchen-pill--closed .kitchen-pill__l2 { display: none; }
+.carta[data-bp="mobile"] .kitchen-pill--closed .kitchen-pill__l1 { font-size: 11px; }
+
 /* Theme toggle */
 .theme-toggle {
   width: 36px; height: 36px; border-radius: 9999px;

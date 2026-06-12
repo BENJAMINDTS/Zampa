@@ -744,6 +744,13 @@
 .banner-closed__title { font-family: var(--font-display); font-weight: 800; font-size: 15px; }
 .banner-closed__sub { font-family: var(--font-body); font-size: 12px; margin-top: 2px; line-height: 1.4; }
 
+.carta[data-bp="mobile"] .banner-closed {
+  margin: 8px 12px; padding: 10px 12px; gap: 8px; border-radius: 10px;
+}
+.carta[data-bp="mobile"] .banner-closed__ic { font-size: 18px; }
+.carta[data-bp="mobile"] .banner-closed__title { font-size: 12px; }
+.carta[data-bp="mobile"] .banner-closed__sub { font-size: 11px; }
+
 /* utility */
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
 
