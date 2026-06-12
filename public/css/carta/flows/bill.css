@@ -752,11 +752,12 @@
 }
 .banner-closed__dot {
   width: 10px; height: 10px; border-radius: 50%;
-  background: var(--color-amber-500);
-  box-shadow: 0 0 0 3px rgba(245,158,11,0.20);
+  background: var(--color-amber-400);
+  box-shadow: 0 0 0 4px rgba(245,158,11,0.25);
+  animation: cutoffPulse 1.4s ease-in-out infinite;
   flex-shrink: 0;
 }
-[data-theme="dark"] .banner-closed__dot { background: var(--color-amber-400); box-shadow: 0 0 0 3px rgba(251,191,36,0.20); }
+[data-theme="dark"] .banner-closed__dot { background: var(--color-amber-400); box-shadow: 0 0 0 4px rgba(251,191,36,0.25); }
 .banner-closed__copy { flex: 1; min-width: 0; line-height: 1.25; }
 .banner-closed__copy strong {
   display: block;
