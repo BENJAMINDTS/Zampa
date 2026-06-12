@@ -41,6 +41,7 @@ class MenuController extends Controller
         $orderingAllowed        = ! $config || $config->isOrderingAllowed();
         $businessNextOpening    = ($config && ! $businessOpen) ? $config->getBusinessNextOpeningTime() : null;
         $minutesUntilClose      = ($config && $businessOpen && ! $orderingAllowed) ? $config->minutesUntilBusinessClose() : null;
+        $businessCloseAt        = ($config && $businessOpen) ? $config->businessCloseAtDisplay() : null;
 
         $kitchenOpen              = ! $config || $config->isKitchenOpen();
         $nextOpeningTime          = ($config && ! $kitchenOpen) ? $config->nextOpeningTime() : null;
@@ -218,7 +219,7 @@ class MenuController extends Controller
             'hasActiveOrder', 'activeOrderTotal', 'billRequested', 'stripePublicKey',
             'splitPaymentEnabled', 'splitPaymentMaxParts', 'activeOrderItemsForAlpine', 'allOrdersForAlpine',
             'businessOpen', 'orderingAllowed', 'businessNextOpening', 'minutesUntilClose',
-            'minutesUntilKitchenClose', 'kitchenCloseAt'
+            'minutesUntilKitchenClose', 'kitchenCloseAt', 'businessCloseAt'
         ));
     }
 }
