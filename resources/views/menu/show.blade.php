@@ -1350,7 +1350,8 @@
             @endif
 
             {{-- DS: .carta__body — área scrolleable con productos --}}
-            <div class="carta__body" id="main-content">
+            <div class="carta__body" id="main-content"
+                 :style="(!$store.schedule.businessOpen && !$store.schedule.bizDismissed) ? 'overflow:hidden' : ''">
 
                 {{-- Banner Menú del Día --}}
                 <x-daily-menu-banner :hash="$table->unique_hash" />
@@ -1482,8 +1483,9 @@
                                                 aria-label="Añadir otro de {{ $product->name }}">+</button>
                                     </div>
                                     {{-- Cerrado: pedidos no permitidos --}}
-                                    <span x-show="!$store.schedule.orderingAllowed"
-                                          style="display:none;font-family:var(--font-body);font-size:11px;color:var(--fg-muted)">Cerrado</span>
+                                    <span class="pcard__closed"
+                                          x-show="!$store.schedule.orderingAllowed"
+                                          style="display:none">Cerrado</span>
                                     @endif
 
                                 </div>{{-- /pcard__foot --}}
@@ -1507,8 +1509,7 @@
         {{-- DS: .biz-closed — overlay negocio cerrado; hijo directo de .carta para
              que position:absolute;inset:0 cubra el viewport completo (100dvh) --}}
         <div class="biz-closed"
-             x-data="{ dismissed: false }"
-             x-show="!$store.schedule.businessOpen && !dismissed"
+             x-show="!$store.schedule.businessOpen && !$store.schedule.bizDismissed"
              style="display:none"
              x-transition:leave="transition duration-300 ease-in"
              x-transition:leave-start="opacity-100"
@@ -1550,7 +1551,7 @@
                     @endif
                     <button type="button"
                             class="biz-closed__btn"
-                            @click="dismissed = true">
+                            @click="$store.schedule.bizDismissed = true">
                         Mirar la carta
                     </button>
                 </div>

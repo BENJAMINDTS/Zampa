@@ -23,6 +23,7 @@ export function registerSchedule() {
         businessOpen:             true,
         businessNextOpening:      null,
         orderingAllowed:          true,
+        bizDismissed:             false,
         _hash: '',
 
         init() {
