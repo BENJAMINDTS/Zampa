@@ -11,7 +11,12 @@
   box-shadow: 0 10px 30px rgba(15, 61, 42, 0.45);
   animation: slide-up 220ms var(--ease-out);
 }
-@keyframes slide-up { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes slide-up   { from { transform: translateY(100%); opacity: 0; } to   { transform: translateY(0);    opacity: 1; } }
+@keyframes slide-down { from { transform: translateY(0);    opacity: 1; } to   { transform: translateY(100%); opacity: 0; } }
+.cart-bar--leaving {
+  animation: slide-down 220ms var(--ease-out) forwards;
+  pointer-events: none;
+}
 .cart-bar__left { display: flex; align-items: center; gap: 10px; }
 .cart-bar__icon { width: 36px; height: 36px; border-radius: 9999px; background: rgba(34, 197, 94, 0.18); display: inline-flex; align-items: center; justify-content: center; position: relative; }
 .cart-bar__icon svg { width: 18px; height: 18px; }

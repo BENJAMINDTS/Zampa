@@ -139,6 +139,8 @@ export function registerCart() {
         _snapTotal: 0,
         /** @type {boolean} True while the slide-down exit animation is running. */
         _barLeaving: false,
+        /** @type {number|null} Timer ID for the leave animation cleanup. */
+        _barLeaveTimer: null,
         /** @type {boolean} Submission in progress. */
         sending: false,
         /** @type {boolean} Order successfully sent. */
@@ -326,6 +328,7 @@ export function registerCart() {
                     this.items = this.items.filter(i => !i.isTapa);
                 }
             }
+            if (this.count === 0) this._triggerLeave();
         },
 
         toggleRemove(key, ing) {
@@ -359,6 +362,20 @@ export function registerCart() {
 
         get count() {
             return this.items.reduce((s, i) => s + i.quantity, 0);
+        },
+
+        /**
+         * Activa la animación de salida del cart-bar.
+         * Mantiene el elemento en el DOM 230ms (duración del slide-down) y luego lo desmonta.
+         */
+        _triggerLeave() {
+            if (this._barLeaving) return;
+            clearTimeout(this._barLeaveTimer);
+            this._barLeaving   = true;
+            this._barLeaveTimer = setTimeout(() => {
+                this._barLeaving    = false;
+                this._barLeaveTimer = null;
+            }, 230);
         },
 
         get barShouldShow() {
@@ -447,6 +464,7 @@ export function registerCart() {
                     this.sent  = true;
                     this.items = [];
                     this.open  = false;
+                    this._triggerLeave();
                 } else {
                     this.error = data.message ?? 'Error al enviar el pedido.';
                 }
