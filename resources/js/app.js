@@ -20,6 +20,7 @@ import { registerMenuStyle }      from './alpine/menu-style.js';
 import { registerSchedule }       from './alpine/schedule.js';
 import { registerTicketConfig }   from './alpine/ticket-config.js';
 import { initProductReorder }     from './pages/product-reorder.js';
+import { initOverscrollBounce }   from './overscroll-bounce.js';
 
 window.Alpine = Alpine;
 
@@ -47,3 +48,4 @@ document.addEventListener('alpine:init', () => {
 Alpine.start();
 
 initProductReorder();
+initOverscrollBounce();
