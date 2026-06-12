@@ -1,6 +1,5 @@
 @php
-  $filtersActive = request()->hasAny(['search', 'category', 'allergen']);
-  $pageOffset    = $products->firstItem() ? $products->firstItem() - 1 : 0;
+  $filtersActive = !$reorderMode && request()->hasAny(['search', 'category', 'allergen']);
 @endphp
 
 <x-app-layout>
@@ -16,19 +15,66 @@
           Mi Carta Digital
         </h2>
         <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5 ml-8">
-          {{ $products->total() }} {{ $products->total() === 1 ? 'producto registrado' : 'productos registrados' }}
+          @if($reorderMode)
+            {{ count($products) }} {{ count($products) === 1 ? 'producto' : 'productos' }} — modo ordenación
+          @else
+            {{ $products->total() }} {{ $products->total() === 1 ? 'producto registrado' : 'productos registrados' }}
+          @endif
         </p>
       </div>
-      <a href="{{ route('products.create') }}"
-         class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm py-2.5 px-4 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900 transition">
-        <svg class="h-4 w-4" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-        </svg>
-        Añadir Producto
-      </a>
+      <div class="flex items-center gap-2">
+        {{-- Toggle reordenar --}}
+        @if($reorderMode)
+          <a href="{{ route('products.index') }}"
+             class="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white font-semibold text-sm py-2.5 px-4 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 dark:focus:ring-offset-gray-900 transition">
+            <svg class="h-4 w-4" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+            Salir de ordenación
+          </a>
+        @else
+          <a href="{{ route('products.index', ['reorder' => 1]) }}"
+             class="inline-flex items-center gap-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-semibold text-sm py-2.5 px-4 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 dark:focus:ring-offset-gray-900 transition">
+            <svg class="h-4 w-4" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
+            </svg>
+            Ordenar carta
+          </a>
+        @endif
+        @if(!$reorderMode)
+        <a href="{{ route('products.create') }}"
+           class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm py-2.5 px-4 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900 transition">
+          <svg class="h-4 w-4" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+          </svg>
+          Añadir Producto
+        </a>
+        @endif
+      </div>
     </div>
 
-    {{-- Filtros: búsqueda, categoría y alérgeno --}}
+    @if($reorderMode)
+    {{-- Banner modo ordenación --}}
+    <div class="rounded-md bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 p-3 mb-4 flex items-center gap-2.5">
+      <svg class="h-4 w-4 text-amber-500 shrink-0" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 110 20A10 10 0 0112 2z"/>
+      </svg>
+      <p class="text-xs text-amber-800 dark:text-amber-300">Arrastra los productos para cambiar el orden de la carta. Los cambios se guardan automáticamente.</p>
+    </div>
+    <div id="reorder-feedback" class="hidden rounded-md bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700 p-3 mb-4 flex items-center gap-2.5" aria-live="polite">
+      <svg class="h-4 w-4 text-emerald-500 shrink-0" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+      </svg>
+      <p class="text-xs text-emerald-800 dark:text-emerald-300">Orden guardado en la carta.</p>
+    </div>
+    <div id="reorder-error" class="hidden rounded-md bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 p-3 mb-4 flex items-center gap-2.5" aria-live="assertive">
+      <svg class="h-4 w-4 text-red-500 shrink-0" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+      </svg>
+      <p class="text-xs text-red-800 dark:text-red-300">Error al guardar el orden. Inténtalo de nuevo.</p>
+    </div>
+    @else
+    {{-- Filtros --}}
     <form method="GET" action="{{ route('products.index') }}"
           class="mb-4 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center flex-wrap"
           role="search" aria-label="Filtrar productos">
@@ -87,28 +133,6 @@
         </a>
       @endif
     </form>
-
-    {{-- Banner reordenación --}}
-    @if($filtersActive)
-    <div class="rounded-md bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 p-3 mb-4 flex items-center gap-2.5">
-      <svg class="h-4 w-4 text-amber-500 shrink-0" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 110 20A10 10 0 0112 2z"/>
-      </svg>
-      <p class="text-xs text-amber-800 dark:text-amber-300">Desactiva los filtros para reordenar la carta con drag & drop.</p>
-    </div>
-    @else
-    <div id="reorder-feedback" class="hidden rounded-md bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700 p-3 mb-4 flex items-center gap-2.5" aria-live="polite">
-      <svg class="h-4 w-4 text-emerald-500 shrink-0" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-      </svg>
-      <p class="text-xs text-emerald-800 dark:text-emerald-300">Orden guardado en la carta.</p>
-    </div>
-    <div id="reorder-error" class="hidden rounded-md bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 p-3 mb-4 flex items-center gap-2.5" aria-live="assertive">
-      <svg class="h-4 w-4 text-red-500 shrink-0" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-      </svg>
-      <p class="text-xs text-red-800 dark:text-red-300">Error al guardar el orden. Inténtalo de nuevo.</p>
-    </div>
     @endif
 
     {{-- Flash de éxito --}}
@@ -128,14 +152,11 @@
         <caption class="sr-only">Listado de productos de mi carta digital</caption>
         <thead class="bg-gray-50 dark:bg-gray-700">
           <tr>
-            {{-- Drag handle --}}
-            <th scope="col" class="w-10 px-3 py-3 @if($filtersActive) opacity-30 @endif" aria-label="Reordenar">
+            <th scope="col" class="w-10 px-3 py-3" aria-label="Reordenar">
               <svg class="h-4 w-4 text-gray-400 mx-auto" aria-hidden="true" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
               </svg>
             </th>
-
-            {{-- Imagen --}}
             <th scope="col" class="hidden sm:table-cell px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               <span class="inline-flex items-center gap-1.5">
                 <svg class="h-3.5 w-3.5" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -144,8 +165,6 @@
                 Imagen
               </span>
             </th>
-
-            {{-- Nombre --}}
             <th scope="col" class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               <span class="inline-flex items-center gap-1.5">
                 <svg class="h-3.5 w-3.5" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -154,8 +173,7 @@
                 Nombre
               </span>
             </th>
-
-            {{-- Precio --}}
+            @if(!$reorderMode)
             <th scope="col" class="hidden md:table-cell px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               <span class="inline-flex items-center gap-1.5">
                 <svg class="h-3.5 w-3.5" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -164,8 +182,6 @@
                 Precio
               </span>
             </th>
-
-            {{-- Alérgenos --}}
             <th scope="col" class="hidden lg:table-cell px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               <span class="inline-flex items-center gap-1.5">
                 <svg class="h-3.5 w-3.5" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -174,22 +190,21 @@
                 Alérgenos
               </span>
             </th>
-
-            {{-- Acciones --}}
             <th scope="col" class="px-4 sm:px-6 py-3 relative">
               <span class="sr-only">Acciones</span>
             </th>
+            @endif
           </tr>
         </thead>
 
         <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700"
-               @if(!$filtersActive) data-reorder-url="{{ route('products.reorder') }}" data-offset="{{ $pageOffset }}" @endif>
+               @if($reorderMode) data-reorder-url="{{ route('products.reorder') }}" data-offset="0" @endif>
           @forelse($products as $product)
           <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" data-product-id="{{ $product->id }}">
 
             {{-- Drag handle --}}
             <td class="w-10 px-3 py-4 text-center">
-              @if(!$filtersActive)
+              @if($reorderMode)
               <span class="drag-handle inline-flex items-center justify-center w-7 h-7 rounded cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
                     aria-label="Arrastrar para reordenar {{ $product->name }}" role="button" tabindex="0">
                 <svg class="h-4 w-4" aria-hidden="true" fill="currentColor" viewBox="0 0 24 24">
@@ -199,7 +214,7 @@
                 </svg>
               </span>
               @else
-              <span class="inline-flex items-center justify-center w-7 h-7 text-gray-300 dark:text-gray-600 cursor-not-allowed" aria-hidden="true">
+              <span class="inline-flex items-center justify-center w-7 h-7 text-gray-300 dark:text-gray-600" aria-hidden="true">
                 <svg class="h-4 w-4" aria-hidden="true" fill="currentColor" viewBox="0 0 24 24">
                   <circle cx="9" cy="5" r="1.5"/><circle cx="15" cy="5" r="1.5"/>
                   <circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/>
@@ -209,7 +224,7 @@
               @endif
             </td>
 
-            {{-- Imagen / Placeholder --}}
+            {{-- Imagen --}}
             <td class="hidden sm:table-cell px-4 sm:px-6 py-4 whitespace-nowrap">
               @if($product->image)
                 <img src="{{ asset('storage/' . $product->image) }}"
@@ -226,15 +241,13 @@
               @endif
             </td>
 
-            {{-- Nombre + estado activo/inactivo + categoría --}}
+            {{-- Nombre + estado + categoría --}}
             <td class="px-4 sm:px-6 py-4">
               <div class="flex flex-col gap-1">
                 <span class="font-medium text-gray-900 dark:text-gray-100 text-sm sm:text-base leading-tight">
                   {{ $product->name }}
                 </span>
-
                 <div class="flex items-center flex-wrap gap-2">
-                  {{-- Estado activo / inactivo --}}
                   @if($product->is_active)
                     <span class="inline-flex items-center gap-1 text-xs text-emerald-700 dark:text-emerald-400">
                       <span class="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden="true"></span>
@@ -248,19 +261,8 @@
                       Oculto en carta
                     </span>
                   @endif
-
-                  {{-- Categorías --}}
                   @foreach($product->categories as $cat)
                     <span class="inline-flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
-                      @if($cat->destination === 'kitchen')
-                        <svg class="h-3 w-3" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
-                        </svg>
-                      @else
-                        <svg class="h-3 w-3" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-                        </svg>
-                      @endif
                       {{ $cat->name }}
                     </span>
                   @endforeach
@@ -268,13 +270,11 @@
               </div>
             </td>
 
+            @if(!$reorderMode)
             {{-- Precio --}}
             <td class="hidden md:table-cell px-4 sm:px-6 py-4 text-gray-600 dark:text-gray-300 text-sm">
               @if($product->variants->isNotEmpty())
                 <div class="flex items-center gap-1 mb-1 text-gray-500 dark:text-gray-400 text-xs">
-                  <svg class="h-3 w-3" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
-                  </svg>
                   desde {{ number_format($product->getEffectivePrice(), 2, ',', '.') }} €
                 </div>
                 <div class="flex flex-wrap gap-1">
@@ -285,10 +285,7 @@
                   @endforeach
                 </div>
               @else
-                <span class="inline-flex items-center gap-1.5 font-semibold text-gray-800 dark:text-gray-200">
-                  <svg class="h-3.5 w-3.5 text-gray-400 dark:text-gray-500" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                  </svg>
+                <span class="font-semibold text-gray-800 dark:text-gray-200">
                   {{ number_format($product->price, 2, ',', '.') }} €
                 </span>
               @endif
@@ -308,12 +305,7 @@
                   @endforeach
                 </div>
               @else
-                <span class="inline-flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
-                  <svg class="h-3.5 w-3.5" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                  </svg>
-                  Sin alérgenos
-                </span>
+                <span class="text-xs text-gray-400 dark:text-gray-500">Sin alérgenos</span>
               @endif
             </td>
 
@@ -343,12 +335,12 @@
                 </form>
               </div>
             </td>
+            @endif
 
           </tr>
           @empty
-          {{-- Estado vacío --}}
           <tr>
-            <td colspan="6" class="px-6 py-16 text-center">
+            <td colspan="{{ $reorderMode ? 3 : 6 }}" class="px-6 py-16 text-center">
               <div class="flex flex-col items-center gap-3">
                 <div class="h-16 w-16 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
                   <svg class="h-8 w-8 text-gray-300 dark:text-gray-600" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -374,7 +366,7 @@
       </table>
     </div>
 
-    @if($products->hasPages())
+    @if(!$reorderMode && $products->hasPages())
     <nav aria-label="Paginación de productos" class="mt-4">
       {{ $products->links() }}
     </nav>
@@ -382,13 +374,55 @@
 
   </div>
 
-@if(!$filtersActive)
+@if($reorderMode)
 <style>
   .sortable-ghost { opacity: 0.4; background: #eef2ff; }
   .dark .sortable-ghost { background: #1e1b4b; }
   .sortable-drag { box-shadow: 0 8px 24px rgba(0,0,0,.15); background: white; }
   .dark .sortable-drag { background: #1f2937; }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const tbody = document.querySelector('tbody[data-reorder-url]');
+  if (!tbody) return;
+
+  const url      = tbody.dataset.reorderUrl;
+  const feedback = document.getElementById('reorder-feedback');
+  const errorEl  = document.getElementById('reorder-error');
+
+  Sortable.create(tbody, {
+    handle: '.drag-handle',
+    animation: 150,
+    ghostClass: 'sortable-ghost',
+    dragClass: 'sortable-drag',
+    onEnd() {
+      const ids = [...tbody.querySelectorAll('tr[data-product-id]')]
+        .map(r => parseInt(r.dataset.productId));
+
+      fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+        },
+        body: JSON.stringify({ ids, offset: 0 }),
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) {
+          feedback.classList.remove('hidden');
+          errorEl.classList.add('hidden');
+          setTimeout(() => feedback.classList.add('hidden'), 2500);
+        } else {
+          errorEl.classList.remove('hidden');
+        }
+      })
+      .catch(() => errorEl.classList.remove('hidden'));
+    },
+  });
+});
+</script>
 @endif
 
 </x-app-layout>
