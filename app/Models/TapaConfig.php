@@ -235,6 +235,42 @@ class TapaConfig extends Model
     }
 
     /**
+     * Hora de cierre del tramo de negocio activo en formato "HH:MM".
+     * Null si el negocio está cerrado o no hay tramos configurados.
+     *
+     * @return string|null
+     */
+    public function businessCloseAtDisplay(): ?string
+    {
+        if (! $this->isBusinessOpen()) {
+            return null;
+        }
+
+        $schedules = $this->businessSchedules;
+
+        if ($schedules->isEmpty()) {
+            return null;
+        }
+
+        $now = Carbon::now()->format('H:i:s');
+
+        foreach ($schedules as $schedule) {
+            $opens  = $schedule->opens_at;
+            $closes = $schedule->closes_at;
+
+            $inSlot = ($opens <= $closes)
+                ? ($now >= $opens && $now <= $closes)
+                : ($now >= $opens || $now <= $closes);
+
+            if ($inSlot) {
+                return substr($closes, 0, 5);
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Devuelve la hora de apertura del próximo tramo de negocio (HH:MM).
      * Null si no hay tramos configurados.
      *
