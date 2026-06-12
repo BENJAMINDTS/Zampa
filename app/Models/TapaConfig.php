@@ -471,6 +471,8 @@ class TapaConfig extends Model
             $target->addDay();
         }
 
-        return (int) $now->diffInMinutes($target);
+        // ceil: cualquier fracción de minuto cuenta como 1, así el banner
+        // no desaparece en el poll cuando quedan <60 segundos para el cierre.
+        return (int) ceil($now->diffInSeconds($target) / 60);
     }
 }
