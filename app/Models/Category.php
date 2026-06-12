@@ -21,7 +21,7 @@ class Category extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $fillable = ['user_id', 'name', 'destination'];
+    protected $fillable = ['user_id', 'name', 'destination', 'sort_order'];
 
     /**
      * @return BelongsTo

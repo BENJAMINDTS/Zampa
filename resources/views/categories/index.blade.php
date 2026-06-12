@@ -13,22 +13,67 @@
         <div>
           <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100 leading-tight">Categorías</h1>
           <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-            {{ $categories->total() }} {{ $categories->total() === 1 ? 'categoría' : 'categorías' }} en tu carta
+            @if($reorderMode)
+              {{ count($categories) }} {{ count($categories) === 1 ? 'categoría' : 'categorías' }} — modo ordenación
+            @else
+              {{ $categories->total() }} {{ $categories->total() === 1 ? 'categoría' : 'categorías' }} en tu carta
+            @endif
           </p>
         </div>
       </div>
-      <a href="{{ route('categories.create') }}"
-         class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white
-                font-semibold text-sm py-2.5 px-4 rounded-lg shadow-md
-                focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2
-                dark:focus:ring-offset-gray-900 transition-colors">
-        <svg class="h-4 w-4" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
-        </svg>
-        Nueva categoría
-      </a>
+      <div class="flex items-center gap-2">
+        {{-- Toggle reordenar --}}
+        @if($reorderMode)
+          <a href="{{ route('categories.index') }}"
+             class="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white font-semibold text-sm py-2.5 px-4 rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 dark:focus:ring-offset-gray-900 transition-colors">
+            <svg class="h-4 w-4" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+            Salir de ordenación
+          </a>
+        @else
+          <a href="{{ route('categories.index', ['reorder' => 1]) }}"
+             class="inline-flex items-center gap-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-semibold text-sm py-2.5 px-4 rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 dark:focus:ring-offset-gray-900 transition-colors">
+            <svg class="h-4 w-4" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
+            </svg>
+            Ordenar
+          </a>
+          <a href="{{ route('categories.create') }}"
+             class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white
+                    font-semibold text-sm py-2.5 px-4 rounded-lg shadow-md
+                    focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2
+                    dark:focus:ring-offset-gray-900 transition-colors">
+            <svg class="h-4 w-4" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+            </svg>
+            Nueva categoría
+          </a>
+        @endif
+      </div>
     </div>
 
+    @if($reorderMode)
+    {{-- Banner modo ordenación --}}
+    <div class="rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 p-3 mb-6 flex items-center gap-2.5">
+      <svg class="h-4 w-4 text-amber-500 shrink-0" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 110 20A10 10 0 0112 2z"/>
+      </svg>
+      <p class="text-xs text-amber-800 dark:text-amber-300">Arrastra las categorías para cambiar el orden en la carta. Los cambios se guardan automáticamente.</p>
+    </div>
+    <div id="reorder-feedback" class="hidden rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700 p-3 mb-4 flex items-center gap-2.5" aria-live="polite">
+      <svg class="h-4 w-4 text-emerald-500 shrink-0" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+      </svg>
+      <p class="text-xs text-emerald-800 dark:text-emerald-300">Orden guardado.</p>
+    </div>
+    <div id="reorder-error" class="hidden rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 p-3 mb-4 flex items-center gap-2.5" aria-live="assertive">
+      <svg class="h-4 w-4 text-red-500 shrink-0" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+      </svg>
+      <p class="text-xs text-red-800 dark:text-red-300">Error al guardar el orden. Inténtalo de nuevo.</p>
+    </div>
+    @else
     {{-- Búsqueda y filtros --}}
     <form method="GET" action="{{ route('categories.index') }}"
           class="mb-6 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center"
@@ -71,6 +116,7 @@
         </a>
       @endif
     </form>
+    @endif
 
     {{-- Flash de éxito --}}
     @if(session('success'))
@@ -83,20 +129,54 @@
     </div>
     @endif
 
-    {{-- Grid de tarjetas --}}
+    @if($reorderMode)
+    {{-- Lista compacta para reordenar --}}
+    <div class="bg-white dark:bg-gray-800 shadow-md rounded-xl overflow-hidden"
+         id="categories-reorder-list"
+         data-reorder-url="{{ route('categories.reorder') }}">
+      @forelse($categories as $category)
+      @php $isKitchen = $category->destination === 'kitchen'; @endphp
+      <div class="flex items-center gap-3 px-4 py-3 border-b border-gray-100 dark:border-gray-700 last:border-b-0 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+           data-category-id="{{ $category->id }}">
+        <span class="drag-handle inline-flex items-center justify-center w-8 h-8 rounded cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors shrink-0"
+              aria-label="Arrastrar para reordenar {{ $category->name }}" role="button" tabindex="0">
+          <svg class="h-4 w-4" aria-hidden="true" fill="currentColor" viewBox="0 0 24 24">
+            <circle cx="9" cy="5" r="1.5"/><circle cx="15" cy="5" r="1.5"/>
+            <circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/>
+            <circle cx="9" cy="19" r="1.5"/><circle cx="15" cy="19" r="1.5"/>
+          </svg>
+        </span>
+        <span class="p-1.5 rounded-lg bg-gray-100 dark:bg-gray-700 shrink-0" aria-hidden="true">
+          @if($isKitchen)
+          <svg class="h-4 w-4 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+          </svg>
+          @else
+          <svg class="h-4 w-4 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+          </svg>
+          @endif
+        </span>
+        <span class="font-medium text-gray-900 dark:text-gray-100 text-sm flex-1">{{ $category->name }}</span>
+        <span class="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-600 shrink-0">
+          {{ $isKitchen ? 'Cocina' : 'Barra' }}
+        </span>
+      </div>
+      @empty
+      <div class="py-12 text-center text-sm text-gray-500 dark:text-gray-400">No hay categorías.</div>
+      @endforelse
+    </div>
+    @else
+    {{-- Grid normal de tarjetas --}}
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
       @forelse ($categories as $category)
-
       @php $isKitchen = $category->destination === 'kitchen'; @endphp
-
       <article class="flex flex-col bg-white dark:bg-gray-800
                        border border-gray-200 dark:border-gray-700
                        rounded-xl shadow-md hover:shadow-xl
                        transition-shadow duration-200 overflow-hidden"
                aria-label="Categoría {{ $category->name }}">
-
         <div class="flex flex-col flex-1 p-5">
-          {{-- Icono + nombre --}}
           <div class="flex items-start gap-3 mb-4">
             <span class="mt-0.5 p-2 rounded-lg shadow-sm
                          bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600"
@@ -122,8 +202,6 @@
               </span>
             </div>
           </div>
-
-          {{-- Botones --}}
           <div class="mt-auto grid grid-cols-2 gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
             <a href="{{ route('categories.edit', $category) }}"
                aria-label="Editar categoría {{ $category->name }}"
@@ -160,7 +238,6 @@
           </div>
         </div>
       </article>
-
       @empty
       <div class="col-span-3 py-16 flex flex-col items-center justify-center
                   border border-dashed border-gray-300 dark:border-gray-600 rounded-xl">
@@ -189,6 +266,59 @@
       {{ $categories->links() }}
     </nav>
     @endif
+    @endif
 
   </div>
+
+@if($reorderMode)
+<style>
+  .sortable-ghost { opacity: 0.4; background: #eef2ff; }
+  .dark .sortable-ghost { background: #1e1b4b; }
+  .sortable-drag { box-shadow: 0 8px 24px rgba(0,0,0,.15); background: white; border-radius: 0.5rem; }
+  .dark .sortable-drag { background: #1f2937; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const list = document.getElementById('categories-reorder-list');
+  if (!list) return;
+
+  const url      = list.dataset.reorderUrl;
+  const feedback = document.getElementById('reorder-feedback');
+  const errorEl  = document.getElementById('reorder-error');
+
+  Sortable.create(list, {
+    handle: '.drag-handle',
+    animation: 150,
+    ghostClass: 'sortable-ghost',
+    dragClass: 'sortable-drag',
+    onEnd() {
+      const ids = [...list.querySelectorAll('[data-category-id]')]
+        .map(el => parseInt(el.dataset.categoryId));
+
+      fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+        },
+        body: JSON.stringify({ ids }),
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) {
+          feedback.classList.remove('hidden');
+          errorEl.classList.add('hidden');
+          setTimeout(() => feedback.classList.add('hidden'), 2500);
+        } else {
+          errorEl.classList.remove('hidden');
+        }
+      })
+      .catch(() => errorEl.classList.remove('hidden'));
+    },
+  });
+});
+</script>
+@endif
+
 </x-app-layout>
