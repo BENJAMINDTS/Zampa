@@ -194,7 +194,11 @@ html, body {
   border-bottom: 1px solid var(--border-subtle);
   flex-shrink: 0;
 }
-.carta[data-bp="mobile"] .filter-bar { display: flex; }
+.carta[data-bp="mobile"] .filter-bar {
+  display: flex;
+  background: var(--bg-chip);
+  border-top: 1px solid var(--border-subtle);
+}
 
 .filter-row {
   display: flex;
