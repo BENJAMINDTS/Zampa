@@ -971,13 +971,17 @@
         <div class="banner-closed" role="status" aria-live="polite"
              x-show="!$store.schedule.kitchenOpen"
              style="display:none">
-            <span class="banner-closed__ic" aria-hidden="true">🌙</span>
-            <div>
-                <div class="banner-closed__title">La cocina está cerrada</div>
-                <div class="banner-closed__sub">
+            <div class="banner-closed__row">
+                <span class="banner-closed__dot" aria-hidden="true"></span>
+                <div class="banner-closed__copy">
+                    <strong>La cocina está cerrada</strong>
                     <span x-show="$store.schedule.kitchenNextOpening"
-                          x-text="'Abre a las ' + $store.schedule.kitchenNextOpening + '. '"></span>Mientras tanto puedes pedir de barra 🍺
+                          x-text="'Abre a las ' + $store.schedule.kitchenNextOpening + ' · Mientras tanto pide de barra 🍺'"></span>
+                    <span x-show="!$store.schedule.kitchenNextOpening">Mientras tanto puedes pedir de barra 🍺</span>
                 </div>
+                <span class="banner-closed__chip">
+                    <span class="dot" aria-hidden="true"></span> Cerrada
+                </span>
             </div>
         </div>
 

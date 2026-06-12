@@ -197,7 +197,6 @@ html, body {
 .carta[data-bp="mobile"] .filter-bar {
   display: flex;
   background: var(--bg-chip);
-  border-top: 1px solid var(--border-subtle);
 }
 
 .filter-row {
