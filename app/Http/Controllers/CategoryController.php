@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Category;
 use App\Models\TapaConfig;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
 
@@ -32,14 +34,52 @@ class CategoryController extends Controller
      */
     public function index(Request $request): View
     {
-        $ownerId    = Auth::user()->ownerUserId();
-        $categories = Category::where('user_id', $ownerId)
-            ->when($request->filled('search'), fn ($q) => $q->where('name', 'like', '%' . $request->search . '%'))
-            ->when($request->filled('destination'), fn ($q) => $q->where('destination', $request->destination))
-            ->paginate(15)
-            ->withQueryString();
+        $ownerId     = Auth::user()->ownerUserId();
+        $reorderMode = $request->boolean('reorder');
 
-        return view('categories.index', compact('categories'));
+        $query = Category::where('user_id', $ownerId)
+            ->orderBy('sort_order')
+            ->orderBy('id');
+
+        if ($reorderMode) {
+            $categories = $query->get();
+        } else {
+            $categories = $query
+                ->when($request->filled('search'), fn ($q) => $q->where('name', 'like', '%' . $request->search . '%'))
+                ->when($request->filled('destination'), fn ($q) => $q->where('destination', $request->destination))
+                ->paginate(15)
+                ->withQueryString();
+        }
+
+        return view('categories.index', compact('categories', 'reorderMode'));
+    }
+
+    /**
+     * Persiste el orden manual de categorías arrastrado por el usuario.
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function reorder(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'ids'   => 'required|array|min:1',
+            'ids.*' => 'required|integer',
+        ]);
+
+        $ownerId = Auth::user()->ownerUserId();
+
+        DB::transaction(function () use ($validated, $ownerId) {
+            foreach ($validated['ids'] as $index => $id) {
+                Category::where('id', $id)
+                    ->where('user_id', $ownerId)
+                    ->update(['sort_order' => $index]);
+            }
+        });
+
+        Cache::forget("menu:{$ownerId}");
+
+        return response()->json(['success' => true]);
     }
 
     /**
