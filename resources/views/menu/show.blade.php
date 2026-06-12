@@ -221,6 +221,7 @@
             'kitchenCloseAt'              => $kitchenCloseAt,
             'businessOpen'                => $businessOpen,
             'businessNextOpening'         => $businessNextOpening,
+            'businessCloseAt'             => $businessCloseAt,
             'orderingAllowed'             => $orderingAllowed,
         ];
     @endphp
@@ -1358,11 +1359,23 @@
 
                 {{-- ══ PRODUCTOS POR CATEGORÍA ══ --}}
                 @forelse($categories as $category)
-                @php $photoCycle = 0; @endphp
+                @php
+                    $photoCycle = 0;
+                    $isKitchen  = $category->destination === 'kitchen';
+                    $canOrder   = $isKitchen
+                        ? '$store.schedule.businessOpen && $store.schedule.kitchenOpen'
+                        : '$store.schedule.businessOpen';
+                    $isClosed   = $isKitchen
+                        ? '!$store.schedule.businessOpen || !$store.schedule.kitchenOpen'
+                        : '!$store.schedule.businessOpen';
+                    $dimStyle   = $isKitchen
+                        ? '(!$store.schedule.kitchenOpen || !$store.schedule.businessOpen) ? \'opacity:0.45;pointer-events:none\' : \'\''
+                        : '!$store.schedule.businessOpen ? \'opacity:0.45;pointer-events:none\' : \'\'';
+                @endphp
                 <div class="category"
                      x-show="isCategoryVisible({{ $category->id }})"
                      x-transition
-                     :style="{{ $category->destination === 'kitchen' ? '!$store.schedule.kitchenOpen ? \'opacity:0.45;pointer-events:none\' : \'\'' : '\'\'' }}">
+                     :style="{!! $dimStyle !!}">
 
                     <div class="category__head">
                         <span class="category__name">{{ $category->name }}</span>
@@ -1446,19 +1459,22 @@
                                         </span>
                                         <button type="button"
                                                 class="btn-add"
-                                                x-show="$store.schedule.orderingAllowed"
+                                                x-show="{!! $canOrder !!}"
                                                 style="display:none"
                                                 @click.stop="$store.variantPicker.show(products.find(p => p.id === {{ $product->id }}))"
                                                 aria-label="Elegir variante de {{ $product->name }}">
                                             +
                                         </button>
+                                        <span class="pcard__closed"
+                                              x-show="{!! $isClosed !!}"
+                                              style="display:none">Cerrado</span>
                                     </div>
                                     @else
                                     {{-- Producto SIN variantes --}}
                                     <span class="pcard__price">{{ number_format((float)$product->price, 2, ',', '.') }}&nbsp;€</span>
 
                                     {{-- Tapa de cortesía: bloqueado --}}
-                                    <span x-show="$store.schedule.orderingAllowed && $store.cart.items.some(i => i.productId === {{ $product->id }} && !i.variantId && i.isTapa)"
+                                    <span x-show="{!! $canOrder !!} && $store.cart.items.some(i => i.productId === {{ $product->id }} && !i.variantId && i.isTapa)"
                                           style="font-family:var(--font-body);font-size:11px;font-weight:700;color:var(--color-amber-800);background:linear-gradient(135deg,#F5DC92,#ECC25A);padding:3px 8px;border-radius:9999px;"
                                           @click.stop>
                                         🫕 Cortesía
@@ -1466,12 +1482,12 @@
                                     {{-- btn-add cuando qty = 0 y no es tapa --}}
                                     <button type="button"
                                             class="btn-add"
-                                            x-show="$store.schedule.orderingAllowed && !$store.cart.items.some(i => i.productId === {{ $product->id }} && !i.variantId)"
+                                            x-show="{!! $canOrder !!} && !$store.cart.items.some(i => i.productId === {{ $product->id }} && !i.variantId)"
                                             @click.stop="$store.cart.add(products.find(p => p.id === {{ $product->id }}))"
                                             aria-label="Añadir {{ $product->name }}">+</button>
                                     {{-- qty control cuando qty > 0 y NO es tapa --}}
                                     <div class="qty"
-                                         x-show="$store.schedule.orderingAllowed && $store.cart.items.some(i => i.productId === {{ $product->id }} && !i.variantId && !i.isTapa)"
+                                         x-show="{!! $canOrder !!} && $store.cart.items.some(i => i.productId === {{ $product->id }} && !i.variantId && !i.isTapa)"
                                          @click.stop>
                                         <button class="qty-minus"
                                                 @click.stop="$store.cart.dec('{{ $product->id }}:none')"
@@ -1482,9 +1498,9 @@
                                                 @click.stop="$store.cart.add(products.find(p => p.id === {{ $product->id }}))"
                                                 aria-label="Añadir otro de {{ $product->name }}">+</button>
                                     </div>
-                                    {{-- Cerrado: pedidos no permitidos --}}
+                                    {{-- Cerrado: destino bloqueado o negocio cerrado --}}
                                     <span class="pcard__closed"
-                                          x-show="!$store.schedule.orderingAllowed"
+                                          x-show="{!! $isClosed !!}"
                                           style="display:none">Cerrado</span>
                                     @endif
 
