@@ -98,14 +98,7 @@
   align-items: center;
 }
 .carta[data-bp="mobile"] .header__bizname {
-  white-space: normal;
-  line-height: 1.15;
   font-size: 15px;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
 }
 
 /* ----- Cart column (desktop persistent) ----- */
