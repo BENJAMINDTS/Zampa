@@ -1190,7 +1190,13 @@
 .pdetail__cta:hover:not(:disabled) { filter: brightness(1.06); transform: translateY(-1px); }
 .pdetail__cta:active:not(:disabled) { transform: translateY(0); }
 .pdetail__cta:disabled { opacity: 0.5; cursor: not-allowed; }
-.pdetail__cta-lab { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; }
+.pdetail__cta-lab { flex: 1; min-width: 0; overflow: hidden; }
+.pdetail__cta-lab-txt { display: inline-block; white-space: nowrap; }
+.pdetail__cta-lab-txt--scroll { animation: pdetail-marquee 3.6s ease-in-out infinite; }
+@keyframes pdetail-marquee {
+  0%, 30%   { transform: translateX(0); }
+  70%, 100% { transform: translateX(var(--cta-overflow, -60px)); }
+}
 .pdetail__cta-price {
   flex-shrink: 0;
   font-family: var(--font-display);
