@@ -104,6 +104,8 @@ export function registerMenuFilters() {
             pdetailExtraIds:   [],
             /** @type {number|null} Selected variant ID in the detail drawer. */
             pdetailVariantId:  null,
+            /** @type {boolean} True when the CTA label text overflows its container. */
+            ctaLabScrolls:     false,
             /** @type {boolean} Whether the kitchen is currently open. */
             kitchenOpen:       ctx.kitchenOpen ?? true,
 
@@ -122,7 +124,15 @@ export function registerMenuFilters() {
                     ? product.variants[0].id
                     : null;
                 this._syncPdetailFromCart();
-                this.$nextTick(() => this._fillPdetailAllergens());
+                this.$nextTick(() => {
+                    this._fillPdetailAllergens();
+                    const lab = this.$refs.ctaLab;
+                    if (lab) {
+                        const overflow = lab.scrollWidth - lab.offsetWidth;
+                        this.ctaLabScrolls = overflow > 0;
+                        lab.style.setProperty('--cta-overflow', `-${overflow}px`);
+                    }
+                });
             },
 
             /**
