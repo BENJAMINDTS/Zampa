@@ -771,7 +771,7 @@
   color: color-mix(in oklab, var(--color-amber-800) 75%, var(--fg-secondary));
 }
 .banner-closed__sub-txt { display: inline-block; white-space: nowrap; }
-.carta:not([data-bp="desktop"]) .banner-closed__sub-txt { animation: banner-marquee 6s ease-in-out infinite; }
+.carta:not([data-bp="desktop"]) .banner-closed__sub-txt { animation: banner-marquee 9s ease-in-out infinite; }
 @keyframes banner-marquee {
   0%, 30%   { transform: translateX(0); }
   70%, 100% { transform: translateX(-70px); }
@@ -1197,7 +1197,7 @@
 .pdetail__cta:disabled { opacity: 0.5; cursor: not-allowed; }
 .pdetail__cta-lab { flex: 1; min-width: 0; overflow: hidden; }
 .pdetail__cta-lab-txt { display: inline-block; white-space: nowrap; }
-.carta:not([data-bp="desktop"]) .pdetail__cta-lab-txt { animation: pdetail-marquee 6s ease-in-out infinite; }
+.carta:not([data-bp="desktop"]) .pdetail__cta-lab-txt { animation: pdetail-marquee 9s ease-in-out infinite; }
 @keyframes pdetail-marquee {
   0%, 30%   { transform: translateX(0); }
   70%, 100% { transform: translateX(-60px); }
