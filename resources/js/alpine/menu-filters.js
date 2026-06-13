@@ -102,6 +102,8 @@ export function registerMenuFilters() {
             pdetailRemovedIds: [],
             /** @type {number[]} Extra ingredient IDs selected. */
             pdetailExtraIds:   [],
+            /** @type {number|null} Selected variant ID in the detail drawer. */
+            pdetailVariantId:  null,
             /** @type {boolean} Whether the kitchen is currently open. */
             kitchenOpen:       ctx.kitchenOpen ?? true,
 
@@ -113,9 +115,38 @@ export function registerMenuFilters() {
              */
             openProduct(product) {
                 if (!product) return;
-                this.selectedProduct = product;
-                this.pdetailClosing  = false;
-                const key      = product.id + ':none';
+                this.selectedProduct  = product;
+                this.pdetailClosing   = false;
+                // Default to first variant (null for products without variants)
+                this.pdetailVariantId = (product.variants && product.variants.length > 0)
+                    ? product.variants[0].id
+                    : null;
+                this._syncPdetailFromCart();
+                this.$nextTick(() => this._fillPdetailAllergens());
+            },
+
+            /**
+             * Switches the selected variant in the detail drawer and resyncs cart state.
+             *
+             * @param {number} variantId
+             * @returns {void}
+             */
+            selectVariant(variantId) {
+                this.pdetailVariantId = variantId;
+                this._syncPdetailFromCart();
+            },
+
+            /**
+             * Reads qty and mods for the current product+variant combo from the cart.
+             *
+             * @returns {void}
+             */
+            _syncPdetailFromCart() {
+                const product  = this.selectedProduct;
+                if (!product) return;
+                const key      = this.pdetailVariantId
+                    ? product.id + ':' + this.pdetailVariantId
+                    : product.id + ':none';
                 const cartItem = Alpine.store('cart').items.find(i => i._key === key);
                 this.pdetailQty        = cartItem ? cartItem.quantity : 1;
                 this.pdetailRemovedIds = cartItem
@@ -124,7 +155,6 @@ export function registerMenuFilters() {
                 this.pdetailExtraIds   = cartItem
                     ? cartItem.mods.filter(m => m.action === 'add').map(m => m.ingredientId)
                     : [];
-                this.$nextTick(() => this._fillPdetailAllergens());
             },
 
             /**
@@ -165,21 +195,26 @@ export function registerMenuFilters() {
              */
             pdetailAddToCart() {
                 if (!this.selectedProduct) return;
-                const cart       = Alpine.store('cart');
-                const product    = this.selectedProduct;
-                const key        = product.id + ':none';
-                const cartItem   = cart.items.find(i => i._key === key);
+                const cart      = Alpine.store('cart');
+                const product   = this.selectedProduct;
+                const variantId = this.pdetailVariantId;
+                const key       = variantId ? product.id + ':' + variantId : product.id + ':none';
+                const cartItem  = cart.items.find(i => i._key === key);
                 const currentQty = cartItem ? cartItem.quantity : 0;
                 const targetQty  = this.pdetailQty;
 
                 if (targetQty > currentQty) {
                     if (!cartItem) {
-                        // Primer añadido: usa add() para inicializar el item en el store
-                        cart.add(product);
+                        if (variantId) {
+                            const variant = product.variants.find(v => v.id === variantId);
+                            if (!variant) return;
+                            cart.addWithVariant(product.id, variant.id, variant.name, variant.price, product);
+                        } else {
+                            cart.add(product);
+                        }
                         const added = cart.items.find(i => i._key === key);
                         if (added && targetQty > 1) added.quantity = targetQty;
                     } else {
-                        // Item ya existe: actualiza quantity directamente y notifica tapas
                         cartItem.quantity = targetQty;
                         if (product.destination === 'bar') cart._checkTapaSuggestion();
                     }

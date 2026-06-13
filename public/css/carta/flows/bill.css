@@ -1077,6 +1077,15 @@
   background: var(--color-red-600, #DC2626);
   color: white;
 }
+.pdetail__chip--variant {
+  border-color: var(--border-subtle);
+}
+.pdetail__chip--variant-on {
+  background: color-mix(in oklab, var(--color-accent, var(--color-indigo-500)) 14%, var(--bg-base));
+  border-color: var(--color-accent, var(--color-indigo-500));
+  color: var(--color-accent, var(--color-indigo-600));
+  font-weight: 600;
+}
 
 /* Extras como lista de filas */
 .pdetail__extras { display: flex; flex-direction: column; gap: 6px; }
