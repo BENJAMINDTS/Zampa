@@ -4001,7 +4001,7 @@
                                     :disabled="selectedProduct?.destination === 'kitchen' && !$store.schedule.kitchenOpen">
                                 <span class="pdetail__cta-lab"
                                       x-text="$store.cart.items.some(i => i._key === (pdetailVariantId ? selectedProduct?.id + ':' + pdetailVariantId : selectedProduct?.id + ':none'))
-                                          ? 'Actualizar carrito' : 'Añadir al carrito'"></span>
+                                          ? 'Actualizar Pedido' : 'Añadir al Pedido'"></span>
                                 <span class="pdetail__cta-price"
                                       x-text="Number(
                                           ((pdetailVariantId
