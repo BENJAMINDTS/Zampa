@@ -1078,9 +1078,11 @@
   color: white;
 }
 .pdetail__chip--variant {
+  padding: 8px 14px;
   border-color: var(--border-subtle);
 }
 .pdetail__chip--variant-on {
+  padding: 8px 14px;
   background: color-mix(in oklab, var(--color-accent, var(--color-indigo-500)) 14%, var(--bg-base));
   border-color: var(--color-accent, var(--color-indigo-500));
   color: var(--color-accent, var(--color-indigo-600));
@@ -1175,6 +1177,8 @@
 
 .pdetail__cta {
   flex: 1;
+  min-width: 0;
+  overflow: hidden;
   display: flex; align-items: center; justify-content: space-between;
   gap: 12px;
   padding: 14px 18px;
@@ -1189,8 +1193,15 @@
 .pdetail__cta:hover:not(:disabled) { filter: brightness(1.06); transform: translateY(-1px); }
 .pdetail__cta:active:not(:disabled) { transform: translateY(0); }
 .pdetail__cta:disabled { opacity: 0.5; cursor: not-allowed; }
-.pdetail__cta-lab { white-space: nowrap; }
+.pdetail__cta-lab {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .pdetail__cta-price {
+  flex-shrink: 0;
   font-family: var(--font-display);
   font-weight: 900;
   font-size: 16px;
