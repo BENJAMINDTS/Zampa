@@ -304,8 +304,23 @@
                     {{ mb_strtoupper(mb_substr($table->user->business_name ?: $table->user->name, 0, 2)) }}
                 </div>
                 <div>
-                    <div class="header__bizname">
-                        {{ $table->user->business_name ?: $table->user->name }}
+                    <div class="header__bizname"
+                         x-init="
+                             function check() {
+                                 const txt = $el.querySelector('.header__bizname-txt');
+                                 const overflow = txt.scrollWidth - $el.offsetWidth;
+                                 if (overflow > 4) {
+                                     $el.style.setProperty('--bizname-overflow', '-' + Math.min(overflow + 8, 160) + 'px');
+                                     txt.classList.add('header__bizname-txt--scroll');
+                                 } else {
+                                     txt.classList.remove('header__bizname-txt--scroll');
+                                 }
+                             }
+                             $nextTick(check);
+                             const _ro = new ResizeObserver(check);
+                             _ro.observe($el);
+                         ">
+                        <span class="header__bizname-txt">{{ $table->user->business_name ?: $table->user->name }}</span>
                     </div>
                     <div class="header__table">{{ $table->name }}{{ $table->zone ? ' · ' . $table->zone->name : '' }}</div>
                 </div>

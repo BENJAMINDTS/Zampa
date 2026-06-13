@@ -113,10 +113,10 @@ html, body {
   white-space: nowrap; overflow: hidden;
 }
 .header__bizname-txt { display: inline-block; white-space: nowrap; }
-.carta:not([data-bp="desktop"]) .header__bizname-txt { animation: bizname-marquee 9s ease-in-out infinite; }
+.header__bizname-txt--scroll { animation: bizname-marquee 9s ease-in-out infinite; }
 @keyframes bizname-marquee {
   0%, 30%   { transform: translateX(0); }
-  70%, 100% { transform: translateX(-80px); }
+  70%, 100% { transform: translateX(var(--bizname-overflow, -60px)); }
 }
 .header__actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .header__table {
