@@ -1078,11 +1078,9 @@
   color: white;
 }
 .pdetail__chip--variant {
-  padding: 8px 14px;
   border-color: var(--border-subtle);
 }
 .pdetail__chip--variant-on {
-  padding: 8px 14px;
   background: color-mix(in oklab, var(--color-accent, var(--color-indigo-500)) 14%, var(--bg-base));
   border-color: var(--color-accent, var(--color-indigo-500));
   color: var(--color-accent, var(--color-indigo-600));
