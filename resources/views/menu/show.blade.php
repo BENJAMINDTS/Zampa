@@ -1579,6 +1579,27 @@
         </div>
 
         {{-- ══════════════════════════════════════════════════════════════════════
+             DELETE PILL — notificación al eliminar un artículo del carrito
+             ══════════════════════════════════════════════════════════════════════ --}}
+        <template x-if="$store.cart._deletePill.visible">
+            <div :class="$store.cart._deletePill.leaving ? 'delete-pill delete-pill--leaving' : 'delete-pill'"
+                 role="status" aria-live="polite">
+                <span aria-hidden="true">🗑</span>
+                <span><strong x-text="$store.cart._deletePill.name"></strong> eliminado</span>
+                <button type="button" class="icon-btn"
+                        @click="$store.cart.hideDeletePill()"
+                        aria-label="Cerrar notificación"
+                        style="width:22px;height:22px;margin-left:4px;background:rgba(254,202,202,0.2);color:#FECACA;">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+        </template>
+
+        {{-- ══════════════════════════════════════════════════════════════════════
              CART BAR — .cart-bar position:absolute dentro de .carta
              ══════════════════════════════════════════════════════════════════════ --}}
         <template x-if="$store.cart.barShouldShow">
