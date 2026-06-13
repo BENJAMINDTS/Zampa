@@ -1465,7 +1465,7 @@
                                                 class="btn-add"
                                                 x-show="{!! $canOrder !!}"
                                                 style="display:none"
-                                                @click.stop="$store.variantPicker.show(products.find(p => p.id === {{ $product->id }}))"
+                                                @click.stop="openProduct(products.find(p => p.id === {{ $product->id }}))"
                                                 aria-label="Elegir variante de {{ $product->name }}">
                                             +
                                         </button>
@@ -1483,11 +1483,11 @@
                                           @click.stop>
                                         🫕 Cortesía
                                     </span>
-                                    {{-- btn-add cuando qty = 0 y no es tapa --}}
+                                    {{-- btn-add cuando qty = 0 y no es tapa — abre pdetail para configurar mods --}}
                                     <button type="button"
                                             class="btn-add"
                                             x-show="{!! $canOrder !!} && !$store.cart.items.some(i => i.productId === {{ $product->id }} && !i.variantId)"
-                                            @click.stop="$store.cart.add(products.find(p => p.id === {{ $product->id }}))"
+                                            @click.stop="openProduct(products.find(p => p.id === {{ $product->id }}))"
                                             aria-label="Añadir {{ $product->name }}">+</button>
                                     {{-- qty control cuando qty > 0 y NO es tapa --}}
                                     <div class="qty"
@@ -3881,7 +3881,31 @@
 
                             <h2 class="pdetail__name" x-text="selectedProduct?.name"></h2>
                             <div class="pdetail__price"
-                                 x-text="Number(selectedProduct?.price || 0).toFixed(2).replace('.', ',') + ' €'"></div>
+                                 x-text="Number(
+                                     pdetailVariantId
+                                         ? ((selectedProduct?.variants || []).find(v => v.id === pdetailVariantId)?.price || 0)
+                                         : (selectedProduct?.price || 0)
+                                 ).toFixed(2).replace('.', ',') + ' €'"></div>
+
+                            {{-- Variantes --}}
+                            <section class="pdetail__section"
+                                     x-show="(selectedProduct?.variants || []).length > 0">
+                                <div class="pdetail__label">Elige una opción</div>
+                                <div class="pdetail__chips" style="flex-wrap:wrap;gap:8px">
+                                    <template x-for="v in (selectedProduct?.variants || [])" :key="v.id">
+                                        <button type="button"
+                                                :class="pdetailVariantId === v.id
+                                                    ? 'pdetail__chip pdetail__chip--variant-on'
+                                                    : 'pdetail__chip pdetail__chip--variant'"
+                                                @click="selectVariant(v.id)"
+                                                :aria-pressed="pdetailVariantId === v.id">
+                                            <span x-text="v.name"></span>
+                                            <span style="opacity:.7;font-size:.82em;margin-left:6px"
+                                                  x-text="Number(v.price).toFixed(2).replace('.', ',') + ' €'"></span>
+                                        </button>
+                                    </template>
+                                </div>
+                            </section>
                             <p class="pdetail__desc"
                                x-text="selectedProduct?.description"
                                x-show="selectedProduct?.description"></p>
@@ -3976,10 +4000,16 @@
                                     @click="pdetailAddToCart()"
                                     :disabled="selectedProduct?.destination === 'kitchen' && !$store.schedule.kitchenOpen">
                                 <span class="pdetail__cta-lab"
-                                      x-text="$store.cart.items.some(i => i.productId === selectedProduct?.id && !i.variantId)
+                                      x-text="$store.cart.items.some(i => i._key === (pdetailVariantId ? selectedProduct?.id + ':' + pdetailVariantId : selectedProduct?.id + ':none'))
                                           ? 'Actualizar carrito' : 'Añadir al carrito'"></span>
                                 <span class="pdetail__cta-price"
-                                      x-text="Number(((selectedProduct?.price || 0) + (selectedProduct?.extras || []).filter(e => pdetailExtraIds.includes(e.id)).reduce((s, e) => s + e.price, 0)) * pdetailQty).toFixed(2).replace('.',',') + ' €'"></span>
+                                      x-text="Number(
+                                          ((pdetailVariantId
+                                              ? ((selectedProduct?.variants || []).find(v => v.id === pdetailVariantId)?.price || 0)
+                                              : (selectedProduct?.price || 0))
+                                          + (selectedProduct?.extras || []).filter(e => pdetailExtraIds.includes(e.id)).reduce((s, e) => s + e.price, 0))
+                                          * pdetailQty
+                                      ).toFixed(2).replace('.',',') + ' €'"></span>
                             </button>
                         </div>
 
