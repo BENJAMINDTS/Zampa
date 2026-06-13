@@ -376,82 +376,6 @@
         {{-- ── FAB Chat IA (Zampi Design System) ─────────────────── --}}
         <div x-data="chatWidget()">
 
-            {{-- Mascot SVG symbol (Official Zampi Design System — zm- prefixed IDs) --}}
-            <svg aria-hidden="true" style="display:none;position:absolute;width:0;height:0;overflow:hidden;">
-                <symbol id="zampi-mascot" viewBox="0 0 120 110">
-                    <defs>
-                        <radialGradient id="zm-bT" cx="38%" cy="28%" r="62%">
-                            <stop offset="0%" stop-color="#FBDF6A"/>
-                            <stop offset="45%" stop-color="#E8980C"/>
-                            <stop offset="100%" stop-color="#A05500"/>
-                        </radialGradient>
-                        <radialGradient id="zm-bB" cx="38%" cy="22%" r="65%">
-                            <stop offset="0%" stop-color="#F5C830"/>
-                            <stop offset="55%" stop-color="#CC7008"/>
-                            <stop offset="100%" stop-color="#8B4000"/>
-                        </radialGradient>
-                        <linearGradient id="zm-ch" x1="0%" y1="0%" x2="0%" y2="100%">
-                            <stop offset="0%" stop-color="#FFD740"/>
-                            <stop offset="100%" stop-color="#F59000"/>
-                        </linearGradient>
-                        <linearGradient id="zm-mt" x1="0%" y1="0%" x2="0%" y2="100%">
-                            <stop offset="0%" stop-color="#7B3010"/>
-                            <stop offset="100%" stop-color="#4A1800"/>
-                        </linearGradient>
-                        <linearGradient id="zm-lt" x1="0%" y1="0%" x2="0%" y2="100%">
-                            <stop offset="0%" stop-color="#5CC830"/>
-                            <stop offset="100%" stop-color="#348010"/>
-                        </linearGradient>
-                        <radialGradient id="zm-sc" cx="50%" cy="38%" r="55%">
-                            <stop offset="0%" stop-color="#0C0620"/>
-                            <stop offset="100%" stop-color="#04000E"/>
-                        </radialGradient>
-                        <filter id="zm-sh"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#3A1800" flood-opacity="0.45"/></filter>
-                        <filter id="zm-gP"><feGaussianBlur stdDeviation="3.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-                        <filter id="zm-gC"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-                    </defs>
-                    <ellipse cx="60" cy="107" rx="40" ry="4" fill="#2A0800" opacity="0.25"/>
-                    <line x1="60" y1="2" x2="60" y2="22" stroke="#7A5010" stroke-width="1.5" stroke-linecap="round"/>
-                    <path d="M60 3 L78 9 L60 16 Z" fill="#D80E1A"/>
-                    <ellipse cx="68" cy="8" rx="4" ry="1.8" fill="white" opacity="0.25" transform="rotate(-10,68,8)"/>
-                    <ellipse cx="60" cy="28" rx="48" ry="22" fill="url(#zm-bT)" filter="url(#zm-sh)"/>
-                    <ellipse cx="44" cy="20" rx="16" ry="8" fill="white" opacity="0.25" transform="rotate(-10,44,20)"/>
-                    <ellipse cx="42" cy="16" rx="4.5" ry="1.8" fill="#FFF0A0" opacity="0.9" transform="rotate(-18,42,16)"/>
-                    <ellipse cx="60" cy="12" rx="4.5" ry="1.8" fill="#FFF0A0" opacity="0.9"/>
-                    <ellipse cx="78" cy="17" rx="4.5" ry="1.8" fill="#FFF0A0" opacity="0.9" transform="rotate(18,78,17)"/>
-                    <ellipse cx="32" cy="26" rx="4" ry="1.6" fill="#FFF0A0" opacity="0.85" transform="rotate(-22,32,26)"/>
-                    <ellipse cx="88" cy="27" rx="4" ry="1.6" fill="#FFF0A0" opacity="0.85" transform="rotate(22,88,27)"/>
-                    <ellipse cx="60" cy="48" rx="48" ry="6" fill="#B06010"/>
-                    <path d="M12 51 Q28 46 42 53 Q54 59 60 52 Q66 45 78 53 Q92 60 108 51 L108 59 Q92 66 78 60 Q66 54 60 60 Q54 66 42 60 Q28 53 12 59 Z" fill="url(#zm-ch)"/>
-                    <path d="M16 55 C11 60 11 68 16 71 L19 71 C15 66 16 55 16 55 Z" fill="#FBBF24"/>
-                    <ellipse cx="16.5" cy="71.5" rx="3" ry="2" fill="#F59000"/>
-                    <path d="M104 55 C109 60 109 68 104 71 L101 71 C105 66 104 55 104 55 Z" fill="#FBBF24"/>
-                    <ellipse cx="103.5" cy="71.5" rx="3" ry="2" fill="#F59000"/>
-                    <path d="M12 59 Q22 55 34 62 Q46 68 60 61 Q74 54 86 62 Q98 68 108 59 L108 65 Q98 73 86 66 Q74 60 60 66 Q46 72 34 66 Q22 60 12 65 Z" fill="url(#zm-lt)"/>
-                    <ellipse cx="60" cy="70" rx="48" ry="9" fill="url(#zm-mt)" filter="url(#zm-sh)"/>
-                    <ellipse cx="60" cy="84" rx="48" ry="14" fill="url(#zm-bB)" filter="url(#zm-sh)"/>
-                    <ellipse cx="60" cy="95" rx="43" ry="8" fill="#8B4000"/>
-                    <ellipse cx="60" cy="101" rx="36" ry="5" fill="#6A3000"/>
-                    <ellipse cx="46" cy="80" rx="16" ry="5" fill="white" opacity="0.15"/>
-                    <ellipse cx="60" cy="66" rx="34" ry="28" fill="#6010B0" opacity="0.45" filter="url(#zm-gP)"/>
-                    <ellipse cx="60" cy="66" rx="32" ry="26" fill="#40087A" stroke="#CC60F8" stroke-width="3"/>
-                    <ellipse cx="60" cy="66" rx="29" ry="23" fill="#2C0660" stroke="#7828B8" stroke-width="1.2"/>
-                    <ellipse cx="60" cy="66" rx="27" ry="21" fill="url(#zm-sc)"/>
-                    <rect x="34" y="54" width="18" height="20" rx="7" fill="#22D3EE" opacity="0.25" filter="url(#zm-gC)"/>
-                    <rect x="35" y="55" width="16" height="18" rx="6" fill="#030E1A"/>
-                    <rect x="36" y="56" width="14" height="16" rx="5" fill="#22D3EE"/>
-                    <ellipse cx="39" cy="58.5" rx="3.5" ry="2" fill="white" opacity="0.65"/>
-                    <rect x="35" y="55" width="16" height="18" rx="6" fill="none" stroke="#A5F3FC" stroke-width="0.8" opacity="0.8"/>
-                    <rect x="68" y="54" width="18" height="20" rx="7" fill="#22D3EE" opacity="0.25" filter="url(#zm-gC)"/>
-                    <rect x="69" y="55" width="16" height="18" rx="6" fill="#030E1A"/>
-                    <rect x="70" y="56" width="14" height="16" rx="5" fill="#22D3EE"/>
-                    <ellipse cx="73" cy="58.5" rx="3.5" ry="2" fill="white" opacity="0.65"/>
-                    <rect x="69" y="55" width="16" height="18" rx="6" fill="none" stroke="#A5F3FC" stroke-width="0.8" opacity="0.8"/>
-                    <path d="M51 79 Q60 86 69 79" fill="none" stroke="#22D3EE" stroke-width="4" stroke-linecap="round" opacity="0.2"/>
-                    <path d="M51 79 Q60 86 69 79" fill="none" stroke="#22D3EE" stroke-width="2" stroke-linecap="round"/>
-                </symbol>
-            </svg>
-
             {{-- Los pictogramas de alérgenos se inyectan vía allergen-pictograms.js (ZAMPA_PICTOGRAMS) --}}
 
             {{-- Sprite SVG: categorías de tipo de alimento --}}
@@ -581,10 +505,9 @@
                     x-transition:leave="transition duration-150"
                     x-transition:leave-start="opacity-100"
                     x-transition:leave-end="opacity-0">
-                <span class="fab__ic zampi-float" aria-hidden="true">
-                    <svg width="24" height="22"><use href="#zampi-mascot"/></svg>
+                <span class="zampi-float" aria-hidden="true">
+                    <img src="/images/zampi-mascot.svg" width="36" height="33" alt="">
                 </span>
-                <span class="fab__label">Zampi</span>
                 <template x-if="cartCount > 0">
                     <span x-text="cartCount"
                           style="position:absolute; top:-8px; right:-8px; min-width:20px; height:20px; border-radius:9999px; background:#FBBF24; color:#050B1F; font-size:11px; font-weight:900; display:flex; align-items:center; justify-content:center; padding:0 4px; font-family:'Nunito',sans-serif; box-shadow:0 0 8px rgba(251,191,36,0.6); pointer-events:none;"></span>
@@ -611,7 +534,7 @@
                     {{-- Cabecera --}}
                     <div style="flex-shrink:0; padding:12px 16px; background:rgba(10,20,48,0.9); backdrop-filter:blur(16px); border-bottom:1px solid rgba(46,80,176,0.4); display:flex; align-items:center; gap:10px;">
                         <div class="zampi-float" style="flex-shrink:0;">
-                            <svg width="38" height="35" aria-hidden="true"><use href="#zampi-mascot"/></svg>
+                            <img src="/images/zampi-mascot.svg" width="38" height="35" alt="">
                         </div>
                         <div style="flex:1;">
                             <h2 style="font-family:'Nunito',sans-serif; font-weight:900; font-size:16px; color:#fff; line-height:1.2; margin:0;">Zampi</h2>
@@ -660,7 +583,7 @@
                                 <template x-if="msg.type === 'bot'">
                                     <div style="display:flex; gap:8px; align-items:flex-end;">
                                         <div class="zampi-avatar" style="flex-shrink:0;">
-                                            <svg width="24" height="22" aria-hidden="true"><use href="#zampi-mascot"/></svg>
+                                            <img src="/images/zampi-mascot.svg" width="24" height="22" alt="">
                                         </div>
                                         <div style="max-width:75%; min-width:0;">
                                             <div style="background:#0E1A38; border:1px solid rgba(46,80,176,0.35); color:#C8D8FF; font-size:14px; line-height:1.6; padding:10px 14px; border-radius:18px 18px 18px 4px; box-shadow:0 2px 12px rgba(0,0,0,0.3); font-family:'Space Grotesk',sans-serif; white-space:pre-line;"
@@ -1775,7 +1698,7 @@
                     {{-- Cabecera con Zampi --}}
                     <div class="waiter-modal__header">
                         <div class="zampi-float waiter-modal__avatar" aria-hidden="true">
-                            <svg width="48" height="44"><use href="#zampi-mascot"/></svg>
+                            <img src="/images/zampi-mascot.svg" width="48" height="44" alt="">
                         </div>
                         <div class="waiter-modal__bubble">
                             <p id="waiter-modal-title" class="waiter-modal__question">
