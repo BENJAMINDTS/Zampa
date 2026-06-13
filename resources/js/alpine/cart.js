@@ -257,8 +257,8 @@ export function registerCart() {
                     quantity:    1,
                     destination: productData?.destination ?? null,
                     mods:        [],
-                    removable:   [],
-                    extras:      [],
+                    removable:   productData?.removable || [],
+                    extras:      productData?.extras    || [],
                 });
             }
             if (productData?.destination === 'bar') {
