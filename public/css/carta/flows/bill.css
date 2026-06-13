@@ -1177,8 +1177,6 @@
 
 .pdetail__cta {
   flex: 1;
-  min-width: 0;
-  overflow: hidden;
   display: flex; align-items: center; justify-content: space-between;
   gap: 12px;
   padding: 14px 18px;
@@ -1193,15 +1191,8 @@
 .pdetail__cta:hover:not(:disabled) { filter: brightness(1.06); transform: translateY(-1px); }
 .pdetail__cta:active:not(:disabled) { transform: translateY(0); }
 .pdetail__cta:disabled { opacity: 0.5; cursor: not-allowed; }
-.pdetail__cta-lab {
-  flex: 1;
-  min-width: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+.pdetail__cta-lab { white-space: nowrap; }
 .pdetail__cta-price {
-  flex-shrink: 0;
   font-family: var(--font-display);
   font-weight: 900;
   font-size: 16px;
@@ -1211,6 +1202,12 @@
   border-radius: 9999px;
   white-space: nowrap;
 }
+/* Móvil: qty encima del CTA → el botón ocupa todo el ancho y el texto cabe */
+.carta[data-bp="mobile"] .pdetail__foot {
+  flex-direction: column;
+  align-items: stretch;
+}
+.carta[data-bp="mobile"] .pdetail__qty { align-self: center; }
 
 /* Tarjeta clicable: hover sutil */
 .pcard { cursor: pointer; transition: transform var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast), border-color var(--duration-fast); }
