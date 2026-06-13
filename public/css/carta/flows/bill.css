@@ -1179,6 +1179,7 @@
   gap: 12px;
   padding: 14px 18px;
   border-radius: 9999px;
+  overflow: hidden;
   background: var(--cta-view-order);
   color: white;
   border: none; cursor: pointer;
@@ -1189,8 +1190,9 @@
 .pdetail__cta:hover:not(:disabled) { filter: brightness(1.06); transform: translateY(-1px); }
 .pdetail__cta:active:not(:disabled) { transform: translateY(0); }
 .pdetail__cta:disabled { opacity: 0.5; cursor: not-allowed; }
-.pdetail__cta-lab { white-space: nowrap; }
+.pdetail__cta-lab { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; }
 .pdetail__cta-price {
+  flex-shrink: 0;
   font-family: var(--font-display);
   font-weight: 900;
   font-size: 16px;
