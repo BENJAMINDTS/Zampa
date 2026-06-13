@@ -249,7 +249,9 @@
   font-family: var(--font-body); font-size: 13px; font-weight: 500;
   animation: pill-in 200ms var(--ease-out);
 }
-@keyframes pill-in { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes pill-in  { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes pill-out { from { transform: translateY(0); opacity: 1; } to { transform: translateY(20px); opacity: 0; } }
+.delete-pill--leaving { animation: pill-out 200ms var(--ease-out) forwards; }
 .delete-pill strong { color: white; font-weight: 700; }
 
 /* ----- Chat panel ----- */
