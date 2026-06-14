@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
+use App\Models\Table;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -114,35 +115,34 @@ class NotificationController extends Controller
     }
 
     /**
-     * Devuelve los pedidos con waiter_called=true del restaurante autenticado.
+     * Devuelve las mesas con waiter_called=true del restaurante autenticado.
      *
      * @return JsonResponse
      */
     public function waiterCalls(): JsonResponse
     {
-        $orders = Order::with('table')
+        $tables = Table::where('user_id', Auth::user()->ownerUserId())
             ->where('waiter_called', true)
-            ->whereHas('table', fn ($q) => $q->where('user_id', Auth::user()->ownerUserId()))
             ->get()
-            ->map(fn (Order $order) => [
-                'id'        => $order->id,
-                'table'     => $order->table->name,
-                'called_at' => $order->waiter_called_at?->format('H:i'),
+            ->map(fn (Table $table) => [
+                'id'        => $table->id,
+                'table'     => $table->name,
+                'called_at' => $table->waiter_called_at?->format('H:i'),
             ])
             ->values();
 
-        return response()->json(['orders' => $orders]);
+        return response()->json(['orders' => $tables]);
     }
 
     /**
-     * Descarta la llamada al camarero de un pedido concreto.
+     * Descarta la llamada al camarero de una mesa concreta.
      *
-     * @param  Order  $order
+     * @param  Table  $order  Recibe ID de mesa (parámetro nombrado 'order' por compatibilidad con ruta)
      * @return JsonResponse
      */
-    public function dismissWaiterCall(Order $order): JsonResponse
+    public function dismissWaiterCall(Table $order): JsonResponse
     {
-        abort_if($order->table->user_id !== Auth::user()->ownerUserId(), 403, 'Acceso denegado.');
+        abort_if($order->user_id !== Auth::user()->ownerUserId(), 403, 'Acceso denegado.');
 
         $order->update(['waiter_called' => false, 'waiter_called_at' => null]);
 
