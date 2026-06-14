@@ -581,85 +581,73 @@
                                         </div>
                                         <div class="zampi-bot-bubble-wrap">
                                             <div class="zampi-bubble-bot" x-text="msg.text"></div>
-                                            {{-- Tarjetas de producto --}}
+                                            {{-- Tarjetas de producto — misma estructura que .pcard de la carta digital --}}
                                             <template x-if="msg.cards && msg.cards.length">
                                                 <div class="zampi-cards-row">
                                                     <template x-for="card in msg.cards" :key="card.id">
-                                                        <div class="zampi-product-card">
-                                                            {{-- Foto del plato o icono de categoría --}}
-                                                            <template x-if="card.image">
-                                                                <img :src="card.image"
-                                                                     :alt="card.name"
-                                                                     class="zampi-card-real-img"
-                                                                     loading="lazy"/>
-                                                            </template>
-                                                            <template x-if="!card.image">
-                                                                <div class="zampi-card-img">
-                                                                    <template x-if="card.foodIcon">
-                                                                        <svg width="34" height="34" viewBox="0 0 24 24"
-                                                                             aria-hidden="true"
-                                                                             class="zampi-card-food-icon">
-                                                                            <use :href="'#fc-' + card.foodIcon.svgId"/>
+                                                        <div class="pcard"
+                                                             role="button"
+                                                             tabindex="0"
+                                                             @click="openProduct(products.find(p => p.id === card.id))"
+                                                             @keydown.enter.prevent="openProduct(products.find(p => p.id === card.id))"
+                                                             :aria-label="'Ver detalle de ' + card.name">
+                                                            {{-- Foto: imagen real o fallback con degradado + emoji (igual que la carta digital) --}}
+                                                            <div class="pcard__photo"
+                                                                 :class="card.image ? '' : 'pcard__photo--food-' + ((card.id % 6) + 1)"
+                                                                 :aria-hidden="!card.image ? 'true' : null">
+                                                                <template x-if="card.image">
+                                                                    <img :src="card.image" :alt="card.name" loading="lazy">
+                                                                </template>
+                                                                <template x-if="!card.image">
+                                                                    <span x-text="card.emoji"></span>
+                                                                </template>
+                                                            </div>
+                                                            {{-- Body --}}
+                                                            <div class="pcard__body">
+                                                                {{-- Badges alérgenos --}}
+                                                                <div class="pcard__badges">
+                                                                    <template x-for="al in (card.allergens || []).slice(0, 5)" :key="al.name">
+                                                                        <svg class="allergen-img"
+                                                                             :aria-label="al.label"
+                                                                             viewBox="0 0 100 100"
+                                                                             width="22" height="22"
+                                                                             role="img">
+                                                                            <use :href="'#al-' + al.svgId"/>
                                                                         </svg>
                                                                     </template>
-                                                                    <template x-if="!card.foodIcon">
-                                                                        <span x-text="card.emoji" class="zampi-card-emoji"></span>
-                                                                    </template>
                                                                 </div>
-                                                            </template>
-                                                            {{-- Nombre --}}
-                                                            <div class="zampi-card-name" x-text="card.name"></div>
-                                                            {{-- Descripción --}}
-                                                            <div x-show="card.description"
-                                                                 class="zampi-card-desc"
-                                                                 x-text="card.description"></div>
-                                                            {{-- Alérgenos UE encima del precio --}}
-                                                            <template x-if="card.allergens && card.allergens.length">
-                                                                <div class="zampi-allergens-row">
-                                                                    <template x-for="al in card.allergens" :key="al.name">
-                                                                        <div :title="al.name" class="zampi-allergen-badge">
-                                                                            <template x-if="al.svgId">
-                                                                                <svg :aria-label="al.label" width="13" height="13"
-                                                                                     class="zampi-allergen-icon">
-                                                                                    <use :href="'#al-' + al.svgId"/>
-                                                                                </svg>
-                                                                            </template>
-                                                                            <template x-if="!al.svgId">
-                                                                                <span class="zampi-allergen-fallback">⚠</span>
-                                                                            </template>
-                                                                            <span x-text="al.label" class="zampi-allergen-label"></span>
+                                                                {{-- Nombre --}}
+                                                                <div class="pcard__name" x-text="card.name"></div>
+                                                                {{-- Descripción --}}
+                                                                <div class="pcard__desc"
+                                                                     x-show="card.description || card.desc"
+                                                                     x-text="card.description || card.desc"></div>
+                                                                {{-- Footer: precio + controles --}}
+                                                                <div class="pcard__foot" @click.stop>
+                                                                    <span class="pcard__price"
+                                                                          x-text="Number(card.price).toFixed(2).replace('.',',') + ' €'"></span>
+                                                                    {{-- Sin cantidad: abre pdetail igual que la carta digital --}}
+                                                                    <template x-if="cartQty(card.id) === 0">
+                                                                        <button type="button"
+                                                                                class="btn-add"
+                                                                                @click.stop="openProduct(products.find(p => p.id === card.id))"
+                                                                                :aria-label="'Añadir ' + card.name + ' al pedido'">+</button>
+                                                                    </template>
+                                                                    {{-- Con cantidad: control [-] [n] [+] --}}
+                                                                    <template x-if="cartQty(card.id) > 0">
+                                                                        <div class="qty" @click.stop>
+                                                                            <button class="qty-minus"
+                                                                                    @click.stop="decreaseQty(card)"
+                                                                                    :aria-label="'Quitar uno de ' + card.name">−</button>
+                                                                            <span class="qty-n" x-text="cartQty(card.id)"></span>
+                                                                            <button class="qty-plus"
+                                                                                    @click.stop="$store.cart.add(products.find(p => p.id === card.id))"
+                                                                                    :aria-label="'Añadir otro de ' + card.name">+</button>
                                                                         </div>
                                                                     </template>
                                                                 </div>
-                                                            </template>
-                                                            {{-- Precio + controles cantidad --}}
-                                                            <div class="zampi-card-footer">
-                                                                <span class="zampi-card-price"
-                                                                      x-text="Number(card.price).toFixed(2).replace('.',',') + ' €'"></span>
-                                                                {{-- Sin cantidad: solo botón + --}}
-                                                                <template x-if="cartQty(card.id) === 0">
-                                                                    <button type="button"
-                                                                            @click.stop="addToCart(card)"
-                                                                            :aria-label="'Añadir ' + card.name + ' al pedido'"
-                                                                            class="zampi-card-add-btn">+</button>
-                                                                </template>
-                                                                {{-- Con cantidad: controles [-] [n] [+] --}}
-                                                                <template x-if="cartQty(card.id) > 0">
-                                                                    <div class="zampi-card-qty-row">
-                                                                        <button type="button"
-                                                                                @click.stop="decreaseQty(card)"
-                                                                                :aria-label="'Quitar uno de ' + card.name"
-                                                                                class="zampi-card-dec-btn">−</button>
-                                                                        <span x-text="cartQty(card.id)"
-                                                                              class="zampi-card-qty"></span>
-                                                                        <button type="button"
-                                                                                @click.stop="addToCart(card)"
-                                                                                :aria-label="'Añadir otro de ' + card.name"
-                                                                                class="zampi-card-inc-btn">+</button>
-                                                                    </div>
-                                                                </template>
-                                                            </div>
-                                                        </div>
+                                                            </div>{{-- /pcard__body --}}
+                                                        </div>{{-- /pcard --}}
                                                     </template>
                                                 </div>
                                             </template>
