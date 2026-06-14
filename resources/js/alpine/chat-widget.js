@@ -94,50 +94,36 @@ export function getFoodIcon(categoryName, productName) {
 export function getAllergenIcon(name) {
     const n = name.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
     if (/gluten|trigo|cebada|centeno|avena|espelta|kamut|harina/.test(n))
-        return { svgId: 'gluten',      label: 'Gluten' };
+        return { svgId: 'gluten',          label: 'Gluten' };
     if (/crustaceo|gamba|langosta|langostino|cangrejo|bogavante|cigala/.test(n))
-        return { svgId: 'crustaceans', label: 'Crustáceos' };
+        return { svgId: 'crustaceos',      label: 'Crustáceos' };
     if (/huevo|yema|clara|ovoalbumina/.test(n))
-        return { svgId: 'egg',         label: 'Huevo' };
+        return { svgId: 'huevos',          label: 'Huevos' };
     if (/pescado|merluza|bacalao|salmon|atun|anchoa|sardina|boqueron|lenguado|dorada|lubina/.test(n))
-        return { svgId: 'fish',        label: 'Pescado' };
+        return { svgId: 'pescado',         label: 'Pescado' };
     if (/cacahuete|mani/.test(n))
-        return { svgId: 'peanuts',     label: 'Cacahuetes' };
+        return { svgId: 'cacahuetes',      label: 'Cacahuetes' };
     if (/soja|soya|tofu|edamame/.test(n))
-        return { svgId: 'soy',         label: 'Soja' };
+        return { svgId: 'soja',            label: 'Soja' };
     if (/leche|lacteo|lactosa|queso|mantequilla|nata|yogur|suero|caseina/.test(n))
-        return { svgId: 'milk',        label: 'Lácteos' };
+        return { svgId: 'lacteos',         label: 'Lácteos' };
     if (/nuez|nueces|almendra|avellana|pistacho|anacardo|macadamia|pacana|brasil|castana/.test(n))
-        return { svgId: 'nuts',        label: 'Frutos secos' };
+        return { svgId: 'frutos-cascara',  label: 'Frutos secos' };
     if (/apio/.test(n))
-        return { svgId: 'celery',      label: 'Apio' };
+        return { svgId: 'apio',            label: 'Apio' };
     if (/mostaza/.test(n))
-        return { svgId: 'mustard',     label: 'Mostaza' };
+        return { svgId: 'mostaza',         label: 'Mostaza' };
     if (/sesamo|tahini|tahina/.test(n))
-        return { svgId: 'sesame',      label: 'Sésamo' };
+        return { svgId: 'sesamo',          label: 'Sésamo' };
     if (/sulfit|azufre|so2|dioxido/.test(n))
-        return { svgId: 'sulphites',   label: 'Sulfitos' };
+        return { svgId: 'sulfitos',        label: 'Sulfitos' };
     if (/altramuz|lupino|lupina/.test(n))
-        return { svgId: 'lupin',       label: 'Altramuces' };
+        return { svgId: 'altramuces',      label: 'Altramuces' };
     if (/molusco|calamar|pulpo|ostra|almeja|mejillon|sepia|chipiro/.test(n))
-        return { svgId: 'molluscs',    label: 'Moluscos' };
+        return { svgId: 'moluscos',        label: 'Moluscos' };
     return { svgId: null, label: name };
 }
 
-/**
- * Returns an inline CSS string for a quick-reply button based on its label.
- *
- * @param {string} qr - Quick reply label.
- * @returns {string} Inline CSS style string.
- */
-export function getQrStyle(qr) {
-    const base = 'border-radius:9999px; padding:5px 12px; font-size:12px; font-family:\'Space Grotesk\',sans-serif; font-weight:600; cursor:pointer; transition:all 150ms ease; border:1px solid; ';
-    if (qr === 'Confirmar pedido')
-        return base + 'background:rgba(34,197,94,0.18); color:#22C55E; border-color:rgba(34,197,94,0.5);';
-    if (qr === 'Ver mi pedido')
-        return base + 'background:rgba(34,211,238,0.15); color:#22D3EE; border-color:rgba(34,211,238,0.45);';
-    return base + 'background:rgba(46,80,176,0.22); color:#8FA8E8; border-color:rgba(46,80,176,0.5);';
-}
 
 /**
  * Registers the `chatWidget` Alpine.data component.
@@ -204,8 +190,12 @@ export function registerChatWidget() {
                 this.$refs.chatInput?.focus();
                 this.scrollBottom();
             });
-            if (!this.menuData) await this.loadMenu();
-            if (!this.conversationId) await this.initConversation();
+            const isFirstOpen = !this.messages.length;
+            const promises = [];
+            if (!this.menuData) promises.push(this.loadMenu());
+            if (isFirstOpen) promises.push(this.startConversationBackend());
+            await Promise.all(promises);
+            if (isFirstOpen) this.initChatUI();
         },
 
         closeChat() {
@@ -226,7 +216,7 @@ export function registerChatWidget() {
             } catch { /* falla silenciosamente */ }
         },
 
-        async initConversation() {
+        initChatUI() {
             const cats = this.menuData?.categories ?? [];
             const qrs  = cats.map(c => this.getCategoryEmoji(c.name) + ' ' + c.name);
             this.pushMsg({ type: 'system',
@@ -234,6 +224,9 @@ export function registerChatWidget() {
             this.pushMsg({ type: 'bot',
                 text: '¡Hola! Soy Zampi, tu asistente de pedidos 🍔 ¿Qué te apetece hoy?',
                 quickReplies: qrs.length ? [...qrs, 'Ver mi pedido'] : ['Ver mi pedido'] });
+        },
+
+        async startConversationBackend() {
             try {
                 const res = await fetch('/api/v1/chat/' + this.tableHash + '/start', {
                     method:  'POST',
@@ -252,6 +245,9 @@ export function registerChatWidget() {
             this.msgSeq++;
             this.messages.push({ _id: this.msgSeq, ...msg });
             this.$nextTick(() => this.scrollBottom());
+            if (msg.cards && msg.cards.some(c => (c.allergens || []).some(a => a.svgId))) {
+                setTimeout(() => window.zampiRefillAllergens?.(), 0);
+            }
         },
 
         async botDelay(text, extra = {}, ms = 880) {
@@ -302,7 +298,6 @@ export function registerChatWidget() {
             if (matched) {
                 this.showCategoryCards(matched);
             } else if (label === 'Ver mi pedido' || label === 'Confirmar pedido') {
-                this.closeChat();
                 Alpine.store('cart').open = true;
             } else if (label === 'Seguir eligiendo') {
                 const qrs = cats.map(c => this.getCategoryEmoji(c.name) + ' ' + c.name);
@@ -319,11 +314,16 @@ export function registerChatWidget() {
         showCategoryCards(category) {
             const emoji = this.getCategoryEmoji(category.name);
             const cards = category.products.map(p => ({
-                id:       p.id,
-                name:     p.name,
-                desc:     p.description || '',
-                price:    p.price,
-                variants: p.variants || [],
+                id:          p.id,
+                name:        p.name,
+                description: p.description || '',
+                image:       p.image ?? null,
+                price:       p.price,
+                variants:    p.variants || [],
+                allergens:   (p.ingredients || [])
+                    .filter(i => i.is_allergen)
+                    .map(i => ({ name: i.name, ...getAllergenIcon(i.name) })),
+                foodIcon:    getFoodIcon(category.name, p.name),
                 emoji,
             }));
             this.botDelay(
@@ -628,20 +628,6 @@ export function registerChatWidget() {
         getCategoryEmoji(name) { return getCategoryEmoji(name); },
         getFoodIcon(cat, prod) { return getFoodIcon(cat, prod); },
         getAllergenIcon(name)   { return getAllergenIcon(name); },
-        getQrStyle(qr)         { return getQrStyle(qr); },
-
-        onQrEnter(el, qr) {
-            if (qr === 'Confirmar pedido') { el.style.background = '#16A34A'; el.style.color = '#fff'; }
-            else if (qr === 'Ver mi pedido') { el.style.background = '#0891B2'; el.style.color = '#fff'; }
-            else { el.style.background = '#1A3380'; el.style.color = '#fff'; }
-        },
-
-        onQrLeave(el, qr) {
-            if (qr === 'Confirmar pedido') { el.style.background = 'rgba(34,197,94,0.18)'; el.style.color = '#22C55E'; }
-            else if (qr === 'Ver mi pedido') { el.style.background = 'rgba(34,211,238,0.15)'; el.style.color = '#22D3EE'; }
-            else { el.style.background = 'rgba(46,80,176,0.22)'; el.style.color = '#8FA8E8'; }
-        },
-
         scrollBottom() {
             this.$nextTick(() => {
                 requestAnimationFrame(() => {
