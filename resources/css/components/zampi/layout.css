@@ -123,90 +123,22 @@
     gap: 12px;
 }
 
-/* ── Zampi Cart Bar ────────────────────────────────────────────────────────── */
-.zampi-cartbar-wrap { flex-shrink: 0; width: 100%; }
-.zampi-cartbar-inner {
+/* ── Zampi Cart Bar — reutiliza .cart-bar de la carta digital ─────────────── */
+.zampi-cartbar-wrap { flex-shrink: 0; }
+
+/* Resetear posición absoluta: dentro del panel fluye verticalmente */
+.zampi-panel .cart-bar {
+    position: relative;
+    left: auto; right: auto; bottom: auto;
+    border-radius: 0;
     width: 100%;
     box-sizing: border-box;
-    background: linear-gradient(135deg, #0f3d2a, #0a2e1f);
-    border-top: 2px solid #22c55e;
-    box-shadow: 0 -4px 20px rgba(34,197,94,0.2);
+    box-shadow: 0 -4px 16px rgba(15, 61, 42, 0.2);
+    animation: none;
 }
-.zampi-cartbar-row { padding: 14px 16px; display: flex; align-items: center; gap: 12px; overflow: visible; }
-.zampi-cart-left { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
-.zampi-cart-icon-wrap { position: relative; flex-shrink: 0; }
-.zampi-cart-badge {
-    position: absolute;
-    top: -6px;
-    right: -6px;
-    min-width: 17px;
-    height: 17px;
-    border-radius: 9999px;
-    background: #EF4444;
-    color: #fff;
-    font-size: 10px;
-    font-weight: 900;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0 3px;
-    font-family: 'Nunito', sans-serif;
-}
-.zampi-cart-items-text {
-    font-size: 13px;
-    color: #fff;
-    font-family: 'Space Grotesk', sans-serif;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    font-weight: 600;
-}
-.zampi-cart-total-text {
-    font-size: 15px;
-    font-weight: 900;
-    color: #FBBF24;
-    font-family: 'Nunito', sans-serif;
-    flex-shrink: 0;
-}
-.zampi-notif-bar { display: flex; gap: 5px; flex-shrink: 0; flex-wrap: nowrap; }
-.zampi-notif-name {
-    font-size: 11px;
-    font-weight: 600;
-    color: #fff;
-    font-family: 'Space Grotesk', sans-serif;
-    white-space: nowrap;
-}
-.zampi-notif-suffix {
-    font-size: 11px;
-    font-weight: 600;
-    color: #fff;
-    font-family: 'Space Grotesk', sans-serif;
-    white-space: nowrap;
-}
-.zampi-cart-actions { display: flex; gap: 8px; flex-shrink: 0; }
-.zampi-cart-order-btn {
-    padding: 0;
-    border-radius: 9999px;
-    background: #16A34A;
-    border: none;
-    color: #fff;
-    font-size: 13px;
-    font-weight: 700;
-    font-family: 'Space Grotesk', sans-serif;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: background 150ms ease;
-    box-shadow: 0 4px 14px rgba(22,163,74,0.45);
-}
-.zampi-cart-order-btn:hover { background: #15803D; }
-.zampi-cart-order-btn-inner {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 18px;
-    line-height: 1;
-}
+
+/* La regla global oculta .cart-bar cuando el chat está abierto — revertirla aquí */
+.carta[data-chat="open"] .zampi-panel .cart-bar { display: flex; }
 
 /* ── Zampi Input Area ──────────────────────────────────────────────────────── */
 .zampi-input-area {
