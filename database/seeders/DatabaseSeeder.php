@@ -410,5 +410,8 @@ class DatabaseSeeder extends Seeder
                 ]
             );
         }
+
+        // ── 10. Productos reales del bar demo ─────────────────────────────
+        $this->call(ProductSeeder::class);
     }
 }
