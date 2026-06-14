@@ -238,18 +238,19 @@
     {{-- Inicializa los badges de alérgenos con los pictogramas oficiales del DS --}}
     <script>
     (function initAllergenBadges() {
-        function fill() {
+        function fillSvg(svg) {
             var p = window.ZAMPA_PICTOGRAMS;
-            var labels = window.ZAMPA_ALLERGEN_LABELS || {};
             if (!p) return;
-            document.querySelectorAll('svg[data-al]').forEach(function (svg) {
-                var slug = svg.getAttribute('data-al');
-                var c = p.ALLERGEN_COLORS[slug] || '#888';
-                var inner = p.pictogramSVG(slug);
-                if (!inner) return;
-                svg.style.setProperty('--c', c);
-                svg.innerHTML = inner;
-            });
+            var slug = svg.getAttribute('data-al');
+            if (!slug || slug === 'null') return;
+            var c = p.ALLERGEN_COLORS[slug] || '#888';
+            var inner = p.pictogramSVG(slug);
+            if (!inner) return;
+            svg.style.setProperty('--c', c);
+            svg.innerHTML = inner;
+        }
+        function fill() {
+            document.querySelectorAll('svg[data-al]').forEach(fillSvg);
         }
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', fill);
@@ -257,6 +258,8 @@
             fill();
         }
         document.addEventListener('alpine:initialized', fill);
+        /* Función global para rellenar los badges del chatbot tras Alpine renderizar */
+        window.zampiRefillAllergens = fill;
     })();
     </script>
 </head>
@@ -606,13 +609,13 @@
                                                             <div class="pcard__body">
                                                                 {{-- Badges alérgenos --}}
                                                                 <div class="pcard__badges">
-                                                                    <template x-for="al in (card.allergens || []).slice(0, 5)" :key="al.name">
+                                                                    <template x-for="al in (card.allergens || []).filter(a => a.svgId).slice(0, 5)" :key="al.name">
                                                                         <svg class="allergen-img"
+                                                                             :data-al="al.svgId"
                                                                              :aria-label="al.label"
                                                                              viewBox="0 0 100 100"
                                                                              width="22" height="22"
                                                                              role="img">
-                                                                            <use :href="'#al-' + al.svgId"/>
                                                                         </svg>
                                                                     </template>
                                                                 </div>
