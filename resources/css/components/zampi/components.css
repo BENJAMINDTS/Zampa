@@ -233,6 +233,31 @@
             mask-image: linear-gradient(to right, black calc(100% - 32px), transparent);
 }
 .zampi-cards-row::-webkit-scrollbar { display: none; }
+
+/* Las .pcard dentro del carrusel del chatbot tienen ancho fijo (la carta digital usa grid) */
+.zampi-cards-row .pcard {
+    width: 160px;
+    flex-shrink: 0;
+}
+/* La foto de la .pcard en el carrusel no necesita aspect-ratio 4:3 completo — más compacta */
+.zampi-cards-row .pcard__photo {
+    aspect-ratio: 4 / 3;
+    font-size: 36px;
+}
+/* El body tiene menos padding vertical en el carrusel */
+.zampi-cards-row .pcard__body {
+    padding: 8px 10px 10px;
+}
+/* El precio es ligeramente más pequeño en el carrusel */
+.zampi-cards-row .pcard__price {
+    font-size: 15px;
+}
+/* El nombre no debe clampear demasiado en el espacio reducido */
+.zampi-cards-row .pcard__name {
+    font-size: 13px;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+}
 .zampi-card-real-img {
     width: 100%;
     height: 72px;
