@@ -1826,9 +1826,26 @@
                                           x-text="$store.cart.count + ($store.cart.count === 1 ? ' artículo' : ' artículos')"></span>
                                 </div>
                                 <div class="cart-sum__rows">
-                                    <div class="cart-sum__row cart-sum__row--muted">
-                                        <span>IVA incluido</span>
+                                    <div class="cart-sum__row">
+                                        <span>Subtotal (sin IVA)</span>
+                                        <span class="num"
+                                              x-text="(Number($store.cart.total) / 1.10).toFixed(2).replace('.', ',') + ' €'"></span>
                                     </div>
+                                    <div class="cart-sum__row cart-sum__row--muted">
+                                        <span>IVA 10% incluido</span>
+                                        <span class="num"
+                                              x-text="(Number($store.cart.total) * 0.10 / 1.10).toFixed(2).replace('.', ',') + ' €'"></span>
+                                    </div>
+                                    <template x-if="$store.cart.items.filter(i => i.destination === 'kitchen' && !i.isTapa).reduce((a, i) => a + i.quantity, 0) > 0">
+                                        <div class="cart-sum__row cart-sum__row--time">
+                                            <span>
+                                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                                Listo en cocina
+                                            </span>
+                                            <span class="num"
+                                                  x-text="'~ ' + Math.max(8, Math.min(24, 8 + $store.cart.items.filter(i => i.destination === 'kitchen' && !i.isTapa).reduce((a, i) => a + i.quantity, 0) * 2)) + ' min'"></span>
+                                        </div>
+                                    </template>
                                 </div>
                             </div>
                         </div>
