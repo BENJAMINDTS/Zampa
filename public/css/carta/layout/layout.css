@@ -97,9 +97,8 @@ html, body {
   z-index: 20;
   flex-shrink: 0;
 }
-.header__brand { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1 1 auto; }
-.header__brand > div:nth-child(2) { flex: 1 1 auto; min-width: 0; }
-.header__bizname { white-space: nowrap; }
+.header__brand { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1 1 auto; overflow: hidden; }
+.header__brand > div:nth-child(2) { flex: 1 1 auto; min-width: 0; overflow: hidden; }
 .header__table { white-space: nowrap; }
 .header__logo {
   width: 36px; height: 36px; border-radius: 8px;
@@ -111,12 +110,19 @@ html, body {
 .header__bizname {
   font-family: var(--font-display); font-weight: 900; font-size: 16px;
   letter-spacing: -0.01em; line-height: 1; color: var(--fg-primary);
+  white-space: nowrap; overflow: hidden;
 }
+.header__bizname-txt { display: inline-block; white-space: nowrap; }
+.header__bizname-txt--scroll { animation: bizname-marquee 9s ease-in-out infinite; }
+@keyframes bizname-marquee {
+  0%, 30%   { transform: translateX(0); }
+  70%, 100% { transform: translateX(var(--bizname-overflow, -60px)); }
+}
+.header__actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .header__table {
   font-family: var(--font-body); font-weight: 500; font-size: 12px;
   color: var(--fg-muted); margin-top: 2px;
 }
-.header__actions { display: flex; align-items: center; gap: 8px; }
 .kitchen-pill {
   display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
   font-family: var(--font-body); font-size: 12px; font-weight: 600;

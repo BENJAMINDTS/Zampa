@@ -189,6 +189,7 @@ class KitchenController extends Controller
         $product->update(['is_available' => ! $product->is_available]);
 
         Cache::forget("menu:{$ownerId}");
+        Cache::forget("chat-menu:{$ownerId}");
 
         return response()->json([
             'product_id'   => $product->id,
