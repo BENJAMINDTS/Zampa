@@ -129,6 +129,7 @@ class ProductController extends Controller
     });
 
     Cache::forget("menu:{$validatedData['user_id']}");
+    Cache::forget("chat-menu:{$validatedData['user_id']}");
 
     if ($request->boolean('configure_ingredients')) {
       return redirect()
@@ -232,6 +233,7 @@ class ProductController extends Controller
         });
 
         Cache::forget("menu:{$product->user_id}");
+        Cache::forget("chat-menu:{$product->user_id}");
 
         return redirect()->route('products.index')->with('success', '¡Plato actualizado correctamente!');
 
@@ -258,6 +260,7 @@ class ProductController extends Controller
         $userId = $product->user_id;
         $product->delete();
         Cache::forget("menu:{$userId}");
+        Cache::forget("chat-menu:{$userId}");
 
         return redirect()->route('products.index')->with('success', 'Plato retirado de la carta.');
 
@@ -309,6 +312,7 @@ class ProductController extends Controller
         });
 
         Cache::forget("menu:{$ownerId}");
+        Cache::forget("chat-menu:{$ownerId}");
 
         return response()->json(['success' => true]);
     }
@@ -339,6 +343,7 @@ class ProductController extends Controller
 
         $product->ingredients()->sync($formatted);
         Cache::forget("menu:{$product->user_id}");
+        Cache::forget("chat-menu:{$product->user_id}");
 
         return redirect()
             ->route('products.edit', $product)
