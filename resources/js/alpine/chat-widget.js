@@ -94,33 +94,33 @@ export function getFoodIcon(categoryName, productName) {
 export function getAllergenIcon(name) {
     const n = name.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
     if (/gluten|trigo|cebada|centeno|avena|espelta|kamut|harina/.test(n))
-        return { svgId: 'gluten',      label: 'Gluten' };
+        return { svgId: 'gluten',          label: 'Gluten' };
     if (/crustaceo|gamba|langosta|langostino|cangrejo|bogavante|cigala/.test(n))
-        return { svgId: 'crustaceans', label: 'Crustáceos' };
+        return { svgId: 'crustaceos',      label: 'Crustáceos' };
     if (/huevo|yema|clara|ovoalbumina/.test(n))
-        return { svgId: 'egg',         label: 'Huevo' };
+        return { svgId: 'huevos',          label: 'Huevos' };
     if (/pescado|merluza|bacalao|salmon|atun|anchoa|sardina|boqueron|lenguado|dorada|lubina/.test(n))
-        return { svgId: 'fish',        label: 'Pescado' };
+        return { svgId: 'pescado',         label: 'Pescado' };
     if (/cacahuete|mani/.test(n))
-        return { svgId: 'peanuts',     label: 'Cacahuetes' };
+        return { svgId: 'cacahuetes',      label: 'Cacahuetes' };
     if (/soja|soya|tofu|edamame/.test(n))
-        return { svgId: 'soy',         label: 'Soja' };
+        return { svgId: 'soja',            label: 'Soja' };
     if (/leche|lacteo|lactosa|queso|mantequilla|nata|yogur|suero|caseina/.test(n))
-        return { svgId: 'milk',        label: 'Lácteos' };
+        return { svgId: 'lacteos',         label: 'Lácteos' };
     if (/nuez|nueces|almendra|avellana|pistacho|anacardo|macadamia|pacana|brasil|castana/.test(n))
-        return { svgId: 'nuts',        label: 'Frutos secos' };
+        return { svgId: 'frutos-cascara',  label: 'Frutos secos' };
     if (/apio/.test(n))
-        return { svgId: 'celery',      label: 'Apio' };
+        return { svgId: 'apio',            label: 'Apio' };
     if (/mostaza/.test(n))
-        return { svgId: 'mustard',     label: 'Mostaza' };
+        return { svgId: 'mostaza',         label: 'Mostaza' };
     if (/sesamo|tahini|tahina/.test(n))
-        return { svgId: 'sesame',      label: 'Sésamo' };
+        return { svgId: 'sesamo',          label: 'Sésamo' };
     if (/sulfit|azufre|so2|dioxido/.test(n))
-        return { svgId: 'sulphites',   label: 'Sulfitos' };
+        return { svgId: 'sulfitos',        label: 'Sulfitos' };
     if (/altramuz|lupino|lupina/.test(n))
-        return { svgId: 'lupin',       label: 'Altramuces' };
+        return { svgId: 'altramuces',      label: 'Altramuces' };
     if (/molusco|calamar|pulpo|ostra|almeja|mejillon|sepia|chipiro/.test(n))
-        return { svgId: 'molluscs',    label: 'Moluscos' };
+        return { svgId: 'moluscos',        label: 'Moluscos' };
     return { svgId: null, label: name };
 }
 
@@ -245,6 +245,9 @@ export function registerChatWidget() {
             this.msgSeq++;
             this.messages.push({ _id: this.msgSeq, ...msg });
             this.$nextTick(() => this.scrollBottom());
+            if (msg.cards && msg.cards.some(c => (c.allergens || []).some(a => a.svgId))) {
+                setTimeout(() => window.zampiRefillAllergens?.(), 0);
+            }
         },
 
         async botDelay(text, extra = {}, ms = 880) {
@@ -317,7 +320,9 @@ export function registerChatWidget() {
                 image:       p.image ?? null,
                 price:       p.price,
                 variants:    p.variants || [],
-                allergens:   [],
+                allergens:   (p.ingredients || [])
+                    .filter(i => i.is_allergen)
+                    .map(i => ({ name: i.name, ...getAllergenIcon(i.name) })),
                 foodIcon:    getFoodIcon(category.name, p.name),
                 emoji,
             }));
