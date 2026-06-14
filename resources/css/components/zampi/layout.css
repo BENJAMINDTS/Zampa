@@ -132,12 +132,12 @@
     left: auto !important;
     right: auto !important;
     bottom: auto !important;
-    width: 100%;
+    width: calc(100% - 32px);
+    margin: 8px 16px;
     box-sizing: border-box;
-    border-radius: 0;
+    border-radius: 24px;
     display: flex;
-    box-shadow: 0 -4px 16px rgba(15, 61, 42, 0.2);
-    /* Anular animaciones absolutas (slide-up/down) que no aplican en flujo normal */
+    box-shadow: 0 10px 30px rgba(15, 61, 42, 0.45);
     animation: none !important;
 }
 
