@@ -1,8 +1,8 @@
-﻿.zampi-bubble-user {
-    background: linear-gradient(135deg, #2E50B0, #1A3380);
-    color: #fff;
+.zampi-bubble-user {
+    background: var(--z-bubble-user-bg, linear-gradient(135deg, #2E50B0, #1A3380));
+    color: var(--z-bubble-user-color, #fff);
     border-radius: 18px 18px 4px 18px;
-    box-shadow: 0 4px 16px rgba(15,31,88,0.55);
+    box-shadow: 0 4px 16px rgba(15,31,88,0.25);
     max-width: 78%;
     padding: 10px 14px;
     font-family: 'Space Grotesk', sans-serif;
@@ -11,11 +11,11 @@
     word-break: break-word;
 }
 .zampi-bubble-bot {
-    background: #0E1A38;
-    border: 1px solid rgba(46,80,176,0.35);
-    color: #C8D8FF;
+    background: var(--z-bubble-bot-bg, #0E1A38);
+    border: 1px solid var(--z-bubble-bot-border, rgba(46,80,176,0.35));
+    color: var(--z-bubble-bot-color, #C8D8FF);
     border-radius: 18px 18px 18px 4px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.15);
     max-width: 75%;
     padding: 10px 14px;
     font-family: 'Space Grotesk', sans-serif;
@@ -28,7 +28,7 @@
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #1A3380, #3070E8);
+    background: var(--z-avatar-bg, linear-gradient(135deg, #1A3380, #3070E8));
     display: flex;
     align-items: center;
     justify-content: center;
@@ -36,14 +36,14 @@
     overflow: hidden;
 }
 .zampi-product-card {
-    background: #0E1A38;
-    border: 1px solid rgba(46,80,176,0.45);
+    background: var(--z-card-bg, #0E1A38);
+    border: 1px solid var(--z-card-border, rgba(46,80,176,0.45));
     border-radius: 16px;
     padding: 10px;
     min-width: 150px;
     max-width: 160px;
     flex-shrink: 0;
-    box-shadow: 0 4px 20px rgba(15,31,88,0.4);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
     cursor: pointer;
     transition: transform 200ms ease;
     display: flex;
@@ -53,7 +53,7 @@
 .zampi-card-img {
     height: 56px;
     border-radius: 10px;
-    background: linear-gradient(135deg, #162648, #0A1430);
+    background: var(--z-card-img-bg, linear-gradient(135deg, #162648, #0A1430));
     display: flex;
     align-items: center;
     justify-content: center;
@@ -80,10 +80,12 @@
 }
 .zampi-add-btn:hover  { transform: scale(1.1); }
 .zampi-add-btn:active { transform: scale(0.92); }
+
+/* ── Quick reply buttons ──────────────────────────────────────────────────── */
 .zampi-qr-btn {
-    background: rgba(46,80,176,0.22);
-    color: #8FA8E8;
-    border: 1px solid rgba(46,80,176,0.5);
+    background: var(--z-qr-btn-bg, rgba(46,80,176,0.22));
+    color: var(--z-qr-btn-color, #8FA8E8);
+    border: 1px solid var(--z-qr-btn-border, rgba(46,80,176,0.5));
     border-radius: 9999px;
     padding: 5px 12px;
     font-size: 12px;
@@ -96,10 +98,32 @@
     align-items: center;
     gap: 4px;
 }
-.zampi-qr-btn:hover  { background: #1A3380; color: #fff; }
+.zampi-qr-btn:hover {
+    background: var(--z-qr-btn-hover-bg, #1A3380);
+    color: var(--z-qr-btn-hover-color, #fff);
+}
+.zampi-qr-btn--confirm {
+    background: var(--z-qr-confirm-bg, rgba(34,197,94,0.18));
+    color: var(--z-qr-confirm-color, #22C55E);
+    border-color: var(--z-qr-confirm-border, rgba(34,197,94,0.5));
+}
+.zampi-qr-btn--confirm:hover {
+    background: var(--z-qr-confirm-hover-bg, #16A34A);
+    color: #fff;
+}
+.zampi-qr-btn--view {
+    background: var(--z-qr-view-bg, rgba(34,211,238,0.15));
+    color: var(--z-qr-view-color, #22D3EE);
+    border-color: var(--z-qr-view-border, rgba(34,211,238,0.45));
+}
+.zampi-qr-btn--view:hover {
+    background: var(--z-qr-view-hover-bg, #0891B2);
+    color: #fff;
+}
+
 .zampi-order-summary {
-    background: rgba(14,26,56,0.9);
-    border: 1px solid rgba(46,80,176,0.45);
+    background: var(--z-order-bg, rgba(14,26,56,0.9));
+    border: 1px solid var(--z-order-border, rgba(46,80,176,0.45));
     border-radius: 16px;
     padding: 12px;
     margin-top: 8px;
@@ -111,29 +135,32 @@
     border-radius: 50%;
     border: none;
     cursor: pointer;
-    background: linear-gradient(135deg, #2E50B0, #1A3380);
+    background: var(--z-send-btn-bg, linear-gradient(135deg, #2E50B0, #1A3380));
     color: #fff;
     font-size: 20px;
     line-height: 1;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 0 14px rgba(46,80,176,0.65);
+    box-shadow: 0 0 14px rgba(46,80,176,0.4);
     flex-shrink: 0;
     transition: transform 150ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .zampi-send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 .zampi-scrollbar::-webkit-scrollbar       { width: 4px; }
 .zampi-scrollbar::-webkit-scrollbar-track { background: transparent; }
-.zampi-scrollbar::-webkit-scrollbar-thumb { background: rgba(46,80,176,0.5); border-radius: 4px; }
-.zampi-chat-input::placeholder            { color: rgba(84,120,208,0.7); }
+.zampi-scrollbar::-webkit-scrollbar-thumb {
+    background: var(--z-scrollbar-thumb, rgba(46,80,176,0.5));
+    border-radius: 4px;
+}
+.zampi-chat-input::placeholder { color: var(--z-input-placeholder, rgba(84,120,208,0.7)); }
 
-/* â”€â”€ Zampi Message rows â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Zampi Message rows ───────────────────────────────────────────────────── */
 .zampi-system-row { display: flex; justify-content: center; }
 .zampi-system-msg {
-    background: rgba(46,80,176,0.22);
-    border: 1px solid rgba(46,80,176,0.3);
-    color: #8FA8E8;
+    background: var(--z-system-bg, rgba(46,80,176,0.22));
+    border: 1px solid var(--z-system-border, rgba(46,80,176,0.3));
+    color: var(--z-system-color, #8FA8E8);
     font-size: 11px;
     padding: 5px 14px;
     border-radius: 9999px;
@@ -147,22 +174,28 @@
 .zampi-user-bubble-wrap { max-width: 78%; }
 .zampi-user-time {
     font-size: 10px;
-    color: #3A5090;
+    color: var(--z-user-time, #3A5090);
     text-align: right;
     margin-top: 3px;
     padding-right: 4px;
 }
 .zampi-typing-row { display: flex; gap: 8px; align-items: flex-end; }
 .zampi-typing-bubble {
-    background: #0E1A38;
-    border: 1px solid rgba(46,80,176,0.35);
+    background: var(--z-typing-bg, #0E1A38);
+    border: 1px solid var(--z-typing-border, rgba(46,80,176,0.35));
     border-radius: 18px 18px 18px 4px;
     padding: 12px 16px;
     display: flex;
     gap: 5px;
     align-items: center;
 }
-.zampi-typing-dot { width: 7px; height: 7px; border-radius: 50%; background: #5478D0; flex-shrink: 0; }
+.zampi-typing-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--z-typing-dot, #5478D0);
+    flex-shrink: 0;
+}
 .zampi-error-row { display: flex; justify-content: center; }
 .zampi-error-msg {
     background: rgba(208,14,26,0.15);
@@ -175,9 +208,9 @@
 }
 .zampi-closed-row { display: flex; justify-content: center; }
 .zampi-closed-msg {
-    background: rgba(46,80,176,0.15);
-    border: 1px solid rgba(46,80,176,0.25);
-    color: #8FA8E8;
+    background: var(--z-closed-bg, rgba(46,80,176,0.15));
+    border: 1px solid var(--z-closed-border, rgba(46,80,176,0.25));
+    color: var(--z-closed-color, #8FA8E8);
     font-size: 11px;
     padding: 5px 14px;
     border-radius: 9999px;
@@ -185,7 +218,7 @@
 }
 .zampi-scroll-end { height: 1px; flex-shrink: 0; }
 
-/* â”€â”€ Zampi Product Cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Zampi Product Cards ──────────────────────────────────────────────────── */
 .zampi-cards-row { display: flex; gap: 8px; margin-top: 8px; overflow-x: auto; padding-bottom: 4px; }
 .zampi-card-real-img {
     width: 100%;
@@ -196,17 +229,23 @@
     flex-shrink: 0;
     display: block;
 }
-.zampi-card-food-icon { color: rgba(139,168,232,0.6); overflow: visible; }
+.zampi-card-food-icon { color: var(--z-card-food-icon, rgba(139,168,232,0.6)); overflow: visible; }
 .zampi-card-emoji { font-size: 26px; }
 .zampi-card-name {
     font-size: 12px;
     font-weight: 700;
-    color: #fff;
+    color: var(--z-card-name, #fff);
     margin-bottom: 3px;
     font-family: 'Space Grotesk', sans-serif;
     line-height: 1.3;
 }
-.zampi-card-desc { font-size: 10px; color: #8FA8E8; margin-bottom: 5px; line-height: 1.4; flex-grow: 1; }
+.zampi-card-desc {
+    font-size: 10px;
+    color: var(--z-card-desc, #8FA8E8);
+    margin-bottom: 5px;
+    line-height: 1.4;
+    flex-grow: 1;
+}
 .zampi-allergens-row { display: flex; flex-wrap: wrap; gap: 3px; margin-bottom: 7px; }
 .zampi-allergen-badge {
     display: inline-flex;
@@ -228,12 +267,17 @@
     letter-spacing: 0.02em;
 }
 .zampi-card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: auto; }
-.zampi-card-price { font-size: 13px; font-weight: 700; color: #FBBF24; font-family: 'Nunito', sans-serif; }
+.zampi-card-price {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--z-card-price, #FBBF24);
+    font-family: 'Nunito', sans-serif;
+}
 .zampi-card-add-btn {
     width: 26px;
     height: 26px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #2E50B0, #1A3380);
+    background: var(--z-card-add-btn-bg, linear-gradient(135deg, #2E50B0, #1A3380));
     border: 2px solid transparent;
     color: #fff;
     font-size: 17px;
@@ -242,7 +286,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 0 8px rgba(46,80,176,0.6);
+    box-shadow: 0 0 8px rgba(46,80,176,0.4);
     flex-shrink: 0;
     transition: all 150ms ease;
 }
@@ -258,7 +302,7 @@
     width: 24px;
     height: 24px;
     border-radius: 50%;
-    background: rgba(46,80,176,0.35);
+    background: var(--z-cart-sm-dec-bg, rgba(46,80,176,0.35));
     border: 2px solid transparent;
     color: #fff;
     font-size: 16px;
@@ -285,7 +329,7 @@
     width: 24px;
     height: 24px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #2E50B0, #1A3380);
+    background: var(--z-card-add-btn-bg, linear-gradient(135deg, #2E50B0, #1A3380));
     border: 2px solid transparent;
     color: #fff;
     font-size: 17px;
@@ -294,7 +338,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 0 8px rgba(46,80,176,0.6);
+    box-shadow: 0 0 8px rgba(46,80,176,0.4);
     flex-shrink: 0;
     transition: all 150ms ease;
 }
@@ -308,36 +352,45 @@
 .zampi-card-qty {
     font-size: 13px;
     font-weight: 800;
-    color: #fff;
+    color: var(--z-cart-qty, #fff);
     font-family: 'Nunito', sans-serif;
     min-width: 14px;
     text-align: center;
 }
 .zampi-qr-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
 
-/* â”€â”€ Zampi Cart Live â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Zampi Cart Live ──────────────────────────────────────────────────────── */
 .zampi-cart-live-title {
     font-size: 13px;
     font-weight: 800;
     font-family: 'Nunito', sans-serif;
-    color: #fff;
+    color: var(--z-order-title, #fff);
     margin-bottom: 8px;
 }
-.zampi-cart-empty { font-size: 12px; color: #8FA8E8; text-align: center; padding: 8px 0; }
+.zampi-cart-empty {
+    font-size: 12px;
+    color: var(--z-cart-empty, #8FA8E8);
+    text-align: center;
+    padding: 8px 0;
+}
 .zampi-cart-item-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 6px 0;
-    border-bottom: 1px solid rgba(255,255,255,0.06);
+    border-bottom: 1px solid var(--z-order-item-border, rgba(255,255,255,0.06));
 }
-.zampi-cart-item-name { font-size: 12px; color: #C8D8FF; flex: 1; }
+.zampi-cart-item-name {
+    font-size: 12px;
+    color: var(--z-order-item-name, #C8D8FF);
+    flex: 1;
+}
 .zampi-cart-controls { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 .zampi-cart-sm-dec {
     width: 22px;
     height: 22px;
     border-radius: 50%;
-    background: rgba(46,80,176,0.35);
+    background: var(--z-cart-sm-dec-bg, rgba(46,80,176,0.35));
     border: 2px solid transparent;
     color: #fff;
     font-size: 15px;
@@ -363,7 +416,7 @@
     width: 22px;
     height: 22px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #2E50B0, #1A3380);
+    background: var(--z-cart-sm-inc-bg, linear-gradient(135deg, #2E50B0, #1A3380));
     border: 2px solid transparent;
     color: #fff;
     font-size: 15px;
@@ -384,7 +437,7 @@
 .zampi-cart-qty {
     font-size: 12px;
     font-weight: 800;
-    color: #fff;
+    color: var(--z-cart-qty, #fff);
     min-width: 14px;
     text-align: center;
     font-family: 'Nunito', sans-serif;
@@ -392,7 +445,7 @@
 .zampi-cart-item-price {
     font-size: 11px;
     font-weight: 600;
-    color: #FBBF24;
+    color: var(--z-card-price, #FBBF24);
     min-width: 48px;
     text-align: right;
     font-family: 'Nunito', sans-serif;
@@ -419,7 +472,16 @@
     justify-content: space-between;
     margin-top: 8px;
     padding-top: 8px;
-    border-top: 1px solid rgba(46,80,176,0.4);
+    border-top: 1px solid var(--z-order-total-border, rgba(46,80,176,0.4));
 }
-.zampi-cart-total-label { font-size: 13px; font-weight: 700; color: #fff; }
-.zampi-cart-total-amount { font-size: 16px; font-weight: 900; color: #FBBF24; font-family: 'Nunito', sans-serif; }
+.zampi-cart-total-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--z-order-total-label, #fff);
+}
+.zampi-cart-total-amount {
+    font-size: 16px;
+    font-weight: 900;
+    color: var(--z-order-total, #FBBF24);
+    font-family: 'Nunito', sans-serif;
+}
