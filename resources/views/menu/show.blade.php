@@ -1713,7 +1713,7 @@
             <button
                 type="button"
                 @click="openModal()"
-                x-show="!sent && !$store.bill.paymentDone && $store.bill.step === '' && !$store.chat.open"
+                x-show="!sent && $store.bill.active && !$store.bill.paymentDone && $store.bill.step === '' && !$store.chat.open"
                 :disabled="onCooldown"
                 :class="onCooldown ? 'fab fab--waiter fab--waiter--cooldown' : 'fab fab--waiter'"
                 :aria-label="onCooldown ? 'Camarero avisado, espera un momento' : 'Llamar al camarero'"
