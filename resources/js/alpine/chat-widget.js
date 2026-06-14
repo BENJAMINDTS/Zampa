@@ -295,7 +295,6 @@ export function registerChatWidget() {
             if (matched) {
                 this.showCategoryCards(matched);
             } else if (label === 'Ver mi pedido' || label === 'Confirmar pedido') {
-                this.closeChat();
                 Alpine.store('cart').open = true;
             } else if (label === 'Seguir eligiendo') {
                 const qrs = cats.map(c => this.getCategoryEmoji(c.name) + ' ' + c.name);
