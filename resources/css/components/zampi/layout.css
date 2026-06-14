@@ -142,11 +142,13 @@
 }
 
 /* La regla global oculta .cart-bar cuando el chat está abierto — revertirla aquí */
-.carta[data-chat="open"] .zampi-panel .cart-bar { display: flex !important; }
+.zampi-panel .cart-bar { display: flex !important; }
 
-/* Cart drawer sobre el overlay Zampi: .scrim es absolute z-40 dentro de .carta,
-   el overlay Zampi es fixed z-50 global → elevarlo a fixed z-60 cuando chat abierto */
-.carta[data-chat="open"] .scrim {
+/* .scrim es position:absolute z-40 dentro de .carta, pero el overlay Zampi es
+   position:fixed z-50 en el stacking context global, por lo que el scrim queda
+   siempre detrás del chat. Elevarlo a fixed z-60 lo pone encima del overlay Zampi.
+   Visualmente es idéntico porque .carta ocupa el 100% del viewport. */
+.scrim {
     position: fixed !important;
     z-index: 60 !important;
 }
