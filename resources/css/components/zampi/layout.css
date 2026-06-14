@@ -124,21 +124,25 @@
 }
 
 /* ── Zampi Cart Bar — reutiliza .cart-bar de la carta digital ─────────────── */
-.zampi-cartbar-wrap { flex-shrink: 0; }
+.zampi-cartbar-wrap { flex-shrink: 0; display: block; }
 
-/* Resetear posición absoluta: dentro del panel fluye verticalmente */
+/* Resetear posición absoluta: dentro del panel fluye como bloque de ancho completo */
 .zampi-panel .cart-bar {
-    position: relative;
-    left: auto; right: auto; bottom: auto;
-    border-radius: 0;
+    position: relative !important;
+    left: auto !important;
+    right: auto !important;
+    bottom: auto !important;
     width: 100%;
     box-sizing: border-box;
+    border-radius: 0;
+    display: flex;
     box-shadow: 0 -4px 16px rgba(15, 61, 42, 0.2);
-    animation: none;
+    /* Anular animaciones absolutas (slide-up/down) que no aplican en flujo normal */
+    animation: none !important;
 }
 
 /* La regla global oculta .cart-bar cuando el chat está abierto — revertirla aquí */
-.carta[data-chat="open"] .zampi-panel .cart-bar { display: flex; }
+.carta[data-chat="open"] .zampi-panel .cart-bar { display: flex !important; }
 
 /* ── Zampi Input Area ──────────────────────────────────────────────────────── */
 .zampi-input-area {
