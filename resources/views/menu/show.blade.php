@@ -771,56 +771,37 @@
 
                     </div>
 
-                    {{-- Barra de carrito flotante --}}
-                    <div x-show="chatCart.length > 0"
-                         x-transition:enter="transition ease-out duration-200"
-                         x-transition:enter-start="opacity-0 translate-y-2"
+                    {{-- Cart bar de la carta digital integrada en el panel Zampi --}}
+                    <div x-show="$store.cart.barShouldShow"
+                         x-transition:enter="transition ease-out duration-[220ms]"
+                         x-transition:enter-start="opacity-0 translate-y-1"
                          x-transition:enter-end="opacity-100 translate-y-0"
-                         x-transition:leave="transition ease-in duration-150"
+                         x-transition:leave="transition ease-in duration-200"
                          x-transition:leave-start="opacity-100 translate-y-0"
-                         x-transition:leave-end="opacity-0 translate-y-2"
+                         x-transition:leave-end="opacity-0 translate-y-1"
                          class="zampi-cartbar-wrap">
-                        <div class="zampi-cartbar-inner">
-                        {{-- Fila principal --}}
-                        <div class="zampi-cartbar-row">
-                        {{-- Resumen del carrito --}}
-                        <div class="zampi-cart-left">
-                            <div class="zampi-cart-icon-wrap">
-                                <svg aria-hidden="true" width="26" height="26" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
-                                </svg>
-                                <span x-text="cartCount" class="zampi-cart-badge"></span>
-                            </div>
-                            <span :class="cartNotifs.length > 0 ? 'zampi-cart-items-text zampi-hidden-mobile' : 'zampi-cart-items-text'"
-                                  x-text="cartCount + (cartCount === 1 ? ' artículo' : ' artículos')"></span>
-                            <span :class="cartNotifs.length > 0 ? 'zampi-cart-total-text zampi-hidden-mobile' : 'zampi-cart-total-text'"
-                                  x-text="Number(cartTotal).toFixed(2).replace('.',',') + ' €'"></span>
-                            {{-- Notificaciones de eliminación acumulables (máx 3) --}}
-                            <div class="zampi-notif-bar" :class="cartNotifs.length > 0 ? 'zampi-notif-bar-active' : ''"
-                                 role="status" aria-live="polite">
-                                <template x-for="notif in cartNotifs" :key="notif.id">
-                                    <div :class="notif.leaving ? 'zampi-notif-pill zampi-notif-pill-out' : 'zampi-notif-pill zampi-notif-pill-in'">
-                                        <span style="font-size:12px;" aria-hidden="true">🗑️</span>
-                                        <span class="zampi-notif-name" x-text="notif.name"></span>
-                                        <span class="zampi-notif-suffix"> eliminado</span>
-                                    </div>
-                                </template>
-                            </div>
-                        </div>
-                        {{-- Botón único: abre el panel de pedido del menú digital --}}
-                        <div class="zampi-cart-actions">
-                            <button type="button"
-                                    @click="$store.cart.open = true"
-                                    aria-label="Ver y confirmar pedido"
-                                    class="zampi-cart-order-btn">
-                                <span class="zampi-cart-order-btn-inner">
-                                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                                    <span>Ver pedido</span>
+                        <button type="button"
+                                :class="$store.cart._barLeaving ? 'cart-bar cart-bar--leaving' : 'cart-bar'"
+                                @click="$store.cart.open = true"
+                                :aria-label="'Ver pedido — ' + $store.cart.displayCount + ($store.cart.displayCount === 1 ? ' artículo' : ' artículos') + ', total ' + Number($store.cart.displayTotal).toFixed(2).replace('.',',') + ' €'">
+                            <div class="cart-bar__left">
+                                <span class="cart-bar__icon"
+                                      x-effect="$store.cart.count; $el.classList.remove('cart-bar__icon--bump'); void $el.offsetWidth; $el.classList.add('cart-bar__icon--bump');">
+                                    <svg aria-hidden="true" width="18" height="18" fill="none"
+                                         stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                              d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
+                                    </svg>
+                                    <span class="cart-bar__count" x-text="$store.cart.displayCount" aria-hidden="true"></span>
                                 </span>
-                            </button>
-                        </div>
-                        </div>{{-- /Fila principal --}}
-                        </div>{{-- /Cart bar inner --}}
+                                <div style="display:flex;flex-direction:column;gap:2px;align-items:flex-start">
+                                    <span x-text="$store.cart.displayCount + ($store.cart.displayCount === 1 ? ' artículo' : ' artículos')"></span>
+                                    <span class="cart-bar__total"
+                                          x-text="Number($store.cart.displayTotal).toFixed(2).replace('.',',') + ' €'"></span>
+                                </div>
+                            </div>
+                            <span class="cart-bar__cta">Ver pedido</span>
+                        </button>
                     </div>
 
                     {{-- Área de input --}}
