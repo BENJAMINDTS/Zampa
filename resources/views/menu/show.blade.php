@@ -782,7 +782,7 @@
                          class="zampi-cartbar-wrap">
                         <button type="button"
                                 :class="$store.cart._barLeaving ? 'cart-bar cart-bar--leaving' : 'cart-bar'"
-                                @click="closeChat(); $store.cart.open = true"
+                                @click="$store.cart.open = true"
                                 :aria-label="'Ver pedido — ' + $store.cart.displayCount + ($store.cart.displayCount === 1 ? ' artículo' : ' artículos') + ', total ' + Number($store.cart.displayTotal).toFixed(2).replace('.',',') + ' €'">
                             <div class="cart-bar__left">
                                 <span class="cart-bar__icon"
