@@ -131,6 +131,7 @@ class ChatController extends Controller
                         'id'          => $p->id,
                         'name'        => $p->name,
                         'description' => $p->description ?? '',
+                        'image'       => $p->image ? asset('storage/' . $p->image) : null,
                         'price'       => $p->variants->isNotEmpty()
                                             ? (float) $p->variants->min('price')
                                             : (float) $p->price,
