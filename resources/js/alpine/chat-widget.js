@@ -311,11 +311,14 @@ export function registerChatWidget() {
         showCategoryCards(category) {
             const emoji = this.getCategoryEmoji(category.name);
             const cards = category.products.map(p => ({
-                id:       p.id,
-                name:     p.name,
-                desc:     p.description || '',
-                price:    p.price,
-                variants: p.variants || [],
+                id:          p.id,
+                name:        p.name,
+                description: p.description || '',
+                image:       p.image ?? null,
+                price:       p.price,
+                variants:    p.variants || [],
+                allergens:   [],
+                foodIcon:    getFoodIcon(category.name, p.name),
                 emoji,
             }));
             this.botDelay(
