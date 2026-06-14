@@ -25,7 +25,8 @@ class WaiterCallController extends Controller
         $table = Table::where('unique_hash', $hash)->firstOrFail();
 
         $order = Order::where('table_id', $table->id)
-            ->whereIn('status', ['pending', 'cooking'])
+            ->whereIn('status', ['pending', 'cooking', 'ready', 'served'])
+            ->where('payment_status', 'pending')
             ->latest()
             ->first();
 
