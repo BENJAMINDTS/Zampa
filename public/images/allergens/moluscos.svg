@@ -1,7 +1,20 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title-moluscos">
-  <title id="title-moluscos">Moluscos</title>
-  <circle cx="32" cy="32" r="32" fill="#1A3A5C"/>
-  <path fill="white" d="M32 48 C20 48 14 40 14 32 C14 22 22 16 32 16 C42 16 50 22 50 32 C50 40 44 48 32 48 Z"/>
-  <path stroke="#1A3A5C" stroke-width="2" fill="none" d="M32 16 L32 48 M14 32 Q32 28 50 32 M18 22 Q32 36 46 22 M20 42 Q32 38 44 42"/>
-  <path fill="white" d="M32 48 L26 56 L32 52 L38 56 Z"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-labelledby="t">
+<title id="t">Contiene moluscos</title>
+<circle cx="48" cy="48" r="48" fill="#6FB6D8"></circle>
+
+<g>
+  
+  
+  
+  <path d="&#xA;    M48 72&#xA;    L24 60&#xA;    Q22 50 26 30&#xA;    Q30 26 32 30&#xA;    Q34 24 38 26&#xA;    Q40 20 44 24&#xA;    Q46 18 50 22&#xA;    Q54 20 56 26&#xA;    Q58 22 62 26&#xA;    Q64 24 66 30&#xA;    Q70 28 70 30&#xA;    Q74 50 72 60&#xA;    Z" fill="#ffffff"></path>
+  
+  <path d="M48 70 L28 36" stroke="#6FB6D8" stroke-width="1.6" stroke-linecap="round" fill="none"></path>
+  <path d="M48 70 L36 24" stroke="#6FB6D8" stroke-width="1.6" stroke-linecap="round" fill="none"></path>
+  <path d="M48 70 L44 22" stroke="#6FB6D8" stroke-width="1.6" stroke-linecap="round" fill="none"></path>
+  <path d="M48 70 L52 22" stroke="#6FB6D8" stroke-width="1.6" stroke-linecap="round" fill="none"></path>
+  <path d="M48 70 L60 24" stroke="#6FB6D8" stroke-width="1.6" stroke-linecap="round" fill="none"></path>
+  <path d="M48 70 L68 36" stroke="#6FB6D8" stroke-width="1.6" stroke-linecap="round" fill="none"></path>
+  
+  <ellipse cx="48" cy="72" rx="6" ry="2.5" fill="#ffffff"></ellipse>
+</g>
 </svg>

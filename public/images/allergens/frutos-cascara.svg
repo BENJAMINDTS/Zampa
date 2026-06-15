@@ -1,6 +1,20 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title-frutos-cascara">
-  <title id="title-frutos-cascara">Frutos de cáscara</title>
-  <circle cx="32" cy="32" r="32" fill="#A0522D"/>
-  <path fill="white" d="M32 16 C24 16 18 22 18 30 C18 38 24 48 32 50 C40 48 46 38 46 30 C46 22 40 16 32 16 Z"/>
-  <path stroke="#A0522D" stroke-width="1.5" fill="none" d="M18 30 Q32 26 46 30 M26 20 Q32 28 38 20"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-labelledby="t">
+<title id="t">Contiene frutos de cáscara</title>
+<circle cx="48" cy="48" r="48" fill="#BD5A4F"></circle>
+
+<g>
+  
+  
+  <path d="&#xA;    M48 22&#xA;    Q26 22 22 44&#xA;    Q20 64 32 76&#xA;    Q40 82 48 82&#xA;    Q56 82 64 76&#xA;    Q76 64 74 44&#xA;    Q70 22 48 22 Z" fill="#ffffff"></path>
+  
+  <path d="M44 22 Q44 14 50 14 Q54 14 54 22" fill="#ffffff"></path>
+  <circle cx="50" cy="14" r="2" fill="#BD5A4F"></circle>
+  
+  <path d="M48 26 Q49 50 48 80" stroke="#BD5A4F" stroke-width="1.8" stroke-linecap="round" fill="none" opacity="0.7"></path>
+  
+  <path d="M30 38 Q34 50 30 72" stroke="#BD5A4F" stroke-width="2.6" stroke-linecap="round" fill="none"></path>
+  <path d="M39 28 Q42 50 39 78" stroke="#BD5A4F" stroke-width="2.4" stroke-linecap="round" fill="none"></path>
+  <path d="M57 28 Q54 50 57 78" stroke="#BD5A4F" stroke-width="2.4" stroke-linecap="round" fill="none"></path>
+  <path d="M66 38 Q62 50 66 72" stroke="#BD5A4F" stroke-width="2.6" stroke-linecap="round" fill="none"></path>
+</g>
 </svg>

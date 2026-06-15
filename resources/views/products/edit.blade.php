@@ -326,7 +326,7 @@
                 </svg>
                 Alérgenos detectados
             </p>
-            <div class="flex flex-wrap gap-2" role="list" aria-label="Alérgenos de {{ $product->name }}">
+            <div class="flex flex-wrap gap-1.5" role="list" aria-label="Alérgenos de {{ $product->name }}">
                 @foreach($product->allergens->flatMap(fn($i) => $i->allergen_types ?? [])->unique()->values() as $slug)
                     <x-allergen-badge :slug="$slug" />
                 @endforeach
