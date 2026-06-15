@@ -500,6 +500,7 @@
                     class="fab fab--chat"
                     @click="openChat()"
                     aria-label="Abrir asistente Zampi"
+                    :style="{ bottom: $store.cart.barShouldShow ? '92px' : '16px' }"
                     x-show="!open"
                     x-cloak
                     x-transition:enter="transition duration-200"
@@ -1503,6 +1504,7 @@
         <div class="fab-cluster"
              x-show="($store.orders.count > 0 || $store.bill.active) && !$store.chat.open"
              style="display:none"
+             :style="{ bottom: $store.cart.barShouldShow ? '92px' : '16px' }"
              x-transition:enter="transition duration-200"
              x-transition:enter-start="opacity-0"
              x-transition:enter-end="opacity-100"
@@ -1577,6 +1579,7 @@
                 x-show="!sent && !$store.bill.paymentDone && $store.bill.step === '' && !$store.chat.open"
                 :disabled="onCooldown"
                 :class="onCooldown ? 'fab fab--waiter fab--waiter--cooldown' : 'fab fab--waiter'"
+                :style="{ bottom: $store.cart.barShouldShow ? '92px' : '16px' }"
                 :aria-label="onCooldown ? 'Camarero avisado, espera un momento' : 'Llamar al camarero'"
                 style="display:none"
             >
@@ -1598,6 +1601,7 @@
                 x-transition:enter-start="opacity-0 scale-90"
                 x-transition:enter-end="opacity-100 scale-100"
                 class="fab fab--waiter fab--waiter--sent"
+                :style="{ bottom: $store.cart.barShouldShow ? '92px' : '16px' }"
                 role="status"
                 aria-live="polite"
                 aria-label="Camarero avisado, en camino"
