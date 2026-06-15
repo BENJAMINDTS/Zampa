@@ -145,8 +145,10 @@ export function registerChatWidget() {
         msgSeq:             0,
         _now:           Date.now(),
         _ticker:        null,
-        cartNotifs:     [],
-        cartNotifSeq:   0,
+        cartNotifs:           [],
+        cartNotifSeq:         0,
+        lastDiscussedProduct:  null,
+        lastDiscussedProducts: [],
 
         get chatCart() {
             return Alpine.store('cart').items.map(i => ({
@@ -320,12 +322,15 @@ export function registerChatWidget() {
                 image:       p.image ?? null,
                 price:       p.price,
                 variants:    p.variants || [],
+                destination: category.destination,
                 allergens:   (p.ingredients || [])
                     .filter(i => i.is_allergen)
                     .map(i => ({ name: i.name, ...getAllergenIcon(i.name) })),
                 foodIcon:    getFoodIcon(category.name, p.name),
                 emoji,
             }));
+            this.lastDiscussedProducts = cards;
+            this.lastDiscussedProduct  = cards.length === 1 ? cards[0] : null;
             this.botDelay(
                 'Aquí tienes nuestra selección de ' + category.name + ' 😋',
                 { cards, quickReplies: ['Confirmar pedido'] }
@@ -351,6 +356,7 @@ export function registerChatWidget() {
             }
 
             Alpine.store('cart').add({ id, name: card.name, price: card.price, destination, removable: [], extras: [] });
+            this.lastDiscussedProduct = { id, name: card.name, price: card.price, destination, variants: card.variants || [] };
         },
 
         decreaseQty(card) {
@@ -531,6 +537,55 @@ export function registerChatWidget() {
 
         tryAddByName(lower) {
             if (!this.menuData) return false;
+
+            // Referencia contextual: "añádelo", "lo mismo", "2 más de eso", etc.
+            const ctxPat = [
+                /\b(a[ñn][aá]delo|a[ñn][aá]dela|ponlo|ponla|lo\s+mismo|lo\s+anterior)\b/,
+                /\b(m[aá]s\s+de\s+(eso|ese|esa)|[1-5]\s+m[aá]s(\s+de\s+(eso|ese|esa))?|uno\s+m[aá]s|dos\s+m[aá]s|tres\s+m[aá]s)\b/,
+                /\b(a[ñn][aá]de|agrega|ponme|dame|quiero)\s+([1-5]|uno|dos|tres|cuatro|cinco)\s+m[aá]s\b/,
+            ];
+            if (ctxPat.some(p => p.test(lower)) && this.lastDiscussedProduct) {
+                const numWords = { uno: 1, una: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5 };
+                let qty = 1;
+                const dMatch = lower.match(/\b([1-5])\b/);
+                if (dMatch) { qty = parseInt(dMatch[1]); }
+                else { for (const [w, n] of Object.entries(numWords)) { if (new RegExp(`\\b${w}\\b`).test(lower)) { qty = n; break; } } }
+
+                const found = this.lastDiscussedProduct;
+                const cats  = this.menuData.categories;
+                const cat   = cats.find(c => c.products.some(p => p.id === found.id));
+                const dest  = cat?.destination ?? found.destination ?? 'kitchen';
+
+                if ((found.variants || []).length > 0) {
+                    this.pendingVariantProd = { id: found.id, name: found.name, destination: dest, variants: found.variants, qty };
+                    const qrs = found.variants.map(v => v.name + ' (' + Number(v.price).toFixed(2).replace('.', ',') + ' €)');
+                    this.pushMsg({ type: 'bot', text: '¿Cómo lo quieres?', quickReplies: qrs });
+                    return true;
+                }
+                const existing = Alpine.store('cart').items.find(i => i.productId === found.id);
+                if (existing) {
+                    existing.quantity += qty;
+                } else {
+                    Alpine.store('cart').add({ id: found.id, name: found.name, price: found.price, destination: dest, removable: [], extras: [] });
+                    if (qty > 1) {
+                        const item = Alpine.store('cart').items.find(i => i.productId === found.id);
+                        if (item) item.quantity = qty;
+                    }
+                }
+                this.pushMsg({
+                    type: 'bot',
+                    text: '✅ ' + (qty > 1 ? qty + '× ' : '') + found.name + ' añadido. ¿Algo más?',
+                    quickReplies: [...cats.map(c => this.getCategoryEmoji(c.name) + ' ' + c.name), 'Confirmar pedido'],
+                });
+                return true;
+            }
+            // Si hay varios platos discutidos y el usuario referencia "eso" de forma ambigua
+            if (ctxPat.some(p => p.test(lower)) && this.lastDiscussedProducts.length > 1) {
+                const qrs = this.lastDiscussedProducts.map(p => p.name);
+                this.pushMsg({ type: 'bot', text: '¿Cuál de estos platos quieres añadir?', quickReplies: qrs });
+                return true;
+            }
+
             const blockPatterns = [
                 /\b(modifica|cambia|actualiza|edita|borra|elimina|quita)\b/,
                 /\b(precio|coste|cuesta|cu[aá]nto|vale|valor)\b/,
@@ -618,7 +673,10 @@ export function registerChatWidget() {
                         'Accept':       'application/json',
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
                     },
-                    body: JSON.stringify({ message: text }),
+                    body: JSON.stringify({
+                        message:    text,
+                        cart_items: this.chatCart.map(i => ({ product_id: i.id, name: i.name, qty: i.qty })),
+                    }),
                 });
                 const data = await res.json();
                 this.isTyping = false;
@@ -627,9 +685,6 @@ export function registerChatWidget() {
                     const qrs   = cats.map(c => this.getCategoryEmoji(c.name) + ' ' + c.name);
 
                     // Solo mostrar tarjetas de productos que existan en el menuData cargado.
-                    // Filtramos aquí para garantizar que cualquier producto que devuelva el backend
-                    // pero no esté en la carta digital actual (tapas ocultas, horario cerrado,
-                    // producto sin categoría asignada, etc.) no genere una tarjeta rota.
                     const menuProductIds = new Set(cats.flatMap(c => c.products.map(p => p.id)));
                     const cards = (data.data.cards ?? [])
                         .filter(c => menuProductIds.has(c.id))
@@ -641,6 +696,8 @@ export function registerChatWidget() {
                                 price:       c.price,
                                 description: c.description,
                                 image:       c.image ?? null,
+                                destination: matchedCat?.destination ?? 'kitchen',
+                                variants:    matchedCat?.products.find(p => p.id === c.id)?.variants ?? [],
                                 allergens:   (c.allergens ?? []).map(a => ({
                                     name: a,
                                     ...getAllergenIcon(a),
@@ -649,6 +706,39 @@ export function registerChatWidget() {
                                 emoji:    getCategoryEmoji(matchedCat?.name ?? ''),
                             };
                         });
+
+                    // Actualizar contexto del último plato discutido para referencias futuras
+                    if (cards.length === 1) {
+                        this.lastDiscussedProduct  = cards[0];
+                        this.lastDiscussedProducts = cards;
+                    } else if (cards.length > 1) {
+                        this.lastDiscussedProduct  = null;
+                        this.lastDiscussedProducts = cards;
+                    }
+
+                    // Ejecutar acciones de carrito dictadas por la IA
+                    for (const action of (data.data.actions ?? [])) {
+                        if (action.type === 'add') {
+                            const matchCat  = cats.find(c => c.products.some(p => p.id === action.product_id));
+                            const matchProd = matchCat?.products.find(p => p.id === action.product_id);
+                            if (matchProd && matchCat) {
+                                const existing = Alpine.store('cart').items.find(i => i.productId === matchProd.id);
+                                if (existing) {
+                                    existing.quantity += (action.qty || 1);
+                                } else {
+                                    Alpine.store('cart').add({ id: matchProd.id, name: matchProd.name, price: matchProd.price, destination: matchCat.destination, removable: [], extras: [] });
+                                    if ((action.qty || 1) > 1) {
+                                        const ci = Alpine.store('cart').items.find(i => i.productId === matchProd.id);
+                                        if (ci) ci.quantity = action.qty;
+                                    }
+                                }
+                                this.lastDiscussedProduct = { id: matchProd.id, name: matchProd.name, price: matchProd.price, destination: matchCat.destination, variants: matchProd.variants ?? [] };
+                            }
+                        } else if (action.type === 'remove') {
+                            Alpine.store('cart').items = Alpine.store('cart').items.filter(i => i.productId !== action.product_id);
+                        }
+                    }
+
                     this.pushMsg({
                         type:         'bot',
                         text:         data.data.reply,
