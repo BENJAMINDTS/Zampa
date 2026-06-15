@@ -133,6 +133,30 @@ export function registerCart() {
         open:    false,
         /** @type {boolean} True while the close animation is running. */
         closing: false,
+
+        showDeletePill(name) {
+            clearTimeout(this._deletePillTimer);
+            clearTimeout(this._deletePillLeaveTimer);
+            this._deletePill.leaving = false;
+            this._deletePill.name    = name;
+            this._deletePill.visible = true;
+            this._deletePillTimer = setTimeout(() => {
+                this._deletePill.leaving = true;
+                this._deletePillLeaveTimer = setTimeout(() => {
+                    this._deletePill.visible = false;
+                }, 200);
+            }, 2000);
+        },
+
+        hideDeletePill() {
+            clearTimeout(this._deletePillTimer);
+            clearTimeout(this._deletePillLeaveTimer);
+            this._deletePill.leaving = true;
+            this._deletePillLeaveTimer = setTimeout(() => {
+                this._deletePill.visible = false;
+            }, 200);
+        },
+
         /** @type {number} Last non-zero count — keeps cart bar display stable during leave animation. */
         _snapCount: 0,
         /** @type {number} Last non-zero total — keeps cart bar display stable during leave animation. */
@@ -141,8 +165,12 @@ export function registerCart() {
         _barLeaving: false,
         /** @type {number|null} Timer ID for the leave animation cleanup. */
         _barLeaveTimer: null,
-        /** @type {{ visible: boolean, leaving: boolean, name: string, _timer: number|null }} */
-        _deletePill: { visible: false, leaving: false, name: '', _timer: null },
+        /** @type {{ visible: boolean, name: string, leaving: boolean }} Delete notification state. */
+        _deletePill:           { visible: false, name: '', leaving: false },
+        _deletePillTimer:      null,
+        _deletePillLeaveTimer: null,
+
+
         /** @type {boolean} Submission in progress. */
         sending: false,
         /** @type {boolean} Order successfully sent. */
@@ -315,25 +343,6 @@ export function registerCart() {
             if (item) item.quantity++;
         },
 
-        _showDeletePill(name) {
-            clearTimeout(this._deletePill._timer);
-            this._deletePill.name    = name;
-            this._deletePill.visible = true;
-            this._deletePill.leaving = false;
-            this._deletePill._timer  = setTimeout(() => this.hideDeletePill(), 3000);
-        },
-
-        hideDeletePill() {
-            if (!this._deletePill.visible) return;
-            this._deletePill.leaving = true;
-            clearTimeout(this._deletePill._timer);
-            this._deletePill._timer = setTimeout(() => {
-                this._deletePill.visible = false;
-                this._deletePill.leaving = false;
-                this._deletePill.name    = '';
-            }, 220);
-        },
-
         dec(key) {
             const idx = this.items.findIndex(i => i._key === key);
             if (idx === -1) return;
@@ -341,7 +350,7 @@ export function registerCart() {
             const wasBarItem = item.destination === 'bar' && !item.isTapa;
             item.quantity--;
             if (item.quantity <= 0) {
-                this._showDeletePill(item.name);
+                this.showDeletePill(item.name);
                 this.items.splice(idx, 1);
             }
             if (wasBarItem) {

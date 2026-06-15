@@ -54,12 +54,16 @@ class Table extends Model
         'floor',
         'is_service_point',
         'vertices',
+        'waiter_called',
+        'waiter_called_at',
     ];
 
     protected $casts = [
         'floor'            => 'integer',
         'is_service_point' => 'boolean',
         'vertices'         => 'array',
+        'waiter_called'    => 'boolean',
+        'waiter_called_at' => 'datetime',
     ];
 
     /**

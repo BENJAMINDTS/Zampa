@@ -845,9 +845,15 @@
                 <span class="banner-closed__dot" aria-hidden="true"></span>
                 <div class="banner-closed__copy">
                     <strong>La cocina está cerrada</strong>
-                    <span x-show="$store.schedule.kitchenNextOpening"
-                          x-text="'Abre a las ' + $store.schedule.kitchenNextOpening + ' · Mientras tanto pide de barra 🍺'"></span>
-                    <span x-show="!$store.schedule.kitchenNextOpening">Mientras tanto puedes pedir de barra 🍺</span>
+                    <span class="banner-closed__sub"
+                          x-show="$store.schedule.kitchenNextOpening">
+                        <span class="banner-closed__sub-txt"
+                              x-text="'Abre a las ' + $store.schedule.kitchenNextOpening + ' · Mientras tanto pide de barra 🍺'"></span>
+                    </span>
+                    <span class="banner-closed__sub"
+                          x-show="!$store.schedule.kitchenNextOpening">
+                        <span class="banner-closed__sub-txt">Mientras tanto puedes pedir de barra 🍺</span>
+                    </span>
                 </div>
                 <span class="banner-closed__chip">
                     <span class="dot" aria-hidden="true"></span> Cerrada
@@ -879,7 +885,10 @@
                 <span class="cutoff-strip__pulse" aria-hidden="true"></span>
                 <div class="cutoff-strip__copy">
                     <strong x-text="`Últimos pedidos · cierre en ${mm}:${ss}`"></strong>
-                    <span x-text="'Cocina cierra a las ' + ($store.schedule.kitchenCloseAt || '') + ' — después solo barra 🍺'"></span>
+                    <span class="cutoff-strip__sub">
+                        <span class="cutoff-strip__sub-txt"
+                              x-text="'Cocina cierra en ' + ($store.schedule.kitchenCloseAt || '') + ' · después solo barra 🍺'"></span>
+                    </span>
                 </div>
                 <span class="cutoff-strip__chip">
                     <span class="dot" aria-hidden="true"></span> Cerrando
@@ -3911,9 +3920,11 @@
                                     class="pdetail__cta"
                                     @click="pdetailAddToCart()"
                                     :disabled="selectedProduct?.destination === 'kitchen' && !$store.schedule.kitchenOpen">
-                                <span class="pdetail__cta-lab"
-                                      x-text="$store.cart.items.some(i => i._key === (pdetailVariantId ? selectedProduct?.id + ':' + pdetailVariantId : selectedProduct?.id + ':none'))
-                                          ? 'Actualizar carrito' : 'Añadir al carrito'"></span>
+                                <span class="pdetail__cta-lab">
+                                    <span class="pdetail__cta-lab-txt"
+                                          x-text="$store.cart.items.some(i => i._key === (pdetailVariantId ? selectedProduct?.id + ':' + pdetailVariantId : selectedProduct?.id + ':none'))
+                                              ? 'Actualizar Pedido' : 'Añadir al Pedido'"></span>
+                                </span>
                                 <span class="pdetail__cta-price"
                                       x-text="Number(
                                           ((pdetailVariantId

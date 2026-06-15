@@ -234,7 +234,7 @@
 
 /* Delete pill */
 .delete-pill {
-  position: absolute; left: 16px; right: 16px; bottom: 86px; z-index: 35;
+  position: absolute; left: 16px; right: 16px; bottom: 93px; z-index: 35;
   display: inline-flex; align-items: center; gap: 10px; justify-content: center;
   padding: 10px 16px; border-radius: 9999px;
   background: var(--delete-pill-bg); color: #FECACA; border: 1px solid var(--delete-pill-border);
@@ -243,8 +243,8 @@
   transition: bottom 220ms ease-in-out;
 }
 @keyframes pill-in  { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-@keyframes pill-out { to   { transform: translateY(20px); opacity: 0; } }
-.delete-pill--leaving { animation: pill-out 200ms ease-in forwards; pointer-events: none; }
+@keyframes pill-out { from { transform: translateY(0); opacity: 1; } to { transform: translateY(20px); opacity: 0; } }
+.delete-pill--leaving { animation: pill-out 200ms var(--ease-out) forwards; pointer-events: none; }
 .delete-pill strong { color: white; font-weight: 700; }
 
 /* ----- Chat panel ----- */

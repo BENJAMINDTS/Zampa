@@ -11,6 +11,8 @@ use App\Models\Table;
 use App\Models\Category;
 use App\Models\Ingredient;
 use App\Models\Zone;
+use App\Models\TapaConfig;
+use App\Models\TicketConfig;
 
 /**
  * @author BenjaminDTS
@@ -145,24 +147,24 @@ class DatabaseSeeder extends Seeder
 
         // ── 5. Categorías reales del negocio ──────────────────────────────────
         $categoryData = [
-            ['name' => 'Desayunos',  'destination' => 'bar'],
-            ['name' => 'Refrescos',  'destination' => 'bar'],
-            ['name' => 'Tostadas',   'destination' => 'kitchen'],
-            ['name' => 'Ensaladas',  'destination' => 'kitchen'],
-            ['name' => 'Bocadillos', 'destination' => 'kitchen'],
-            ['name' => 'Roscas',     'destination' => 'kitchen'],
-            ['name' => 'Pizzas',     'destination' => 'kitchen'],
-            ['name' => 'Raciones',   'destination' => 'kitchen'],
-            ['name' => 'Cerveza',    'destination' => 'bar'],
-            ['name' => 'Vino',       'destination' => 'bar'],
-            ['name' => 'Licores',    'destination' => 'bar'],
-            ['name' => 'Copas',      'destination' => 'bar'],
+            ['name' => 'Desayunos',  'destination' => 'bar',     'sort_order' => 0],
+            ['name' => 'Refrescos',  'destination' => 'bar',     'sort_order' => 1],
+            ['name' => 'Tostadas',   'destination' => 'kitchen', 'sort_order' => 2],
+            ['name' => 'Ensaladas',  'destination' => 'kitchen', 'sort_order' => 3],
+            ['name' => 'Bocadillos', 'destination' => 'kitchen', 'sort_order' => 4],
+            ['name' => 'Roscas',     'destination' => 'kitchen', 'sort_order' => 5],
+            ['name' => 'Pizzas',     'destination' => 'kitchen', 'sort_order' => 6],
+            ['name' => 'Raciones',   'destination' => 'kitchen', 'sort_order' => 7],
+            ['name' => 'Cerveza',    'destination' => 'bar',     'sort_order' => 8],
+            ['name' => 'Vino',       'destination' => 'bar',     'sort_order' => 9],
+            ['name' => 'Licores',    'destination' => 'bar',     'sort_order' => 10],
+            ['name' => 'Copas',      'destination' => 'bar',     'sort_order' => 11],
         ];
 
         foreach ($categoryData as $cat) {
-            Category::firstOrCreate(
+            Category::updateOrCreate(
                 ['name' => $cat['name'], 'user_id' => $user->id],
-                ['destination' => $cat['destination']]
+                ['destination' => $cat['destination'], 'sort_order' => $cat['sort_order']]
             );
         }
 
@@ -410,5 +412,37 @@ class DatabaseSeeder extends Seeder
                 ]
             );
         }
+
+        // ── 10. TapaConfig del negocio demo ──────────────────────────────
+        TapaConfig::firstOrCreate(
+            ['user_id' => $user->id],
+            [
+                'tapas_enabled'            => false,
+                'tapas_free'               => true,
+                'price_mode'               => 'fixed',
+                'max_tapa_variants'        => 3,
+                'tapa_price'               => null,
+                'extra_tapa_enabled'       => false,
+                'extra_tapa_price'         => null,
+                'ordering_cutoff_minutes'  => 0,
+            ]
+        );
+
+        // ── 11. TicketConfig del negocio demo ─────────────────────────────
+        TicketConfig::firstOrCreate(
+            ['user_id' => $user->id],
+            [
+                'logo'        => null,
+                'tax_id'      => null,
+                'footer_text' => null,
+                'template'    => 'classic',
+            ]
+        );
+
+        // ── 12. Productos reales del bar demo ─────────────────────────────
+        $this->call(ProductSeeder::class);
+
+        // ── 13. Menú del Día demo ──────────────────────────────────────────
+        $this->call(DailyMenuSeeder::class);
     }
 }

@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Order;
 use App\Models\Table;
 use Illuminate\Http\JsonResponse;
 
@@ -15,7 +14,8 @@ use Illuminate\Http\JsonResponse;
 class WaiterCallController extends Controller
 {
     /**
-     * Marca el pedido activo de la mesa como waiter_called = true.
+     * Marca la mesa como waiter_called = true.
+     * Funciona con o sin pedido activo.
      *
      * @param  string  $hash  El unique_hash de la mesa
      * @return JsonResponse
@@ -24,16 +24,7 @@ class WaiterCallController extends Controller
     {
         $table = Table::where('unique_hash', $hash)->firstOrFail();
 
-        $order = Order::where('table_id', $table->id)
-            ->whereIn('status', ['pending', 'cooking'])
-            ->latest()
-            ->first();
-
-        if (! $order) {
-            return response()->json(['success' => false, 'message' => 'No hay pedido activo.'], 404);
-        }
-
-        $order->update([
+        $table->update([
             'waiter_called'    => true,
             'waiter_called_at' => now(),
         ]);

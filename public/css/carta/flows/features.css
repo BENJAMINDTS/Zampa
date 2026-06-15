@@ -47,14 +47,19 @@
   font-variant-numeric: tabular-nums;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.cutoff-strip__copy span {
-  display: block;
+.cutoff-strip__sub {
+  display: block; overflow: hidden;
   font-family: var(--font-body); font-size: 11.5px;
   color: color-mix(in oklab, var(--color-amber-800) 75%, var(--fg-secondary));
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.cutoff-strip__sub-txt { display: inline-block; white-space: nowrap; }
+.carta:not([data-bp="desktop"]) .cutoff-strip__sub-txt { animation: cutoff-marquee 9s ease-in-out infinite; }
+@keyframes cutoff-marquee {
+  0%, 30%   { transform: translateX(0); }
+  70%, 100% { transform: translateX(-70px); }
 }
 [data-theme="dark"] .cutoff-strip__copy strong { color: var(--color-amber-300); }
-[data-theme="dark"] .cutoff-strip__copy span { color: color-mix(in oklab, var(--color-amber-300) 75%, var(--fg-secondary)); }
+[data-theme="dark"] .cutoff-strip__sub { color: color-mix(in oklab, var(--color-amber-300) 75%, var(--fg-secondary)); }
 .cutoff-strip__chip {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 5px 10px; border-radius: 9999px;
