@@ -25,6 +25,7 @@
     font-size: 14px;
     line-height: 1.6;
     word-break: break-word;
+    white-space: pre-line;
 }
 .zampi-avatar {
     width: 32px;
@@ -522,4 +523,16 @@
     font-weight: 900;
     color: var(--z-order-total, #FBBF24);
     font-family: 'Nunito', sans-serif;
+}
+
+/* ── Cart bar dentro del panel Zampi — tema minimal: esquinas cuadradas como el principal ── */
+[data-theme="minimal"] .zampi-panel .cart-bar {
+    border-radius: 2px;
+    box-shadow: 0 8px 24px rgba(61, 79, 101, 0.36), 0 2px 6px rgba(61, 79, 101, 0.18);
+}
+[data-theme="minimal"] .zampi-panel .cart-bar__cta {
+    border-radius: 2px;
+}
+[data-theme="minimal"] .carta[data-theme="dark"] .zampi-panel .cart-bar {
+    box-shadow: 0 8px 28px rgba(10, 13, 22, 0.55), 0 2px 8px rgba(10, 13, 22, 0.30);
 }

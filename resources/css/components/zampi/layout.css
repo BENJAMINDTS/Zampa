@@ -123,8 +123,29 @@
     gap: 12px;
 }
 
+/* ── Zampi Delete Pill — reutiliza .delete-pill de la carta digital ──────── */
+/* Posición fija encima del input (siempre visible), no participa en el flujo
+   flex para que no se mueva cuando el cart-bar entra/sale */
+.zampi-panel .delete-pill {
+    position: absolute !important;
+    left: 16px !important;
+    right: 16px !important;
+    bottom: 93px;              /* posición sin cart-bar (igual que carta digital) */
+    z-index: 6;
+    transition: bottom 220ms ease-in-out;
+}
+
 /* ── Zampi Cart Bar — reutiliza .cart-bar de la carta digital ─────────────── */
-.zampi-cartbar-wrap { flex-shrink: 0; display: block; }
+.zampi-cartbar-wrap {
+    flex-shrink: 0;
+    display: block;
+    overflow: hidden;
+    max-height: 90px;          /* cart-bar 62px + márgenes 16px + buffer */
+    transition: max-height 220ms ease-in;
+}
+.zampi-cartbar-wrap--leaving {
+    max-height: 0;             /* colapsa en sincronía con el slide-down del cart-bar */
+}
 
 /* Resetear posición absoluta: dentro del panel fluye como bloque de ancho completo */
 .zampi-panel .cart-bar {
@@ -138,7 +159,6 @@
     border-radius: 24px;
     display: flex;
     box-shadow: 0 10px 30px rgba(15, 61, 42, 0.45);
-    animation: none !important;
 }
 
 /* La regla global oculta .cart-bar cuando el chat está abierto — revertirla aquí */

@@ -115,34 +115,35 @@ class NotificationController extends Controller
     }
 
     /**
-     * Devuelve las mesas con waiter_called=true del restaurante autenticado.
+     * Devuelve los pedidos con waiter_called=true del restaurante autenticado.
      *
      * @return JsonResponse
      */
     public function waiterCalls(): JsonResponse
     {
-        $tables = Table::where('user_id', Auth::user()->ownerUserId())
+        $orders = Order::with('table:id,name')
             ->where('waiter_called', true)
+            ->whereHas('table', fn ($q) => $q->where('user_id', Auth::user()->ownerUserId()))
             ->get()
-            ->map(fn (Table $table) => [
-                'id'        => $table->id,
-                'table'     => $table->name,
-                'called_at' => $table->waiter_called_at?->format('H:i'),
+            ->map(fn (Order $order) => [
+                'id'        => $order->id,
+                'table'     => $order->table->name,
+                'called_at' => $order->waiter_called_at?->format('H:i'),
             ])
             ->values();
 
-        return response()->json(['orders' => $tables]);
+        return response()->json(['orders' => $orders]);
     }
 
     /**
-     * Descarta la llamada al camarero de una mesa concreta.
+     * Descarta la llamada al camarero de un pedido concreto.
      *
-     * @param  Table  $order  Recibe ID de mesa (parámetro nombrado 'order' por compatibilidad con ruta)
+     * @param  Order  $order
      * @return JsonResponse
      */
-    public function dismissWaiterCall(Table $order): JsonResponse
+    public function dismissWaiterCall(Order $order): JsonResponse
     {
-        abort_if($order->user_id !== Auth::user()->ownerUserId(), 403, 'Acceso denegado.');
+        abort_if($order->table->user_id !== Auth::user()->ownerUserId(), 403, 'Acceso denegado.');
 
         $order->update(['waiter_called' => false, 'waiter_called_at' => null]);
 

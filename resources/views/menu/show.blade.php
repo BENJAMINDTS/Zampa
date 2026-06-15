@@ -16,8 +16,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     @endif
     @vite(['resources/js/app.js'])
-    <link rel="stylesheet" href="{{ asset('css/carta/colors_and_type.css') }}?v={{ filemtime(public_path('css/carta/colors_and_type.css')) }}">
     <link rel="stylesheet" href="{{ asset('css/carta/styles.css') }}?v={{ filemtime(public_path('css/carta/styles.css')) }}">
+    <link rel="stylesheet" href="{{ asset('css/carta/colors_and_type.css') }}?v={{ filemtime(public_path('css/carta/colors_and_type.css')) }}">
     <style>
     /* ── Dark mode: categoría seleccionada en sidebar ──────────────────
        Mismo estilo que light mode: fondo suave + barra lateral izquierda.
@@ -500,6 +500,7 @@
                     class="fab fab--chat"
                     @click="openChat()"
                     aria-label="Abrir asistente Zampi"
+                    :style="{ bottom: $store.cart.barShouldShow ? '92px' : '16px' }"
                     x-show="!open"
                     x-cloak
                     x-transition:enter="transition duration-200"
@@ -531,6 +532,26 @@
 
                 {{-- Panel: full-screen en móvil / modal en tablet / flotante en desktop --}}
                 <div class="zampi-panel zampi-panel-bg zampi-scrollbar">
+
+                    {{-- Delete pill — sigue al cart-bar cuando aparece/desaparece --}}
+                    <template x-if="$store.cart._deletePill.visible">
+                        <div :class="$store.cart._deletePill.leaving ? 'delete-pill delete-pill--leaving' : 'delete-pill'"
+                             :style="($store.cart.barShouldShow && !$store.cart._barLeaving) ? 'bottom:161px' : ''"
+                             role="status" aria-live="polite">
+                            <span aria-hidden="true">🗑</span>
+                            <span><strong x-text="$store.cart._deletePill.name"></strong> eliminado</span>
+                            <button type="button" class="icon-btn"
+                                    @click="$store.cart.hideDeletePill()"
+                                    aria-label="Cerrar notificación"
+                                    style="width:22px;height:22px;margin-left:4px;background:rgba(254,202,202,0.2);color:#FECACA;">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                     stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
+                    </template>
 
                     {{-- Cabecera --}}
                     <div class="zampi-header">
@@ -660,10 +681,7 @@
                                                     <template x-for="(qr, qrIdx) in msg.quickReplies" :key="qrIdx">
                                                         <button type="button"
                                                                 @click="handleQuickReply(qr)"
-                                                                :class="qr === 'Confirmar pedido' ? 'zampi-qr-btn zampi-qr-btn--confirm' : (qr === 'Ver mi pedido' ? 'zampi-qr-btn zampi-qr-btn--view' : 'zampi-qr-btn')">
-                                                                <template x-if="qr === 'Ver mi pedido'">
-                                                                    <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                                                                </template>
+                                                                :class="qr === 'Confirmar pedido' ? 'zampi-qr-btn zampi-qr-btn--confirm' : 'zampi-qr-btn'">
                                                                 <template x-if="qr === 'Confirmar pedido'">
                                                                     <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
                                                                 </template>
@@ -764,12 +782,7 @@
 
                     {{-- Cart bar de la carta digital integrada en el panel Zampi --}}
                     <div x-show="$store.cart.barShouldShow"
-                         x-transition:enter="transition ease-out duration-[220ms]"
-                         x-transition:enter-start="opacity-0 translate-y-1"
-                         x-transition:enter-end="opacity-100 translate-y-0"
-                         x-transition:leave="transition ease-in duration-200"
-                         x-transition:leave-start="opacity-100 translate-y-0"
-                         x-transition:leave-end="opacity-0 translate-y-1"
+                         :class="{ 'zampi-cartbar-wrap--leaving': $store.cart._barLeaving }"
                          class="zampi-cartbar-wrap">
                         <button type="button"
                                 :class="$store.cart._barLeaving ? 'cart-bar cart-bar--leaving' : 'cart-bar'"
@@ -1447,8 +1460,9 @@
         {{-- ══════════════════════════════════════════════════════════════════════
              DELETE PILL — notificación al eliminar un artículo del carrito
              ══════════════════════════════════════════════════════════════════════ --}}
-        <template x-if="$store.cart._deletePill.visible">
+        <template x-if="$store.cart._deletePill.visible && !$store.chat.open">
             <div :class="$store.cart._deletePill.leaving ? 'delete-pill delete-pill--leaving' : 'delete-pill'"
+                 :style="($store.cart.barShouldShow && !$store.cart._barLeaving) ? 'bottom:93px' : 'bottom:16px'"
                  role="status" aria-live="polite">
                 <span aria-hidden="true">🗑</span>
                 <span><strong x-text="$store.cart._deletePill.name"></strong> eliminado</span>
@@ -1499,6 +1513,7 @@
         <div class="fab-cluster"
              x-show="($store.orders.count > 0 || $store.bill.active) && !$store.chat.open"
              style="display:none"
+             :style="{ bottom: $store.cart.barShouldShow ? '92px' : '16px' }"
              x-transition:enter="transition duration-200"
              x-transition:enter-start="opacity-0"
              x-transition:enter-end="opacity-100"
@@ -1573,6 +1588,7 @@
                 x-show="!sent && !$store.bill.paymentDone && $store.bill.step === '' && !$store.chat.open"
                 :disabled="onCooldown"
                 :class="onCooldown ? 'fab fab--waiter fab--waiter--cooldown' : 'fab fab--waiter'"
+                :style="{ bottom: $store.cart.barShouldShow ? '92px' : '16px' }"
                 :aria-label="onCooldown ? 'Camarero avisado, espera un momento' : 'Llamar al camarero'"
                 style="display:none"
             >
@@ -1594,6 +1610,7 @@
                 x-transition:enter-start="opacity-0 scale-90"
                 x-transition:enter-end="opacity-100 scale-100"
                 class="fab fab--waiter fab--waiter--sent"
+                :style="{ bottom: $store.cart.barShouldShow ? '92px' : '16px' }"
                 role="status"
                 aria-live="polite"
                 aria-label="Camarero avisado, en camino"

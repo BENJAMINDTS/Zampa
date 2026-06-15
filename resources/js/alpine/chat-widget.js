@@ -145,8 +145,10 @@ export function registerChatWidget() {
         msgSeq:             0,
         _now:           Date.now(),
         _ticker:        null,
-        cartNotifs:     [],
-        cartNotifSeq:   0,
+        cartNotifs:           [],
+        cartNotifSeq:         0,
+        lastDiscussedProduct:  null,
+        lastDiscussedProducts: [],
 
         get chatCart() {
             return Alpine.store('cart').items.map(i => ({
@@ -223,7 +225,7 @@ export function registerChatWidget() {
                 text: (this.menuData?.table ?? 'Mesa') + ' · ' + (this.menuData?.restaurant ?? '') });
             this.pushMsg({ type: 'bot',
                 text: '¡Hola! Soy Zampi, tu asistente de pedidos 🍔 ¿Qué te apetece hoy?',
-                quickReplies: qrs.length ? [...qrs, 'Ver mi pedido'] : ['Ver mi pedido'] });
+                quickReplies: qrs });
         },
 
         async startConversationBackend() {
@@ -285,7 +287,7 @@ export function registerChatWidget() {
                     const cats = this.menuData?.categories ?? [];
                     this.botDelay(
                         '✅ ' + (qty > 1 ? qty + '× ' : '') + pending.name + ' (' + variant.name + ') añadido al pedido. ¿Algo más?',
-                        { quickReplies: [...cats.map(c => this.getCategoryEmoji(c.name) + ' ' + c.name), 'Ver mi pedido', 'Confirmar pedido'] }
+                        { quickReplies: [...cats.map(c => this.getCategoryEmoji(c.name) + ' ' + c.name), 'Confirmar pedido'] }
                     );
                     return;
                 }
@@ -297,15 +299,15 @@ export function registerChatWidget() {
             const matched = cats.find(c => label === this.getCategoryEmoji(c.name) + ' ' + c.name || c.name === label);
             if (matched) {
                 this.showCategoryCards(matched);
-            } else if (label === 'Ver mi pedido' || label === 'Confirmar pedido') {
+            } else if (label === 'Confirmar pedido') {
                 Alpine.store('cart').open = true;
             } else if (label === 'Seguir eligiendo') {
                 const qrs = cats.map(c => this.getCategoryEmoji(c.name) + ' ' + c.name);
-                this.botDelay('¿Qué más te gustaría pedir?', { quickReplies: [...qrs, 'Ver mi pedido'] });
+                this.botDelay('¿Qué más te gustaría pedir?', { quickReplies: qrs });
             } else if (label === '📋 Nuevo pedido') {
                 Alpine.store('cart').items = [];
                 const qrs = cats.map(c => this.getCategoryEmoji(c.name) + ' ' + c.name);
-                this.botDelay('¡Claro! ¿Qué te gustaría pedir?', { quickReplies: [...qrs, 'Ver mi pedido'] });
+                this.botDelay('¡Claro! ¿Qué te gustaría pedir?', { quickReplies: qrs });
             } else {
                 this.sendToAI(label);
             }
@@ -320,15 +322,18 @@ export function registerChatWidget() {
                 image:       p.image ?? null,
                 price:       p.price,
                 variants:    p.variants || [],
+                destination: category.destination,
                 allergens:   (p.ingredients || [])
                     .filter(i => i.is_allergen)
                     .map(i => ({ name: i.name, ...getAllergenIcon(i.name) })),
                 foodIcon:    getFoodIcon(category.name, p.name),
                 emoji,
             }));
+            this.lastDiscussedProducts = cards;
+            this.lastDiscussedProduct  = cards.length === 1 ? cards[0] : null;
             this.botDelay(
                 'Aquí tienes nuestra selección de ' + category.name + ' 😋',
-                { cards, quickReplies: ['Ver mi pedido', 'Confirmar pedido'] }
+                { cards, quickReplies: ['Confirmar pedido'] }
             );
         },
 
@@ -351,6 +356,7 @@ export function registerChatWidget() {
             }
 
             Alpine.store('cart').add({ id, name: card.name, price: card.price, destination, removable: [], extras: [] });
+            this.lastDiscussedProduct = { id, name: card.name, price: card.price, destination, variants: card.variants || [] };
         },
 
         decreaseQty(card) {
@@ -381,11 +387,12 @@ export function registerChatWidget() {
             const item = Alpine.store('cart').items.find(i => i.productId === id);
             Alpine.store('cart').items = Alpine.store('cart').items.filter(i => i.productId !== id);
             if (item) {
+                Alpine.store('cart')._showDeletePill(item.name);
                 this.showCartNotif(item.name);
                 const qrs = (this.menuData?.categories ?? []).map(c => this.getCategoryEmoji(c.name) + ' ' + c.name);
                 this.pushMsg({ type: 'bot',
                     text: '🗑️ ' + item.name + ' eliminado del pedido.',
-                    quickReplies: Alpine.store('cart').items.length ? ['Ver mi pedido', 'Confirmar pedido', ...qrs] : qrs,
+                    quickReplies: Alpine.store('cart').items.length ? ['Confirmar pedido', ...qrs] : qrs,
                 });
             }
         },
@@ -459,15 +466,50 @@ export function registerChatWidget() {
             if (!text || this.sending || this.isTyping) return;
             this.input = '';
             this.pushMsg({ type: 'user', text, time: Date.now() });
-            const lower = text.toLowerCase();
+            const norm  = s => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+            const lower = norm(text);
             const cats  = this.menuData?.categories ?? [];
-            const matched = cats.find(c => c.name.toLowerCase() === lower);
-            if (matched)                                   { this.showCategoryCards(matched); return; }
+
+            // Coincidencia exacta con nombre de categoría
+            const exactCat = cats.find(c => norm(c.name) === lower);
+            if (exactCat) { this.showCategoryCards(exactCat); return; }
+
+            // Coincidencia parcial: el mensaje contiene el nombre de una categoría
+            // Permite "qué hay de postres", "ponme los entrantes", "ver bebidas", etc.
+            const mentionedCat = cats.find(c => lower.includes(norm(c.name)));
+            if (mentionedCat) { this.showCategoryCards(mentionedCat); return; }
+
+            // Si el mensaje tiene intención de explorar una categoría pero ninguna
+            // coincidió con las disponibles → mostrar las categorías reales en lugar
+            // de dejar que la IA invente o liste categorías que no existen.
+            const isCategoryBrowse = /\b(que\s+hay\s+(de|en)|que\s+teneis\s+de|teneis\s+de|hay\s+de|ver\s+(los|las|el|la|todos|todas)|mostrar\s+(los|las)|cuales?\s+son\s+(las?\s+)?categor|que\s+(tipo|categoria|categorias)|alguna?\s+opcion)\b/.test(lower);
+            if (isCategoryBrowse) {
+                const qrs = cats.map(c => this.getCategoryEmoji(c.name) + ' ' + c.name);
+                this.botDelay(
+                    'No tenemos esa categoría en este momento 😊 Aquí tienes las disponibles:',
+                    { quickReplies: qrs }
+                );
+                return;
+            }
+
             if (lower.includes('mi pedido') ||
                 lower.includes('ver pedido') ||
                 lower.includes('carrito'))                 { this.showCartSummary(); return; }
             if (lower.includes('confirmar') &&
                 lower.includes('pedido'))                  { this.confirmOrder(); return; }
+
+            // Interceptar "muéstrame la carta / el menú / qué hay" →
+            // mostrar chips de categoría en lugar de mandar al AI a listar todo
+            const hasCarta = /\b(carta|menu|menus|platos|oferta)\b/.test(lower);
+            if (hasCarta) {
+                const qrs = cats.map(c => this.getCategoryEmoji(c.name) + ' ' + c.name);
+                this.botDelay(
+                    'Aquí tienes las categorías disponibles 😊 Toca la que más te apetezca:',
+                    { quickReplies: qrs }
+                );
+                return;
+            }
+
             if (this.tryRemoveByName(lower, text)) return;
             if (this.tryAddByName(lower)) return;
             await this.sendToAI(text);
@@ -483,10 +525,11 @@ export function registerChatWidget() {
                 const words = norm(item.name).split(/\s+/).filter(w => w.length > 3);
                 if (words.some(w => nl.includes(w))) {
                     Alpine.store('cart').items = Alpine.store('cart').items.filter(i => i.productId !== item.id);
+                    Alpine.store('cart')._showDeletePill(item.name);
                     const qrs = (this.menuData?.categories ?? []).map(c => this.getCategoryEmoji(c.name) + ' ' + c.name);
                     this.pushMsg({ type: 'bot',
                         text: '🗑️ ' + item.name + ' eliminado del pedido. ¿Seguimos? 😊',
-                        quickReplies: this.chatCart.length ? ['Ver mi pedido', 'Confirmar pedido', ...qrs] : qrs,
+                        quickReplies: this.chatCart.length ? ['Confirmar pedido', ...qrs] : qrs,
                     });
                     return true;
                 }
@@ -496,6 +539,55 @@ export function registerChatWidget() {
 
         tryAddByName(lower) {
             if (!this.menuData) return false;
+
+            // Referencia contextual: "añádelo", "lo mismo", "2 más de eso", etc.
+            const ctxPat = [
+                /\b(a[ñn][aá]delo|a[ñn][aá]dela|ponlo|ponla|lo\s+mismo|lo\s+anterior)\b/,
+                /\b(m[aá]s\s+de\s+(eso|ese|esa)|[1-5]\s+m[aá]s(\s+de\s+(eso|ese|esa))?|uno\s+m[aá]s|dos\s+m[aá]s|tres\s+m[aá]s)\b/,
+                /\b(a[ñn][aá]de|agrega|ponme|dame|quiero)\s+([1-5]|uno|dos|tres|cuatro|cinco)\s+m[aá]s\b/,
+            ];
+            if (ctxPat.some(p => p.test(lower)) && this.lastDiscussedProduct) {
+                const numWords = { uno: 1, una: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5 };
+                let qty = 1;
+                const dMatch = lower.match(/\b([1-5])\b/);
+                if (dMatch) { qty = parseInt(dMatch[1]); }
+                else { for (const [w, n] of Object.entries(numWords)) { if (new RegExp(`\\b${w}\\b`).test(lower)) { qty = n; break; } } }
+
+                const found = this.lastDiscussedProduct;
+                const cats  = this.menuData.categories;
+                const cat   = cats.find(c => c.products.some(p => p.id === found.id));
+                const dest  = cat?.destination ?? found.destination ?? 'kitchen';
+
+                if ((found.variants || []).length > 0) {
+                    this.pendingVariantProd = { id: found.id, name: found.name, destination: dest, variants: found.variants, qty };
+                    const qrs = found.variants.map(v => v.name + ' (' + Number(v.price).toFixed(2).replace('.', ',') + ' €)');
+                    this.pushMsg({ type: 'bot', text: '¿Cómo lo quieres?', quickReplies: qrs });
+                    return true;
+                }
+                const existing = Alpine.store('cart').items.find(i => i.productId === found.id);
+                if (existing) {
+                    existing.quantity += qty;
+                } else {
+                    Alpine.store('cart').add({ id: found.id, name: found.name, price: found.price, destination: dest, removable: [], extras: [] });
+                    if (qty > 1) {
+                        const item = Alpine.store('cart').items.find(i => i.productId === found.id);
+                        if (item) item.quantity = qty;
+                    }
+                }
+                this.pushMsg({
+                    type: 'bot',
+                    text: '✅ ' + (qty > 1 ? qty + '× ' : '') + found.name + ' añadido. ¿Algo más?',
+                    quickReplies: [...cats.map(c => this.getCategoryEmoji(c.name) + ' ' + c.name), 'Confirmar pedido'],
+                });
+                return true;
+            }
+            // Si hay varios platos discutidos y el usuario referencia "eso" de forma ambigua
+            if (ctxPat.some(p => p.test(lower)) && this.lastDiscussedProducts.length > 1) {
+                const qrs = this.lastDiscussedProducts.map(p => p.name);
+                this.pushMsg({ type: 'bot', text: '¿Cuál de estos platos quieres añadir?', quickReplies: qrs });
+                return true;
+            }
+
             const blockPatterns = [
                 /\b(modifica|cambia|actualiza|edita|borra|elimina|quita)\b/,
                 /\b(precio|coste|cuesta|cu[aá]nto|vale|valor)\b/,
@@ -560,7 +652,7 @@ export function registerChatWidget() {
             this.pushMsg({
                 type: 'bot',
                 text: '✅ ' + (qty > 1 ? qty + '× ' : '') + found.name + ' añadido al pedido. ¿Algo más?',
-                quickReplies: [...cats.map(c => this.getCategoryEmoji(c.name) + ' ' + c.name), 'Ver mi pedido', 'Confirmar pedido'],
+                quickReplies: [...cats.map(c => this.getCategoryEmoji(c.name) + ' ' + c.name), 'Confirmar pedido'],
             });
             return true;
         },
@@ -569,7 +661,7 @@ export function registerChatWidget() {
             if (!this.conversationId || this.closed) {
                 const cats = this.menuData?.categories ?? [];
                 this.botDelay('Por favor elige una categoría para empezar 😊',
-                    { quickReplies: [...cats.map(c => this.getCategoryEmoji(c.name) + ' ' + c.name), 'Ver mi pedido'] });
+                    { quickReplies: cats.map(c => this.getCategoryEmoji(c.name) + ' ' + c.name) });
                 return;
             }
             this.sending  = true;
@@ -583,29 +675,72 @@ export function registerChatWidget() {
                         'Accept':       'application/json',
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
                     },
-                    body: JSON.stringify({ message: text }),
+                    body: JSON.stringify({
+                        message:    text,
+                        cart_items: this.chatCart.map(i => ({ product_id: i.id, name: i.name, qty: i.qty })),
+                    }),
                 });
                 const data = await res.json();
                 this.isTyping = false;
                 if (res.ok && data.success) {
                     const cats  = this.menuData?.categories ?? [];
                     const qrs   = cats.map(c => this.getCategoryEmoji(c.name) + ' ' + c.name);
-                    const cards = (data.data.cards ?? []).map(c => {
-                        const matchedCat = cats.find(cat => cat.products.some(p => p.id === c.id));
-                        return {
-                            id:          c.id,
-                            name:        c.name,
-                            price:       c.price,
-                            description: c.description,
-                            image:       c.image ?? null,
-                            allergens:   (c.allergens ?? []).map(a => ({
-                                name: a,
-                                ...getAllergenIcon(a),
-                            })),
-                            foodIcon: getFoodIcon(matchedCat?.name ?? '', c.name),
-                            emoji:    getCategoryEmoji(matchedCat?.name ?? ''),
-                        };
-                    });
+
+                    // Solo mostrar tarjetas de productos que existan en el menuData cargado.
+                    const menuProductIds = new Set(cats.flatMap(c => c.products.map(p => p.id)));
+                    const cards = (data.data.cards ?? [])
+                        .filter(c => menuProductIds.has(c.id))
+                        .map(c => {
+                            const matchedCat = cats.find(cat => cat.products.some(p => p.id === c.id));
+                            return {
+                                id:          c.id,
+                                name:        c.name,
+                                price:       c.price,
+                                description: c.description,
+                                image:       c.image ?? null,
+                                destination: matchedCat?.destination ?? 'kitchen',
+                                variants:    matchedCat?.products.find(p => p.id === c.id)?.variants ?? [],
+                                allergens:   (c.allergens ?? []).map(a => ({
+                                    name: a,
+                                    ...getAllergenIcon(a),
+                                })),
+                                foodIcon: getFoodIcon(matchedCat?.name ?? '', c.name),
+                                emoji:    getCategoryEmoji(matchedCat?.name ?? ''),
+                            };
+                        });
+
+                    // Actualizar contexto del último plato discutido para referencias futuras
+                    if (cards.length === 1) {
+                        this.lastDiscussedProduct  = cards[0];
+                        this.lastDiscussedProducts = cards;
+                    } else if (cards.length > 1) {
+                        this.lastDiscussedProduct  = null;
+                        this.lastDiscussedProducts = cards;
+                    }
+
+                    // Ejecutar acciones de carrito dictadas por la IA
+                    for (const action of (data.data.actions ?? [])) {
+                        if (action.type === 'add') {
+                            const matchCat  = cats.find(c => c.products.some(p => p.id === action.product_id));
+                            const matchProd = matchCat?.products.find(p => p.id === action.product_id);
+                            if (matchProd && matchCat) {
+                                const existing = Alpine.store('cart').items.find(i => i.productId === matchProd.id);
+                                if (existing) {
+                                    existing.quantity += (action.qty || 1);
+                                } else {
+                                    Alpine.store('cart').add({ id: matchProd.id, name: matchProd.name, price: matchProd.price, destination: matchCat.destination, removable: [], extras: [] });
+                                    if ((action.qty || 1) > 1) {
+                                        const ci = Alpine.store('cart').items.find(i => i.productId === matchProd.id);
+                                        if (ci) ci.quantity = action.qty;
+                                    }
+                                }
+                                this.lastDiscussedProduct = { id: matchProd.id, name: matchProd.name, price: matchProd.price, destination: matchCat.destination, variants: matchProd.variants ?? [] };
+                            }
+                        } else if (action.type === 'remove') {
+                            Alpine.store('cart').items = Alpine.store('cart').items.filter(i => i.productId !== action.product_id);
+                        }
+                    }
+
                     this.pushMsg({
                         type:         'bot',
                         text:         data.data.reply,

@@ -170,6 +170,7 @@ export function registerCart() {
         _deletePillTimer:      null,
         _deletePillLeaveTimer: null,
 
+
         /** @type {boolean} Submission in progress. */
         sending: false,
         /** @type {boolean} Order successfully sent. */
