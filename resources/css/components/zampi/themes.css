@@ -10,76 +10,81 @@
  *   - [data-theme="minimal"] .carta[data-theme="dark"] → minimal dark
  */
 
-/* ── MODERN LIGHT (default) ──────────────────────────────────────────────── */
+/* ── MODERN LIGHT — Indigo Fresh ─────────────────────────────────────────── */
 .zampi-panel {
-    --z-panel-bg:               #FFFFFF;
-    --z-header-bg:              rgba(248, 250, 255, 0.97);
-    --z-header-border:          rgba(46, 80, 176, 0.15);
-    --z-header-title:           #0F1A40;
-    --z-header-sub:             #4A6098;
-    --z-close-border:           rgba(46, 80, 176, 0.2);
-    --z-close-color:            #6080C0;
-    --z-close-hover-bg:         rgba(46, 80, 176, 0.1);
-    --z-close-hover-color:      #0F1A40;
-    --z-bubble-bot-bg:          #EEF2FF;
-    --z-bubble-bot-border:      rgba(46, 80, 176, 0.15);
-    --z-bubble-bot-color:       #1A2A50;
-    --z-bubble-user-bg:         linear-gradient(135deg, #2E50B0, #1A3380);
+    --z-panel-bg:               linear-gradient(180deg, #F5F3FF 0%, #FFFFFF 28%);
+    --z-header-bg:              rgba(255, 255, 255, 0.97);
+    --z-header-border:          rgba(99, 102, 241, 0.22);
+    --z-header-title:           #1E1B4B;
+    --z-header-sub:             #6366F1;
+    --z-close-border:           rgba(99, 102, 241, 0.22);
+    --z-close-color:            #818CF8;
+    --z-close-hover-bg:         rgba(99, 102, 241, 0.1);
+    --z-close-hover-color:      #4F46E5;
+    --z-bubble-bot-bg:          #F5F3FF;
+    --z-bubble-bot-border:      rgba(99, 102, 241, 0.2);
+    --z-bubble-bot-color:       #1E1B4B;
+    --z-bubble-user-bg:         linear-gradient(135deg, #6366F1, #4F46E5);
     --z-bubble-user-color:      #fff;
-    --z-avatar-bg:              linear-gradient(135deg, #1A3380, #3070E8);
-    --z-card-bg:                #F5F7FF;
-    --z-card-border:            rgba(46, 80, 176, 0.15);
-    --z-card-img-bg:            linear-gradient(135deg, #E0E8FF, #D0DAFF);
-    --z-card-food-icon:         rgba(46, 80, 176, 0.4);
-    --z-card-name:              #0F1A40;
-    --z-card-desc:              #4A6098;
-    --z-card-price:             #1A3380;
-    --z-system-bg:              rgba(46, 80, 176, 0.08);
-    --z-system-border:          rgba(46, 80, 176, 0.2);
-    --z-system-color:           #4A6098;
-    --z-user-time:              #8090B0;
-    --z-typing-bg:              #EEF2FF;
-    --z-typing-border:          rgba(46, 80, 176, 0.15);
-    --z-typing-dot:             #8098D8;
-    --z-input-area-bg:          rgba(248, 250, 255, 0.97);
-    --z-input-area-border:      rgba(46, 80, 176, 0.12);
-    --z-input-wrapper-bg:       rgba(230, 238, 255, 0.6);
-    --z-input-border:           rgba(46, 80, 176, 0.2);
-    --z-input-color:            #0F1A40;
-    --z-input-placeholder:      rgba(70, 100, 180, 0.45);
-    --z-scrollbar-thumb:        rgba(46, 80, 176, 0.25);
-    --z-order-bg:               rgba(240, 244, 255, 0.9);
-    --z-order-border:           rgba(46, 80, 176, 0.2);
-    --z-order-title:            #0F1A40;
-    --z-order-item-name:        #1A2A50;
-    --z-order-item-border:      rgba(0, 0, 0, 0.07);
-    --z-order-total-border:     rgba(46, 80, 176, 0.2);
-    --z-order-total-label:      #0F1A40;
-    --z-order-total:            #1A3380;
-    --z-cart-empty:             #4A6098;
-    --z-cart-qty:               #0F1A40;
-    --z-closed-bg:              rgba(46, 80, 176, 0.08);
-    --z-closed-border:          rgba(46, 80, 176, 0.15);
-    --z-closed-color:           #4A6098;
-    --z-send-btn-bg:            linear-gradient(135deg, #2E50B0, #1A3380);
-    --z-qr-btn-bg:              rgba(46, 80, 176, 0.1);
-    --z-qr-btn-border:          rgba(46, 80, 176, 0.3);
-    --z-qr-btn-color:           #2E50B0;
-    --z-qr-btn-hover-bg:        #2E50B0;
+    --z-avatar-bg:              linear-gradient(135deg, #4F46E5, #7C3AED);
+    --z-card-bg:                #FFFFFF;
+    --z-card-border:            rgba(99, 102, 241, 0.14);
+    --z-card-img-bg:            linear-gradient(135deg, #EEF2FF, #E0E7FF);
+    --z-card-food-icon:         rgba(99, 102, 241, 0.45);
+    --z-card-name:              #1E1B4B;
+    --z-card-desc:              #6B7280;
+    --z-card-price:             #4F46E5;
+    --z-system-bg:              rgba(99, 102, 241, 0.07);
+    --z-system-border:          rgba(99, 102, 241, 0.2);
+    --z-system-color:           #6366F1;
+    --z-user-time:              #A5B4FC;
+    --z-typing-bg:              #F5F3FF;
+    --z-typing-border:          rgba(99, 102, 241, 0.18);
+    --z-typing-dot:             #818CF8;
+    --z-input-area-bg:          rgba(255, 255, 255, 0.98);
+    --z-input-area-border:      rgba(99, 102, 241, 0.14);
+    --z-input-wrapper-bg:       #F5F3FF;
+    --z-input-border:           rgba(99, 102, 241, 0.28);
+    --z-input-color:            #1E1B4B;
+    --z-input-placeholder:      rgba(99, 102, 241, 0.42);
+    --z-scrollbar-thumb:        rgba(99, 102, 241, 0.22);
+    --z-order-bg:               rgba(245, 243, 255, 0.96);
+    --z-order-border:           rgba(99, 102, 241, 0.15);
+    --z-order-title:            #1E1B4B;
+    --z-order-item-name:        #312E81;
+    --z-order-item-border:      rgba(99, 102, 241, 0.08);
+    --z-order-total-border:     rgba(99, 102, 241, 0.2);
+    --z-order-total-label:      #1E1B4B;
+    --z-order-total:            #4F46E5;
+    --z-cart-empty:             #818CF8;
+    --z-cart-qty:               #1E1B4B;
+    --z-closed-bg:              rgba(99, 102, 241, 0.07);
+    --z-closed-border:          rgba(99, 102, 241, 0.18);
+    --z-closed-color:           #818CF8;
+    --z-send-btn-bg:            linear-gradient(135deg, #6366F1, #4F46E5);
+    --z-qr-btn-bg:              rgba(99, 102, 241, 0.08);
+    --z-qr-btn-border:          rgba(99, 102, 241, 0.24);
+    --z-qr-btn-color:           #4F46E5;
+    --z-qr-btn-hover-bg:        #6366F1;
     --z-qr-btn-hover-color:     #fff;
-    --z-qr-confirm-bg:          rgba(34, 197, 94, 0.12);
-    --z-qr-confirm-border:      rgba(34, 197, 94, 0.4);
-    --z-qr-confirm-color:       #15803D;
-    --z-qr-confirm-hover-bg:    #16A34A;
-    --z-qr-view-bg:             rgba(6, 182, 212, 0.1);
-    --z-qr-view-border:         rgba(6, 182, 212, 0.35);
-    --z-qr-view-color:          #0E7490;
-    --z-qr-view-hover-bg:       #0891B2;
-    --z-card-add-btn-bg:        linear-gradient(135deg, #2E50B0, #1A3380);
-    --z-cart-sm-dec-bg:         rgba(46, 80, 176, 0.15);
-    --z-cart-sm-inc-bg:         linear-gradient(135deg, #2E50B0, #1A3380);
+    --z-qr-confirm-bg:          rgba(16, 185, 129, 0.1);
+    --z-qr-confirm-border:      rgba(16, 185, 129, 0.32);
+    --z-qr-confirm-color:       #047857;
+    --z-qr-confirm-hover-bg:    #059669;
+    --z-qr-view-bg:             rgba(99, 102, 241, 0.07);
+    --z-qr-view-border:         rgba(99, 102, 241, 0.22);
+    --z-qr-view-color:          #4F46E5;
+    --z-qr-view-hover-bg:       #6366F1;
+    --z-card-add-btn-bg:        linear-gradient(135deg, #6366F1, #4F46E5);
+    --z-cart-sm-dec-bg:         rgba(99, 102, 241, 0.1);
+    --z-cart-sm-inc-bg:         linear-gradient(135deg, #6366F1, #4F46E5);
 }
-.zampi-overlay { --z-overlay-bg: rgba(0, 0, 20, 0.55); }
+.zampi-overlay { --z-overlay-bg: rgba(15, 10, 40, 0.48); }
+
+/* Tarjetas flotantes en modern light */
+.zampi-panel .zampi-cards-row .pcard {
+    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.12), 0 1px 4px rgba(0, 0, 0, 0.05);
+}
 
 /* ── MODERN DARK (original Night Blue) ──────────────────────────────────── */
 .carta[data-theme="dark"] .zampi-panel {
@@ -152,76 +157,81 @@
 }
 .carta[data-theme="dark"] .zampi-overlay { --z-overlay-bg: rgba(1, 4, 14, 0.92); }
 
-/* ── CLASSIC LIGHT ───────────────────────────────────────────────────────── */
+/* ── CLASSIC LIGHT — Golden Bistro ───────────────────────────────────────── */
 [data-theme="classic"] .zampi-panel {
-    --z-panel-bg:               #FFFDF6;
-    --z-header-bg:              rgba(255, 252, 240, 0.97);
-    --z-header-border:          rgba(180, 140, 80, 0.25);
-    --z-header-title:           #2C1A0A;
-    --z-header-sub:             #8B6914;
-    --z-close-border:           rgba(180, 140, 80, 0.3);
-    --z-close-color:            #8B6914;
-    --z-close-hover-bg:         rgba(180, 140, 80, 0.15);
-    --z-close-hover-color:      #2C1A0A;
-    --z-bubble-bot-bg:          #F5EFD8;
-    --z-bubble-bot-border:      rgba(180, 140, 80, 0.25);
-    --z-bubble-bot-color:       #3A2510;
-    --z-bubble-user-bg:         linear-gradient(135deg, #8B6914, #6B4E0A);
-    --z-bubble-user-color:      #FFF8E8;
-    --z-avatar-bg:              linear-gradient(135deg, #6B4E0A, #A07820);
-    --z-card-bg:                #FBF5E4;
-    --z-card-border:            rgba(180, 140, 80, 0.25);
-    --z-card-img-bg:            linear-gradient(135deg, #EDE3C8, #E0D4B0);
-    --z-card-food-icon:         rgba(139, 100, 20, 0.5);
-    --z-card-name:              #2C1A0A;
-    --z-card-desc:              #8B6914;
-    --z-card-price:             #7A5200;
-    --z-system-bg:              rgba(180, 140, 80, 0.1);
-    --z-system-border:          rgba(180, 140, 80, 0.25);
-    --z-system-color:           #8B6914;
-    --z-user-time:              #A08050;
-    --z-typing-bg:              #F5EFD8;
-    --z-typing-border:          rgba(180, 140, 80, 0.25);
-    --z-typing-dot:             #A08050;
-    --z-input-area-bg:          rgba(255, 252, 240, 0.97);
-    --z-input-area-border:      rgba(180, 140, 80, 0.2);
-    --z-input-wrapper-bg:       rgba(255, 248, 230, 0.8);
-    --z-input-border:           rgba(180, 140, 80, 0.3);
-    --z-input-color:            #3A2510;
-    --z-input-placeholder:      rgba(140, 100, 40, 0.45);
-    --z-scrollbar-thumb:        rgba(180, 140, 80, 0.35);
-    --z-order-bg:               rgba(245, 239, 216, 0.9);
-    --z-order-border:           rgba(180, 140, 80, 0.25);
-    --z-order-title:            #2C1A0A;
-    --z-order-item-name:        #3A2510;
-    --z-order-item-border:      rgba(100, 70, 20, 0.12);
-    --z-order-total-border:     rgba(180, 140, 80, 0.3);
-    --z-order-total-label:      #2C1A0A;
-    --z-order-total:            #7A5200;
-    --z-cart-empty:             #8B6914;
-    --z-cart-qty:               #2C1A0A;
-    --z-closed-bg:              rgba(180, 140, 80, 0.08);
-    --z-closed-border:          rgba(180, 140, 80, 0.2);
-    --z-closed-color:           #8B6914;
-    --z-send-btn-bg:            linear-gradient(135deg, #8B6914, #6B4E0A);
-    --z-qr-btn-bg:              rgba(180, 140, 80, 0.12);
-    --z-qr-btn-border:          rgba(180, 140, 80, 0.35);
-    --z-qr-btn-color:           #6B4E0A;
-    --z-qr-btn-hover-bg:        #8B6914;
-    --z-qr-btn-hover-color:     #FFF8E8;
+    --z-panel-bg:               linear-gradient(180deg, #FFFDF5 0%, #FFFBEE 100%);
+    --z-header-bg:              rgba(255, 253, 242, 0.98);
+    --z-header-border:          rgba(180, 83, 9, 0.2);
+    --z-header-title:           #451A03;
+    --z-header-sub:             #B45309;
+    --z-close-border:           rgba(180, 83, 9, 0.2);
+    --z-close-color:            #D97706;
+    --z-close-hover-bg:         rgba(180, 83, 9, 0.1);
+    --z-close-hover-color:      #451A03;
+    --z-bubble-bot-bg:          #FFFBEB;
+    --z-bubble-bot-border:      rgba(180, 83, 9, 0.2);
+    --z-bubble-bot-color:       #451A03;
+    --z-bubble-user-bg:         linear-gradient(135deg, #D97706, #B45309);
+    --z-bubble-user-color:      #fff;
+    --z-avatar-bg:              linear-gradient(135deg, #B45309, #92400E);
+    --z-card-bg:                #FFFFFF;
+    --z-card-border:            rgba(180, 83, 9, 0.15);
+    --z-card-img-bg:            linear-gradient(135deg, #FEF3C7, #FDE68A);
+    --z-card-food-icon:         rgba(180, 83, 9, 0.45);
+    --z-card-name:              #451A03;
+    --z-card-desc:              #92400E;
+    --z-card-price:             #B45309;
+    --z-system-bg:              rgba(180, 83, 9, 0.07);
+    --z-system-border:          rgba(180, 83, 9, 0.2);
+    --z-system-color:           #B45309;
+    --z-user-time:              #F59E0B;
+    --z-typing-bg:              #FFFBEB;
+    --z-typing-border:          rgba(180, 83, 9, 0.18);
+    --z-typing-dot:             #D97706;
+    --z-input-area-bg:          rgba(255, 253, 242, 0.98);
+    --z-input-area-border:      rgba(180, 83, 9, 0.12);
+    --z-input-wrapper-bg:       #FFFBEB;
+    --z-input-border:           rgba(180, 83, 9, 0.28);
+    --z-input-color:            #451A03;
+    --z-input-placeholder:      rgba(180, 83, 9, 0.38);
+    --z-scrollbar-thumb:        rgba(180, 83, 9, 0.22);
+    --z-order-bg:               rgba(255, 251, 235, 0.96);
+    --z-order-border:           rgba(180, 83, 9, 0.15);
+    --z-order-title:            #451A03;
+    --z-order-item-name:        #78350F;
+    --z-order-item-border:      rgba(180, 83, 9, 0.08);
+    --z-order-total-border:     rgba(180, 83, 9, 0.2);
+    --z-order-total-label:      #451A03;
+    --z-order-total:            #B45309;
+    --z-cart-empty:             #D97706;
+    --z-cart-qty:               #451A03;
+    --z-closed-bg:              rgba(180, 83, 9, 0.06);
+    --z-closed-border:          rgba(180, 83, 9, 0.15);
+    --z-closed-color:           #D97706;
+    --z-send-btn-bg:            linear-gradient(135deg, #D97706, #B45309);
+    --z-qr-btn-bg:              rgba(180, 83, 9, 0.07);
+    --z-qr-btn-border:          rgba(180, 83, 9, 0.24);
+    --z-qr-btn-color:           #B45309;
+    --z-qr-btn-hover-bg:        #D97706;
+    --z-qr-btn-hover-color:     #fff;
     --z-qr-confirm-bg:          rgba(34, 197, 94, 0.1);
-    --z-qr-confirm-border:      rgba(34, 197, 94, 0.35);
+    --z-qr-confirm-border:      rgba(34, 197, 94, 0.3);
     --z-qr-confirm-color:       #15803D;
     --z-qr-confirm-hover-bg:    #16A34A;
-    --z-qr-view-bg:             rgba(6, 182, 212, 0.08);
-    --z-qr-view-border:         rgba(6, 182, 212, 0.3);
-    --z-qr-view-color:          #0E7490;
-    --z-qr-view-hover-bg:       #0891B2;
-    --z-card-add-btn-bg:        linear-gradient(135deg, #8B6914, #6B4E0A);
-    --z-cart-sm-dec-bg:         rgba(180, 140, 80, 0.2);
-    --z-cart-sm-inc-bg:         linear-gradient(135deg, #8B6914, #6B4E0A);
+    --z-qr-view-bg:             rgba(180, 83, 9, 0.07);
+    --z-qr-view-border:         rgba(180, 83, 9, 0.22);
+    --z-qr-view-color:          #92400E;
+    --z-qr-view-hover-bg:       #D97706;
+    --z-card-add-btn-bg:        linear-gradient(135deg, #D97706, #B45309);
+    --z-cart-sm-dec-bg:         rgba(180, 83, 9, 0.1);
+    --z-cart-sm-inc-bg:         linear-gradient(135deg, #D97706, #B45309);
 }
-[data-theme="classic"] .zampi-overlay { --z-overlay-bg: rgba(30, 15, 0, 0.65); }
+[data-theme="classic"] .zampi-overlay { --z-overlay-bg: rgba(69, 26, 3, 0.45); }
+
+/* Tarjetas flotantes en classic light */
+[data-theme="classic"] .zampi-panel .zampi-cards-row .pcard {
+    box-shadow: 0 4px 20px rgba(180, 83, 9, 0.1), 0 1px 4px rgba(0, 0, 0, 0.05);
+}
 
 /* ── CLASSIC DARK ────────────────────────────────────────────────────────── */
 [data-theme="classic"] .carta[data-theme="dark"] .zampi-panel {
@@ -294,76 +304,81 @@
 }
 [data-theme="classic"] .carta[data-theme="dark"] .zampi-overlay { --z-overlay-bg: rgba(10, 5, 0, 0.92); }
 
-/* ── MINIMAL LIGHT (Slate Professional) ──────────────────────────────────── */
+/* ── MINIMAL LIGHT — Clean Emerald ───────────────────────────────────────── */
 [data-theme="minimal"] .zampi-panel {
-    --z-panel-bg:               #F7F8FA;
+    --z-panel-bg:               #FFFFFF;
     --z-header-bg:              rgba(255, 255, 255, 0.99);
-    --z-header-border:          rgba(55, 65, 81, 0.1);
-    --z-header-title:           #111827;
-    --z-header-sub:             #6B7280;
-    --z-close-border:           rgba(55, 65, 81, 0.15);
-    --z-close-color:            #6B7280;
-    --z-close-hover-bg:         rgba(55, 65, 81, 0.08);
-    --z-close-hover-color:      #111827;
-    --z-bubble-bot-bg:          #EDEFF2;
-    --z-bubble-bot-border:      rgba(55, 65, 81, 0.08);
-    --z-bubble-bot-color:       #1F2937;
-    --z-bubble-user-bg:         linear-gradient(135deg, #374151, #1F2937);
-    --z-bubble-user-color:      #F9FAFB;
-    --z-avatar-bg:              linear-gradient(135deg, #374151, #4B5563);
-    --z-card-bg:                #EDEEF1;
-    --z-card-border:            rgba(55, 65, 81, 0.1);
-    --z-card-img-bg:            linear-gradient(135deg, #E5E7EB, #D1D5DB);
-    --z-card-food-icon:         rgba(55, 65, 81, 0.4);
-    --z-card-name:              #111827;
+    --z-header-border:          rgba(5, 150, 105, 0.16);
+    --z-header-title:           #064E3B;
+    --z-header-sub:             #059669;
+    --z-close-border:           rgba(5, 150, 105, 0.18);
+    --z-close-color:            #34D399;
+    --z-close-hover-bg:         rgba(5, 150, 105, 0.08);
+    --z-close-hover-color:      #064E3B;
+    --z-bubble-bot-bg:          #F0FDF4;
+    --z-bubble-bot-border:      rgba(5, 150, 105, 0.16);
+    --z-bubble-bot-color:       #064E3B;
+    --z-bubble-user-bg:         linear-gradient(135deg, #059669, #047857);
+    --z-bubble-user-color:      #fff;
+    --z-avatar-bg:              linear-gradient(135deg, #047857, #065F46);
+    --z-card-bg:                #FFFFFF;
+    --z-card-border:            rgba(5, 150, 105, 0.14);
+    --z-card-img-bg:            linear-gradient(135deg, #D1FAE5, #A7F3D0);
+    --z-card-food-icon:         rgba(5, 150, 105, 0.42);
+    --z-card-name:              #064E3B;
     --z-card-desc:              #6B7280;
-    --z-card-price:             #374151;
-    --z-system-bg:              rgba(55, 65, 81, 0.06);
-    --z-system-border:          rgba(55, 65, 81, 0.12);
-    --z-system-color:           #6B7280;
-    --z-user-time:              #9CA3AF;
-    --z-typing-bg:              #EDEFF2;
-    --z-typing-border:          rgba(55, 65, 81, 0.08);
-    --z-typing-dot:             #9CA3AF;
+    --z-card-price:             #047857;
+    --z-system-bg:              rgba(5, 150, 105, 0.07);
+    --z-system-border:          rgba(5, 150, 105, 0.18);
+    --z-system-color:           #059669;
+    --z-user-time:              #6EE7B7;
+    --z-typing-bg:              #F0FDF4;
+    --z-typing-border:          rgba(5, 150, 105, 0.14);
+    --z-typing-dot:             #34D399;
     --z-input-area-bg:          rgba(255, 255, 255, 0.99);
-    --z-input-area-border:      rgba(55, 65, 81, 0.08);
-    --z-input-wrapper-bg:       rgba(237, 239, 242, 0.8);
-    --z-input-border:           rgba(55, 65, 81, 0.14);
-    --z-input-color:            #111827;
-    --z-input-placeholder:      rgba(107, 114, 128, 0.55);
-    --z-scrollbar-thumb:        rgba(55, 65, 81, 0.2);
-    --z-order-bg:               rgba(242, 243, 246, 0.95);
-    --z-order-border:           rgba(55, 65, 81, 0.1);
-    --z-order-title:            #111827;
-    --z-order-item-name:        #1F2937;
-    --z-order-item-border:      rgba(55, 65, 81, 0.08);
-    --z-order-total-border:     rgba(55, 65, 81, 0.12);
-    --z-order-total-label:      #111827;
-    --z-order-total:            #374151;
-    --z-cart-empty:             #6B7280;
-    --z-cart-qty:               #111827;
-    --z-closed-bg:              rgba(55, 65, 81, 0.05);
-    --z-closed-border:          rgba(55, 65, 81, 0.1);
-    --z-closed-color:           #6B7280;
-    --z-send-btn-bg:            linear-gradient(135deg, #374151, #1F2937);
-    --z-qr-btn-bg:              rgba(55, 65, 81, 0.08);
-    --z-qr-btn-border:          rgba(55, 65, 81, 0.18);
-    --z-qr-btn-color:           #4B5563;
-    --z-qr-btn-hover-bg:        #374151;
-    --z-qr-btn-hover-color:     #F9FAFB;
-    --z-qr-confirm-bg:          rgba(34, 197, 94, 0.1);
-    --z-qr-confirm-border:      rgba(34, 197, 94, 0.3);
-    --z-qr-confirm-color:       #15803D;
-    --z-qr-confirm-hover-bg:    #16A34A;
+    --z-input-area-border:      rgba(5, 150, 105, 0.12);
+    --z-input-wrapper-bg:       #F0FDF4;
+    --z-input-border:           rgba(5, 150, 105, 0.25);
+    --z-input-color:            #064E3B;
+    --z-input-placeholder:      rgba(5, 150, 105, 0.4);
+    --z-scrollbar-thumb:        rgba(5, 150, 105, 0.2);
+    --z-order-bg:               rgba(240, 253, 244, 0.96);
+    --z-order-border:           rgba(5, 150, 105, 0.14);
+    --z-order-title:            #064E3B;
+    --z-order-item-name:        #065F46;
+    --z-order-item-border:      rgba(5, 150, 105, 0.08);
+    --z-order-total-border:     rgba(5, 150, 105, 0.18);
+    --z-order-total-label:      #064E3B;
+    --z-order-total:            #047857;
+    --z-cart-empty:             #34D399;
+    --z-cart-qty:               #064E3B;
+    --z-closed-bg:              rgba(5, 150, 105, 0.06);
+    --z-closed-border:          rgba(5, 150, 105, 0.14);
+    --z-closed-color:           #34D399;
+    --z-send-btn-bg:            linear-gradient(135deg, #059669, #047857);
+    --z-qr-btn-bg:              rgba(5, 150, 105, 0.07);
+    --z-qr-btn-border:          rgba(5, 150, 105, 0.22);
+    --z-qr-btn-color:           #047857;
+    --z-qr-btn-hover-bg:        #059669;
+    --z-qr-btn-hover-color:     #fff;
+    --z-qr-confirm-bg:          rgba(5, 150, 105, 0.08);
+    --z-qr-confirm-border:      rgba(5, 150, 105, 0.26);
+    --z-qr-confirm-color:       #047857;
+    --z-qr-confirm-hover-bg:    #059669;
     --z-qr-view-bg:             rgba(6, 182, 212, 0.08);
-    --z-qr-view-border:         rgba(6, 182, 212, 0.25);
+    --z-qr-view-border:         rgba(6, 182, 212, 0.24);
     --z-qr-view-color:          #0E7490;
     --z-qr-view-hover-bg:       #0891B2;
-    --z-card-add-btn-bg:        linear-gradient(135deg, #374151, #1F2937);
-    --z-cart-sm-dec-bg:         rgba(55, 65, 81, 0.12);
-    --z-cart-sm-inc-bg:         linear-gradient(135deg, #374151, #1F2937);
+    --z-card-add-btn-bg:        linear-gradient(135deg, #059669, #047857);
+    --z-cart-sm-dec-bg:         rgba(5, 150, 105, 0.1);
+    --z-cart-sm-inc-bg:         linear-gradient(135deg, #059669, #047857);
 }
-[data-theme="minimal"] .zampi-overlay { --z-overlay-bg: rgba(17, 24, 39, 0.5); }
+[data-theme="minimal"] .zampi-overlay { --z-overlay-bg: rgba(6, 78, 59, 0.42); }
+
+/* Tarjetas flotantes en minimal light */
+[data-theme="minimal"] .zampi-panel .zampi-cards-row .pcard {
+    box-shadow: 0 4px 20px rgba(5, 150, 105, 0.1), 0 1px 4px rgba(0, 0, 0, 0.04);
+}
 
 /* ── MINIMAL DARK (Charcoal Slate Professional) ───────────────────────────── */
 [data-theme="minimal"] .carta[data-theme="dark"] .zampi-panel {
