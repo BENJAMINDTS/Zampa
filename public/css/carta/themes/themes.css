@@ -37,16 +37,15 @@
 
 /* ============================================================
    FABs: drop down when there is no cart-bar, push up when there is.
-   Smooth transition tied to cart-bar presence.
+   bottom is controlled via Alpine :style binding (barShouldShow).
+   CSS :has(.cart-bar) was removed because the zampi-overlay keeps
+   a .cart-bar in the DOM via x-show even when the bar is hidden,
+   so :has() never resolved to "no cart-bar".
    ============================================================ */
 .fab--chat, .fab--bill, .fab-cluster {
   transition: bottom 260ms var(--ease-smooth);
 }
-.carta:not(:has(.cart-bar)) .fab--chat,
-.carta:not(:has(.cart-bar)) .fab--bill,
-.carta:not(:has(.cart-bar)) .fab-cluster {
-  bottom: 16px;
-}
+/* .fab--waiter already declares transition in bill.css (bottom + filter) — don't override here */
 
 
 /* ============================================================
