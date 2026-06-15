@@ -387,6 +387,7 @@ export function registerChatWidget() {
             const item = Alpine.store('cart').items.find(i => i.productId === id);
             Alpine.store('cart').items = Alpine.store('cart').items.filter(i => i.productId !== id);
             if (item) {
+                Alpine.store('cart')._showDeletePill(item.name);
                 this.showCartNotif(item.name);
                 const qrs = (this.menuData?.categories ?? []).map(c => this.getCategoryEmoji(c.name) + ' ' + c.name);
                 this.pushMsg({ type: 'bot',
@@ -524,6 +525,7 @@ export function registerChatWidget() {
                 const words = norm(item.name).split(/\s+/).filter(w => w.length > 3);
                 if (words.some(w => nl.includes(w))) {
                     Alpine.store('cart').items = Alpine.store('cart').items.filter(i => i.productId !== item.id);
+                    Alpine.store('cart')._showDeletePill(item.name);
                     const qrs = (this.menuData?.categories ?? []).map(c => this.getCategoryEmoji(c.name) + ' ' + c.name);
                     this.pushMsg({ type: 'bot',
                         text: '🗑️ ' + item.name + ' eliminado del pedido. ¿Seguimos? 😊',
