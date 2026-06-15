@@ -2272,7 +2272,7 @@
 .fab--waiter {
   position: fixed;
   right: 16px;
-  bottom: 92px;
+  bottom: 160px;
   z-index: 30;
   width: auto;
   height: 44px;
@@ -2307,8 +2307,8 @@
   box-shadow: 0 8px 20px rgba(34, 197, 94, 0.4);
   pointer-events: none;
 }
-.carta[data-bp="tablet"]  .fab--waiter { right: 24px; bottom: 92px; }
-.carta[data-bp="desktop"] .fab--waiter { right: 32px; bottom: 92px; }
+.carta[data-bp="tablet"]  .fab--waiter { right: 24px; bottom: 160px; }
+.carta[data-bp="desktop"] .fab--waiter { right: 32px; bottom: 160px; }
 .carta[data-bp="mobile"]  .fab--waiter .fab__label {
   max-width: 0;
   opacity: 0;
@@ -2481,7 +2481,7 @@
 
 /* ── Mobile: raise bell button above fab-cluster ────────────── */
 .carta[data-bp="mobile"] .fab--waiter {
-  bottom: 148px;
+  bottom: 160px;
 }
 
 /* Dark mode scrim */
