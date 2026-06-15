@@ -58,7 +58,11 @@ class ChatController extends Controller
     public function send(Request $request, Conversation $conversation): JsonResponse
     {
         $validated = $request->validate([
-            'message' => 'required|string|max:500',
+            'message'                   => 'required|string|max:500',
+            'cart_items'                => 'sometimes|array|max:50',
+            'cart_items.*.product_id'   => 'sometimes|integer|min:1',
+            'cart_items.*.name'         => 'sometimes|string|max:255',
+            'cart_items.*.qty'          => 'sometimes|integer|min:1|max:99',
         ]);
 
         if ($conversation->status === 'closed') {
@@ -69,14 +73,19 @@ class ChatController extends Controller
             ], 422);
         }
 
-        $result = $this->chatService->handleMessage($conversation, $validated['message']);
+        $result = $this->chatService->handleMessage(
+            $conversation,
+            $validated['message'],
+            $validated['cart_items'] ?? []
+        );
 
         return response()->json([
             'success' => ! $result['error'],
             'data'    => [
-                'reply'  => $result['message'],
-                'cards'  => $result['cards'] ?? [],
-                'closed' => $result['closed'],
+                'reply'   => $result['message'],
+                'cards'   => $result['cards'] ?? [],
+                'actions' => $result['actions'] ?? [],
+                'closed'  => $result['closed'],
             ],
             'message' => $result['error'] ? 'Error en el asistente.' : 'OK',
         ]);
