@@ -2,13 +2,18 @@
 
 namespace App\Services;
 
+use App\Models\Category;
 use App\Models\Conversation;
 use App\Models\Product;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 
 /**
  * Lógica principal del chatbot IA.
  *
  * Responsable de:
+ * - Cargar exactamente los mismos productos que muestra la carta digital (caché compartida)
+ * - Buscar productos relevantes en la BD según el mensaje del usuario
  * - Construir el system prompt con el menú real del restaurante
  * - Recuperar el historial de mensajes como contexto para la IA
  * - Controlar el límite de tokens por conversación
@@ -21,6 +26,15 @@ class ChatService
 {
     private const MAX_TOKENS = 6000;
 
+    private const STOP_WORDS = [
+        'que', 'con', 'del', 'los', 'las', 'una', 'uno', 'unos', 'unas',
+        'algo', 'algún', 'alguna', 'para', 'por', 'favor', 'quiero', 'quisiera',
+        'dame', 'ponme', 'tenéis', 'tienen', 'hay', 'tienes', 'tiene', 'tener',
+        'pedir', 'pido', 'pedimos', 'traer', 'traeme', 'trae', 'tráeme',
+        'puede', 'puedo', 'podría', 'gustaría', 'sería', 'comer', 'tomar',
+        'ver', 'mostrar', 'recomendar', 'recomienda', 'ayuda', 'hola', 'buenas',
+    ];
+
     /**
      * @param  OpenAIService  $openAI
      */
@@ -29,11 +43,13 @@ class ChatService
     /**
      * Procesa un mensaje del usuario y devuelve la respuesta del asistente.
      *
-     * Persiste ambos mensajes en la BD y actualiza el contador de tokens.
+     * Carga las categorías de la carta digital (caché compartida con MenuController)
+     * antes de llamar a la IA para garantizar que el contexto y las tarjetas son
+     * exactamente los mismos productos que ve el cliente en la carta.
      *
      * @param  Conversation  $conversation
      * @param  string        $userMessage
-     * @return array{error: bool, message: string}
+     * @return array{error: bool, message: string, cards: array, closed: bool}
      */
     public function handleMessage(Conversation $conversation, string $userMessage): array
     {
@@ -44,16 +60,23 @@ class ChatService
                 'error'   => false,
                 'message' => 'Hemos llegado al límite de esta conversación. '
                            . 'Confirma tu pedido o inicia una nueva conversación.',
+                'cards'   => [],
                 'closed'  => true,
             ];
         }
+
+        // Carga el menú exactamente igual que la carta digital (misma caché)
+        $categories = $this->getMenuCategories($conversation->table->user_id);
+
+        // Busca productos relevantes del mensaje — solo del pool de la carta
+        $cards = $this->searchProducts($userMessage, $categories);
 
         $conversation->messages()->create([
             'role'    => 'user',
             'content' => $userMessage,
         ]);
 
-        $messages = $this->buildContext($conversation);
+        $messages = $this->buildContext($conversation, $categories, $cards);
 
         try {
             $response = $this->openAI->sendMessage($messages);
@@ -62,16 +85,17 @@ class ChatService
                 'error'   => true,
                 'message' => 'El asistente no está disponible en este momento. '
                            . 'Puedes usar el menú tradicional.',
+                'cards'   => [],
                 'closed'  => false,
             ];
         }
 
-        $assistantReply = $response['choices'][0]['message']['content'] ?? '';
-        $tokensUsed     = $response['usage']['total_tokens'] ?? 0;
+        $reply      = $response['choices'][0]['message']['content'] ?? '';
+        $tokensUsed = $response['usage']['total_tokens'] ?? 0;
 
         $conversation->messages()->create([
             'role'        => 'assistant',
-            'content'     => $assistantReply,
+            'content'     => $reply,
             'tokens_used' => $tokensUsed,
         ]);
 
@@ -79,29 +103,137 @@ class ChatService
 
         return [
             'error'   => false,
-            'message' => $assistantReply,
-            'cards'   => $this->extractMentionedProducts($conversation, $assistantReply),
+            'message' => $reply,
+            'cards'   => $cards,
             'closed'  => false,
         ];
     }
 
     /**
-     * Detecta qué productos del menú menciona el texto de la IA y los devuelve
-     * como tarjetas estructuradas para el frontend.
+     * Devuelve las categorías con productos activos y disponibles del restaurante,
+     * usando la misma clave de caché que MenuController para garantizar coherencia.
+     * Solo incluye productos que pertenecen a una categoría visible en la carta.
      *
-     * @param  Conversation  $conversation
-     * @param  string        $text
+     * @param  int  $userId
+     * @return Collection
+     */
+    private function getMenuCategories(int $userId): Collection
+    {
+        return Cache::remember("menu:{$userId}", 300, function () use ($userId) {
+            return Category::where('user_id', $userId)
+                ->with(['products' => function ($q) {
+                    $q->where('is_active', true)
+                      ->where('is_available', true)
+                      ->with('ingredients')
+                      ->orderBy('sort_order')
+                      ->orderBy('name');
+                }])
+                ->orderBy('name')
+                ->get()
+                ->filter(fn($c) => $c->products->isNotEmpty());
+        });
+    }
+
+    /**
+     * Busca en el pool de productos de la carta los que coincidan con el mensaje.
+     * Opera exclusivamente sobre la misma colección que muestra la carta digital
+     * para que nunca aparezcan tarjetas de platos no visibles al cliente.
+     *
+     * @param  string      $query
+     * @param  Collection  $categories  Categorías ya cargadas de la carta
      * @return array
      */
-    private function extractMentionedProducts(Conversation $conversation, string $text): array
+    private function searchProducts(string $query, Collection $categories): array
     {
-        $lower = mb_strtolower($text);
+        $lower = mb_strtolower($query);
 
-        return Product::where('user_id', $conversation->table->user->id)
-            ->where('is_active', true)
-            ->with('ingredients')
-            ->get()
-            ->filter(fn (Product $p) => str_contains($lower, mb_strtolower($p->name)))
+        $isAllergyDeclaration = (bool) preg_match(
+            '/\b(alergi[ao]|intoleranci[ao]|no\s+puedo\s+(comer|tomar)|no\s+como|no\s+tomo|soy\s+cel[ií]ac|me\s+sient[ae]\s+mal)\b/u',
+            $lower
+        );
+
+        $terms = array_values(array_filter(
+            preg_split('/[\s,.\-]+/u', $lower),
+            fn($t) => mb_strlen($t) >= 3 && !in_array($t, self::STOP_WORDS, true)
+        ));
+
+        if (empty($terms)) {
+            return [];
+        }
+
+        // Pool de productos exactamente igual al de la carta digital
+        $allProducts = $categories->flatMap(fn($c) => $c->products->map(function (Product $p) use ($c): Product {
+            $p->_categoryName = $c->name;
+            return $p;
+        }));
+
+        if ($isAllergyDeclaration) {
+            // Productos seguros: ningún ingrediente coincide con el alérgeno declarado
+            $safe = $allProducts->filter(function (Product $p) use ($terms): bool {
+                foreach ($p->ingredients as $ingredient) {
+                    foreach ($terms as $term) {
+                        if (str_contains(mb_strtolower($ingredient->name), $term)) {
+                            return false;
+                        }
+                        foreach ($ingredient->allergen_types ?? [] as $slug) {
+                            if (str_contains(mb_strtolower((string) $slug), $term)) {
+                                return false;
+                            }
+                        }
+                    }
+                }
+                return true;
+            })->take(5);
+
+            return $this->formatProducts($safe);
+        }
+
+        // Búsqueda positiva con lógica AND: el plato debe contener TODOS los términos.
+        // Fallback OR si ningún plato cumple la combinación completa.
+        $filterFn = function (Product $p, array $requiredTerms): bool {
+            foreach ($requiredTerms as $term) {
+                $found = false;
+                if (str_contains(mb_strtolower($p->name), $term)) {
+                    $found = true;
+                } elseif ($p->description && str_contains(mb_strtolower($p->description), $term)) {
+                    $found = true;
+                } else {
+                    foreach ($p->ingredients as $ingredient) {
+                        if (str_contains(mb_strtolower($ingredient->name), $term)) {
+                            $found = true;
+                            break;
+                        }
+                        foreach ($ingredient->allergen_types ?? [] as $slug) {
+                            if (str_contains(mb_strtolower((string) $slug), $term)) {
+                                $found = true;
+                                break 2;
+                            }
+                        }
+                    }
+                }
+                if (!$found) {
+                    return false;
+                }
+            }
+            return true;
+        };
+
+        $matched = $allProducts->filter(fn($p) => $filterFn($p, $terms))->take(5);
+
+        if ($matched->isEmpty() && count($terms) > 1) {
+            $matched = $allProducts->filter(fn($p) => $filterFn($p, [reset($terms)]))->take(5);
+        }
+
+        return $this->formatProducts($matched);
+    }
+
+    /**
+     * @param  Collection  $products
+     * @return array
+     */
+    private function formatProducts(Collection $products): array
+    {
+        return $products
             ->map(fn (Product $p) => [
                 'id'          => $p->id,
                 'name'        => $p->name,
@@ -120,86 +252,88 @@ class ChatService
     /**
      * Construye el array de mensajes que se envía a la API.
      *
-     * Incluye un system prompt dinámico con el menú real del restaurante,
-     * la receta (ingredientes + alérgenos) de cada plato, y el historial
-     * de la conversación. La IA puede LEER recetas pero nunca modificarlas.
+     * El menú que recibe la IA es exactamente el mismo que muestra la carta digital
+     * (misma caché). Si el backend encontró productos relevantes, los destaca como
+     * contexto para que la IA genere una respuesta coherente con las tarjetas.
      *
      * @param  Conversation  $conversation
+     * @param  Collection    $categories       Categorías ya cargadas de la carta
+     * @param  array         $relevantProducts Productos encontrados por el backend
      * @return array
      */
-    private function buildContext(Conversation $conversation): array
+    private function buildContext(Conversation $conversation, Collection $categories, array $relevantProducts = []): array
     {
         $user           = $conversation->table->user;
         $restaurantName = $user->business_name ?: $user->name;
+        $categoryNames  = $categories->pluck('name')->join(', ');
 
-        $menuLines = Product::where('user_id', $user->id)
-            ->where('is_active', true)
-            ->with('ingredients')
-            ->get()
-            ->map(function (Product $p): string {
-                $ingredients = $p->ingredients->map(fn($i) => $i->name)->join(', ');
-                $allergens   = $p->ingredients
-                    ->where('is_allergen', true)
-                    ->map(fn($i) => $i->name)
-                    ->join(', ');
+        $menuLines = $categories->flatMap(fn($c) => $c->products->map(function (Product $p) use ($c): string {
+            $ingredients = $p->ingredients->map(fn($i) => $i->name)->join(', ');
+            $allergens   = $p->ingredients
+                ->where('is_allergen', true)
+                ->map(fn($i) => $i->name)
+                ->join(', ');
 
-                $line = "- {$p->name} (" . number_format($p->price, 2) . '€)';
+            $line = "[{$c->name}] {$p->name} (" . number_format($p->price, 2) . '€)';
 
-                if ($ingredients !== '') {
-                    $line .= ": {$ingredients}";
-                }
-                if ($allergens !== '') {
-                    $line .= " [ALÉRGENOS: {$allergens}]";
-                }
+            if ($ingredients !== '') {
+                $line .= ": {$ingredients}";
+            }
+            if ($allergens !== '') {
+                $line .= " [ALÉRGENOS: {$allergens}]";
+            }
 
-                return $line;
-            })
-            ->join("\n");
+            return $line;
+        }))->join("\n");
+
+        $relevantHint = '';
+        if (!empty($relevantProducts)) {
+            $count        = count($relevantProducts);
+            $relevantHint = "\n\nATENCIÓN — EL SISTEMA YA MUESTRA {$count} TARJETA(S) VISUAL(ES) AL CLIENTE.\n"
+                          . "NORMA ABSOLUTA: NO menciones nombres de platos, precios ni ingredientes en tu respuesta.\n"
+                          . "El cliente ya los ve en las tarjetas. Tu respuesta debe ser:\n"
+                          . "1. Una frase de introducción cálida (ej: '¡Aquí tienes las opciones disponibles! 😊')\n"
+                          . "2. Opcionalmente una frase de cierre breve (ej: '¿Te animas con alguno?')\n"
+                          . "Total: máximo 2 frases. Sin nombres de platos. Sin precios. Sin listas.";
+        }
 
         $systemPrompt = [
             'role'    => 'system',
             'content' => "Eres Zampi, el asistente virtual del restaurante \"{$restaurantName}\". "
                        . "Tu tono es siempre cálido, amable y cercano, como si fueras un camarero de confianza. "
                        . "Respondes en español de España, de forma concisa y natural.\n\n"
-                       . "MENÚ DISPONIBLE (nombre, precio, ingredientes y alérgenos):\n"
-                       . $menuLines . "\n\n"
-                       . "NORMAS GENERALES:\n"
-                       . "- NUNCA sugieras modificar recetas, precios ni ingredientes.\n"
-                       . "- No inventes platos, precios ni ingredientes que no aparezcan en la lista.\n"
-                       . "- Si tienes dudas sobre un caso muy específico, invita amablemente al cliente a consultarlo con el personal.\n\n"
+                       . "CATEGORÍAS DISPONIBLES EN LA CARTA: {$categoryNames}\n\n"
+                       . "PLATOS DE LA CARTA (formato: [Categoría] Nombre (precio): ingredientes [ALÉRGENOS: ...]):\n"
+                       . $menuLines
+                       . $relevantHint . "\n\n"
+                       . "NORMAS GENERALES (CRÍTICO):\n"
+                       . "- El menú de arriba es la ÚNICA fuente de verdad. Solo existen los platos listados.\n"
+                       . "- NUNCA menciones, sugieras ni inventes platos, precios ni ingredientes que no aparezcan en la lista.\n"
+                       . "- NUNCA sugieras modificar recetas ni ingredientes de los platos.\n"
+                       . "- Si el cliente pide algo que no existe, díselo y recomiéndale alternativas reales del menú.\n\n"
+                       . "NORMA CRÍTICA — LISTADO DE CARTA:\n"
+                       . "- NUNCA copies ni listes el menú completo en tu respuesta de texto, aunque el cliente te lo pida explícitamente.\n"
+                       . "- Si el cliente pide ver la carta o el menú, dile con un mensaje corto que puede explorar\n"
+                       . "  las categorías ({$categoryNames}) usando los botones del chat. No listes los platos.\n\n"
                        . "NORMAS DE FORMATO:\n"
-                       . "- Usa emojis en TODOS tus mensajes para transmitir cercanía y buen rollo: en recomendaciones, dudas, sugerencias, confirmaciones y avisos. Ejemplos: 😊 🍽️ 🎉 👌 😋 🔥 ✨ 🙌 🤔 ⚠️ 💬.\n"
-                       . "- Coloca los emojis al inicio o al final de frases clave, nunca en medio de una palabra.\n"
-                       . "- Cuando recomiendes o menciones varios platos, usa este formato exacto:\n"
-                       . "  1. Una frase breve de introducción cálida con emoji.\n"
-                       . "  2. Cada plato en su propia línea, precedido de un guion: «— Nombre del plato: breve descripción o motivo por el que lo recomiendas (máx. 10 palabras)».\n"
-                       . "  3. Una frase corta de cierre con emoji invitando a preguntar o pedir.\n"
-                       . "- Si solo mencionas un plato, escríbelo en texto natural sin guion.\n"
-                       . "- NO incluyas precios en el texto: el sistema los mostrará en tarjetas visuales automáticamente.\n"
-                       . "- NO uses asteriscos, markdown ni formato HTML.\n\n"
-                       . "VARIEDAD EN EL LENGUAJE (muy importante):\n"
-                       . "- NUNCA repitas la misma frase de apertura o cierre en dos mensajes seguidos. Varía siempre el vocabulario.\n"
-                       . "- Frases de apertura prohibidas por ser demasiado repetitivas: «¡Genial elección!», «¡Claro que sí!», «¡Por supuesto!», «¡Estupendo!». Sustitúyelas por expresiones más naturales y variadas.\n"
-                       . "- Frases de cierre prohibidas por ser repetitivas: «¿Te gustaría que te recomiende un plato en particular?», «¿Puedo ayudarte con algo más?». Varía con alternativas como: «¿Lo añadimos?», «¿Qué te apetece?», «¿Te lo pongo?», «Dime si quieres algo más 😊».\n"
-                       . "- Adapta el tono al contexto: si el cliente lleva varios mensajes, sé más directo y menos ceremonioso; si es el primer mensaje, sé más acogedor.\n"
-                       . "- Usa sinónimos y giros distintos en cada respuesta para sonar como una persona real, no como un bot con plantilla fija.\n\n"
-                       . "NORMAS SOBRE ALÉRGENOS (muy importante):\n"
-                       . "- DISTINCIÓN CLAVE: detecta si el cliente PIDE un ingrediente (quiere comerlo) o si DECLARA una alergia/intolerancia (quiere evitarlo). Son situaciones opuestas.\n"
-                       . "- Si el cliente PIDE algo que contiene un alérgeno (ej. «quiero algo con pescado», «ponme gambas»): recomiéndale los platos que lo llevan con entusiasmo, e informa de forma breve y natural que ese ingrediente está clasificado como alérgeno, por si lo necesita saber: por ejemplo «Te cuento que el pescado es un alérgeno declarado, por si alguien en la mesa lo necesita saber».\n"
-                       . "- Si el cliente DECLARA una alergia o intolerancia (ej. «soy alérgico al pescado», «no puedo tomar gluten»): responde con empatía y tranquilidad, indica qué platos NO contienen ese alérgeno y sugiere siempre alternativas seguras.\n"
-                       . "- Nunca evites ni descartes un plato que el cliente ha pedido expresamente, aunque contenga un alérgeno.\n"
-                       . "- Nunca minimices la importancia de una alergia alimentaria cuando el cliente la declara.\n"
-                       . "- Si tienes dudas sobre si el cliente pide o evita el ingrediente, pregúntale de forma natural antes de actuar.\n"
-                       . "- Usa frases como: «¡Claro, tenemos varias opciones con pescado!», «Te indico cuáles llevan ese ingrediente», «Por si alguien en la mesa lo necesita saber, el pescado es un alérgeno».\n\n"
-                       . "BÚSQUEDA ESTRICTA DE PLATOS Y RECOMENDACIÓN DE SIMILARES (crítico):\n"
-                       . "- Cuando el cliente pida un plato concreto, sigue este orden de búsqueda SIEMPRE:\n"
-                       . "  1. Busca coincidencia exacta o parcial por nombre en el menú.\n"
-                       . "  2. Si no hay coincidencia por nombre, busca platos que compartan ingredientes clave con lo pedido.\n"
-                       . "  3. Si tampoco hay coincidencia por ingredientes, busca platos de la misma categoría o tipo de comida (ej. si pide pizza y no hay, busca otras masas o platos italianos).\n"
-                       . "  4. Si tras los tres pasos anteriores no encuentras nada relacionado, busca platos populares o bien valorados del menú que puedan satisfacer el mismo tipo de apetito (salado, contundente, ligero, dulce, etc.).\n"
-                       . "- NUNCA respondas simplemente que el plato no está disponible sin ofrecer alternativas. Siempre recomienda al menos 2 platos similares del menú con una explicación breve de por qué se parecen o podrían gustarle.\n"
-                       . "- Si el plato pedido no existe en el menú, díselo con naturalidad y de inmediato preséntale las alternativas más cercanas: ej. «No tenemos [plato], pero si te gusta [característica], te van a encantar estos 😋».\n"
-                       . "- Usa el menú completo que tienes arriba como única fuente de verdad. No inventes platos ni ingredientes que no aparezcan en él.",
+                       . "- Usa emojis para transmitir cercanía: 😊 🍽️ 🎉 👌 😋 🔥 ✨ 🙌 🤔 ⚠️ 💬.\n"
+                       . "- CUANDO EL SISTEMA MUESTRA TARJETAS: escribe SOLO 1-2 frases (introducción + cierre). "
+                       . "PROHIBIDO mencionar nombres de platos, precios o ingredientes en el texto. Las tarjetas ya lo muestran.\n"
+                       . "- CUANDO NO HAY TARJETAS: puedes nombrar 1-2 platos del menú en el texto, nunca la lista completa.\n"
+                       . "- NO uses asteriscos, guiones de lista, markdown ni formato HTML.\n"
+                       . "- NO incluyas marcadores, códigos ni IDs de ningún tipo en tu respuesta.\n\n"
+                       . "VARIEDAD EN EL LENGUAJE:\n"
+                       . "- NUNCA repitas la misma frase de apertura o cierre en mensajes seguidos.\n"
+                       . "- Evita frases genéricas como «¡Genial elección!», «¡Claro que sí!», «¡Por supuesto!».\n"
+                       . "- Varía el vocabulario y el tono para sonar como una persona real.\n\n"
+                       . "NORMAS SOBRE ALÉRGENOS:\n"
+                       . "- Distingue si el cliente PIDE un ingrediente (quiere comerlo) o DECLARA una alergia (quiere evitarlo).\n"
+                       . "- Si pide algo con un alérgeno: recomiéndale los platos que lo llevan con entusiasmo.\n"
+                       . "- Si declara una alergia: responde con empatía e indica qué platos NO contienen ese alérgeno.\n"
+                       . "- Nunca minimices la importancia de una alergia declarada.\n\n"
+                       . "BÚSQUEDA DE ALTERNATIVAS:\n"
+                       . "- Si lo pedido no existe, ofrece siempre al menos 2 alternativas del menú con justificación breve.\n"
+                       . "- Usa el menú como única fuente. No inventes.",
         ];
 
         $history = $conversation->messages()
