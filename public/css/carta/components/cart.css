@@ -46,7 +46,6 @@
 .fab--chat {
   right: 16px; bottom: 92px;
   background: linear-gradient(135deg, #2E50B0, #1A3380);
-  overflow: hidden;
 }
 .fab--chat img { width: 48px; height: 48px; }
 .fab--bill {
