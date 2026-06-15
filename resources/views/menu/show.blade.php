@@ -631,10 +631,13 @@
                                                                 {{-- Badges alérgenos --}}
                                                                 <div class="pcard__badges">
                                                                     <template x-for="al in (card.allergens || []).filter(a => a.svgId).slice(0, 5)" :key="al.name">
-                                                                        <img class="allergen-img"
-                                                                             :src="'/images/allergens/' + al.svgId + '.svg'"
-                                                                             :alt="al.label"
-                                                                             width="22" height="22">
+                                                                        <svg class="allergen-img"
+                                                                             :data-al="al.svgId"
+                                                                             :aria-label="al.label"
+                                                                             viewBox="0 0 100 100"
+                                                                             width="22" height="22"
+                                                                             role="img">
+                                                                        </svg>
                                                                     </template>
                                                                 </div>
                                                                 {{-- Nombre --}}
@@ -1077,10 +1080,13 @@
                                     :class="activeAllergens.includes('{{ $slug }}') ? 'allergen-chip--active' : ''"
                                     @click="toggleAllergen('{{ $slug }}')"
                                     :aria-pressed="activeAllergens.includes('{{ $slug }}').toString()">
-                                <img class="allergen-img"
-                                     src="{{ asset('images/allergens/' . $slug . '.svg') }}"
+                                <svg class="allergen-img"
+                                     data-al="{{ $slug }}"
+                                     viewBox="0 0 100 100"
                                      width="22" height="22"
-                                     alt="{{ $name }}">
+                                     role="img"
+                                     aria-label="{{ $name }}">
+                                </svg>
                                 <span>Sin {{ $allergenShortLabels[$slug] ?? $name }}</span>
                             </button>
                             @endforeach
@@ -1196,10 +1202,13 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
                                 </svg>
                             </span>
-                            <img class="allergen-img"
-                                 src="{{ asset('images/allergens/' . $slug . '.svg') }}"
+                            <svg class="allergen-img"
+                                 data-al="{{ $slug }}"
+                                 viewBox="0 0 100 100"
                                  width="22" height="22"
-                                 alt="{{ $name }}">
+                                 role="img"
+                                 aria-label="{{ $name }}">
+                            </svg>
                             <span style="font-size:13px">Sin {{ $allergenShortLabels[$slug] ?? $name }}</span>
                         </div>
                         @endforeach
@@ -1301,10 +1310,13 @@
                                 {{-- Badges alérgenos — pictogramas oficiales DS --}}
                                 <div class="pcard__badges">
                                     @foreach($allergenSlugs->take(5) as $slug)
-                                    <img class="allergen-img"
-                                         src="{{ asset('images/allergens/' . $slug . '.svg') }}"
+                                    <svg class="allergen-img"
+                                         data-al="{{ $slug }}"
+                                         viewBox="0 0 100 100"
                                          width="22" height="22"
-                                         alt="Contiene {{ \App\Models\Ingredient::ALLERGEN_TYPES[$slug] ?? $slug }}">
+                                         role="img"
+                                         aria-label="Contiene {{ \App\Models\Ingredient::ALLERGEN_TYPES[$slug] ?? $slug }}">
+                                    </svg>
                                     @endforeach
                                 </div>
 
@@ -3826,10 +3838,13 @@
                                 <div class="pdetail__allergens">
                                     <template x-for="al in (selectedProduct?.allergenTypes || [])" :key="al">
                                         <span class="pdetail__allergen">
-                                            <img class="allergen-img"
-                                                 :src="'/images/allergens/' + al + '.svg'"
+                                            <svg class="allergen-img"
+                                                 :data-al="al"
+                                                 viewBox="0 0 100 100"
                                                  width="22" height="22"
-                                                 :alt="'Contiene ' + (window.ZAMPA_ALLERGEN_LABELS?.[al] || al)">
+                                                 role="img"
+                                                 :aria-label="'Contiene ' + (window.ZAMPA_ALLERGEN_LABELS?.[al] || al)">
+                                            </svg>
                                             <span x-text="window.ZAMPA_ALLERGEN_LABELS?.[al] || al"></span>
                                         </span>
                                     </template>
