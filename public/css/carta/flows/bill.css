@@ -2257,8 +2257,8 @@
 
 /* ── Llamar camarero — botón campana + modal ────────────────── */
 .fab--waiter {
-  position: fixed;
-  right: 16px;
+  position: absolute;
+  right: 82px;
   bottom: 92px;
   z-index: 30;
   width: auto;
@@ -2278,7 +2278,7 @@
   letter-spacing: 0.01em;
   cursor: pointer;
   animation: waiter-btn-in 320ms var(--ease-smooth);
-  transition: filter 0.2s;
+  transition: bottom 260ms var(--ease-smooth), filter 0.2s, padding .3s var(--ease-smooth);
 }
 .fab--waiter:hover { filter: brightness(1.08); }
 [data-theme="dark"] .fab--waiter {
@@ -2294,13 +2294,36 @@
   box-shadow: 0 8px 20px rgba(34, 197, 94, 0.4);
   pointer-events: none;
 }
-.carta[data-bp="tablet"]  .fab--waiter { right: 24px; bottom: 92px; }
-.carta[data-bp="desktop"] .fab--waiter { right: 32px; bottom: 92px; }
-.carta[data-bp="mobile"]  .fab--waiter .fab__label {
+.carta[data-bp="tablet"]  .fab--waiter { right: 82px; }
+.carta[data-bp="desktop"] .fab--waiter { right: 82px; }
+.carta[data-bp="mobile"] .fab--waiter {
+  width: auto;
+  min-width: 44px;
+  height: 44px;
+  padding: 0 13px;
+  gap: 0;
+}
+.carta[data-bp="mobile"] .fab--waiter .fab__label {
   max-width: 0;
+  margin-left: 0;
   opacity: 0;
   overflow: hidden;
-  transition: max-width .3s var(--ease-smooth), opacity .3s;
+  white-space: nowrap;
+  transition: max-width .3s var(--ease-smooth),
+              opacity .2s ease,
+              margin-left .3s var(--ease-smooth);
+}
+.carta[data-bp="mobile"] .fab--waiter:hover .fab__label,
+.carta[data-bp="mobile"] .fab--waiter:focus-visible .fab__label,
+.carta[data-bp="mobile"] .fab--waiter:active .fab__label {
+  max-width: 150px;
+  margin-left: 8px;
+  opacity: 1;
+}
+.carta[data-bp="mobile"] .fab--waiter:hover,
+.carta[data-bp="mobile"] .fab--waiter:focus-visible,
+.carta[data-bp="mobile"] .fab--waiter:active {
+  padding-right: 16px;
 }
 
 /* Scrim waiter */
