@@ -51,7 +51,7 @@ class ChatService
      * @param  string        $userMessage
      * @return array{error: bool, message: string, cards: array, closed: bool}
      */
-    public function handleMessage(Conversation $conversation, string $userMessage): array
+    public function handleMessage(Conversation $conversation, string $userMessage, array $cartItems = []): array
     {
         if ($conversation->tokens_used >= self::MAX_TOKENS) {
             $conversation->update(['status' => 'closed']);
@@ -61,6 +61,7 @@ class ChatService
                 'message' => 'Hemos llegado al límite de esta conversación. '
                            . 'Confirma tu pedido o inicia una nueva conversación.',
                 'cards'   => [],
+                'actions' => [],
                 'closed'  => true,
             ];
         }
@@ -76,7 +77,7 @@ class ChatService
             'content' => $userMessage,
         ]);
 
-        $messages = $this->buildContext($conversation, $categories, $cards);
+        $messages = $this->buildContext($conversation, $categories, $cards, $cartItems);
 
         try {
             $response = $this->openAI->sendMessage($messages);
@@ -86,12 +87,35 @@ class ChatService
                 'message' => 'El asistente no está disponible en este momento. '
                            . 'Puedes usar el menú tradicional.',
                 'cards'   => [],
+                'actions' => [],
                 'closed'  => false,
             ];
         }
 
-        $reply      = $response['choices'][0]['message']['content'] ?? '';
+        $rawReply   = $response['choices'][0]['message']['content'] ?? '';
         $tokensUsed = $response['usage']['total_tokens'] ?? 0;
+
+        // Extraer y limpiar marcas de acción ([ADD:id:qty] / [REMOVE:id])
+        $actions    = [];
+        $cleanReply = preg_replace_callback(
+            '/\[ADD:(\d+):(\d+)\]/i',
+            function ($m) use (&$actions): string {
+                $actions[] = ['type' => 'add', 'product_id' => (int) $m[1], 'qty' => (int) $m[2]];
+                return '';
+            },
+            $rawReply
+        );
+        $cleanReply = preg_replace_callback(
+            '/\[REMOVE:(\d+)\]/i',
+            function ($m) use (&$actions): string {
+                $actions[] = ['type' => 'remove', 'product_id' => (int) $m[1]];
+                return '';
+            },
+            $cleanReply ?? $rawReply
+        );
+        $validIds = $categories->flatMap(fn($c) => $c->products->pluck('id'))->toArray();
+        $actions  = array_values(array_filter($actions, fn($a) => in_array($a['product_id'], $validIds, true)));
+        $reply    = trim($cleanReply ?? $rawReply);
 
         $conversation->messages()->create([
             'role'        => 'assistant',
@@ -105,6 +129,7 @@ class ChatService
             'error'   => false,
             'message' => $reply,
             'cards'   => $cards,
+            'actions' => $actions,
             'closed'  => false,
         ];
     }
@@ -148,7 +173,7 @@ class ChatService
         $lower = mb_strtolower($query);
 
         $isAllergyDeclaration = (bool) preg_match(
-            '/\b(alergi[ao]|intoleranci[ao]|no\s+puedo\s+(comer|tomar)|no\s+como|no\s+tomo|soy\s+cel[ií]ac|me\s+sient[ae]\s+mal)\b/u',
+            '/\b(sin|no\s+quiero\s+\w|no\s+tiene?|no\s+tengan?|no\s+lleve?|no\s+contenga?|no\s+tenga?|que\s+no\s+(tenga?|lleve?|contenga?|tiene?)|alergi[ao]|intoleranci[ao]|no\s+puedo\s+(comer|tomar)|no\s+como|no\s+tomo|soy\s+cel[ií]ac|me\s+sient[ae]\s+mal)\b/u',
             $lower
         );
 
@@ -168,15 +193,21 @@ class ChatService
         }));
 
         if ($isAllergyDeclaration) {
-            // Productos seguros: ningún ingrediente coincide con el alérgeno declarado
-            $safe = $allProducts->filter(function (Product $p) use ($terms): bool {
+            // Expande sinónimos para mejorar la detección (ej: "lácteos" → leche, queso, nata…)
+            $avoidTerms = $this->expandAllergenTerms($terms);
+
+            $safe = $allProducts->filter(function (Product $p) use ($avoidTerms): bool {
                 foreach ($p->ingredients as $ingredient) {
-                    foreach ($terms as $term) {
-                        if (str_contains(mb_strtolower($ingredient->name), $term)) {
+                    $ingName = mb_strtolower($ingredient->name);
+                    foreach ($avoidTerms as $term) {
+                        if (str_contains($ingName, $term)) {
                             return false;
                         }
-                        foreach ($ingredient->allergen_types ?? [] as $slug) {
-                            if (str_contains(mb_strtolower((string) $slug), $term)) {
+                    }
+                    foreach ($ingredient->allergen_types ?? [] as $slug) {
+                        $slugLower = mb_strtolower((string) $slug);
+                        foreach ($avoidTerms as $term) {
+                            if (str_contains($slugLower, $term)) {
                                 return false;
                             }
                         }
@@ -228,6 +259,51 @@ class ChatService
     }
 
     /**
+     * Expande un término de alérgeno a sus sinónimos de ingredientes comunes.
+     * Permite que "lácteos" detecte leche, queso, nata, etc. en la carta.
+     *
+     * @param  array  $terms
+     * @return array
+     */
+    private function expandAllergenTerms(array $terms): array
+    {
+        $synonyms = [
+            'lacteo'    => ['leche', 'queso', 'mantequilla', 'nata', 'yogur', 'suero', 'caseina', 'lactosa'],
+            'lacteos'   => ['leche', 'queso', 'mantequilla', 'nata', 'yogur', 'suero', 'caseina', 'lactosa'],
+            'leche'     => ['leche', 'lactosa', 'nata'],
+            'queso'     => ['queso'],
+            'gluten'    => ['trigo', 'cebada', 'centeno', 'avena', 'espelta', 'harina', 'gluten'],
+            'trigo'     => ['trigo', 'harina', 'gluten'],
+            'huevo'     => ['huevo', 'yema', 'clara'],
+            'huevos'    => ['huevo', 'yema', 'clara'],
+            'pescado'   => ['pescado', 'merluza', 'bacalao', 'salmon', 'atun', 'anchoa', 'sardina'],
+            'marisco'   => ['gamba', 'langosta', 'langostino', 'cangrejo', 'bogavante', 'pulpo', 'calamar', 'ostra', 'almeja', 'mejillon'],
+            'soja'      => ['soja', 'soya', 'tofu', 'edamame'],
+            'sesamo'    => ['sesamo', 'tahini', 'tahina'],
+            'mostaza'   => ['mostaza'],
+            'apio'      => ['apio'],
+            'cacahuete' => ['cacahuete', 'mani'],
+            'nuez'      => ['nuez', 'nueces', 'almendra', 'avellana', 'pistacho'],
+            'frutos'    => ['nuez', 'almendra', 'avellana', 'pistacho', 'anacardo', 'macadamia'],
+        ];
+
+        $intentWords = ['sin', 'tenga', 'lleve', 'tiene', 'quiero', 'quiere', 'contiene', 'contenga', 'que'];
+
+        $expanded = [];
+        foreach ($terms as $term) {
+            if (in_array($term, $intentWords, true) || mb_strlen($term) < 3) {
+                continue;
+            }
+            $expanded[] = $term;
+            if (isset($synonyms[$term])) {
+                $expanded = array_merge($expanded, $synonyms[$term]);
+            }
+        }
+
+        return array_unique(array_values($expanded));
+    }
+
+    /**
      * @param  Collection  $products
      * @return array
      */
@@ -261,11 +337,18 @@ class ChatService
      * @param  array         $relevantProducts Productos encontrados por el backend
      * @return array
      */
-    private function buildContext(Conversation $conversation, Collection $categories, array $relevantProducts = []): array
+    private function buildContext(Conversation $conversation, Collection $categories, array $relevantProducts = [], array $cartItems = []): array
     {
         $user           = $conversation->table->user;
         $restaurantName = $user->business_name ?: $user->name;
         $categoryNames  = $categories->pluck('name')->join(', ');
+
+        $cartContext = empty($cartItems)
+            ? 'vacío'
+            : implode("\n", array_map(
+                fn($item) => '- ' . ($item['name'] ?? 'Producto') . ' ×' . ($item['qty'] ?? 1),
+                $cartItems
+            ));
 
         $menuLines = $categories->flatMap(fn($c) => $c->products->map(function (Product $p) use ($c): string {
             $ingredients = $p->ingredients->map(fn($i) => $i->name)->join(', ');
@@ -274,7 +357,7 @@ class ChatService
                 ->map(fn($i) => $i->name)
                 ->join(', ');
 
-            $line = "[{$c->name}] {$p->name} (" . number_format($p->price, 2) . '€)';
+            $line = "[{$c->name}] {$p->name} (ID:{$p->id} | " . number_format($p->price, 2) . '€)';
 
             if ($ingredients !== '') {
                 $line .= ": {$ingredients}";
@@ -331,6 +414,16 @@ class ChatService
                        . "- Si pide algo con un alérgeno: recomiéndale los platos que lo llevan con entusiasmo.\n"
                        . "- Si declara una alergia: responde con empatía e indica qué platos NO contienen ese alérgeno.\n"
                        . "- Nunca minimices la importancia de una alergia declarada.\n\n"
+                       . "PEDIDO ACTUAL DEL CLIENTE:\n"
+                       . $cartContext . "\n\n"
+                       . "ACCIONES EN EL PEDIDO (CRÍTICO):\n"
+                       . "- Si el cliente pide añadir un plato concreto al pedido, incluye AL FINAL de tu respuesta (tras el texto) la marca: [ADD:ID:CANTIDAD]\n"
+                       . "  Donde ID es el número que aparece como 'ID:X' en el menú de arriba, y CANTIDAD es un entero.\n"
+                       . "  Ejemplo: cliente dice 'añade 2 de ese plato' → respuesta: '¡Hecho! 😊 [ADD:55:2]'\n"
+                       . "- Si el cliente pide quitar/eliminar un plato del pedido, incluye: [REMOVE:ID]\n"
+                       . "- SOLO usa estas marcas si conoces el ID exacto. Si hay ambigüedad, pregunta al cliente cuál plato.\n"
+                       . "- NUNCA digas 'ya lo añadí' o 'ya está en tu pedido' sin incluir la marca [ADD:...].\n"
+                       . "- Las marcas no se muestran al cliente; el sistema las procesa automáticamente.\n\n"
                        . "BÚSQUEDA DE ALTERNATIVAS:\n"
                        . "- Si lo pedido no existe, ofrece siempre al menos 2 alternativas del menú con justificación breve.\n"
                        . "- Usa el menú como única fuente. No inventes.",
