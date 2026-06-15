@@ -459,15 +459,50 @@ export function registerChatWidget() {
             if (!text || this.sending || this.isTyping) return;
             this.input = '';
             this.pushMsg({ type: 'user', text, time: Date.now() });
-            const lower = text.toLowerCase();
+            const norm  = s => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+            const lower = norm(text);
             const cats  = this.menuData?.categories ?? [];
-            const matched = cats.find(c => c.name.toLowerCase() === lower);
-            if (matched)                                   { this.showCategoryCards(matched); return; }
+
+            // Coincidencia exacta con nombre de categoría
+            const exactCat = cats.find(c => norm(c.name) === lower);
+            if (exactCat) { this.showCategoryCards(exactCat); return; }
+
+            // Coincidencia parcial: el mensaje contiene el nombre de una categoría
+            // Permite "qué hay de postres", "ponme los entrantes", "ver bebidas", etc.
+            const mentionedCat = cats.find(c => lower.includes(norm(c.name)));
+            if (mentionedCat) { this.showCategoryCards(mentionedCat); return; }
+
+            // Si el mensaje tiene intención de explorar una categoría pero ninguna
+            // coincidió con las disponibles → mostrar las categorías reales en lugar
+            // de dejar que la IA invente o liste categorías que no existen.
+            const isCategoryBrowse = /\b(que\s+hay\s+(de|en)|que\s+teneis\s+de|teneis\s+de|hay\s+de|ver\s+(los|las|el|la|todos|todas)|mostrar\s+(los|las)|cuales?\s+son\s+(las?\s+)?categor|que\s+(tipo|categoria|categorias)|alguna?\s+opcion)\b/.test(lower);
+            if (isCategoryBrowse) {
+                const qrs = cats.map(c => this.getCategoryEmoji(c.name) + ' ' + c.name);
+                this.botDelay(
+                    'No tenemos esa categoría en este momento 😊 Aquí tienes las disponibles:',
+                    { quickReplies: qrs.length ? [...qrs, 'Ver mi pedido'] : ['Ver mi pedido'] }
+                );
+                return;
+            }
+
             if (lower.includes('mi pedido') ||
                 lower.includes('ver pedido') ||
                 lower.includes('carrito'))                 { this.showCartSummary(); return; }
             if (lower.includes('confirmar') &&
                 lower.includes('pedido'))                  { this.confirmOrder(); return; }
+
+            // Interceptar "muéstrame la carta / el menú / qué hay" →
+            // mostrar chips de categoría en lugar de mandar al AI a listar todo
+            const hasCarta = /\b(carta|menu|menus|platos|oferta)\b/.test(lower);
+            if (hasCarta) {
+                const qrs = cats.map(c => this.getCategoryEmoji(c.name) + ' ' + c.name);
+                this.botDelay(
+                    'Aquí tienes las categorías disponibles 😊 Toca la que más te apetezca:',
+                    { quickReplies: qrs.length ? [...qrs, 'Ver mi pedido'] : ['Ver mi pedido'] }
+                );
+                return;
+            }
+
             if (this.tryRemoveByName(lower, text)) return;
             if (this.tryAddByName(lower)) return;
             await this.sendToAI(text);
@@ -590,22 +625,30 @@ export function registerChatWidget() {
                 if (res.ok && data.success) {
                     const cats  = this.menuData?.categories ?? [];
                     const qrs   = cats.map(c => this.getCategoryEmoji(c.name) + ' ' + c.name);
-                    const cards = (data.data.cards ?? []).map(c => {
-                        const matchedCat = cats.find(cat => cat.products.some(p => p.id === c.id));
-                        return {
-                            id:          c.id,
-                            name:        c.name,
-                            price:       c.price,
-                            description: c.description,
-                            image:       c.image ?? null,
-                            allergens:   (c.allergens ?? []).map(a => ({
-                                name: a,
-                                ...getAllergenIcon(a),
-                            })),
-                            foodIcon: getFoodIcon(matchedCat?.name ?? '', c.name),
-                            emoji:    getCategoryEmoji(matchedCat?.name ?? ''),
-                        };
-                    });
+
+                    // Solo mostrar tarjetas de productos que existan en el menuData cargado.
+                    // Filtramos aquí para garantizar que cualquier producto que devuelva el backend
+                    // pero no esté en la carta digital actual (tapas ocultas, horario cerrado,
+                    // producto sin categoría asignada, etc.) no genere una tarjeta rota.
+                    const menuProductIds = new Set(cats.flatMap(c => c.products.map(p => p.id)));
+                    const cards = (data.data.cards ?? [])
+                        .filter(c => menuProductIds.has(c.id))
+                        .map(c => {
+                            const matchedCat = cats.find(cat => cat.products.some(p => p.id === c.id));
+                            return {
+                                id:          c.id,
+                                name:        c.name,
+                                price:       c.price,
+                                description: c.description,
+                                image:       c.image ?? null,
+                                allergens:   (c.allergens ?? []).map(a => ({
+                                    name: a,
+                                    ...getAllergenIcon(a),
+                                })),
+                                foodIcon: getFoodIcon(matchedCat?.name ?? '', c.name),
+                                emoji:    getCategoryEmoji(matchedCat?.name ?? ''),
+                            };
+                        });
                     this.pushMsg({
                         type:         'bot',
                         text:         data.data.reply,
