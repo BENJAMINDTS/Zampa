@@ -532,6 +532,26 @@
                 {{-- Panel: full-screen en móvil / modal en tablet / flotante en desktop --}}
                 <div class="zampi-panel zampi-panel-bg zampi-scrollbar">
 
+                    {{-- Delete pill — sigue al cart-bar cuando aparece/desaparece --}}
+                    <template x-if="$store.cart._deletePill.visible">
+                        <div :class="$store.cart._deletePill.leaving ? 'delete-pill delete-pill--leaving' : 'delete-pill'"
+                             :style="($store.cart.barShouldShow && !$store.cart._barLeaving) ? 'bottom:161px' : ''"
+                             role="status" aria-live="polite">
+                            <span aria-hidden="true">🗑</span>
+                            <span><strong x-text="$store.cart._deletePill.name"></strong> eliminado</span>
+                            <button type="button" class="icon-btn"
+                                    @click="$store.cart.hideDeletePill()"
+                                    aria-label="Cerrar notificación"
+                                    style="width:22px;height:22px;margin-left:4px;background:rgba(254,202,202,0.2);color:#FECACA;">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                     stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
+                    </template>
+
                     {{-- Cabecera --}}
                     <div class="zampi-header">
                         <div class="zampi-float zampi-header-icon">
@@ -764,12 +784,7 @@
 
                     {{-- Cart bar de la carta digital integrada en el panel Zampi --}}
                     <div x-show="$store.cart.barShouldShow"
-                         x-transition:enter="transition ease-out duration-[220ms]"
-                         x-transition:enter-start="opacity-0 translate-y-1"
-                         x-transition:enter-end="opacity-100 translate-y-0"
-                         x-transition:leave="transition ease-in duration-200"
-                         x-transition:leave-start="opacity-100 translate-y-0"
-                         x-transition:leave-end="opacity-0 translate-y-1"
+                         :class="{ 'zampi-cartbar-wrap--leaving': $store.cart._barLeaving }"
                          class="zampi-cartbar-wrap">
                         <button type="button"
                                 :class="$store.cart._barLeaving ? 'cart-bar cart-bar--leaving' : 'cart-bar'"
@@ -1434,6 +1449,28 @@
                 </div>
             </div>
         </div>
+
+        {{-- ══════════════════════════════════════════════════════════════════════
+             DELETE PILL — notificación al eliminar un artículo del carrito
+             ══════════════════════════════════════════════════════════════════════ --}}
+        <template x-if="$store.cart._deletePill.visible && !$store.chat.open">
+            <div :class="$store.cart._deletePill.leaving ? 'delete-pill delete-pill--leaving' : 'delete-pill'"
+                 :style="($store.cart.barShouldShow && !$store.cart._barLeaving) ? 'bottom:93px' : 'bottom:16px'"
+                 role="status" aria-live="polite">
+                <span aria-hidden="true">🗑</span>
+                <span><strong x-text="$store.cart._deletePill.name"></strong> eliminado</span>
+                <button type="button" class="icon-btn"
+                        @click="$store.cart.hideDeletePill()"
+                        aria-label="Cerrar notificación"
+                        style="width:22px;height:22px;margin-left:4px;background:rgba(254,202,202,0.2);color:#FECACA;">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+        </template>
 
         {{-- ══════════════════════════════════════════════════════════════════════
              CART BAR — .cart-bar position:absolute dentro de .carta

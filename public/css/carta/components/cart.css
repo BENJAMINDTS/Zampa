@@ -241,6 +241,7 @@
   background: var(--delete-pill-bg); color: #FECACA; border: 1px solid var(--delete-pill-border);
   font-family: var(--font-body); font-size: 13px; font-weight: 500;
   animation: pill-in 200ms var(--ease-out);
+  transition: bottom 220ms ease-in-out;
 }
 @keyframes pill-in { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 .delete-pill strong { color: white; font-weight: 700; }
