@@ -223,7 +223,7 @@ export function registerChatWidget() {
                 text: (this.menuData?.table ?? 'Mesa') + ' · ' + (this.menuData?.restaurant ?? '') });
             this.pushMsg({ type: 'bot',
                 text: '¡Hola! Soy Zampi, tu asistente de pedidos 🍔 ¿Qué te apetece hoy?',
-                quickReplies: qrs.length ? [...qrs, 'Ver mi pedido'] : ['Ver mi pedido'] });
+                quickReplies: qrs });
         },
 
         async startConversationBackend() {
@@ -285,7 +285,7 @@ export function registerChatWidget() {
                     const cats = this.menuData?.categories ?? [];
                     this.botDelay(
                         '✅ ' + (qty > 1 ? qty + '× ' : '') + pending.name + ' (' + variant.name + ') añadido al pedido. ¿Algo más?',
-                        { quickReplies: [...cats.map(c => this.getCategoryEmoji(c.name) + ' ' + c.name), 'Ver mi pedido', 'Confirmar pedido'] }
+                        { quickReplies: [...cats.map(c => this.getCategoryEmoji(c.name) + ' ' + c.name), 'Confirmar pedido'] }
                     );
                     return;
                 }
@@ -297,15 +297,15 @@ export function registerChatWidget() {
             const matched = cats.find(c => label === this.getCategoryEmoji(c.name) + ' ' + c.name || c.name === label);
             if (matched) {
                 this.showCategoryCards(matched);
-            } else if (label === 'Ver mi pedido' || label === 'Confirmar pedido') {
+            } else if (label === 'Confirmar pedido') {
                 Alpine.store('cart').open = true;
             } else if (label === 'Seguir eligiendo') {
                 const qrs = cats.map(c => this.getCategoryEmoji(c.name) + ' ' + c.name);
-                this.botDelay('¿Qué más te gustaría pedir?', { quickReplies: [...qrs, 'Ver mi pedido'] });
+                this.botDelay('¿Qué más te gustaría pedir?', { quickReplies: qrs });
             } else if (label === '📋 Nuevo pedido') {
                 Alpine.store('cart').items = [];
                 const qrs = cats.map(c => this.getCategoryEmoji(c.name) + ' ' + c.name);
-                this.botDelay('¡Claro! ¿Qué te gustaría pedir?', { quickReplies: [...qrs, 'Ver mi pedido'] });
+                this.botDelay('¡Claro! ¿Qué te gustaría pedir?', { quickReplies: qrs });
             } else {
                 this.sendToAI(label);
             }
@@ -328,7 +328,7 @@ export function registerChatWidget() {
             }));
             this.botDelay(
                 'Aquí tienes nuestra selección de ' + category.name + ' 😋',
-                { cards, quickReplies: ['Ver mi pedido', 'Confirmar pedido'] }
+                { cards, quickReplies: ['Confirmar pedido'] }
             );
         },
 
@@ -385,7 +385,7 @@ export function registerChatWidget() {
                 const qrs = (this.menuData?.categories ?? []).map(c => this.getCategoryEmoji(c.name) + ' ' + c.name);
                 this.pushMsg({ type: 'bot',
                     text: '🗑️ ' + item.name + ' eliminado del pedido.',
-                    quickReplies: Alpine.store('cart').items.length ? ['Ver mi pedido', 'Confirmar pedido', ...qrs] : qrs,
+                    quickReplies: Alpine.store('cart').items.length ? ['Confirmar pedido', ...qrs] : qrs,
                 });
             }
         },
@@ -480,7 +480,7 @@ export function registerChatWidget() {
                 const qrs = cats.map(c => this.getCategoryEmoji(c.name) + ' ' + c.name);
                 this.botDelay(
                     'No tenemos esa categoría en este momento 😊 Aquí tienes las disponibles:',
-                    { quickReplies: qrs.length ? [...qrs, 'Ver mi pedido'] : ['Ver mi pedido'] }
+                    { quickReplies: qrs }
                 );
                 return;
             }
@@ -498,7 +498,7 @@ export function registerChatWidget() {
                 const qrs = cats.map(c => this.getCategoryEmoji(c.name) + ' ' + c.name);
                 this.botDelay(
                     'Aquí tienes las categorías disponibles 😊 Toca la que más te apetezca:',
-                    { quickReplies: qrs.length ? [...qrs, 'Ver mi pedido'] : ['Ver mi pedido'] }
+                    { quickReplies: qrs }
                 );
                 return;
             }
@@ -521,7 +521,7 @@ export function registerChatWidget() {
                     const qrs = (this.menuData?.categories ?? []).map(c => this.getCategoryEmoji(c.name) + ' ' + c.name);
                     this.pushMsg({ type: 'bot',
                         text: '🗑️ ' + item.name + ' eliminado del pedido. ¿Seguimos? 😊',
-                        quickReplies: this.chatCart.length ? ['Ver mi pedido', 'Confirmar pedido', ...qrs] : qrs,
+                        quickReplies: this.chatCart.length ? ['Confirmar pedido', ...qrs] : qrs,
                     });
                     return true;
                 }
@@ -595,7 +595,7 @@ export function registerChatWidget() {
             this.pushMsg({
                 type: 'bot',
                 text: '✅ ' + (qty > 1 ? qty + '× ' : '') + found.name + ' añadido al pedido. ¿Algo más?',
-                quickReplies: [...cats.map(c => this.getCategoryEmoji(c.name) + ' ' + c.name), 'Ver mi pedido', 'Confirmar pedido'],
+                quickReplies: [...cats.map(c => this.getCategoryEmoji(c.name) + ' ' + c.name), 'Confirmar pedido'],
             });
             return true;
         },
@@ -604,7 +604,7 @@ export function registerChatWidget() {
             if (!this.conversationId || this.closed) {
                 const cats = this.menuData?.categories ?? [];
                 this.botDelay('Por favor elige una categoría para empezar 😊',
-                    { quickReplies: [...cats.map(c => this.getCategoryEmoji(c.name) + ' ' + c.name), 'Ver mi pedido'] });
+                    { quickReplies: cats.map(c => this.getCategoryEmoji(c.name) + ' ' + c.name) });
                 return;
             }
             this.sending  = true;

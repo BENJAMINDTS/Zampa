@@ -16,8 +16,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     @endif
     @vite(['resources/js/app.js'])
-    <link rel="stylesheet" href="{{ asset('css/carta/colors_and_type.css') }}?v={{ filemtime(public_path('css/carta/colors_and_type.css')) }}">
     <link rel="stylesheet" href="{{ asset('css/carta/styles.css') }}?v={{ filemtime(public_path('css/carta/styles.css')) }}">
+    <link rel="stylesheet" href="{{ asset('css/carta/colors_and_type.css') }}?v={{ filemtime(public_path('css/carta/colors_and_type.css')) }}">
     <style>
     /* ── Dark mode: categoría seleccionada en sidebar ──────────────────
        Mismo estilo que light mode: fondo suave + barra lateral izquierda.
@@ -680,10 +680,7 @@
                                                     <template x-for="(qr, qrIdx) in msg.quickReplies" :key="qrIdx">
                                                         <button type="button"
                                                                 @click="handleQuickReply(qr)"
-                                                                :class="qr === 'Confirmar pedido' ? 'zampi-qr-btn zampi-qr-btn--confirm' : (qr === 'Ver mi pedido' ? 'zampi-qr-btn zampi-qr-btn--view' : 'zampi-qr-btn')">
-                                                                <template x-if="qr === 'Ver mi pedido'">
-                                                                    <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                                                                </template>
+                                                                :class="qr === 'Confirmar pedido' ? 'zampi-qr-btn zampi-qr-btn--confirm' : 'zampi-qr-btn'">
                                                                 <template x-if="qr === 'Confirmar pedido'">
                                                                     <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
                                                                 </template>
