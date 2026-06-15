@@ -5,7 +5,7 @@
 }
 @keyframes zampiFloat {
     0%, 100% { transform: translateY(0); }
-    50%      { transform: translateY(-5px); }
+    50%      { transform: translateY(-3px); }
 }
 @keyframes zampiPulse {
     0%, 100% { opacity: 1; }
@@ -16,7 +16,7 @@
     40%           { opacity: 0.2; }
 }
 
-.zampi-float    { animation: zampiFloat 3s ease-in-out infinite; }
+.zampi-float    { animation: zampiFloat 4s ease-in-out infinite; }
 .zampi-pulse    { animation: zampiPulse 2s ease-in-out infinite; }
 .zampi-msg-appear { animation: zampiSlideUp 0.3s ease; }
 .zampi-typing-1 { animation: zampiTyping 1.2s ease-in-out 0.0s infinite; }
