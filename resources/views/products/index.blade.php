@@ -299,7 +299,7 @@
                     ->unique()->values();
               @endphp
               @if($allergenSlugs->isNotEmpty())
-                <div class="flex flex-wrap gap-3" role="list" aria-label="Alérgenos de {{ $product->name }}">
+                <div class="flex flex-wrap gap-1.5" role="list" aria-label="Alérgenos de {{ $product->name }}">
                   @foreach($allergenSlugs as $slug)
                     <x-allergen-badge :slug="$slug" />
                   @endforeach
