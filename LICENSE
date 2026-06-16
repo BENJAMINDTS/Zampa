@@ -1,21 +1,130 @@
-MIT License
+Copyright (c) 2025-2026 BenjaminDTS, SebastianBCF y AyrtonAlania
+Todos los derechos reservados. / All rights reserved.
 
-Copyright (c) 2026 BENJAMINDTS, SebastianBCF, AyrtonAlania
+Proyecto: Zampa — Plataforma SaaS para la digitalización de bares
+y restaurantes (carta digital, pedidos, pagos y gestión).
+Repositorio original: https://github.com/BENJAMINDTS/Zampa
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+════════════════════════════════════════════════════════════════
+  LICENCIA DE USO NO COMERCIAL CON ATRIBUCIÓN OBLIGATORIA
+  NON-COMMERCIAL LICENSE WITH MANDATORY ATTRIBUTION
+════════════════════════════════════════════════════════════════
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+─── ESPAÑOL ─────────────────────────────────────────────────────
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+Se concede permiso, de forma gratuita, para usar, estudiar, copiar
+y modificar este software (en adelante, "Zampa") y su
+documentación, ÚNICAMENTE bajo las siguientes condiciones:
+
+1. USO NO COMERCIAL
+   Queda estrictamente prohibido el uso total o parcial de Zampa,
+   sus componentes o cualquier obra derivada con fines comerciales
+   o económicos, incluyendo, entre otros:
+
+   - Su integración en productos o servicios de pago.
+   - Ofrecer Zampa o cualquier obra derivada como un servicio SaaS
+     de pago a bares, restaurantes o cualquier otro negocio.
+   - Su uso interno en empresas u organizaciones con fines
+     de lucro directo o indirecto, incluyendo su despliegue para
+     digitalizar la operativa de un negocio de hostelería real
+     con ánimo de lucro.
+   - Su venta, sublicencia o distribución a cambio de remuneración.
+   - Su uso por parte de autónomos o desarrolladores individuales
+     para prestar servicios remunerados a terceros basados en
+     Zampa o en cualquier obra derivada.
+
+   El uso está permitido exclusivamente para fines personales,
+   educativos, académicos (incluyendo Trabajos de Fin de Grado
+   o de Ciclo), de investigación o proyectos sin ánimo de lucro.
+
+2. ATRIBUCIÓN OBLIGATORIA
+   Cualquier redistribución del código original de Zampa o de
+   obras derivadas, ya sea pública o privada, debe incluir de
+   forma visible y accesible:
+
+   - Los nombres de los autores originales: BenjaminDTS,
+     SebastianBCF y AyrtonAlania.
+   - Un enlace al repositorio original:
+     https://github.com/BENJAMINDTS/Zampa
+   - Una descripción clara de los cambios realizados respecto
+     al código original de Zampa.
+
+   No se permite presentar obras derivadas de Zampa como si
+   fueran trabajo propio sin reconocer la autoría original de
+   los tres autores.
+
+3. COMPARTIR IGUAL
+   Toda obra derivada de Zampa debe distribuirse bajo los mismos
+   términos de esta licencia. No se puede aplicar una licencia
+   más restrictiva ni más permisiva sobre el trabajo derivado.
+
+4. SIN GARANTÍAS
+   Zampa se proporciona "tal cual", sin garantía de ningún tipo,
+   expresa o implícita. Los autores no se hacen responsables de
+   daños directos, indirectos, accidentales o de cualquier otro
+   tipo derivados del uso de este software, incluyendo pero no
+   limitado a pérdidas económicas derivadas de su uso en un
+   negocio real de hostelería.
+
+─── ENGLISH ─────────────────────────────────────────────────────
+
+Permission is granted, free of charge, to use, study, copy, and
+modify this software ("Zampa") and its documentation, ONLY under
+the following conditions:
+
+1. NON-COMMERCIAL USE ONLY
+   Any use, in whole or in part, of Zampa, its components, or any
+   derivative work for commercial or economic purposes is strictly
+   prohibited, including but not limited to:
+
+   - Integration into paid products or services.
+   - Offering Zampa or any derivative work as a paid SaaS service
+     to bars, restaurants, or any other business.
+   - Internal use by companies or organizations for direct or
+     indirect commercial gain, including deploying it to digitize
+     the operations of a real for-profit hospitality business.
+   - Sale, sublicensing, or distribution in exchange for
+     compensation.
+   - Use by freelancers or individual developers to provide paid
+     services to third parties based on Zampa or any derivative
+     work.
+
+   Use is permitted exclusively for personal, educational,
+   academic (including end-of-degree or end-of-cycle projects),
+   research, or non-profit project purposes.
+
+2. MANDATORY ATTRIBUTION
+   Any redistribution of Zampa's original code or derivative
+   works, whether public or private, must visibly and accessibly
+   include:
+
+   - The original authors' names: BenjaminDTS, SebastianBCF, and
+     AyrtonAlania.
+   - A link to the original repository:
+     https://github.com/BENJAMINDTS/Zampa
+   - A clear description of the changes made relative to Zampa's
+     original code.
+
+   Derivative works of Zampa may not be presented as original
+   work without acknowledging the original authorship of all
+   three authors.
+
+3. SHARE ALIKE
+   Any derivative work of Zampa must be distributed under the
+   same terms of this license. A more restrictive or more
+   permissive license may not be applied to the derivative work.
+
+4. NO WARRANTIES
+   Zampa is provided "as is", without warranty of any kind,
+   express or implied. The authors shall not be liable for any
+   direct, indirect, incidental, or other damages arising from
+   the use of this software, including but not limited to
+   financial losses resulting from its use in a real hospitality
+   business.
+
+════════════════════════════════════════════════════════════════
+  Para solicitar una licencia comercial / For commercial licensing:
+  BenjaminDTS    — https://github.com/BenjaminDTS
+  SebastianBCF   — https://github.com/SebastianBCF
+  AyrtonAlania   — https://github.com/AyrtonAlania
+════════════════════════════════════════════════════════════════
